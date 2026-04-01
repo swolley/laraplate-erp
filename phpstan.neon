@@ -1,0 +1,66 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+    # Livello di analisi (0-9, max = 9)
+    level: 5
+
+    # PHPDoc from Larastan / relations is often wider than runtime; reduces false "always true" branches
+    treatPhpDocTypesAsCertain: false
+
+    tmpDir: /tmp/phpstan
+    
+    # Directory da analizzare (tests/ omitted: Pest expectations are not PHPStan-friendly without pestphp/extension)
+    paths:
+        - app/
+        - config
+        - database
+        - routes
+    
+    # File da escludere
+    excludePaths:
+        - vendor/**
+        - tests/Support/**
+        # Stubs are loaded via bootstrapFiles; excluding avoids duplicate definitions and noise
+        - tests/Stubs/**
+        # These areas depend on the monolith (Core Filament utils, Elasticsearch client)
+        - app/Filament/**
+        - app/Analytics/**
+        # Seeders extend Core Seeder / use Core models — analyse when Core is on the classpath
+        - database/seeders/**
+        # Blueprint fluent API vs framework version mismatches are noisy in packages
+        - database/migrations/**
+
+    # Ignora errori specifici
+    ignoreErrors:
+        -
+          message: "#Called 'env' outside of the config directory which returns null when the config is cached, use 'config'.$#"
+          identifier: larastan.noEnvCallsOutsideOfConfig
+          path: config/*
+        - '#PHPDoc tag @mixin contains unknown class.*IdeHelper.*#'
+        # Laravel 12 relation generics (declaring model / pivot) vs Larastan stubs
+        -
+            identifier: generics.lessTypes
+            path: app/Models
+        -
+            identifier: return.type
+            path: app/Models
+
+    # Avoid noise when ignore patterns drift after refactors
+    reportUnmatchedIgnoredErrors: false
+
+    # Core stubs are loaded only via bootstrapFiles (not stubFiles) so PHPStan does not
+    # type-check stub bodies against missing optional deps (e.g. Scout) in isolation.
+    bootstrapFiles:
+        - tests/bootstrap-stubs.php
+
+    # Standalone package: Eloquent dynamic attrs; enable when @property blocks are complete
+    checkModelProperties: false
+    # Reduce false positives on dynamic Eloquent attributes and relations
+    universalObjectCratesClasses:
+        - Illuminate\Database\Eloquent\Model
+    checkOctaneCompatibility: true
+    noEnvCallsOutsideOfConfig: true
+    checkModelAppends: true
