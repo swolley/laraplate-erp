@@ -111,5 +111,6 @@
             "pestphp/pest-plugin": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "version": "v1.0.0"
 }
