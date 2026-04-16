@@ -20,7 +20,7 @@
 
 ## Description
 
-The Crm Module provides the foundation for **Customer Relationship Management** in Laraplate: contacts, accounts, pipelines, activities, and sales workflows. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
+The Business Module provides the foundation for **Customer Relationship Management** in Laraplate: contacts, accounts, pipelines, activities, and sales workflows. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
 
 At this stage the package ships as a **scaffold** (service provider, routes, config, and tooling). Domain models, Filament resources, and migrations will grow alongside product requirements.
 
@@ -28,7 +28,7 @@ At this stage the package ships as a **scaffold** (service provider, routes, con
 
 If you want to add this module to your project, you can use the `joshbrw/laravel-module-installer` package.
 
-In a full Laraplate application you typically depend on **Core** first, then add Crm. Add the repositories to your `composer.json` file (adjust URLs if you use forks or private registries):
+In a full Laraplate application you typically depend on **Core** first, then add Business. Add the repositories to your `composer.json` file (adjust URLs if you use forks or private registries):
 
 ```json
 "repositories": [
@@ -38,31 +38,31 @@ In a full Laraplate application you typically depend on **Core** first, then add
     },
     {
         "type": "composer",
-        "url": "https://github.com/swolley/laraplate-crm.git"
+        "url": "https://github.com/swolley/laraplate-business.git"
     }
 ]
 ```
 
 ```bash
-composer require joshbrw/laravel-module-installer swolley/laraplate-core swolley/laraplate-crm
+composer require joshbrw/laravel-module-installer swolley/laraplate-core swolley/laraplate-business
 ```
 
 Then install and activate the modules:
 
 ```bash
 php artisan module:install Core
-php artisan module:install Crm
+php artisan module:install Business
 ```
 
-Ensure `modules_statuses.json` lists `Crm` as enabled when you want the module loaded.
+Ensure `modules_statuses.json` lists `Business` as enabled when you want the module loaded.
 
 ## Configuration
 
-When the module is active, configuration is published under the **`crm`** key (file: `Modules/Crm/config/config.php`).
+When the module is active, configuration is published under the **`business`** key (file: `Modules/Business/config/config.php`).
 
 ```php
 // Example
-config('crm.name'); // "Crm"
+config('business.name'); // "Business"
 ```
 
 Add environment-driven settings here as features are implemented, for example:
@@ -83,7 +83,7 @@ Add environment-driven settings here as features are implemented, for example:
 
 ### Installed Packages (development)
 
-The Crm module aligns with the same quality toolchain as **Cms** and **Core**:
+The Business module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   [pestphp/pest](https://github.com/pestphp/pest) and Laravel / type-coverage plugins
 -   [laravel/pint](https://github.com/laravel/pint)
@@ -95,8 +95,8 @@ The Crm module aligns with the same quality toolchain as **Cms** and **Core**:
 ### Module metadata
 
 -   **Priority:** `999` in `module.json` (load order consistent with other feature modules)
--   **Namespace:** `Modules\Crm\...`
--   **Web / API routes:** `Modules/Crm/routes/web.php`, `Modules/Crm/routes/api.php`
+-   **Namespace:** `Modules\Business\...`
+-   **Web / API routes:** `Modules/Business/routes/web.php`, `Modules/Business/routes/api.php`
 
 ### Roadmap (planned CRM capabilities)
 
@@ -108,7 +108,7 @@ The Crm module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ## Scripts
 
-The Crm module exposes the same Composer script conventions as **Cms** and **Core**:
+The Business module exposes the same Composer script conventions as **Cms** and **Core**:
 
 ### Code quality and testing
 
@@ -156,7 +156,7 @@ If you want to contribute to this project, follow these steps:
 
 ## License
 
-Crm Module is open-sourced software licensed under the [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html).
+Business Module is open-sourced software licensed under the [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html).
 
 ## TODO
 

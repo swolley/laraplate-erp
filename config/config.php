@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
-    'name' => 'Crm',
+    'name' => 'Business',
 ];

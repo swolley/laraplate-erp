@@ -1,6 +1,8 @@
 <?php
 
-namespace Modules\Crm\Providers;
+declare(strict_types=1);
+
+namespace Modules\Business\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 

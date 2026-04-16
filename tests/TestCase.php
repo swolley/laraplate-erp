@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Modules\Crm\Tests;
+namespace Modules\Business\Tests;
 
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 abstract class TestCase extends OrchestraTestCase
@@ -17,7 +15,7 @@ abstract class TestCase extends OrchestraTestCase
 
     protected function defineEnvironment($app): void
     {
-        $app->make(\Illuminate\Contracts\Config\Repository::class)->set('crm', require __DIR__ . '/../config/config.php');
+        $app->make(\Illuminate\Contracts\Config\Repository::class)->set('business', require __DIR__ . '/../config/config.php');
         $app->make(\Illuminate\Contracts\Config\Repository::class)->set('database.default', 'testing');
         $app->make(\Illuminate\Contracts\Config\Repository::class)->set('database.connections.testing', [
             'driver' => 'sqlite',

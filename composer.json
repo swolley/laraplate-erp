@@ -1,11 +1,11 @@
 {
-    "name": "swolley/laraplate-crm",
+    "name": "swolley/laraplate-business",
     "vendor": "swolley",
-    "description": "CRM Module contains all the necessary functionalities for build up a new CRM system.",
+    "description": "Business Module contains all the necessary functionalities for build up a new Business system.",
     "keywords": [
         "laravel",
         "laraplate",
-        "crm"
+        "business"
     ],
     "authors": [
         {
@@ -91,16 +91,16 @@
     },
     "autoload": {
         "psr-4": {
-            "Modules\\Crm\\": "app/",
-            "Modules\\Crm\\Database\\Factories\\": "database/factories/",
-            "Modules\\Crm\\Database\\Seeders\\": "database/seeders/"
+            "Modules\\Business\\": "app/",
+            "Modules\\Business\\Database\\Factories\\": "database/factories/",
+            "Modules\\Business\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Modules\\Crm\\Tests\\Unit\\": "tests/Unit",
-            "Modules\\Crm\\Tests\\Feature\\": "tests/Feature",
-            "Modules\\Crm\\Tests\\Support\\": "tests/Support/"
+            "Modules\\Business\\Tests\\Unit\\": "tests/Unit",
+            "Modules\\Business\\Tests\\Feature\\": "tests/Feature",
+            "Modules\\Business\\Tests\\Support\\": "tests/Support/"
         },
         "classmap": [
             "tests/TestCase.php"
@@ -112,5 +112,5 @@
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
-    "version": "v1.0.0"
+    "version": "v1.1.0"
 }

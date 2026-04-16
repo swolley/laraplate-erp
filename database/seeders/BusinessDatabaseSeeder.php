@@ -1,10 +1,12 @@
 <?php
 
-namespace Modules\Crm\Database\Seeders;
+declare(strict_types=1);
+
+namespace Modules\Business\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class CrmDatabaseSeeder extends Seeder
+class BusinessDatabaseSeeder extends Seeder
 {
     /**
      * Run the database seeds.

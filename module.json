@@ -1,19 +1,13 @@
 {
-    "name": "Crm",
-    "alias": "crm",
-    "description": "Customer Relationship Management Module",
+    "name": "Business",
+    "alias": "business",
+    "description": "Business Module",
     "keywords": [
-        "crm",
-        "customer",
-        "relationship",
-        "management",
-        "sales",
-        "marketing",
-        "customer-support"
+        "business"
     ],
     "priority": 999,
     "providers": [
-        "Modules\\Crm\\Providers\\CrmServiceProvider"
+        "Modules\\Business\\Providers\\BusinessServiceProvider"
     ],
     "files": []
 }
