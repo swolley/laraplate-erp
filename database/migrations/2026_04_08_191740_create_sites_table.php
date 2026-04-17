@@ -14,13 +14,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('contacts', function (Blueprint $table): void {
+        Schema::create('sites', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'contacts_customer_id_FK')->nullable(true)->setNullOnDelete();
-            $table->foreignId('user_id')->constrained('users', 'id', 'contacts_users_FK')->nullable(true)->nullOnDelete();
             $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('address_line_1')->nullable();
+            $table->string('address_line_2')->nullable();
+            $table->string('city')->nullable();
+            $table->string('region')->nullable();
+            $table->string('postal_code')->nullable();
+            $table->char('country_code', 2)->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
 
             MigrateUtils::timestamps(
                 $table,
@@ -35,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('contacts');
+        Schema::dropIfExists('sites');
     }
 };

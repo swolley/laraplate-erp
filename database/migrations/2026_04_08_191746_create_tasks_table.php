@@ -17,6 +17,7 @@ return new class extends Migration
         Schema::create('tasks', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('project_id')->constrained('projects', 'id', 'tasks_projects_FK')->nullable(true)->setNullOnDelete();
+            $table->foreignId('site_id')->constrained('sites', 'id', 'tasks_sites_FK')->nullable(true)->setNullOnDelete();
             $table->foreignId('activity_id')->constrained('activities', 'id', 'tasks_activities_FK')->nullable(false)->setNullOnDelete();
 
             MigrateUtils::timestamps(
