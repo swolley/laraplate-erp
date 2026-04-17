@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('state');
             $table->string('zip');
             $table->string('country');
+            
             MigrateUtils::timestamps(
                 $table,
                 hasCreateUpdate: true,

@@ -17,6 +17,7 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
+            
             MigrateUtils::timestamps(
                 $table,
                 hasCreateUpdate: true,

@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\Business\Database\Factories\QuoteFactory;
 
+/**
+ * @mixin IdeHelperQuote
+ */
 class Quote extends Model
 {
     use HasFactory;
