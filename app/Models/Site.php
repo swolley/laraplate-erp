@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Modules\Core\Models\Place;
 use Modules\Core\Overrides\Model;
 
 /**
@@ -35,5 +37,10 @@ class Site extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function places(): HasOne
+    {
+        return $this->hasOne(Place::class);
     }
 }

@@ -15,9 +15,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('quotes', function (Blueprint $table): void {
+        Schema::create('quotations', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'quotes_customer_id_FK')->nullable(true)->setNullOnDelete();
+            $table->foreignId('customer_id')->constrained('customers', 'id', 'quotations_customer_id_FK')->nullable(true)->setNullOnDelete();
             $table->text('notes')->nullable(true);
             $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::DRAFT->value);
             MigrateUtils::timestamps(
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('quotes');
+        Schema::dropIfExists('quotations');
     }
 };

@@ -45,8 +45,8 @@ class Customer extends Model
         return $this->hasMany(Project::class);
     }
 
-    public function quotes(): HasMany
+    public function quotations(): HasMany
     {
-        return $this->hasMany(Quote::class);
+        return $this->hasMany(Quotation::class);
     }
 }
