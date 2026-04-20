@@ -17,13 +17,16 @@ return new class extends Migration
     {
         Schema::create('quotations', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'quotations_customer_id_FK')->nullable(true)->setNullOnDelete();
-            $table->text('notes')->nullable(true);
-            $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::DRAFT->value);
+            $table->foreignId('customer_id')->constrained('customers', 'id', 'quotations_customer_id_FK')->nullable(true)->setNullOnDelete()->comment('The customer that the quotation belongs to');
+            $table->text('notes')->nullable(true)->comment('The notes of the quotation');
+            $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::DRAFT->value)->index('quotations_status_IDX')->comment('The status of the quotation');
+            $table->unsignedTinyInteger('version')->default(0)->comment('The revision number of the quotation');
+
             MigrateUtils::timestamps(
                 $table,
                 hasCreateUpdate: true,
                 hasSoftDelete: true,
+                hasLocks: true,
                 hasValidity: true,
                 isValidityRequired: false,
             );

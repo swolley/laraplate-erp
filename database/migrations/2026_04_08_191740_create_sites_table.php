@@ -16,13 +16,14 @@ return new class extends Migration
     {
         Schema::create('sites', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->foreignId('place_id')->constrained('places', 'id', 'sites_place_id_FK')->restrictOnDelete();
+            $table->string('name')->comment('The name of the site');
+            $table->foreignId('place_id')->constrained('places', 'id', 'sites_place_id_FK')->restrictOnDelete()->comment('The place that the site belongs to');
 
             MigrateUtils::timestamps(
                 $table,
                 hasCreateUpdate: true,
                 hasSoftDelete: true,
+                hasValidity: true,
             );
         });
     }

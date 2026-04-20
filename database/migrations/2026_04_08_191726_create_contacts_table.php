@@ -17,11 +17,11 @@ return new class extends Migration
         Schema::create('contacts', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable(true)->comment('The user that the contact belongs to');
-            $table->string('name')->unique('contacts_name_UN');
+            $table->string('name')->comment('The name of the contact')->nullable(false);
             // not unique because we allow multiple contacts with the same email
-            $table->string('email')->nullable();
+            $table->string('email')->comment('The email of the contact')->nullable(true);
             // not unique because we allow multiple contacts with the same phone
-            $table->string('phone')->nullable();
+            $table->string('phone')->comment('The phone of the contact')->nullable(true);
 
             MigrateUtils::timestamps(
                 $table,
@@ -31,14 +31,6 @@ return new class extends Migration
 
             $table->unique(['user_id', 'name', 'deleted_at'], 'contacts_UN');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-        });
-
-        Schema::create('customers_contacts', function (Blueprint $table): void {
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'customers_contacts_customer_id_FK')->cascadeOnDelete();
-            $table->foreignId('contact_id')->constrained('contacts', 'id', 'customers_contacts_contact_id_FK')->cascadeOnDelete();
-            $table->primary(['customer_id', 'contact_id']);
-
-            MigrateUtils::timestamps($table);
         });
     }
 
