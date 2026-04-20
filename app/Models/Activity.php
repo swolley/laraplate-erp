@@ -23,12 +23,17 @@ class Activity extends Taxonomy
 
     public function time_entries(): HasMany
     {
-        return $this->hasMany(TimeEntry::class);
+        return $this->hasMany(TimeEntry::class, 'taxonomy_id');
     }
 
     public function price_list_items(): HasMany
     {
-        return $this->hasMany(PriceListItem::class);
+        return $this->hasMany(PriceListItem::class, 'taxonomy_id');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'taxonomy_id');
     }
 
     #[Override]

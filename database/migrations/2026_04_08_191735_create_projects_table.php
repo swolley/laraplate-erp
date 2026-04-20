@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('projects', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'projects_customer_id_FK')->nullable(true)->setNullOnDelete()->comment('The customer that the project belongs to');
+            $table->foreignId('customer_id')->constrained('customers', 'id', 'projects_customer_id_FK')->restrictOnDelete()->comment('The customer that the project belongs to');
             $table->foreignId('quotation_id')->constrained('quotations', 'id', 'projects_quotation_id_FK')->nullable(true)->setNullOnDelete()->comment('The quotation that the project belongs to');
             $table->string('name')->comment('The name of the project');
             $table->text('description')->nullable(true)->comment('The description of the project');

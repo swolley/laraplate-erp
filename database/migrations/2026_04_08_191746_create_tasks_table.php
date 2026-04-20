@@ -18,7 +18,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects', 'id', 'tasks_projects_FK')->nullable(true)->setNullOnDelete()->comment('The project that the task belongs to');
             $table->foreignId('site_id')->constrained('sites', 'id', 'tasks_sites_FK')->nullable(true)->setNullOnDelete()->comment('The site that the task belongs to');
-            $table->foreignId('activity_id')->constrained('activities', 'id', 'tasks_activities_FK')->nullable(false)->setNullOnDelete()->comment('The activity that the task belongs to');
+            $table->foreignId('taxonomy_id')->constrained('taxonomies', 'id', 'tasks_taxonomy_id_FK')->restrictOnDelete()->comment('Activity type node in taxonomies (EntityType activities)');
 
             MigrateUtils::timestamps(
                 $table,

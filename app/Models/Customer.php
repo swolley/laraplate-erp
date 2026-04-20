@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Business\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Core\Helpers\HasActivation;
@@ -30,9 +31,12 @@ class Customer extends Model
     //     // return CustomerFactory::new();
     // }
 
-    public function contacts(): HasMany
+    /**
+     * @return BelongsToMany<Contact, $this>
+     */
+    public function contacts(): BelongsToMany
     {
-        return $this->hasMany(Contact::class);
+        return $this->belongsToMany(Contact::class, 'contactables')->withTimestamps();
     }
 
     public function tasks(): HasManyThrough
@@ -48,5 +52,18 @@ class Customer extends Model
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class);
+    }
+
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'name' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        return $rules;
     }
 }

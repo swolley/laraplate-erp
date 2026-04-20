@@ -39,4 +39,19 @@ class Site extends Model
     {
         return $this->belongsTo(Place::class);
     }
+
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'name' => ['required', 'string', 'max:255'],
+            'place_id' => ['required', 'integer', 'exists:places,id'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'name' => ['sometimes', 'string', 'max:255'],
+            'place_id' => ['sometimes', 'integer', 'exists:places,id'],
+        ]);
+
+        return $rules;
+    }
 }

@@ -6,6 +6,7 @@ namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Override;
@@ -25,7 +26,6 @@ class Contact extends Model
     ];
 
     protected $hidden = [
-        'customer_id',
         'user_id',
         'user',
         'created_at',
@@ -34,17 +34,14 @@ class Contact extends Model
 
     private ?User $tempUser = null;
 
-    // protected static function newFactory(): ContactFactory
-    // {
-    //     // return ContactFactory::new();
-    // }
-
     /**
-     * @return BelongsTo<Customer, $this>
+     * Customers this contact is linked to (pivot `contactables`).
+     *
+     * @return BelongsToMany<Customer, $this>
      */
-    public function customer(): BelongsTo
+    public function customers(): BelongsToMany
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsToMany(Customer::class, 'contactables')->withTimestamps();
     }
 
     /**
@@ -56,7 +53,7 @@ class Contact extends Model
     }
 
     /**
-     * @return BelongsTo<User>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

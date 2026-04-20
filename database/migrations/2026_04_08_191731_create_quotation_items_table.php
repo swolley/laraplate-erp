@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('name')->comment('The name of the quotation item');
             $table->enum('billing_mode', BillingMode::cases())->nullable(false)->default(BillingMode::UNIT->value)->comment('The billing mode of the quotation item');
             $table->unsignedSmallInteger('quantity')->comment('The quantity of the quotation item')->default(1);
+            $table->decimal('unit_price', 15, 4)->nullable()->comment('Unit price in quotation currency context; null if only descriptive line');
 
             MigrateUtils::timestamps(
                 $table,
