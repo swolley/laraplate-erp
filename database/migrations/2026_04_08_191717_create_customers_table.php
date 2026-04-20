@@ -17,7 +17,8 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            
+            $table->boolean('is_active')->default(true);
+
             MigrateUtils::timestamps(
                 $table,
                 hasCreateUpdate: true,

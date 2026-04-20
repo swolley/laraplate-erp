@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 
@@ -31,11 +30,11 @@ class Contact extends Model
     // }
 
     /**
-     * @return HasMany<Customer,$this>
+     * @return BelongsTo<Customer, $this>
      */
-    public function customers(): HasMany
+    public function customer(): BelongsTo
     {
-        return $this->hasMany(Customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     /**

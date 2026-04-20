@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'contacts_customer_id_FK')->nullable(true)->setNullOnDelete();
+            $table->foreignId('customer_id')->constrained('customers', 'id', 'contacts_customer_id_FK')->restrictOnDelete();
             $table->foreignId('user_id')->constrained('users', 'id', 'contacts_users_FK')->nullable(true)->nullOnDelete();
             $table->string('name');
             $table->string('email')->nullable();

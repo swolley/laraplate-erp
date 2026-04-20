@@ -17,14 +17,7 @@ return new class extends Migration
         Schema::create('sites', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            $table->string('address_line_1')->nullable();
-            $table->string('address_line_2')->nullable();
-            $table->string('city')->nullable();
-            $table->string('region')->nullable();
-            $table->string('postal_code')->nullable();
-            $table->char('country_code', 2)->nullable();
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->foreignId('place_id')->constrained('places', 'id', 'sites_place_id_FK')->restrictOnDelete();
 
             MigrateUtils::timestamps(
                 $table,

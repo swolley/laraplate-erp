@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Business\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Core\Models\Place;
 use Modules\Core\Overrides\Model;
 
@@ -21,14 +21,7 @@ class Site extends Model
      */
     protected $fillable = [
         'name',
-        'address_line_1',
-        'address_line_2',
-        'city',
-        'region',
-        'postal_code',
-        'country_code',
-        'latitude',
-        'longitude',
+        'place_id',
     ];
 
     /**
@@ -39,8 +32,11 @@ class Site extends Model
         return $this->hasMany(Task::class);
     }
 
-    public function places(): HasOne
+    /**
+     * @return BelongsTo<Place, $this>
+     */
+    public function place(): BelongsTo
     {
-        return $this->hasOne(Place::class);
+        return $this->belongsTo(Place::class);
     }
 }
