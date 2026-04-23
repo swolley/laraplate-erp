@@ -6,8 +6,8 @@ namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Business\Casts\EntityType;
+use Modules\Business\Models\Pivot\Presettable;
 use Modules\Core\Models\Entity as CoreEntity;
-use Modules\Core\Models\Pivot\Presettable;
 use Override;
 
 /**
