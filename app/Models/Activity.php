@@ -40,5 +40,5 @@ class Activity extends Taxonomy
     protected static function getEntityType(): IDynamicEntityTypable
     {
         return EntityType::ACTIVITIES;
-    }
+    }   
 }
