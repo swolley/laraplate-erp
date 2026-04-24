@@ -58,10 +58,4 @@ final class Preset extends CorePreset
     {
         return Activity::class;
     }
-
-    #[Override]
-    protected static function getRelatedActivityModelClass(): string
-    {
-        return Activity::class;
-    }
 }
