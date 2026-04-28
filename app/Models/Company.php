@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Override;
 
@@ -42,6 +43,22 @@ class Company extends Model
             ->where('is_default', true)
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * @return HasMany<Account, $this>
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    /**
+     * @return HasMany<FiscalYear, $this>
+     */
+    public function fiscal_years(): HasMany
+    {
+        return $this->hasMany(FiscalYear::class);
     }
 
     #[Override]

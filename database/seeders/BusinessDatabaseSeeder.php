@@ -9,14 +9,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\Business\Casts\EntityType;
+use Modules\Business\Models\Company;
 use Modules\Business\Models\Entity;
 use Modules\Business\Models\Preset;
+use Modules\Business\Services\Accounting\ChartOfAccountsInstaller;
+use Modules\Business\Services\Accounting\FiscalCalendarInstaller;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
 
 /**
- * Bootstraps the Business module: ensures the Activity entity and its standard
- * preset exist, with an initial presettable version.
+ * Bootstraps the Business module: default company (tenant), Activity entity,
+ * Italian chart of accounts, and the current calendar fiscal year (12 periods).
  *
  * Activity tree (taxonomy nodes) seeding belongs to dev fixtures and lives in
  * `DevBusinessTaxonomySeeder`.
@@ -30,15 +33,63 @@ final class BusinessDatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        if (! Schema::hasTable('entities') || ! Schema::hasTable('presets') || ! Schema::hasTable('presettables')) {
-            $this->command?->warn('Skipping BusinessDatabaseSeeder: prerequisite Core tables (entities/presets/presettables) are missing.');
+        /** @var Company|null $company */
+        $company = null;
 
-            return;
+        if (Schema::hasTable('companies')) {
+            Model::unguarded(function () use (&$company): void {
+                $company = $this->ensureDefaultCompany();
+            });
         }
 
-        Model::unguarded(function (): void {
-            $this->defaultEntities();
-        });
+        if (! Schema::hasTable('entities') || ! Schema::hasTable('presets') || ! Schema::hasTable('presettables')) {
+            $this->command?->warn('Skipping Business entity bootstrap: prerequisite Core tables (entities/presets/presettables) are missing.');
+        } else {
+            Model::unguarded(function (): void {
+                $this->defaultEntities();
+            });
+        }
+
+        if ($company instanceof Company && Schema::hasTable('accounts')) {
+            Model::unguarded(function () use ($company): void {
+                resolve(ChartOfAccountsInstaller::class)->installWhenEmpty($company);
+            });
+        }
+
+        if ($company instanceof Company && Schema::hasTable('fiscal_years')) {
+            Model::unguarded(function () use ($company): void {
+                resolve(FiscalCalendarInstaller::class)->ensureCalendarYear($company, (int) now()->year);
+            });
+        }
+    }
+
+    private function ensureDefaultCompany(): Company
+    {
+        $this->logOperation(Company::class);
+
+        $existing = Company::query()->withoutGlobalScopes()->where('is_default', true)->orderBy('id')->first();
+
+        if ($existing instanceof Company) {
+            $this->command?->line('    - default company already exists');
+
+            return $existing;
+        }
+
+        /** @var Company $company */
+        $company = $this->create(Company::class, [
+            'slug' => 'default',
+            'name' => 'Default company',
+            'legal_name' => null,
+            'tax_id' => null,
+            'fiscal_country' => 'IT',
+            'default_currency' => 'EUR',
+            'settings' => null,
+            'is_default' => true,
+        ]);
+
+        $this->command?->line('    - default company <fg=green>created</>');
+
+        return $company;
     }
 
     private function defaultEntities(): void
