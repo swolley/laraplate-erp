@@ -61,6 +61,22 @@ class Company extends Model
         return $this->hasMany(FiscalYear::class);
     }
 
+    /**
+     * @return HasMany<DocumentSequence, $this>
+     */
+    public function document_sequences(): HasMany
+    {
+        return $this->hasMany(DocumentSequence::class);
+    }
+
+    /**
+     * @return HasMany<JournalEntry, $this>
+     */
+    public function journal_entries(): HasMany
+    {
+        return $this->hasMany(JournalEntry::class);
+    }
+
     #[Override]
     public function getRules(): array
     {

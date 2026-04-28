@@ -7,9 +7,11 @@ namespace Modules\Business\Providers;
 use Modules\Business\Contracts\ChartOfAccountsProvider;
 use Modules\Business\Contracts\CurrencyConverter;
 use Modules\Business\Services\Accounting\ChartOfAccountsInstaller;
+use Modules\Business\Services\Accounting\DocumentNumberAllocator;
 use Modules\Business\Services\Accounting\FiscalCalendarInstaller;
 use Modules\Business\Services\Accounting\FiscalPeriodCloser;
 use Modules\Business\Services\Accounting\ItalianCoaProvider;
+use Modules\Business\Services\Accounting\JournalPostingService;
 use Modules\Business\Services\Currency\NoopCurrencyConverter;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 use Override;
@@ -38,5 +40,7 @@ class BusinessServiceProvider extends ModuleServiceProvider
         ));
         $this->app->singleton(FiscalCalendarInstaller::class);
         $this->app->singleton(FiscalPeriodCloser::class);
+        $this->app->singleton(DocumentNumberAllocator::class);
+        $this->app->singleton(JournalPostingService::class);
     }
 }
