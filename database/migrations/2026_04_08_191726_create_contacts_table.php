@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\Business\Helpers\BusinessMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -16,6 +17,7 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table): void {
             $table->id();
+            BusinessMigrateUtils::companyForeign($table);
             $table->unsignedBigInteger('user_id')->nullable(true)->comment('The user that the contact belongs to');
             $table->string('name')->comment('The name of the contact')->nullable(false);
             // not unique because we allow multiple contacts with the same email

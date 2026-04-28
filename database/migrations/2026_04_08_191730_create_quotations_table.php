@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Business\Casts\QuoteStatus;
+use Modules\Business\Helpers\BusinessMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -17,6 +18,7 @@ return new class extends Migration
     {
         Schema::create('quotations', function (Blueprint $table): void {
             $table->id();
+            BusinessMigrateUtils::companyForeign($table);
             $table->foreignId('customer_id')->constrained('customers', 'id', 'quotations_customer_id_FK')->restrictOnDelete()->comment('The customer that the quotation belongs to');
             $table->char('currency', 3)->default('EUR')->comment('ISO 4217 for document amounts');
             $table->text('notes')->nullable(true)->comment('The notes of the quotation');

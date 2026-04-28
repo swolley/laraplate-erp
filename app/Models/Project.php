@@ -7,6 +7,7 @@ namespace Modules\Business\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Business\Casts\ProjectStatus;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
 use Override;
@@ -16,6 +17,7 @@ use Override;
  */
 class Project extends Model
 {
+    use BelongsToCompany;
     use HasValidity;
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Business\Models;
 
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Overrides\Model;
 
 // use Modules\Business\Database\Factories\MovementFactory;
@@ -13,6 +14,8 @@ use Modules\Core\Overrides\Model;
  */
 class Movement extends Model
 {
+    use BelongsToCompany;
+
     /**
      * The attributes that are mass assignable.
      */

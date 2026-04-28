@@ -7,6 +7,7 @@ namespace Modules\Business\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Business\Casts\QuoteStatus;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
@@ -17,6 +18,7 @@ use Override;
  */
 class Quotation extends Model
 {
+    use BelongsToCompany;
     use HasLocks;
     use HasValidity;
 

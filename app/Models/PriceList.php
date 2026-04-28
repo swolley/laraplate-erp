@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
 use Override;
@@ -14,6 +15,7 @@ use Override;
  */
 class PriceList extends Model
 {
+    use BelongsToCompany;
     use HasValidity;
 
     protected $table = 'price_lists';

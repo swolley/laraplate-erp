@@ -94,7 +94,10 @@
             "Modules\\Business\\": "app/",
             "Modules\\Business\\Database\\Factories\\": "database/factories/",
             "Modules\\Business\\Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

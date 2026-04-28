@@ -7,6 +7,7 @@ namespace Modules\Business\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Override;
@@ -16,6 +17,8 @@ use Override;
  */
 class Contact extends Model
 {
+    use BelongsToCompany;
+
     /**
      * The attributes that are mass assignable.
      */

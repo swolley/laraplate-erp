@@ -6,6 +6,7 @@ namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Models\Place;
 use Modules\Core\Overrides\Model;
 
@@ -16,6 +17,8 @@ use Modules\Core\Overrides\Model;
  */
 class Site extends Model
 {
+    use BelongsToCompany;
+
     /**
      * The attributes that are mass assignable.
      */

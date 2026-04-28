@@ -7,6 +7,7 @@ namespace Modules\Business\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Modules\Business\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasActivation;
 use Modules\Core\Overrides\Model;
 
@@ -17,6 +18,7 @@ use Modules\Core\Overrides\Model;
  */
 class Customer extends Model
 {
+    use BelongsToCompany;
     use HasActivation;
 
     /**
