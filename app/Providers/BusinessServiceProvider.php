@@ -13,6 +13,8 @@ use Modules\Business\Services\Accounting\FiscalPeriodCloser;
 use Modules\Business\Services\Accounting\ItalianCoaProvider;
 use Modules\Business\Services\Accounting\JournalPostingService;
 use Modules\Business\Services\Currency\NoopCurrencyConverter;
+use Modules\Business\Services\Taxation\TaxCodeSupersessionService;
+use Modules\Business\Services\Taxation\TaxLineCalculator;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 use Override;
 
@@ -42,5 +44,7 @@ class BusinessServiceProvider extends ModuleServiceProvider
         $this->app->singleton(FiscalPeriodCloser::class);
         $this->app->singleton(DocumentNumberAllocator::class);
         $this->app->singleton(JournalPostingService::class);
+        $this->app->singleton(TaxLineCalculator::class);
+        $this->app->singleton(TaxCodeSupersessionService::class);
     }
 }

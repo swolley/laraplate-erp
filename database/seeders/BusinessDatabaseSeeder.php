@@ -18,11 +18,10 @@ use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
 
 /**
- * Bootstraps the Business module: default company (tenant), Activity entity,
- * Italian chart of accounts, and the current calendar fiscal year (12 periods).
- *
- * Activity tree (taxonomy nodes) seeding belongs to dev fixtures and lives in
- * `DevBusinessTaxonomySeeder`.
+ * Bootstraps the Business module: default company (tenant), Activity and opportunity-stage
+ * entities, Italian chart of accounts, calendar fiscal year (via FiscalCalendarInstaller),
+ * and default Italian tax codes. Taxonomy trees for activities and opportunity stages are
+ * seeded by dev fixtures ({@see \Modules\Business\Database\Seeders\DevBusinessTaxonomySeeder}).
  */
 final class BusinessDatabaseSeeder extends Seeder
 {
@@ -59,6 +58,12 @@ final class BusinessDatabaseSeeder extends Seeder
         if ($company instanceof Company && Schema::hasTable('fiscal_years')) {
             Model::unguarded(function () use ($company): void {
                 resolve(FiscalCalendarInstaller::class)->ensureCalendarYear($company, (int) now()->year);
+            });
+        }
+
+        if ($company instanceof Company && Schema::hasTable('tax_codes')) {
+            Model::unguarded(function () use ($company): void {
+                resolve(ItalianTaxCodesSeeder::class)->seedForCompany($company);
             });
         }
     }
@@ -103,6 +108,11 @@ final class BusinessDatabaseSeeder extends Seeder
                 [
                     'name' => 'activity',
                     'type' => EntityType::ACTIVITIES,
+                    'preset' => 'standard',
+                ],
+                [
+                    'name' => 'opportunity_stage',
+                    'type' => EntityType::OPPORTUNITY_STAGES,
                     'preset' => 'standard',
                 ],
             ];

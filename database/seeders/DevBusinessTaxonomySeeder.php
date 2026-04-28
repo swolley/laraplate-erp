@@ -80,6 +80,8 @@ final class DevBusinessTaxonomySeeder extends Seeder
                 $this->seedActivityTree((int) $entity->id, (int) $presettable->id);
             });
         });
+
+        $this->call(DevBusinessOpportunityStagesTaxonomySeeder::class);
     }
 
     private function seedActivityTree(int $entity_id, int $presettable_id): void

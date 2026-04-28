@@ -77,6 +77,22 @@ class Company extends Model
         return $this->hasMany(JournalEntry::class);
     }
 
+    /**
+     * @return HasMany<TaxCode, $this>
+     */
+    public function tax_codes(): HasMany
+    {
+        return $this->hasMany(TaxCode::class);
+    }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     #[Override]
     public function getRules(): array
     {

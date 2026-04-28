@@ -23,6 +23,7 @@ class JournalEntryLine extends Model
         'journal_entry_id',
         'line_no',
         'account_id',
+        'tax_code_id',
         'amount_doc',
         'currency_doc',
         'amount_local',
@@ -65,6 +66,14 @@ class JournalEntryLine extends Model
     }
 
     /**
+     * @return BelongsTo<TaxCode, $this>
+     */
+    public function source_tax_code(): BelongsTo
+    {
+        return $this->belongsTo(TaxCode::class, 'tax_code_id');
+    }
+
+    /**
      * @return BelongsTo<JournalEntry, $this>
      */
     public function journal_entry(): BelongsTo
@@ -88,6 +97,7 @@ class JournalEntryLine extends Model
             'journal_entry_id' => ['required', 'integer', 'exists:journal_entries,id'],
             'line_no' => ['required', 'integer', 'min:1', 'max:65535'],
             'account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:tax_codes,id'],
             'amount_doc' => ['required', 'numeric'],
             'currency_doc' => ['required', 'string', 'size:3'],
             'amount_local' => ['required', 'numeric'],
@@ -101,6 +111,7 @@ class JournalEntryLine extends Model
         $rules['update'] = array_merge($rules['update'], [
             'line_no' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'account_id' => ['sometimes', 'integer', 'exists:accounts,id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:tax_codes,id'],
             'amount_doc' => ['sometimes', 'numeric'],
             'currency_doc' => ['sometimes', 'string', 'size:3'],
             'amount_local' => ['sometimes', 'numeric'],

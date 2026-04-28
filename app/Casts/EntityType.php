@@ -6,10 +6,21 @@ namespace Modules\Business\Casts;
 
 use Modules\Core\Contracts\IDynamicEntityTypable;
 
+/**
+ * Selects which Business-owned taxonomy tree rows in `taxonomies` belong to.
+ * Described in this module's `docs/GLOSSARY.md` under Taxonomies.
+ */
 enum EntityType: string implements IDynamicEntityTypable
 {
-    case MOVEMENTS = 'movements';
+    /**
+     * Work-log and list/catalog activities ({@see Activity} / `taxonomies`).
+     */
     case ACTIVITIES = 'activities';
+
+    /**
+     * CRM pipeline stages ({@see OpportunityStage} / `taxonomies`) for opportunities.
+     */
+    case OPPORTUNITY_STAGES = 'opportunity_stages';
 
     /**
      * Get all values as array.
