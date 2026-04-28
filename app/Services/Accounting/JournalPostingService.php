@@ -6,8 +6,11 @@ namespace Modules\Business\Services\Accounting;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Modules\Business\Exceptions\CannotReverseUnpostedJournalException;
 use Modules\Business\Exceptions\FiscalPeriodCompanyMismatchException;
 use Modules\Business\Exceptions\JournalAccountNotInCompanyException;
+use Modules\Business\Exceptions\JournalAlreadyReversedException;
+use Modules\Business\Exceptions\JournalEntryCompanyMismatchException;
 use Modules\Business\Exceptions\PostingToClosedFiscalPeriodException;
 use Modules\Business\Models\Account;
 use Modules\Business\Models\Company;
@@ -41,6 +44,171 @@ final class JournalPostingService
         ?string $description = null,
         ?int $posted_by_user_id = null,
     ): JournalEntry {
+        $this->validateLinesForPosting($company, $lines, $fiscal_period);
+
+        $posted_at = CarbonImmutable::now();
+
+        return DB::transaction(function () use (
+            $company,
+            $lines,
+            $fiscal_period,
+            $description,
+            $posted_by_user_id,
+            $posted_at,
+        ): JournalEntry {
+            return $this->persistPostedEntry(
+                $company,
+                $lines,
+                $fiscal_period,
+                $description,
+                $posted_by_user_id,
+                $posted_at,
+                null,
+                null,
+            );
+        });
+    }
+
+    /**
+     * Posts a reversing voucher that inverts every line amount of a posted entry.
+     */
+    public function reverse(
+        JournalEntry $posted_entry,
+        Company $company,
+        string $reversal_reason,
+        ?int $posted_by_user_id = null,
+    ): JournalEntry {
+        $posted_entry = JournalEntry::withoutGlobalScopes()
+            ->whereKey($posted_entry->getKey())
+            ->with('lines')
+            ->firstOrFail();
+
+        if ($posted_entry->posted_at === null) {
+            throw CannotReverseUnpostedJournalException::make((int) $posted_entry->getKey());
+        }
+
+        if ((int) $posted_entry->company_id !== (int) $company->id) {
+            throw JournalEntryCompanyMismatchException::make(
+                (int) $posted_entry->getKey(),
+                (int) $company->id,
+            );
+        }
+
+        $reversal_exists = JournalEntry::withoutGlobalScopes()
+            ->where('reverses_journal_entry_id', $posted_entry->getKey())
+            ->exists();
+
+        if ($reversal_exists) {
+            throw JournalAlreadyReversedException::make((int) $posted_entry->getKey());
+        }
+
+        $storno_lines = [];
+
+        foreach ($posted_entry->lines as $line) {
+            $storno_lines[] = [
+                'account_id' => (int) $line->account_id,
+                'amount_doc' => JournalLineBalance::negated($line->amount_doc),
+                'currency_doc' => (string) $line->currency_doc,
+                'amount_local' => JournalLineBalance::negated($line->amount_local),
+                'currency_local' => (string) $line->currency_local,
+                'fx_rate' => $line->fx_rate,
+                'tax_code' => $line->tax_code,
+                'tax_rate' => $line->tax_rate,
+                'tax_label' => $line->tax_label,
+                'description' => $line->description,
+            ];
+        }
+
+        $this->validateLinesForPosting($company, $storno_lines, $posted_entry->fiscal_period);
+        $posted_at = CarbonImmutable::now();
+        $description = 'Reversal of journal #' . $posted_entry->getKey() . ': ' . $reversal_reason;
+
+        return DB::transaction(function () use (
+            $company,
+            $storno_lines,
+            $posted_entry,
+            $description,
+            $posted_by_user_id,
+            $posted_at,
+            $reversal_reason,
+        ): JournalEntry {
+            return $this->persistPostedEntry(
+                $company,
+                $storno_lines,
+                $posted_entry->fiscal_period,
+                $description,
+                $posted_by_user_id,
+                $posted_at,
+                (int) $posted_entry->getKey(),
+                $reversal_reason,
+            );
+        });
+    }
+
+    /**
+     * @param  list<array{
+     *     account_id: int,
+     *     amount_doc: string|float,
+     *     currency_doc: string,
+     *     amount_local: string|float,
+     *     currency_local: string,
+     *     fx_rate: string|float,
+     *     description?: string|null,
+     *     tax_code?: string|null,
+     *     tax_rate?: string|float|null,
+     *     tax_label?: string|null,
+     * }>  $lines
+     */
+    private function persistPostedEntry(
+        Company $company,
+        array $lines,
+        ?FiscalPeriod $fiscal_period,
+        ?string $description,
+        ?int $posted_by_user_id,
+        CarbonImmutable $posted_at,
+        ?int $reverses_journal_entry_id,
+        ?string $reversal_reason,
+    ): JournalEntry {
+        $entry = JournalEntry::withoutGlobalScopes()->create([
+            'company_id' => $company->id,
+            'fiscal_period_id' => $fiscal_period?->getKey(),
+            'posted_at' => $posted_at,
+            'posted_by' => $posted_by_user_id,
+            'description' => $description,
+            'reverses_journal_entry_id' => $reverses_journal_entry_id,
+            'reversal_reason' => $reversal_reason,
+        ]);
+
+        $line_no = 1;
+
+        foreach ($lines as $line) {
+            JournalEntryLine::query()->create([
+                'journal_entry_id' => $entry->getKey(),
+                'line_no' => $line_no,
+                'account_id' => $line['account_id'],
+                'amount_doc' => $line['amount_doc'],
+                'currency_doc' => $line['currency_doc'],
+                'amount_local' => $line['amount_local'],
+                'currency_local' => $line['currency_local'],
+                'fx_rate' => $line['fx_rate'],
+                'tax_code' => $line['tax_code'] ?? null,
+                'tax_rate' => $line['tax_rate'] ?? null,
+                'tax_label' => $line['tax_label'] ?? null,
+                'description' => $line['description'] ?? null,
+            ]);
+            $line_no++;
+        }
+
+        $this->assertPersistedLinesBalance($entry);
+
+        return $entry->load('lines');
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     */
+    private function validateLinesForPosting(Company $company, array $lines, ?FiscalPeriod $fiscal_period): void
+    {
         $amount_locals = array_map(
             static fn (array $line): string|float => $line['amount_local'],
             $lines,
@@ -66,47 +234,15 @@ final class JournalPostingService
         foreach ($lines as $line) {
             $this->assertAccountBelongsToCompany((int) $line['account_id'], $company);
         }
+    }
 
-        $posted_at = CarbonImmutable::now();
-
-        return DB::transaction(function () use (
-            $company,
-            $lines,
-            $fiscal_period,
-            $description,
-            $posted_by_user_id,
-            $posted_at,
-        ): JournalEntry {
-            $entry = JournalEntry::withoutGlobalScopes()->create([
-                'company_id' => $company->id,
-                'fiscal_period_id' => $fiscal_period?->getKey(),
-                'posted_at' => $posted_at,
-                'posted_by' => $posted_by_user_id,
-                'description' => $description,
-            ]);
-
-            $line_no = 1;
-
-            foreach ($lines as $line) {
-                JournalEntryLine::query()->create([
-                    'journal_entry_id' => $entry->getKey(),
-                    'line_no' => $line_no,
-                    'account_id' => $line['account_id'],
-                    'amount_doc' => $line['amount_doc'],
-                    'currency_doc' => $line['currency_doc'],
-                    'amount_local' => $line['amount_local'],
-                    'currency_local' => $line['currency_local'],
-                    'fx_rate' => $line['fx_rate'],
-                    'tax_code' => $line['tax_code'] ?? null,
-                    'tax_rate' => $line['tax_rate'] ?? null,
-                    'tax_label' => $line['tax_label'] ?? null,
-                    'description' => $line['description'] ?? null,
-                ]);
-                $line_no++;
-            }
-
-            return $entry->load('lines');
-        });
+    private function assertPersistedLinesBalance(JournalEntry $entry): void
+    {
+        $amount_locals = JournalEntryLine::query()
+            ->where('journal_entry_id', $entry->getKey())
+            ->pluck('amount_local')
+            ->all();
+        JournalLineBalance::assertBalanced($amount_locals);
     }
 
     private function assertAccountBelongsToCompany(int $account_id, Company $company): void

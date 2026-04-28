@@ -36,4 +36,15 @@ final class JournalLineBalance
 
         return number_format((float) $value, 4, '.', '');
     }
+
+    /**
+     * Decimal string with the opposite sign (for reversal lines).
+     */
+    public static function negated(string|int|float $value): string
+    {
+        return BigDecimal::of(self::normalizeToDecimalString($value))
+            ->multipliedBy(-1)
+            ->toScale(4)
+            ->__toString();
+    }
 }

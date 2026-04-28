@@ -41,9 +41,11 @@ final class DocumentNumberAllocator
                     'document_type' => $document_type,
                     'fiscal_year' => $fiscal_year,
                     'last_number' => 1,
-                    'gap_allowed' => false,
+                    'gap_allowed' => $document_type->defaultGapAllowed(),
                     'prefix' => '',
                     'padding' => 5,
+                    'format_pattern' => null,
+                    'suffix' => '',
                 ]);
             } catch (QueryException $exception) {
                 if (! self::isUniqueConstraintViolation($exception)) {
@@ -68,28 +70,8 @@ final class DocumentNumberAllocator
                 ->where('fiscal_year', $fiscal_year)
                 ->firstOrFail();
 
-            return self::formatDisplay(
-                $inserted->prefix,
-                $fiscal_year,
-                $inserted->last_number,
-                $inserted->padding,
-            );
+            return DocumentNumberFormatter::format($inserted, $fiscal_year, $inserted->last_number);
         });
-    }
-
-    public static function formatDisplay(
-        string $prefix,
-        int $fiscal_year,
-        int $counter,
-        int $padding,
-    ): string {
-        $body = str_pad((string) $counter, max(1, $padding), '0', STR_PAD_LEFT);
-
-        if ($fiscal_year > 0) {
-            return $prefix . $fiscal_year . '-' . $body;
-        }
-
-        return $prefix . $body;
     }
 
     private static function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
@@ -100,12 +82,7 @@ final class DocumentNumberAllocator
         ]);
         $row->refresh();
 
-        return self::formatDisplay(
-            $row->prefix,
-            $fiscal_year,
-            $row->last_number,
-            $row->padding,
-        );
+        return DocumentNumberFormatter::format($row, $fiscal_year, $row->last_number);
     }
 
     private static function isUniqueConstraintViolation(QueryException $exception): bool

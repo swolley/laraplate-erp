@@ -26,6 +26,8 @@ class DocumentSequence extends Model
         'gap_allowed',
         'prefix',
         'padding',
+        'format_pattern',
+        'suffix',
     ];
 
     #[Override]
@@ -40,6 +42,8 @@ class DocumentSequence extends Model
             'gap_allowed' => ['sometimes', 'boolean'],
             'prefix' => ['sometimes', 'string', 'max:32'],
             'padding' => ['sometimes', 'integer', 'min:1', 'max:12'],
+            'format_pattern' => ['nullable', 'string', 'max:255'],
+            'suffix' => ['sometimes', 'string', 'max:32'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'document_type' => ['sometimes', 'string', DocumentType::validationRule()],
@@ -48,6 +52,8 @@ class DocumentSequence extends Model
             'gap_allowed' => ['sometimes', 'boolean'],
             'prefix' => ['sometimes', 'string', 'max:32'],
             'padding' => ['sometimes', 'integer', 'min:1', 'max:12'],
+            'format_pattern' => ['nullable', 'string', 'max:255'],
+            'suffix' => ['sometimes', 'string', 'max:32'],
         ]);
 
         return $rules;

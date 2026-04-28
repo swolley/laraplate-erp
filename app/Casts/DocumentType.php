@@ -27,4 +27,17 @@ enum DocumentType: string
     {
         return 'in:' . implode(',', self::values());
     }
+
+    /**
+     * Whether a rollback of the surrounding transaction may leave numbering holes.
+     *
+     * Fiscal / legal streams keep false so operators treat each allocated number as consumed.
+     */
+    public function defaultGapAllowed(): bool
+    {
+        return match ($this) {
+            self::Quotation => true,
+            default => false,
+        };
+    }
 }

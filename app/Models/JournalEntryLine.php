@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Business\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Business\Exceptions\PostedJournalImmutableException;
 use Modules\Core\Overrides\Model;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -32,6 +33,36 @@ class JournalEntryLine extends Model
         'tax_label',
         'description',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (JournalEntryLine $line): void {
+            if (self::journalHeaderIsPosted($line)) {
+                throw PostedJournalImmutableException::make();
+            }
+        });
+
+        static::deleting(function (JournalEntryLine $line): void {
+            if (self::journalHeaderIsPosted($line)) {
+                throw PostedJournalImmutableException::make();
+            }
+        });
+    }
+
+    private static function journalHeaderIsPosted(JournalEntryLine $line): bool
+    {
+        $journal_entry_id = (int) ($line->getOriginal('journal_entry_id') ?: $line->journal_entry_id);
+
+        if ($journal_entry_id === 0) {
+            return false;
+        }
+
+        $posted_at = JournalEntry::withoutGlobalScopes()
+            ->whereKey($journal_entry_id)
+            ->value('posted_at');
+
+        return $posted_at !== null;
+    }
 
     /**
      * @return BelongsTo<JournalEntry, $this>
