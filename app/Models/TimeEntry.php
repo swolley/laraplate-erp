@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Business\Models;
 
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use Modules\Business\Observers\TimeEntryObserver;
+use Modules\Business\Rules\TimeEntryOverlap;
 use Modules\Core\Overrides\Model;
 use Override;
 
+#[ObservedBy([TimeEntryObserver::class])]
 /**
  * @mixin IdeHelperTimeEntry
  */
@@ -66,6 +74,74 @@ class TimeEntry extends Model
         return $this->belongsTo(QuotationItem::class, 'quotation_item_id');
     }
 
+    /**
+     * Whether any other (non-soft-deleted) TimeEntry of the given user
+     * overlaps the half-open interval [startedAt, endedAt).
+     *
+     * `endedAt = null` means an open-ended session (treated as future infinity).
+     */
+    public static function existsOverlapFor(
+        int $userId,
+        DateTimeInterface|string $startedAt,
+        DateTimeInterface|string|null $endedAt,
+        ?int $excludeId = null,
+    ): bool {
+        $query = static::query()
+            ->forUser($userId)
+            ->overlapping($startedAt, $endedAt);
+
+        if ($excludeId !== null) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     * Restrict the query to entries belonging to the given user.
+     */
+    #[Scope]
+    protected function forUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Restrict the query to entries that overlap the given half-open
+     * interval [startedAt, endedAt). `endedAt = null` is treated as
+     * future infinity (open session).
+     */
+    #[Scope]
+    protected function overlapping(
+        Builder $query,
+        DateTimeInterface|string $startedAt,
+        DateTimeInterface|string|null $endedAt,
+    ): Builder {
+        $start = $startedAt instanceof DateTimeInterface ? $startedAt : Carbon::parse($startedAt);
+        $end = $endedAt === null
+            ? null
+            : ($endedAt instanceof DateTimeInterface ? $endedAt : Carbon::parse($endedAt));
+
+        if ($end !== null) {
+            $query->where('started_at', '<', $end);
+        }
+
+        return $query->where(function (Builder $inner) use ($start): void {
+            $inner->whereNull('ended_at')
+                ->orWhere('ended_at', '>', $start);
+        });
+    }
+
+    /**
+     * Restrict the query to entries with the given taxonomy (activity) node.
+     * Useful for time aggregations grouped by activity.
+     */
+    #[Scope]
+    protected function forTaxonomy(Builder $query, int $taxonomyId): Builder
+    {
+        return $query->where('taxonomy_id', $taxonomyId);
+    }
+
     protected function casts(): array
     {
         return [
@@ -85,7 +161,7 @@ class TimeEntry extends Model
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
             'started_at' => ['required', 'date'],
-            'ended_at' => ['nullable', 'date', 'after:started_at'],
+            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap()],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'user_id' => ['sometimes', 'integer', 'exists:users,id'],
@@ -94,7 +170,7 @@ class TimeEntry extends Model
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
             'started_at' => ['sometimes', 'date'],
-            'ended_at' => ['nullable', 'date', 'after:started_at'],
+            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($this->getKey())],
         ]);
 
         return $rules;
