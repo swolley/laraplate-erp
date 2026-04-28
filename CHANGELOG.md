@@ -4,9 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Add migrations for quotes and projects, and update Quote model
+- Enhance Business module with new Site model and relationships
+- Introduce new models and enums for business logic
+- Enhance Contact model with user handling and validation rules
+- Add BillingMode enum and enhance migrations with comments and constraints
+- Enhance models with validation rules and relationships, and add new migrations
+- Introduce Preset and Presettable models with relationships and methods
+- *(business)* Close MVP pre-accounting layer (time-domain + dev seeders)
+- *(business)* Lay multi-tenant ERP foundations (M0-ERP)
+- *(accounting)* Document sequences and journal posting (B3b)
+- *(accounting)* Complete M1 journal reversal and document sequence formatting
+- *(business)* Tax codes, VAT calculator, invoice stubs, opportunity stages
+
 ### 🚜 Refactor
 
 - Rename CRM module to Business module and update related files
+- Update relationships in Contact and Site models, and modify migrations
+- Remove redundant method in Preset model
 
 ## [1.0.0] - 2026-04-01
 
