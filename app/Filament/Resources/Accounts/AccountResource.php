@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\Accounts;
+namespace Modules\ERP\Filament\Resources\Accounts;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -11,12 +11,12 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\Business\Filament\Resources\Accounts\Pages\CreateAccount;
-use Modules\Business\Filament\Resources\Accounts\Pages\EditAccount;
-use Modules\Business\Filament\Resources\Accounts\Pages\ListAccounts;
-use Modules\Business\Filament\Resources\Accounts\Schemas\AccountForm;
-use Modules\Business\Filament\Resources\Accounts\Tables\AccountsTable;
-use Modules\Business\Models\Account;
+use Modules\ERP\Filament\Resources\Accounts\Pages\CreateAccount;
+use Modules\ERP\Filament\Resources\Accounts\Pages\EditAccount;
+use Modules\ERP\Filament\Resources\Accounts\Pages\ListAccounts;
+use Modules\ERP\Filament\Resources\Accounts\Schemas\AccountForm;
+use Modules\ERP\Filament\Resources\Accounts\Tables\AccountsTable;
+use Modules\ERP\Models\Account;
 use Override;
 use UnitEnum;
 
@@ -32,7 +32,7 @@ final class AccountResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'Business';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
     protected static ?int $navigationSort = 30;

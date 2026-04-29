@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Database\Seeders;
+namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Modules\Business\Casts\EntityType;
-use Modules\Business\Models\Activity;
-use Modules\Business\Models\Entity;
-use Modules\Business\Models\Pivot\Presettable;
+use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Models\Activity;
+use Modules\ERP\Models\Entity;
+use Modules\ERP\Models\Pivot\Presettable;
 use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\Core\Overrides\Seeder;
 
@@ -24,11 +24,11 @@ use Modules\Core\Overrides\Seeder;
  *
  * Idempotent: re-runs are safe and skip already-seeded nodes.
  *
- * Prerequisites enforced by {@see BusinessDatabaseSeeder}:
+ * Prerequisites enforced by {@see ERPDatabaseSeeder}:
  * - `entities`/`presets`/`presettables` rows for the `activity` entity exist.
  * - `taxonomies` and `taxonomies_translations` tables are migrated.
  */
-final class DevBusinessTaxonomySeeder extends Seeder
+final class DevERPTaxonomySeeder extends Seeder
 {
     /**
      * @var array<int, array{slug: string, it: string, en: string}>
@@ -44,7 +44,7 @@ final class DevBusinessTaxonomySeeder extends Seeder
     public function run(): void
     {
         if (! Schema::hasTable('taxonomies') || ! Schema::hasTable('taxonomies_translations')) {
-            $this->command?->warn('Skipping DevBusinessTaxonomySeeder: taxonomies tables are missing.');
+            $this->command?->warn('Skipping DevERPTaxonomySeeder: taxonomies tables are missing.');
 
             return;
         }
@@ -56,7 +56,7 @@ final class DevBusinessTaxonomySeeder extends Seeder
             ->first();
 
         if (! $entity instanceof Entity) {
-            $this->command?->warn('Skipping DevBusinessTaxonomySeeder: Entity "activity" not found. Run BusinessDatabaseSeeder first.');
+            $this->command?->warn('Skipping DevERPTaxonomySeeder: Entity "activity" not found. Run ERPDatabaseSeeder first.');
 
             return;
         }
@@ -68,7 +68,7 @@ final class DevBusinessTaxonomySeeder extends Seeder
             ->first();
 
         if (! $presettable instanceof Presettable) {
-            $this->command?->warn('Skipping DevBusinessTaxonomySeeder: no active presettable for Entity "activity".');
+            $this->command?->warn('Skipping DevERPTaxonomySeeder: no active presettable for Entity "activity".');
 
             return;
         }
@@ -81,7 +81,7 @@ final class DevBusinessTaxonomySeeder extends Seeder
             });
         });
 
-        $this->call(DevBusinessOpportunityStagesTaxonomySeeder::class);
+        $this->call(DevERPOpportunityStagesTaxonomySeeder::class);
     }
 
     private function seedActivityTree(int $entity_id, int $presettable_id): void

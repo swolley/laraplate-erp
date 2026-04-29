@@ -3,18 +3,18 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Business\Casts\AccountKind;
-use Modules\Business\Casts\DocumentType;
-use Modules\Business\Exceptions\JournalAlreadyReversedException;
-use Modules\Business\Exceptions\PostedJournalImmutableException;
-use Modules\Business\Exceptions\PostingToClosedFiscalPeriodException;
-use Modules\Business\Models\Account;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\DocumentSequence;
-use Modules\Business\Models\FiscalPeriod;
-use Modules\Business\Models\FiscalYear;
-use Modules\Business\Services\Accounting\DocumentNumberAllocator;
-use Modules\Business\Services\Accounting\JournalPostingService;
+use Modules\ERP\Casts\AccountKind;
+use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Exceptions\JournalAlreadyReversedException;
+use Modules\ERP\Exceptions\PostedJournalImmutableException;
+use Modules\ERP\Exceptions\PostingToClosedFiscalPeriodException;
+use Modules\ERP\Models\Account;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use Modules\ERP\Services\Accounting\JournalPostingService;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

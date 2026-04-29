@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Helpers\BusinessMigrateUtils;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -22,7 +22,7 @@ return new class extends Migration
                 ->constrained('accounts', 'id', 'journal_entry_lines_account_id_FK')
                 ->restrictOnDelete();
 
-            BusinessMigrateUtils::moneyColumns($table);
+            ERPMigrateUtils::moneyColumns($table);
 
             $table->string('tax_code', 32)->nullable();
             $table->decimal('tax_rate', 8, 4)->nullable();

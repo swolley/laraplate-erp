@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use DG\BypassFinals;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Business\Tests\TestCase;
+use Modules\ERP\Tests\TestCase;
 
 BypassFinals::enable();
 

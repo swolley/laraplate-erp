@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\JournalEntries\Pages;
+namespace Modules\ERP\Filament\Resources\JournalEntries\Pages;
 
 use Filament\Resources\Pages\ViewRecord;
-use Modules\Business\Filament\Resources\JournalEntries\JournalEntryResource;
+use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
 use Override;
 
 final class ViewJournalEntry extends ViewRecord

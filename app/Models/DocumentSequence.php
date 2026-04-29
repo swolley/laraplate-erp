@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
-use Modules\Business\Casts\DocumentType;
-use Modules\Business\Concerns\BelongsToCompany;
+use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Overrides\Model;
 use Override;
 

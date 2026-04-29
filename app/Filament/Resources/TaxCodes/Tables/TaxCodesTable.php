@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\TaxCodes\Tables;
+namespace Modules\ERP\Filament\Resources\TaxCodes\Tables;
 
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\TaxCodes\Schemas;
+namespace Modules\ERP\Filament\Resources\TaxCodes\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\KeyValue;
@@ -10,7 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
-use Modules\Business\Casts\TaxKind;
+use Modules\ERP\Casts\TaxKind;
 
 final class TaxCodeForm
 {

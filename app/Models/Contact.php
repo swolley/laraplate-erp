@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\Business\Concerns\BelongsToCompany;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Override;

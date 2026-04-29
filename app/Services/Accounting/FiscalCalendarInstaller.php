@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\FiscalPeriod;
-use Modules\Business\Models\FiscalYear;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
 
 /**
  * Ensures a calendar-year fiscal cycle (Jan–Dec) with twelve monthly periods exists.

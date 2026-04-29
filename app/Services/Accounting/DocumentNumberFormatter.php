@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
-use Modules\Business\Models\DocumentSequence;
+use Modules\ERP\Models\DocumentSequence;
 
 /**
  * Renders a sequence counter using optional {@see DocumentSequence::$format_pattern} tokens.

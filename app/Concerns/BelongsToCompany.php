@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Concerns;
+namespace Modules\ERP\Concerns;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Business\Models\Company;
-use Modules\Business\Scopes\BelongsToCompanyScope;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Scopes\BelongsToCompanyScope;
 
-use function Modules\Business\Helpers\current_company_id;
+use function Modules\ERP\Helpers\current_company_id;
 
 /**
  * Marks a model as company-scoped (multi-tenant).

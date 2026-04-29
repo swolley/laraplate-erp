@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Helpers\BusinessMigrateUtils;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('journal_entries', function (Blueprint $table): void {
             $table->id();
-            BusinessMigrateUtils::companyForeign($table);
+            ERPMigrateUtils::companyForeign($table);
             $table->foreignId('fiscal_period_id')
                 ->nullable()
                 ->constrained('fiscal_periods', 'id', 'journal_entries_fiscal_period_id_FK')

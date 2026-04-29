@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Contracts;
+namespace Modules\ERP\Contracts;
 
 use DateTimeInterface;
 

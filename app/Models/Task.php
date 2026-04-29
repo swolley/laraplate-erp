@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +10,7 @@ use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
 use Override;
 
-// use Modules\Business\Database\Factories\TaskFactory;
+// use Modules\ERP\Database\Factories\TaskFactory;
 
 /**
  * @mixin IdeHelperTask

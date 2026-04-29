@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Casts\AccountKind;
-use Modules\Business\Services\Accounting\ItalianCoaProvider;
+use Modules\ERP\Casts\AccountKind;
+use Modules\ERP\Services\Accounting\ItalianCoaProvider;
 
 it('exposes at least 100 CoA rows for a full SME baseline', function (): void {
     $definitions = (new ItalianCoaProvider())->definitions();

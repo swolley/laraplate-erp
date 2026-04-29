@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Modules\Business\Exceptions\CannotReverseUnpostedJournalException;
-use Modules\Business\Exceptions\FiscalPeriodCompanyMismatchException;
-use Modules\Business\Exceptions\JournalAccountNotInCompanyException;
-use Modules\Business\Exceptions\JournalAlreadyReversedException;
-use Modules\Business\Exceptions\JournalEntryCompanyMismatchException;
-use Modules\Business\Exceptions\PostingToClosedFiscalPeriodException;
-use Modules\Business\Models\Account;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\FiscalPeriod;
-use Modules\Business\Models\JournalEntry;
-use Modules\Business\Models\JournalEntryLine;
+use Modules\ERP\Exceptions\CannotReverseUnpostedJournalException;
+use Modules\ERP\Exceptions\FiscalPeriodCompanyMismatchException;
+use Modules\ERP\Exceptions\JournalAccountNotInCompanyException;
+use Modules\ERP\Exceptions\JournalAlreadyReversedException;
+use Modules\ERP\Exceptions\JournalEntryCompanyMismatchException;
+use Modules\ERP\Exceptions\PostingToClosedFiscalPeriodException;
+use Modules\ERP\Models\Account;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\JournalEntryLine;
 
 /**
  * Persists balanced double-entry journal entries in the company functional currency.

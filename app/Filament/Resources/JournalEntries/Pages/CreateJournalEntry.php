@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\JournalEntries\Pages;
+namespace Modules\ERP\Filament\Resources\JournalEntries\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Business\Filament\Resources\JournalEntries\JournalEntryResource;
-use Modules\Business\Filament\Resources\JournalEntries\Schemas\JournalEntryCreateForm;
-use Modules\Business\Models\JournalEntry;
+use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
+use Modules\ERP\Filament\Resources\JournalEntries\Schemas\JournalEntryCreateForm;
+use Modules\ERP\Models\JournalEntry;
 use Override;
 
 final class CreateJournalEntry extends CreateRecord

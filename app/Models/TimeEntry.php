@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Modules\Business\Observers\TimeEntryObserver;
-use Modules\Business\Rules\TimeEntryOverlap;
+use Modules\ERP\Observers\TimeEntryObserver;
+use Modules\ERP\Rules\TimeEntryOverlap;
 use Modules\Core\Overrides\Model;
 use Override;
 

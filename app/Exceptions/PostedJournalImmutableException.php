@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Exceptions;
+namespace Modules\ERP\Exceptions;
 
 use RuntimeException;
 
 /**
- * Thrown when a posted journal header or line is mutated or removed outside {@see \Modules\Business\Services\Accounting\JournalPostingService}.
+ * Thrown when a posted journal header or line is mutated or removed outside {@see \Modules\ERP\Services\Accounting\JournalPostingService}.
  */
 final class PostedJournalImmutableException extends RuntimeException
 {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Support\Facades\DB;
-use Modules\Business\Exceptions\FiscalPeriodAlreadyClosedException;
-use Modules\Business\Exceptions\FiscalYearAlreadyClosedException;
-use Modules\Business\Models\FiscalPeriod;
-use Modules\Business\Models\FiscalYear;
+use Modules\ERP\Exceptions\FiscalPeriodAlreadyClosedException;
+use Modules\ERP\Exceptions\FiscalYearAlreadyClosedException;
+use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
 
 /**
  * Closes fiscal periods and whole fiscal years (administrative lock).

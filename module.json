@@ -1,13 +1,14 @@
 {
-    "name": "Business",
-    "alias": "business",
-    "description": "Business Module",
+    "name": "ERP",
+    "alias": "erp",
+    "description": "ERP module — accounting and operations domain for Laraplate.",
     "keywords": [
-        "business"
+        "erp",
+        "laraplate"
     ],
     "priority": 999,
     "providers": [
-        "Modules\\Business\\Providers\\BusinessServiceProvider"
+        "Modules\\ERP\\Providers\\ERPServiceProvider"
     ],
     "files": []
 }

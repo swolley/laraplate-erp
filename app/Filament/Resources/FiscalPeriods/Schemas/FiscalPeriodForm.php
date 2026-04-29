@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\FiscalPeriods\Schemas;
+namespace Modules\ERP\Filament\Resources\FiscalPeriods\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;

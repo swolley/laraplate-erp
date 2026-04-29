@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Filament\Resources\Accounts\AccountResource;
-use Modules\Business\Filament\Resources\Companies\CompanyResource;
-use Modules\Business\Filament\Resources\DocumentSequences\DocumentSequenceResource;
-use Modules\Business\Filament\Resources\FiscalPeriods\FiscalPeriodResource;
-use Modules\Business\Filament\Resources\FiscalYears\FiscalYearResource;
-use Modules\Business\Filament\Resources\JournalEntries\JournalEntryResource;
-use Modules\Business\Filament\Resources\TaxCodes\TaxCodeResource;
-use Modules\Business\Models\Account;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\DocumentSequence;
-use Modules\Business\Models\FiscalPeriod;
-use Modules\Business\Models\FiscalYear;
-use Modules\Business\Models\JournalEntry;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Filament\Resources\Accounts\AccountResource;
+use Modules\ERP\Filament\Resources\Companies\CompanyResource;
+use Modules\ERP\Filament\Resources\DocumentSequences\DocumentSequenceResource;
+use Modules\ERP\Filament\Resources\FiscalPeriods\FiscalPeriodResource;
+use Modules\ERP\Filament\Resources\FiscalYears\FiscalYearResource;
+use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
+use Modules\ERP\Filament\Resources\TaxCodes\TaxCodeResource;
+use Modules\ERP\Models\Account;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\TaxCode;
 use Tests\TestCase;
 
 uses(TestCase::class);

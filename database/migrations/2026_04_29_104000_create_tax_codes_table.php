@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Casts\TaxKind;
-use Modules\Business\Helpers\BusinessMigrateUtils;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tax_codes', function (Blueprint $table): void {
             $table->id();
-            BusinessMigrateUtils::companyForeign($table);
+            ERPMigrateUtils::companyForeign($table);
             $table->string('code', 64)->comment('Immutable business key (e.g. IT_VAT_22); supersession uses a new code');
             $table->enum('kind', array_map(
                 static fn (TaxKind $k): string => $k->value,

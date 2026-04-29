@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Currency;
+namespace Modules\ERP\Services\Currency;
 
 use DateTimeInterface;
-use Modules\Business\Contracts\CurrencyConverter;
-use Modules\Business\Exceptions\UnsupportedCurrencyConversionException;
+use Modules\ERP\Contracts\CurrencyConverter;
+use Modules\ERP\Exceptions\UnsupportedCurrencyConversionException;
 use Override;
 
 /**

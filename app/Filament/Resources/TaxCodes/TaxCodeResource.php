@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\TaxCodes;
+namespace Modules\ERP\Filament\Resources\TaxCodes;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -11,12 +11,12 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\Business\Filament\Resources\TaxCodes\Pages\CreateTaxCode;
-use Modules\Business\Filament\Resources\TaxCodes\Pages\EditTaxCode;
-use Modules\Business\Filament\Resources\TaxCodes\Pages\ListTaxCodes;
-use Modules\Business\Filament\Resources\TaxCodes\Schemas\TaxCodeForm;
-use Modules\Business\Filament\Resources\TaxCodes\Tables\TaxCodesTable;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Filament\Resources\TaxCodes\Pages\CreateTaxCode;
+use Modules\ERP\Filament\Resources\TaxCodes\Pages\EditTaxCode;
+use Modules\ERP\Filament\Resources\TaxCodes\Pages\ListTaxCodes;
+use Modules\ERP\Filament\Resources\TaxCodes\Schemas\TaxCodeForm;
+use Modules\ERP\Filament\Resources\TaxCodes\Tables\TaxCodesTable;
+use Modules\ERP\Models\TaxCode;
 use Override;
 use UnitEnum;
 
@@ -32,7 +32,7 @@ final class TaxCodeResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'Business';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
     protected static ?int $navigationSort = 20;

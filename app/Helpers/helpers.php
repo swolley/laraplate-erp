@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Helpers;
+namespace Modules\ERP\Helpers;
 
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\Container as ContainerContract;
@@ -12,7 +12,7 @@ use Throwable;
  * Resolve the currently active company id for tenant-aware queries.
  *
  * Resolution order:
- *   1. Container binding `business.current_company_id` (set by request
+ *   1. Container binding `erp.current_company_id` (set by request
  *      middleware, console runner, queue handler, etc.).
  *   2. Authenticated user's `company_id` attribute, if present.
  *   3. `null` -> no filter applied (bootstrap mode for CLI seeders/migrations
@@ -26,9 +26,9 @@ function current_company_id(): ?int
 {
     $container = container_or_null();
 
-    if ($container !== null && $container->bound('business.current_company_id')) {
+    if ($container !== null && $container->bound('erp.current_company_id')) {
         try {
-            $bound = $container->make('business.current_company_id');
+            $bound = $container->make('erp.current_company_id');
 
             if (is_int($bound)) {
                 return $bound;
@@ -74,18 +74,18 @@ function with_company(int $companyId, callable $callback)
         return $callback();
     }
 
-    $had_previous = $container->bound('business.current_company_id');
-    $previous = $had_previous ? $container->make('business.current_company_id') : null;
+    $had_previous = $container->bound('erp.current_company_id');
+    $previous = $had_previous ? $container->make('erp.current_company_id') : null;
 
-    $container->instance('business.current_company_id', $companyId);
+    $container->instance('erp.current_company_id', $companyId);
 
     try {
         return $callback();
     } finally {
         if ($had_previous) {
-            $container->instance('business.current_company_id', $previous);
+            $container->instance('erp.current_company_id', $previous);
         } else {
-            $container->forgetInstance('business.current_company_id');
+            $container->forgetInstance('erp.current_company_id');
         }
     }
 }

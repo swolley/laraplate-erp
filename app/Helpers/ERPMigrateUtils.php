@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Helpers;
+namespace Modules\ERP\Helpers;
 
 use Illuminate\Database\Schema\Blueprint;
 
@@ -12,7 +12,7 @@ use Illuminate\Database\Schema\Blueprint;
  * Sibling to {@see \Modules\Core\Helpers\MigrateUtils}; lives in the Business
  * module so the Core stays unaware of accounting/multi-currency primitives.
  */
-final class BusinessMigrateUtils
+final class ERPMigrateUtils
 {
     /**
      * Add the standard dual-currency money columns to a transactional table.

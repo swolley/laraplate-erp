@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Scopes;
+namespace Modules\ERP\Scopes;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Override;
 
-use function Modules\Business\Helpers\current_company_id;
+use function Modules\ERP\Helpers\current_company_id;
 
 /**
  * Restricts queries on tenant-aware Business models to the active company.
  *
  * Resolution rules (see {@see current_company_id()}):
- * - explicit container binding `business.current_company_id` if set;
+ * - explicit container binding `erp.current_company_id` if set;
  * - otherwise the authenticated user's `company_id`;
  * - otherwise no filter is applied (bootstrap mode for CLI/seeders).
  *

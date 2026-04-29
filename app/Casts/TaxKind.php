@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Casts;
+namespace Modules\ERP\Casts;
 
 /**
- * Fiscal classification for rows in {@see \Modules\Business\Models\TaxCode}.
+ * Fiscal classification for rows in {@see \Modules\ERP\Models\TaxCode}.
  */
 enum TaxKind: string
 {

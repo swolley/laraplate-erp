@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\DocumentSequences\Schemas;
+namespace Modules\ERP\Filament\Resources\DocumentSequences\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
-use Modules\Business\Casts\DocumentType;
+use Modules\ERP\Casts\DocumentType;
 
 final class DocumentSequenceForm
 {

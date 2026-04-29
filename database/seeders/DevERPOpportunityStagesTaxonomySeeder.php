@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Database\Seeders;
+namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Modules\Business\Casts\EntityType;
-use Modules\Business\Models\Entity;
-use Modules\Business\Models\OpportunityStage;
-use Modules\Business\Models\Pivot\Presettable;
+use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Models\Entity;
+use Modules\ERP\Models\OpportunityStage;
+use Modules\ERP\Models\Pivot\Presettable;
 use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\Core\Overrides\Seeder;
 
 /**
  * Dev fixture: default CRM pipeline stages ({@see EntityType::OPPORTUNITY_STAGES}).
  */
-final class DevBusinessOpportunityStagesTaxonomySeeder extends Seeder
+final class DevERPOpportunityStagesTaxonomySeeder extends Seeder
 {
     /**
      * @var array<int, array{slug: string, it: string, en: string}>
@@ -46,7 +46,7 @@ final class DevBusinessOpportunityStagesTaxonomySeeder extends Seeder
             ->first();
 
         if (! $entity instanceof Entity) {
-            $this->command?->warn('Skipping opportunity stages: Entity "opportunity_stage" not found. Run BusinessDatabaseSeeder first.');
+            $this->command?->warn('Skipping opportunity stages: Entity "opportunity_stage" not found. Run ERPDatabaseSeeder first.');
 
             return;
         }

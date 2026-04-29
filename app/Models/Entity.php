@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Modules\Business\Casts\EntityType;
-use Modules\Business\Models\Pivot\Presettable;
+use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Models\Pivot\Presettable;
 use Modules\Core\Models\Entity as CoreEntity;
 use Override;
 

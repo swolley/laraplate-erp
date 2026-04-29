@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Casts;
+namespace Modules\ERP\Casts;
 
 /**
  * Synthetic cash direction for Tricount-style adapters mapped to journal lines.

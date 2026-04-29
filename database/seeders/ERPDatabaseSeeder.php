@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Database\Seeders;
+namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Casts\EntityType;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\Entity;
-use Modules\Business\Models\Preset;
-use Modules\Business\Services\Accounting\ChartOfAccountsInstaller;
-use Modules\Business\Services\Accounting\FiscalCalendarInstaller;
+use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\Entity;
+use Modules\ERP\Models\Preset;
+use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
+use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
 
 /**
- * Bootstraps the Business module: default company (tenant), Activity and opportunity-stage
+ * Bootstraps the ERP module: default company (tenant), Activity and opportunity-stage
  * entities, Italian chart of accounts, calendar fiscal year (via FiscalCalendarInstaller),
  * and default Italian tax codes. Taxonomy trees for activities and opportunity stages are
- * seeded by dev fixtures ({@see \Modules\Business\Database\Seeders\DevBusinessTaxonomySeeder}).
+ * seeded by dev fixtures ({@see \Modules\ERP\Database\Seeders\DevERPTaxonomySeeder}).
  */
-final class BusinessDatabaseSeeder extends Seeder
+final class ERPDatabaseSeeder extends Seeder
 {
     /**
      * @var Collection<string, Entity>
@@ -42,7 +42,7 @@ final class BusinessDatabaseSeeder extends Seeder
         }
 
         if (! Schema::hasTable('entities') || ! Schema::hasTable('presets') || ! Schema::hasTable('presettables')) {
-            $this->command?->warn('Skipping Business entity bootstrap: prerequisite Core tables (entities/presets/presettables) are missing.');
+            $this->command?->warn('Skipping ERP entity bootstrap: prerequisite Core tables (entities/presets/presettables) are missing.');
         } else {
             Model::unguarded(function (): void {
                 $this->defaultEntities();

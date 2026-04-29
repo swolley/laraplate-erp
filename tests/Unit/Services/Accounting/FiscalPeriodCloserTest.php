@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Exceptions\FiscalPeriodAlreadyClosedException;
-use Modules\Business\Exceptions\FiscalYearAlreadyClosedException;
-use Modules\Business\Models\FiscalYear;
-use Modules\Business\Services\Accounting\FiscalPeriodCloser;
-use Modules\Business\Tests\Support\FakeFiscalPeriod;
+use Modules\ERP\Exceptions\FiscalPeriodAlreadyClosedException;
+use Modules\ERP\Exceptions\FiscalYearAlreadyClosedException;
+use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
+use Modules\ERP\Tests\Support\FakeFiscalPeriod;
 use Tests\TestCase;
 
 uses(TestCase::class);

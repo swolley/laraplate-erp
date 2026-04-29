@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Modules\Business\Casts\DocumentType;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\DocumentSequence;
+use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\DocumentSequence;
 
 /**
  * Issues the next document number for a company stream, using a pessimistic row lock.

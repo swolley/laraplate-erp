@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
-use Modules\Business\Casts\EntityType;
+use Modules\ERP\Casts\EntityType;
 use Modules\Core\Contracts\IDynamicEntityTypable;
 use Modules\Core\Models\Taxonomy;
 use Override;

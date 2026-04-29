@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\JournalEntries\Schemas;
+namespace Modules\ERP\Filament\Resources\JournalEntries\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\Business\Models\Account;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Models\Account;
+use Modules\ERP\Models\TaxCode;
 
 final class JournalEntryLineSchema
 {

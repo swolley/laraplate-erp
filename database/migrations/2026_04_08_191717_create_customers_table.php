@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Helpers\BusinessMigrateUtils;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table): void {
             $table->id();
-            BusinessMigrateUtils::companyForeign($table);
+            ERPMigrateUtils::companyForeign($table);
             $table->string('name')->comment('The name of the customer');
             $table->boolean('is_active')->default(true)->comment('Whether the customer is active');
 

@@ -20,15 +20,15 @@
 
 ## Description
 
-The Business Module provides the foundation for **Customer Relationship Management** in Laraplate: contacts, accounts, pipelines, activities, and sales workflows. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
+The **ERP** module provides Laraplate’s **accounting and operations** domain: multi-company, chart of accounts, journal entries, fiscal calendar, tax codes, commercial scaffolding (customers, quotations, projects), and related Filament admin resources. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
 
-At this stage the package ships as a **scaffold** (service provider, routes, config, and tooling). Domain models, Filament resources, and migrations will grow alongside product requirements.
+The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
 
 ## Installation
 
 If you want to add this module to your project, you can use the `joshbrw/laravel-module-installer` package.
 
-In a full Laraplate application you typically depend on **Core** first, then add Business. Add the repositories to your `composer.json` file (adjust URLs if you use forks or private registries):
+In a full Laraplate application you typically depend on **Core** first, then add **ERP**. Add the repositories to your `composer.json` file (adjust URLs if you use forks or private registries):
 
 ```json
 "repositories": [
@@ -38,40 +38,34 @@ In a full Laraplate application you typically depend on **Core** first, then add
     },
     {
         "type": "composer",
-        "url": "https://github.com/swolley/laraplate-business.git"
+        "url": "https://github.com/swolley/laraplate-erp.git"
     }
 ]
 ```
 
 ```bash
-composer require joshbrw/laravel-module-installer swolley/laraplate-core swolley/laraplate-business
+composer require joshbrw/laravel-module-installer swolley/laraplate-core swolley/laraplate-erp
 ```
 
 Then install and activate the modules:
 
 ```bash
 php artisan module:install Core
-php artisan module:install Business
+php artisan module:install ERP
 ```
 
-Ensure `modules_statuses.json` lists `Business` as enabled when you want the module loaded.
+Ensure `modules_statuses.json` lists `ERP` as enabled when you want the module loaded.
 
 ## Configuration
 
-When the module is active, configuration is published under the **`business`** key (file: `Modules/Business/config/config.php`).
+When the module is active, configuration is published under the **`erp`** key (file: `Modules/ERP/config/config.php`).
 
 ```php
 // Example
-config('business.name'); // "Business"
+config('erp.name'); // "ERP"
 ```
 
-Add environment-driven settings here as features are implemented, for example:
-
-```env
-# CRM (examples — extend as the module evolves)
-# CRM_DEFAULT_LOCALE=en
-# CRM_AUDIT_ENABLED=true
-```
+Add environment-driven settings here as features are implemented.
 
 ## Features
 
@@ -83,32 +77,31 @@ Add environment-driven settings here as features are implemented, for example:
 
 ### Installed Packages (development)
 
-The Business module aligns with the same quality toolchain as **Cms** and **Core**:
+The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   [pestphp/pest](https://github.com/pestphp/pest) and Laravel / type-coverage plugins
 -   [laravel/pint](https://github.com/laravel/pint)
 -   [larastan/larastan](https://github.com/larastan/larastan)
 -   [rector/rector](https://github.com/rectorphp/rector) and [driftingly/rector-laravel](https://github.com/driftingly/rector-laravel)
--   [filament/filament](https://github.com/filamentphp/filament) (v5) for future admin UI
+-   [filament/filament](https://github.com/filamentphp/filament) (v5) for admin UI
 -   [nunomaduro/phpinsights](https://github.com/nunomaduro/phpinsights), [peckphp/peck](https://github.com/peckphp/peck)
 
 ### Module metadata
 
 -   **Priority:** `999` in `module.json` (load order consistent with other feature modules)
--   **Namespace:** `Modules\Business\...`
--   **Web / API routes:** `Modules/Business/routes/web.php`, `Modules/Business/routes/api.php`
+-   **Namespace:** `Modules\ERP\...`
+-   **Composer package:** `swolley/laraplate-erp`
+-   **Web / API routes:** `Modules/ERP/routes/web.php`, `Modules/ERP/routes/api.php`
 
-### Roadmap (planned CRM capabilities)
+### Roadmap
 
--   Accounts, contacts, and leads
--   Pipelines, deals, and stages
--   Activities, tasks, and reminders
--   Integration with Core auth, roles, and auditing where applicable
--   Filament panels for back-office CRM
+-   Full CRM, inventory, and invoicing UI where not yet covered
+-   E-invoice provider contracts (implementations as separate packages)
+-   Deeper integration with Core auth, roles, and auditing
 
 ## Scripts
 
-The Business module exposes the same Composer script conventions as **Cms** and **Core**:
+The ERP module exposes the same Composer script conventions as **Cms** and **Core**:
 
 ### Code quality and testing
 
@@ -146,6 +139,17 @@ composer version:patch
 composer setup:hooks
 ```
 
+## Repository rename (from laraplate-business)
+
+If you still have a clone using the old remote:
+
+```bash
+git remote set-url origin git@github.com:swolley/laraplate-erp.git
+# or HTTPS: https://github.com/swolley/laraplate-erp.git
+```
+
+In the parent Laraplate app, update `.gitmodules` to `path = Modules/ERP` and `url` / `pushurl` for `laraplate-erp`, then run `git submodule sync` and `composer update`.
+
 ## Contributing
 
 If you want to contribute to this project, follow these steps:
@@ -156,14 +160,12 @@ If you want to contribute to this project, follow these steps:
 
 ## License
 
-Business Module is open-sourced software licensed under the [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html).
+ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html).
 
 ## TODO
 
 High-level items for early development:
 
-- [ ] Domain model design (contacts, companies, deals, activities)
-- [ ] Migrations and factories
-- [ ] Filament resources and policies
-- [ ] API resources and form requests
+- [ ] Expand domain coverage (CRM, stock, billing) per roadmap
+- [ ] API resources and form requests where needed
 - [ ] Documentation for integration with Core (users, teams, permissions)

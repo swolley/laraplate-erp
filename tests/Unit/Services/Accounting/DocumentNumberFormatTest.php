@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Models\DocumentSequence;
-use Modules\Business\Services\Accounting\DocumentNumberFormatter;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Services\Accounting\DocumentNumberFormatter;
 use Tests\TestCase;
 
 uses(TestCase::class);

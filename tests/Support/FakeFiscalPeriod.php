@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Tests\Support;
+namespace Modules\ERP\Tests\Support;
 
 use Override;
-use Modules\Business\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalPeriod;
 
 /**
  * Test double that bypasses persistence for {@see FiscalPeriodCloser} unit tests.

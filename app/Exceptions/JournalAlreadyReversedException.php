@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Exceptions;
+namespace Modules\ERP\Exceptions;
 
 use RuntimeException;
 

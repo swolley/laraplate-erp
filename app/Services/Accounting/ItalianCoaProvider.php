@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
-use Modules\Business\Casts\AccountKind;
-use Modules\Business\Contracts\ChartOfAccountsProvider;
+use Modules\ERP\Casts\AccountKind;
+use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Override;
 
 /**

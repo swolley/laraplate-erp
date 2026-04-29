@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\JournalEntries;
+namespace Modules\ERP\Filament\Resources\JournalEntries;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -12,13 +12,13 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Business\Filament\Resources\JournalEntries\Pages\CreateJournalEntry;
-use Modules\Business\Filament\Resources\JournalEntries\Pages\EditJournalEntry;
-use Modules\Business\Filament\Resources\JournalEntries\Pages\ListJournalEntries;
-use Modules\Business\Filament\Resources\JournalEntries\Pages\ViewJournalEntry;
-use Modules\Business\Filament\Resources\JournalEntries\Schemas\JournalEntryInfolist;
-use Modules\Business\Filament\Resources\JournalEntries\Tables\JournalEntriesTable;
-use Modules\Business\Models\JournalEntry;
+use Modules\ERP\Filament\Resources\JournalEntries\Pages\CreateJournalEntry;
+use Modules\ERP\Filament\Resources\JournalEntries\Pages\EditJournalEntry;
+use Modules\ERP\Filament\Resources\JournalEntries\Pages\ListJournalEntries;
+use Modules\ERP\Filament\Resources\JournalEntries\Pages\ViewJournalEntry;
+use Modules\ERP\Filament\Resources\JournalEntries\Schemas\JournalEntryInfolist;
+use Modules\ERP\Filament\Resources\JournalEntries\Tables\JournalEntriesTable;
+use Modules\ERP\Models\JournalEntry;
 use Override;
 use UnitEnum;
 
@@ -34,7 +34,7 @@ final class JournalEntryResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'Business';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
     protected static ?int $navigationSort = 40;

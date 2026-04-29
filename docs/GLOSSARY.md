@@ -1,6 +1,6 @@
-# Business module glossary
+# ERP module glossary
 
-Canonical English names for ERP/Business entities in this module. Use these terms in code, APIs, and cross-module documentation.
+Canonical English names for ERP entities in this module. Use these terms in code, APIs, and cross-module documentation.
 
 ## Multi-tenancy
 
@@ -11,14 +11,14 @@ Canonical English names for ERP/Business entities in this module. Use these term
 
 ## Taxonomies
 
-The Core table `taxonomies` stores hierarchical catalog data. **Business** discriminates trees with `Modules\Business\Casts\EntityType` on the related **Entity** record:
+The Core table `taxonomies` stores hierarchical catalog data. **Business** discriminates trees with `Modules\ERP\Casts\EntityType` on the related **Entity** record:
 
 | EntityType value | Model (subclass of Taxonomy) | Typical use |
 |------------------|------------------------------|-------------|
 | `activities` | `Activity` | Work types for tasks, time entries, price list items. |
 | `opportunity_stages` | `OpportunityStage` | CRM pipeline stages (M3.1+). |
 
-Leaf nodes hold business data; they are **not** replaced by enums per vertical. Seeds: `DevBusinessTaxonomySeeder`, `DevBusinessOpportunityStagesTaxonomySeeder`.
+Leaf nodes hold operational catalog data; they are **not** replaced by enums per vertical. Seeds: `DevERPTaxonomySeeder`, `DevERPOpportunityStagesTaxonomySeeder`.
 
 **Removed:** `EntityType::MOVEMENTS` — cash movement tagging is expressed via **Chart of Accounts** (`JournalEntryLine.account_id`) and optional analytic FKs (e.g. `project_id`, `site_id`).
 

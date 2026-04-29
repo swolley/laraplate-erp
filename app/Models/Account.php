@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Business\Casts\AccountKind;
-use Modules\Business\Concerns\BelongsToCompany;
+use Modules\ERP\Casts\AccountKind;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Overrides\Model;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;

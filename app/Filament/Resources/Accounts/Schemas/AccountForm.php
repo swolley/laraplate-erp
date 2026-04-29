@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\Accounts\Schemas;
+namespace Modules\ERP\Filament\Resources\Accounts\Schemas;
 
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
-use Modules\Business\Casts\AccountKind;
+use Modules\ERP\Casts\AccountKind;
 
 final class AccountForm
 {

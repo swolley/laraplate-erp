@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Taxation;
+namespace Modules\ERP\Services\Taxation;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use DateTimeInterface;
-use Modules\Business\Casts\TaxKind;
-use Modules\Business\Exceptions\TaxCodeNotActiveException;
-use Modules\Business\Exceptions\TaxKindMismatchException;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Exceptions\TaxCodeNotActiveException;
+use Modules\ERP\Exceptions\TaxKindMismatchException;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\TaxCode;
 
 /**
  * VAT / withholding math and resolution of active {@see TaxCode} rows at a posting date.

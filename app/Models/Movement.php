@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
-use Modules\Business\Concerns\BelongsToCompany;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Overrides\Model;
 
-// use Modules\Business\Database\Factories\MovementFactory;
+// use Modules\ERP\Database\Factories\MovementFactory;
 
 /**
  * @mixin IdeHelperMovement

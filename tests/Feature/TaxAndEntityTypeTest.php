@@ -3,16 +3,16 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Business\Casts\EntityType;
-use Modules\Business\Casts\InvoiceDirection;
-use Modules\Business\Casts\TaxKind;
-use Modules\Business\Exceptions\TaxCodeImmutableAttributeException;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\Invoice;
-use Modules\Business\Models\InvoiceLine;
-use Modules\Business\Models\TaxCode;
-use Modules\Business\Services\Taxation\TaxCodeSupersessionService;
-use Modules\Business\Services\Taxation\TaxLineCalculator;
+use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Exceptions\TaxCodeImmutableAttributeException;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\InvoiceLine;
+use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
+use Modules\ERP\Services\Taxation\TaxLineCalculator;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

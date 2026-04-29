@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models\Pivot;
+namespace Modules\ERP\Models\Pivot;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Business\Models\Entity;
-use Modules\Business\Models\Preset;
+use Modules\ERP\Models\Entity;
+use Modules\ERP\Models\Preset;
 use Modules\Core\Models\Pivot\Presettable as CorePresettable;
 use Override;
 

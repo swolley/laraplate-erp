@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Exceptions;
+namespace Modules\ERP\Exceptions;
 
 use RuntimeException;
 
 /**
  * Raised when a cross-currency conversion is requested but no real
- * {@see \Modules\Business\Contracts\CurrencyConverter} provider is bound.
+ * {@see \Modules\ERP\Contracts\CurrencyConverter} provider is bound.
  *
  * The default no-op converter only supports identity (same currency) conversions.
  */
@@ -21,7 +21,7 @@ final class UnsupportedCurrencyConversionException extends RuntimeException
             . 'Bind a real implementation of %s in the service container before requesting non-identity conversions.',
             $from,
             $to,
-            \Modules\Business\Contracts\CurrencyConverter::class,
+            \Modules\ERP\Contracts\CurrencyConverter::class,
         ));
     }
 }

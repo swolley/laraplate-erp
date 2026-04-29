@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Taxation;
+namespace Modules\ERP\Services\Taxation;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Models\TaxCode;
 
 /**
  * Deactivates a superseded row and points it to the replacement {@see TaxCode}.

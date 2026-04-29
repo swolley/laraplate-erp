@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Database\Seeders;
+namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Casts\TaxKind;
-use Modules\Business\Models\Company;
-use Modules\Business\Models\TaxCode;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\TaxCode;
 use Modules\Core\Overrides\Seeder;
 
 /**

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Business\Casts\TaxKind;
-use Modules\Business\Concerns\BelongsToCompany;
-use Modules\Business\Exceptions\TaxCodeImmutableAttributeException;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Exceptions\TaxCodeImmutableAttributeException;
 use Modules\Core\Overrides\Model;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;

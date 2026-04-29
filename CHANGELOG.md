@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚜 Refactor
+
+- Rename module from **Business** to **ERP**: folder `Modules/ERP`, repo `laraplate-erp`, namespace `Modules\ERP`, config key `erp`, container binding `erp.current_company_id`, Filament nav group `ERP`.
+
 ### 🚀 Features
 
 - Add migrations for quotes and projects, and update Quote model

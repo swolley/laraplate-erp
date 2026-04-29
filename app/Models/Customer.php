@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Models;
+namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Modules\Business\Concerns\BelongsToCompany;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasActivation;
 use Modules\Core\Overrides\Model;
 
-// use Modules\Business\Database\Factories\CustomerFactory;
+// use Modules\ERP\Database\Factories\CustomerFactory;
 
 /**
  * @mixin IdeHelperCustomer

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Exceptions\UnsupportedCurrencyConversionException;
-use Modules\Business\Services\Currency\NoopCurrencyConverter;
+use Modules\ERP\Exceptions\UnsupportedCurrencyConversionException;
+use Modules\ERP\Services\Currency\NoopCurrencyConverter;
 
 it('returns identity rate and amount when source and target currency match', function (): void {
     $converter = new NoopCurrencyConverter();

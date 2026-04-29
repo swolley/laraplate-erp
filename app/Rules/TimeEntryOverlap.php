@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Rules;
+namespace Modules\ERP\Rules;
 
 use Closure;
 use DateTimeInterface;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Modules\Business\Models\TimeEntry;
+use Modules\ERP\Models\TimeEntry;
 use Override;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\FiscalPeriods;
+namespace Modules\ERP\Filament\Resources\FiscalPeriods;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -11,12 +11,12 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\Business\Filament\Resources\FiscalPeriods\Pages\CreateFiscalPeriod;
-use Modules\Business\Filament\Resources\FiscalPeriods\Pages\EditFiscalPeriod;
-use Modules\Business\Filament\Resources\FiscalPeriods\Pages\ListFiscalPeriods;
-use Modules\Business\Filament\Resources\FiscalPeriods\Schemas\FiscalPeriodForm;
-use Modules\Business\Filament\Resources\FiscalPeriods\Tables\FiscalPeriodsTable;
-use Modules\Business\Models\FiscalPeriod;
+use Modules\ERP\Filament\Resources\FiscalPeriods\Pages\CreateFiscalPeriod;
+use Modules\ERP\Filament\Resources\FiscalPeriods\Pages\EditFiscalPeriod;
+use Modules\ERP\Filament\Resources\FiscalPeriods\Pages\ListFiscalPeriods;
+use Modules\ERP\Filament\Resources\FiscalPeriods\Schemas\FiscalPeriodForm;
+use Modules\ERP\Filament\Resources\FiscalPeriods\Tables\FiscalPeriodsTable;
+use Modules\ERP\Models\FiscalPeriod;
 use Override;
 use UnitEnum;
 
@@ -32,7 +32,7 @@ final class FiscalPeriodResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'Business';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
     protected static ?int $navigationSort = 60;

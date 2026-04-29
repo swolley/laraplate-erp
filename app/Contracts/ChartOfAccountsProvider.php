@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Contracts;
+namespace Modules\ERP\Contracts;
 
-use Modules\Business\Casts\AccountKind;
+use Modules\ERP\Casts\AccountKind;
 
 /**
  * Pluggable chart of accounts definition for seeding / import.

@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\Business\Casts\DocumentType;
-use Modules\Business\Helpers\BusinessMigrateUtils;
+use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('document_sequences', function (Blueprint $table): void {
             $table->id();
-            BusinessMigrateUtils::companyForeign($table);
+            ERPMigrateUtils::companyForeign($table);
             $table->enum('document_type', array_map(
                 static fn (DocumentType $t): string => $t->value,
                 DocumentType::cases(),

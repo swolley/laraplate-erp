@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\JournalEntries\Schemas;
+namespace Modules\ERP\Filament\Resources\JournalEntries\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Modules\Business\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalPeriod;
 
 final class JournalEntryHeaderFields
 {

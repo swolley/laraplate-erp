@@ -1,11 +1,11 @@
 {
-    "name": "swolley/laraplate-business",
+    "name": "swolley/laraplate-erp",
     "vendor": "swolley",
-    "description": "Business Module contains all the necessary functionalities for build up a new Business system.",
+    "description": "ERP module for Laraplate: accounting, fiscal calendar, commercial scaffolding, and related services.",
     "keywords": [
         "laravel",
         "laraplate",
-        "business"
+        "erp"
     ],
     "authors": [
         {
@@ -91,9 +91,9 @@
     },
     "autoload": {
         "psr-4": {
-            "Modules\\Business\\": "app/",
-            "Modules\\Business\\Database\\Factories\\": "database/factories/",
-            "Modules\\Business\\Database\\Seeders\\": "database/seeders/"
+            "Modules\\ERP\\": "app/",
+            "Modules\\ERP\\Database\\Factories\\": "database/factories/",
+            "Modules\\ERP\\Database\\Seeders\\": "database/seeders/"
         },
         "files": [
             "app/Helpers/helpers.php"
@@ -101,9 +101,9 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Modules\\Business\\Tests\\Unit\\": "tests/Unit",
-            "Modules\\Business\\Tests\\Feature\\": "tests/Feature",
-            "Modules\\Business\\Tests\\Support\\": "tests/Support/"
+            "Modules\\ERP\\Tests\\Unit\\": "tests/Unit",
+            "Modules\\ERP\\Tests\\Feature\\": "tests/Feature",
+            "Modules\\ERP\\Tests\\Support\\": "tests/Support/"
         },
         "classmap": [
             "tests/TestCase.php"

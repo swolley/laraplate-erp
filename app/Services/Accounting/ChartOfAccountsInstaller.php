@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
-use Modules\Business\Contracts\ChartOfAccountsProvider;
-use Modules\Business\Models\Account;
-use Modules\Business\Models\Company;
+use Modules\ERP\Contracts\ChartOfAccountsProvider;
+use Modules\ERP\Models\Account;
+use Modules\ERP\Models\Company;
 
 /**
  * Idempotent loader that materialises a {@see ChartOfAccountsProvider} definition set
@@ -66,12 +66,12 @@ final class ChartOfAccountsInstaller
     }
 
     /**
-     * @param  list<array{code: string, name: string, kind: \Modules\Business\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}>  $definitions
-     * @return list<array{code: string, name: string, kind: \Modules\Business\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}>
+     * @param  list<array{code: string, name: string, kind: \Modules\ERP\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}>  $definitions
+     * @return list<array{code: string, name: string, kind: \Modules\ERP\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}>
      */
     private function topologicallySortedDefinitions(array $definitions): array
     {
-        /** @var array<string, array{code: string, name: string, kind: \Modules\Business\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}> $by_code */
+        /** @var array<string, array{code: string, name: string, kind: \Modules\ERP\Casts\AccountKind, parent_code: string|null, meta?: array<string, mixed>}> $by_code */
         $by_code = [];
 
         foreach ($definitions as $row) {

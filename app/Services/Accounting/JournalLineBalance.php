@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Services\Accounting;
+namespace Modules\ERP\Services\Accounting;
 
 use Brick\Math\BigDecimal;
-use Modules\Business\Exceptions\UnbalancedJournalException;
+use Modules\ERP\Exceptions\UnbalancedJournalException;
 
 /**
  * Validates that signed functional-currency amounts net to zero (double-entry balance).

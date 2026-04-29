@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Models\Account;
+use Modules\ERP\Models\Account;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 it('forces DIFF versioning on Account regardless of settings', function (): void {

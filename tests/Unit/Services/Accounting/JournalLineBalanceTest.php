@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Modules\Business\Exceptions\UnbalancedJournalException;
-use Modules\Business\Services\Accounting\JournalLineBalance;
+use Modules\ERP\Exceptions\UnbalancedJournalException;
+use Modules\ERP\Services\Accounting\JournalLineBalance;
 
 it('accepts balanced signed amounts', function (): void {
     expect(fn () => JournalLineBalance::assertBalanced(['100.0000', '-50.25', '-49.7500']))

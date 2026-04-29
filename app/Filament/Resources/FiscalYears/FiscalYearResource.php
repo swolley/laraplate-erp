@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Filament\Resources\FiscalYears;
+namespace Modules\ERP\Filament\Resources\FiscalYears;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -11,12 +11,12 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\Business\Filament\Resources\FiscalYears\Pages\CreateFiscalYear;
-use Modules\Business\Filament\Resources\FiscalYears\Pages\EditFiscalYear;
-use Modules\Business\Filament\Resources\FiscalYears\Pages\ListFiscalYears;
-use Modules\Business\Filament\Resources\FiscalYears\Schemas\FiscalYearForm;
-use Modules\Business\Filament\Resources\FiscalYears\Tables\FiscalYearsTable;
-use Modules\Business\Models\FiscalYear;
+use Modules\ERP\Filament\Resources\FiscalYears\Pages\CreateFiscalYear;
+use Modules\ERP\Filament\Resources\FiscalYears\Pages\EditFiscalYear;
+use Modules\ERP\Filament\Resources\FiscalYears\Pages\ListFiscalYears;
+use Modules\ERP\Filament\Resources\FiscalYears\Schemas\FiscalYearForm;
+use Modules\ERP\Filament\Resources\FiscalYears\Tables\FiscalYearsTable;
+use Modules\ERP\Models\FiscalYear;
 use Override;
 use UnitEnum;
 
@@ -32,7 +32,7 @@ final class FiscalYearResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'Business';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
     protected static ?int $navigationSort = 50;

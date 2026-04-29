@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Modules\Business\Observers;
+namespace Modules\ERP\Observers;
 
 use Illuminate\Validation\ValidationException;
-use Modules\Business\Models\TimeEntry;
+use Modules\ERP\Models\TimeEntry;
 
 /**
  * TimeEntry domain guard.
