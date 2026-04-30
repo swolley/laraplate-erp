@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\ERP\Casts\EntityType;
 use Modules\Core\Contracts\IDynamicEntityTypable;
 use Modules\Core\Models\Taxonomy;
+use Modules\ERP\Models\Pivot\Presettable;
 use Override;
 
 /**
@@ -40,5 +41,11 @@ class Activity extends Taxonomy
     protected static function getEntityType(): IDynamicEntityTypable
     {
         return EntityType::ACTIVITIES;
-    }   
+    }
+
+    #[Override]
+    public static function getPresettableClass(): string
+    {
+        return Presettable::class;
+    }
 }

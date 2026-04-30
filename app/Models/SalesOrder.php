@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
@@ -86,6 +87,93 @@ class SalesOrder extends Model
         return $this->hasMany(SalesOrderLine::class);
     }
 
+    protected static function booted(): void
+    {
+        static::saving(static function (SalesOrder $order): void {
+            if ($order->exists && $order->isHeaderLocked() && $order->isDirty([
+                'customer_id',
+                'quotation_id',
+                'project_id',
+                'reference',
+                'currency',
+            ])) {
+                throw ValidationException::withMessages([
+                    'status' => ['Confirmed/evaded orders have a locked header and cannot change key fields.'],
+                ]);
+            }
+
+            if ($order->quotation_id !== null) {
+                $quotation = Quotation::query()->find($order->quotation_id);
+
+                if ($quotation === null) {
+                    throw ValidationException::withMessages([
+                        'quotation_id' => ['The selected quotation is invalid.'],
+                    ]);
+                }
+
+                if ((int) $quotation->customer_id !== (int) $order->customer_id) {
+                    throw ValidationException::withMessages([
+                        'quotation_id' => ['The quotation must belong to the same customer as this order.'],
+                    ]);
+                }
+
+                if ((int) $quotation->company_id !== (int) $order->company_id) {
+                    throw ValidationException::withMessages([
+                        'quotation_id' => ['The quotation must belong to the same company as this order.'],
+                    ]);
+                }
+            }
+
+            if ($order->project_id !== null) {
+                $project = Project::query()->find($order->project_id);
+
+                if ($project === null) {
+                    throw ValidationException::withMessages([
+                        'project_id' => ['The selected project is invalid.'],
+                    ]);
+                }
+
+                if ((int) $project->customer_id !== (int) $order->customer_id) {
+                    throw ValidationException::withMessages([
+                        'project_id' => ['The project must belong to the same customer as this order.'],
+                    ]);
+                }
+
+                if ((int) $project->company_id !== (int) $order->company_id) {
+                    throw ValidationException::withMessages([
+                        'project_id' => ['The project must belong to the same company as this order.'],
+                    ]);
+                }
+            }
+
+            if ($order->exists
+                && $order->amends_sales_order_id !== null
+                && (int) $order->amends_sales_order_id === (int) $order->getKey()) {
+                throw ValidationException::withMessages([
+                    'amends_sales_order_id' => ['An order cannot amend itself.'],
+                ]);
+            }
+        });
+
+        static::saved(static function (SalesOrder $order): void {
+            if ($order->status !== SalesOrderStatus::CONFIRMED) {
+                return;
+            }
+
+            if ($order->quotation_id === null) {
+                return;
+            }
+
+            $quotation = Quotation::query()->find($order->quotation_id);
+
+            if ($quotation === null || $quotation->isLocked()) {
+                return;
+            }
+
+            $quotation->lock();
+        });
+    }
+
     #[Override]
     public function getRules(): array
     {
@@ -120,5 +208,19 @@ class SalesOrder extends Model
         return [
             'status' => SalesOrderStatus::class,
         ];
+    }
+
+    private function isHeaderLocked(): bool
+    {
+        return in_array($this->status, [
+            SalesOrderStatus::CONFIRMED,
+            SalesOrderStatus::PARTIALLY_EVASED,
+            SalesOrderStatus::FULLY_EVASED,
+        ], true);
+    }
+
+    protected function shouldVersioning(): bool
+    {
+        return false;
     }
 }

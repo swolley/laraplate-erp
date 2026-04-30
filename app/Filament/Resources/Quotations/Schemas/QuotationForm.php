@@ -9,6 +9,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Casts\QuoteStatus;
@@ -37,9 +38,23 @@ final class QuotationForm
                     ->relationship('customer', 'name')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->live(),
                 Select::make('opportunity_id')
-                    ->relationship('opportunity', 'name')
+                    ->label('Opportunity')
+                    ->relationship(
+                        'opportunity',
+                        'name',
+                        modifyQueryUsing: static function ($query, $search, Get $get) {
+                            $customer_id = (int) ($get('customer_id') ?? 0);
+
+                            if ($customer_id === 0) {
+                                return $query->whereRaw('0 = 1');
+                            }
+
+                            return $query->where('opportunities.customer_id', $customer_id);
+                        },
+                    )
                     ->searchable()
                     ->preload()
                     ->nullable(),

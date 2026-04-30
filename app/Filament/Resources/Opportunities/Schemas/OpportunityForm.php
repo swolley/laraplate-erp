@@ -43,7 +43,8 @@ final class OpportunityForm
                     ->relationship('stage', 'name')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->helperText('Pipeline stages require taxonomies: run ERPDatabaseSeeder then DevERPOpportunityStagesTaxonomySeeder (or equivalent) so stages exist.'),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),

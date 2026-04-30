@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderLineStatus;
@@ -46,6 +47,25 @@ class SalesOrderLine extends Model
     public function quotation_item(): BelongsTo
     {
         return $this->belongsTo(QuotationItem::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(static function (SalesOrderLine $line): void {
+            $line_is_progressed = $line->qty_delivered > 0 || $line->qty_invoiced > 0;
+
+            if (! $line->exists || ! $line_is_progressed) {
+                return;
+            }
+
+            if (! $line->isDirty('qty_ordered')) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'qty_ordered' => ['qty_ordered cannot be changed after delivery or invoicing has started.'],
+            ]);
+        });
     }
 
     #[Override]

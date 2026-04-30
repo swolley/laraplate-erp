@@ -10,7 +10,9 @@ use Filament\Panel;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Filament\Resources\SalesOrders\Pages\CreateSalesOrder;
 use Modules\ERP\Filament\Resources\SalesOrders\Pages\EditSalesOrder;
 use Modules\ERP\Filament\Resources\SalesOrders\Pages\ListSalesOrders;
@@ -40,6 +42,22 @@ final class SalesOrderResource extends Resource
     public static function getSlug(?Panel $panel = null): string
     {
         return 'business/sales-orders';
+    }
+
+    #[Override]
+    public static function getRecordTitle(?Model $record): string | Htmlable | null
+    {
+        if (! $record instanceof SalesOrder) {
+            return parent::getRecordTitle($record);
+        }
+
+        $reference = $record->getAttribute('reference');
+
+        if (filled($reference)) {
+            return (string) $reference;
+        }
+
+        return '#'.$record->getKey();
     }
 
     public static function form(Schema $schema): Schema
