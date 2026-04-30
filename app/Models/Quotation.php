@@ -6,11 +6,11 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\ERP\Casts\QuoteStatus;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Casts\QuoteStatus;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 
 /**
@@ -27,6 +27,7 @@ class Quotation extends Model
      */
     protected $fillable = [
         'customer_id',
+        'opportunity_id',
         'currency',
         'notes',
         'status',
@@ -42,6 +43,14 @@ class Quotation extends Model
     }
 
     /**
+     * @return BelongsTo<Opportunity, $this>
+     */
+    public function opportunity(): BelongsTo
+    {
+        return $this->belongsTo(Opportunity::class);
+    }
+
+    /**
      * @return HasMany<QuotationItem, $this>
      */
     public function quotation_items(): HasMany
@@ -49,12 +58,12 @@ class Quotation extends Model
         return $this->hasMany(QuotationItem::class);
     }
 
-    protected function casts(): array
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function sales_orders(): HasMany
     {
-        return [
-            'status' => QuoteStatus::class,
-            'version' => 'integer',
-        ];
+        return $this->hasMany(SalesOrder::class);
     }
 
     #[Override]
@@ -63,6 +72,7 @@ class Quotation extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
             'currency' => ['required', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'string', QuoteStatus::validationRule()],
@@ -70,6 +80,7 @@ class Quotation extends Model
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', QuoteStatus::validationRule()],
@@ -77,5 +88,13 @@ class Quotation extends Model
         ]);
 
         return $rules;
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'status' => QuoteStatus::class,
+            'version' => 'integer',
+        ];
     }
 }

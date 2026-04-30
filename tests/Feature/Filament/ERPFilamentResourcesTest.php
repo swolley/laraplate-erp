@@ -16,9 +16,6 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('registers Filament pages for companies', function (): void {
     $pages = CompanyResource::getPages();

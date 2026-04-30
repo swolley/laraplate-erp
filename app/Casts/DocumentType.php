@@ -10,6 +10,7 @@ namespace Modules\ERP\Casts;
 enum DocumentType: string
 {
     case Quotation = 'quotation';
+    case SalesOrder = 'sales_order';
     case SalesInvoice = 'sales_invoice';
     case PurchaseInvoice = 'purchase_invoice';
     case CreditNote = 'credit_note';
@@ -36,7 +37,7 @@ enum DocumentType: string
     public function defaultGapAllowed(): bool
     {
         return match ($this) {
-            self::Quotation => true,
+            self::Quotation, self::SalesOrder => true,
             default => false,
         };
     }

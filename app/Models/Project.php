@@ -49,6 +49,14 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function sales_orders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    /**
      * @return HasMany<Task, $this>
      */
     public function tasks(): HasMany

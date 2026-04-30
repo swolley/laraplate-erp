@@ -7,9 +7,10 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\ERP\Concerns\BelongsToCompany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 
 /**
@@ -45,6 +46,14 @@ class Contact extends Model
     public function customers(): BelongsToMany
     {
         return $this->belongsToMany(Customer::class, 'contactables')->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<Lead, $this>
+     */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
     }
 
     /**

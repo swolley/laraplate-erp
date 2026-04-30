@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\DocumentType;
@@ -15,9 +13,8 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\Accounting\JournalPostingService;
-use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('allocates sequential document numbers per company and stream', function (): void {
     $company = Company::query()->create([

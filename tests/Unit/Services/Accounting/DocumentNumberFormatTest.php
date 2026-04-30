@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Services\Accounting\DocumentNumberFormatter;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('formats numbers with fiscal year segment when year is positive (default layout)', function (): void {
     expect(DocumentNumberFormatter::defaultLayout('INV-', '', 2026, '00007'))

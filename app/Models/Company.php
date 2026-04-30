@@ -93,6 +93,22 @@ class Company extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    /**
+     * @return HasMany<Lead, $this>
+     */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * @return HasMany<Opportunity, $this>
+     */
+    public function opportunities(): HasMany
+    {
+        return $this->hasMany(Opportunity::class);
+    }
+
     #[Override]
     public function getRules(): array
     {

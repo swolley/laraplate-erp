@@ -13,9 +13,8 @@ use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
-use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('lists Business entity types without movements and with opportunity stages', function (): void {
     $values = EntityType::values();
@@ -85,7 +84,7 @@ it('resolves the active tax code at a posting date', function (): void {
     ]);
 
     $calculator = new TaxLineCalculator;
-    $resolved = $calculator->resolveActiveAt($company, 'IT_VAT_LEGACY', new \DateTimeImmutable('2026-06-01'));
+    $resolved = $calculator->resolveActiveAt($company, 'IT_VAT_LEGACY', new DateTimeImmutable('2026-06-01'));
 
     expect($resolved->id)->toBe($legacy->id);
 });

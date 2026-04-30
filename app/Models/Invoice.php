@@ -39,6 +39,14 @@ class Invoice extends Model
         return $this->hasMany(InvoiceLine::class);
     }
 
+    /**
+     * @return HasMany<EInvoiceSubmission, $this>
+     */
+    public function eInvoiceSubmissions(): HasMany
+    {
+        return $this->hasMany(EInvoiceSubmission::class);
+    }
+
     #[Override]
     public function getRules(): array
     {

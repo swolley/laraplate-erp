@@ -7,9 +7,6 @@ use Modules\ERP\Exceptions\FiscalYearAlreadyClosedException;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
 use Modules\ERP\Tests\Support\FakeFiscalPeriod;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('closes an open fiscal period and persists in memory', function (): void {
     $period = new FakeFiscalPeriod();

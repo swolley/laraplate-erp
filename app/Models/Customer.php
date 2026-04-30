@@ -7,9 +7,9 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasActivation;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Concerns\BelongsToCompany;
 
 // use Modules\ERP\Database\Factories\CustomerFactory;
 
@@ -54,6 +54,30 @@ class Customer extends Model
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class);
+    }
+
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function sales_orders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    /**
+     * @return HasMany<Lead, $this>
+     */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * @return HasMany<Opportunity, $this>
+     */
+    public function opportunities(): HasMany
+    {
+        return $this->hasMany(Opportunity::class);
     }
 
     public function getRules(): array
