@@ -1,76 +1,86 @@
-# Modulo ERP — operazioni aziendali, magazzino e contabilità
+# ERP module — commercial, logistics, and accounting domain
 
-## In parole semplici
+## Purpose
 
-Il modulo **ERP** (Enterprise Resource Planning) raccoglie la logica **gestionale** di Laraplate: anagrafiche societarie, clienti, opportunità di vendita, ordini, magazzino, movimenti di stock, documenti di acquisto e vendita, contabilità in partita doppia, codici fiscali/IVA, periodi e anni fiscali, fino agli aspetti legati alla fatturazione elettronica dove implementati. È il punto di incontro tra **operatività commerciale** e **rappresentazione contabile**.
+`ERP` delivers operational business workflows in Laraplate: sales, purchasing, inventory, accounting, tax, and fiscal governance.
 
-## A chi serve
+It models the transactional backbone where business documents, stock movements, and accounting entries must remain consistent.
 
-- **Commerciale / project manager**: clienti, progetti, attività, lead, opportunità, preventivi, ordini di vendita.
-- **Logistica / magazzino**: articoli (`Item`), giacenze (`StockLevel`), movimenti (`StockMovement`), magazzini, documenti di **consegna** (delivery note) e **ricezione merce** (goods receipt), ordini di acquisto.
-- **Amministrazione e ragioniere / commercialista** (lettura semi-tecnica): piano dei conti, registrazioni in **prima nota** (`JournalEntry` con righe), fatture e relative righe, codici imposta, chiusure di periodo fiscale, numerazioni documentali, eventuali submission e-fattura. Questa documentazione **non** sostituisce normativa o adeguamenti legali: descrive **cosa fa il software** nel modello dati, non cosa obbliga il codice civile o il Sistema di Interscambio in un dato anno solare.
-- **Sviluppatore**: servizi di dominio (posting, tasse, magazzino), modelli Eloquent, Filament resources, observer e migrazioni nel modulo.
+## Core functional areas
 
-## Funzionalità principali (panorama)
+### Master data and CRM-lite
 
-### Anagrafiche e CRM leggero
+- Companies, customers, contacts, sites.
+- Leads/opportunities/stages/activities/tasks.
+- Projects linked to commercial lifecycle.
 
-- **Company**, **Customer**, **Contact**, **Site** — struttura organizzativa e relazioni commerciali.
-- **Lead**, **Opportunity**, **OpportunityStage**, **Activity**, **Task**, **TimeEntry** — pipeline vendite e tracciamento attività.
-- **Project** — collegamento tra opportunità/contratti e lavoro erogato.
+### Order-to-cash
 
-### Vendite e acquisti
+- Quotations and sales orders.
+- Delivery notes and outbound inventory posting.
+- Invoice generation and submission tracking (where enabled).
 
-- **Quotation** / **QuotationItem** — offerte commerciali.
-- **SalesOrder** / **SalesOrderLine** — ordini cliente vincolanti per logistica e fatturazione.
-- **PurchaseOrder** / **PurchaseOrderLine** — ordini a fornitore.
-- **DeliveryNote** / **DeliveryNoteLine** — documenti di uscita merce dal magazzino verso il cliente (con servizi dedicati al posting di magazzino quando il documento viene confermato/postato, secondo implementazione).
-- **GoodsReceipt** / **GoodsReceiptLine** — ingressi merce collegati agli acquisti, con servizi di aggiornamento giacenze.
+### Procure-to-pay
 
-### Magazzino e costi
+- Purchase orders and inbound goods receipts.
+- Inventory updates from receiving pipeline.
+- Supplier-side document chaining into accounting.
 
-- **Warehouse**, **StockLevel**, **StockMovement**, **StockCostLayer** — tracciamento quantità, valorizzazioni e storico movimenti (utile per analisi e, dove previsto, per metodi di valorizzazione).
+### Inventory and valuation
 
-### Contabilità e fiscalità
+- Warehouses, stock levels, stock movements, cost layers.
+- Inventory services coordinate stock consistency around document posting events.
 
-- **Account** — piano dei conti; il provider predefinito nel `ERPServiceProvider` punta a un **piano dei conti italiano** (`ItalianCoaProvider`) installabile tramite `ChartOfAccountsInstaller`.
-- **JournalEntry** / **JournalEntryLine** — registrazioni contabili; il servizio `JournalPostingService` orchestra la scrittura coerente con le regole del dominio.
-- **FiscalYear**, **FiscalPeriod** — struttura temporale degli esercizi; `FiscalCalendarInstaller` e `FiscalPeriodCloser` supportano setup e chiusure di periodo (da usare con procedure interne e revisione del commercialista).
-- **TaxCode**, **TaxLineCalculator**, **TaxCodeSupersessionService** — gestione aliquote / nature e successioni normative tra codici IVA.
-- **Invoice** / **InvoiceLine**, **EInvoiceSubmission** — ciclo fatture e tracciamento invii dove il modulo è esteso verso l’e-fattura.
+### Accounting and fiscal controls
 
-### Amministrazione documenti e valute
+- Chart of accounts and posting services (`JournalEntry`, lines, posting orchestrators).
+- Fiscal years and periods, close operations, calendar setup utilities.
+- Tax code services (rates, supersession/evolution handling).
+- Document numbering/sequence services for traceability and compliance.
 
-- **DocumentSequence** + `DocumentNumberAllocator` — numerazioni progressive per tipi documento (coerenza legale e di audit).
-- **CurrencyConverter** — binding di default a `NoopCurrencyConverter` (nessuna conversione): in progetti multi-valuta si sostituisce l’implementazione con un servizio reale (API di cambio, tabella giornaliera, ecc.).
+## Typical operational flows
 
-### Altri elementi di dominio
+### Sales flow
 
-- **PriceList** / **PriceListItem** — listini.
-- **Preset** e pivot **Presettable** — meccanismi di applicazione rapida di configurazioni a più entità (riduzione errori di data entry ripetuto).
+1. Customer and product/list-price preparation.
+2. Quotation and conversion to sales order.
+3. Delivery note posting updates inventory.
+4. Invoicing and accounting posting alignment.
 
-## Interfaccia amministrativa (Filament)
+### Purchasing flow
 
-Il modulo espone numerose **Filament Resources** sotto `Modules/ERP/app/Filament/Resources/` (clienti, aziende, progetti, ordini, fatture, prima nota, codici IVA, periodi fiscali, articoli, giacenze, documenti logistici, sequenze numeriche, ecc.). L’esperienza utente è quella standard Filament v5: elenchi filtrabili, form con relazioni, azioni di tabella e pagine dedicate a creazione/modifica/visualizzazione.
+1. Purchase order issuance.
+2. Goods receipt posting updates stock.
+3. Supplier invoice reconciliation and accounting posting.
 
-## Come si usa in pratica (flussi tipici)
+### Period-end flow
 
-1. **Setup contabile iniziale**: caricare piano dei conti, definire anni e periodi fiscali, configurare codici IVA coerenti con l’attività; definire sequenze numeriche per fatture, ordini e registrazioni.
-2. **Vendita**: creare anagrafica cliente → opportunità / preventivo → ordine di vendita; in parallelo definire articoli e listini se necessario.
-3. **Evasione**: generare documenti di consegna collegati agli ordini; alla **conferma/posting** (secondo le regole implementate) il magazzino si aggiorna tramite i servizi `DeliveryNoteInventoryService` e affini.
-4. **Acquisto**: ordine fornitore → ricezione merce con `GoodsReceiptInventoryService` per riflettere ingressi in stock.
-5. **Contabilità**: generare o importare registrazioni in prima nota; chiudere periodi solo dopo controllo reconciliazione con estratti conto e policy aziendali.
+1. Validate ledger and inventory consistency.
+2. Review tax code applicability.
+3. Close fiscal period after reconciliation checks.
 
-## Estensioni per lo sviluppatore
+## Internal architecture notes
 
-- Sostituire `CurrencyConverter` con un’implementazione concreta se serve multi-valuta.
-- Rispettare gli **observer** e i **service** già presenti quando si aggiungono nuovi stati documento: duplicare la logica di magazzino o IVA nei controller Filament senza passare dai servizi centralizza il rischio di inconsistenze contabili.
+- Business transitions should pass through service layer, not ad-hoc controller updates.
+- Observers and posting services are the safest extension points for new document states.
+- Currency conversion is pluggable; default converter is intentionally minimal.
 
-## Dipendenze
+## Risks and controls
 
-- **Core** (autenticazione, permessi, infrastruttura).
-- **AI** opzionale per funzionalità intelligenti trasversali (ricerca, assistenti) se abilitate a livello progetto.
+- Inventory/accounting divergence if posting logic is bypassed.
+- Fiscal period closure without reconciliation can lock incorrect balances.
+- Tax behavior must remain parameterized and version-aware for regulatory changes.
 
-## Avvertenza
+## Dependencies
 
-I numeri prodotti dal modulo ERP hanno impatto **fiscale e civilistico**. Ogni installazione richiede **parametrizzazione**, **test** e **validazione** da parte del responsabile amministrativo prima dell’uso in produzione.
+- Strong dependency on `Core` lifecycle infrastructure (permissions, locks, settings, approvals, versioning).
+- Optional `AI` support for assistant/search scenarios.
+
+## FAQ prompts for RAG
+
+- Which service posts inventory when a delivery note is confirmed?
+- How do purchase receipts affect stock and accounting?
+- Where is fiscal period closing logic implemented?
+- How are tax code supersessions handled?
+- What is the safe extension pattern for new ERP document states?
+- How do document sequences interact with legal/audit requirements?
