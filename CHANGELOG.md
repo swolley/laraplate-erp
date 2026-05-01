@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Enhance delivery note and goods receipt forms with line items and validation
+
+## [1.2.0] - 2026-05-01
+
+### 🚀 Features
+
 - *(business)* Add Filament resources for accounting domain
 - *(erp)* Complete CRM/SO baseline and add M3 foundation resources
 - *(erp)* Implement inventory management for stock movements and receipts

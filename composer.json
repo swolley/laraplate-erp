@@ -2,7 +2,7 @@
     "name": "swolley/laraplate-erp",
     "vendor": "swolley",
     "description": "ERP module for Laraplate: accounting, fiscal calendar, commercial scaffolding, and related services.",
-    "version": "v1.2.0",
+    "version": "v1.3.0",
     "keywords": [
         "laravel",
         "laraplate",

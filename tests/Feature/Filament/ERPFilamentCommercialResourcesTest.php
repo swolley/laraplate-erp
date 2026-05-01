@@ -175,7 +175,8 @@ it('delivery note resource form includes core fields', function (): void {
     );
 
     expect($names)->toContain('sales_order_id')
-        ->and($names)->toContain('delivered_at');
+        ->and($names)->toContain('delivered_at')
+        ->and($names)->toContain('line_items');
 });
 
 it('invoice resource form includes core fields', function (): void {
@@ -208,5 +209,6 @@ it('goods receipt resource form includes core fields', function (): void {
     );
 
     expect($names)->toContain('purchase_order_id')
-        ->and($names)->toContain('received_at');
+        ->and($names)->toContain('received_at')
+        ->and($names)->toContain('line_items');
 });

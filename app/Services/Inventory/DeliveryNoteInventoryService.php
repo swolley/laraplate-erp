@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
+use Modules\ERP\Models\Item;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
+use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
 /**
@@ -100,6 +102,38 @@ final class DeliveryNoteInventoryService
      */
     private function validateSalesOrderLines(DeliveryNote $header, Collection $lines): void
     {
+        $company_id = (int) $header->company_id;
+
+        foreach ($lines as $line) {
+            if ((int) $line->company_id !== $company_id) {
+                throw ValidationException::withMessages([
+                    'company_id' => ['Delivery note line company does not match delivery note company.'],
+                ]);
+            }
+
+            $item_matches_company = Item::query()
+                ->whereKey((int) $line->item_id)
+                ->where('company_id', $company_id)
+                ->exists();
+
+            if (! $item_matches_company) {
+                throw ValidationException::withMessages([
+                    'item_id' => ['Item does not belong to the same company as the delivery note.'],
+                ]);
+            }
+
+            $warehouse_matches_company = Warehouse::query()
+                ->whereKey((int) $line->warehouse_id)
+                ->where('company_id', $company_id)
+                ->exists();
+
+            if (! $warehouse_matches_company) {
+                throw ValidationException::withMessages([
+                    'warehouse_id' => ['Warehouse does not belong to the same company as the delivery note.'],
+                ]);
+            }
+        }
+
         if ($header->sales_order_id === null) {
             return;
         }

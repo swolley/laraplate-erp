@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
+use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
+use Modules\ERP\Models\Warehouse;
 
 /**
  * Posts inventory for a {@see GoodsReceipt} after `posted_at` is set: inbound
@@ -87,6 +89,7 @@ final class GoodsReceiptInventoryService
                         ->firstOrFail();
 
                     $this->registerPurchaseReceipts($purchase_order, $quantities);
+                    $this->syncPurchaseOrderStatus($purchase_order->fresh(['lines']));
                 }
             }
 
@@ -99,6 +102,38 @@ final class GoodsReceiptInventoryService
      */
     private function validatePurchaseOrderLines(GoodsReceipt $header, Collection $lines): void
     {
+        $company_id = (int) $header->company_id;
+
+        foreach ($lines as $line) {
+            if ((int) $line->company_id !== $company_id) {
+                throw ValidationException::withMessages([
+                    'company_id' => ['Goods receipt line company does not match goods receipt company.'],
+                ]);
+            }
+
+            $item_matches_company = Item::query()
+                ->whereKey((int) $line->item_id)
+                ->where('company_id', $company_id)
+                ->exists();
+
+            if (! $item_matches_company) {
+                throw ValidationException::withMessages([
+                    'item_id' => ['Item does not belong to the same company as the goods receipt.'],
+                ]);
+            }
+
+            $warehouse_matches_company = Warehouse::query()
+                ->whereKey((int) $line->warehouse_id)
+                ->where('company_id', $company_id)
+                ->exists();
+
+            if (! $warehouse_matches_company) {
+                throw ValidationException::withMessages([
+                    'warehouse_id' => ['Warehouse does not belong to the same company as the goods receipt.'],
+                ]);
+            }
+        }
+
         if ($header->purchase_order_id === null) {
             return;
         }
@@ -175,6 +210,35 @@ final class GoodsReceiptInventoryService
                 (int) $po_line->qty_received + $qty,
             );
             $po_line->save();
+        }
+    }
+
+    private function syncPurchaseOrderStatus(PurchaseOrder $purchase_order): void
+    {
+        $lines = $purchase_order->lines;
+
+        if ($lines->isEmpty()) {
+            return;
+        }
+
+        $all_received = $lines->every(
+            static fn (PurchaseOrderLine $line): bool => $line->qty_received >= $line->qty_ordered
+        );
+
+        if ($all_received) {
+            $purchase_order->status = 'received';
+            $purchase_order->saveQuietly();
+
+            return;
+        }
+
+        $has_progress = $lines->contains(
+            static fn (PurchaseOrderLine $line): bool => $line->qty_received > 0
+        );
+
+        if ($has_progress) {
+            $purchase_order->status = 'partial';
+            $purchase_order->saveQuietly();
         }
     }
 }
