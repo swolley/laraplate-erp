@@ -25,6 +25,7 @@ class SalesOrderLine extends Model
     protected $fillable = [
         'sales_order_id',
         'quotation_item_id',
+        'item_id',
         'name',
         'qty_ordered',
         'qty_delivered',
@@ -39,6 +40,14 @@ class SalesOrderLine extends Model
     public function sales_order(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class);
+    }
+
+    /**
+     * @return BelongsTo<Item, $this>
+     */
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
     }
 
     /**
@@ -75,6 +84,7 @@ class SalesOrderLine extends Model
         $rules['create'] = array_merge($rules['create'], [
             'sales_order_id' => ['required', 'integer', 'exists:sales_orders,id'],
             'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
+            'item_id' => ['nullable', 'integer', 'exists:items,id'],
             'name' => ['required', 'string', 'max:255'],
             'qty_ordered' => ['required', 'integer', 'min:1'],
             'qty_delivered' => ['sometimes', 'integer', 'min:0'],
@@ -85,6 +95,7 @@ class SalesOrderLine extends Model
         $rules['update'] = array_merge($rules['update'], [
             'sales_order_id' => ['sometimes', 'integer', 'exists:sales_orders,id'],
             'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
+            'item_id' => ['nullable', 'integer', 'exists:items,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'qty_ordered' => ['sometimes', 'integer', 'min:1'],
             'qty_delivered' => ['sometimes', 'integer', 'min:0'],

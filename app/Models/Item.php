@@ -39,6 +39,14 @@ class Item extends Model
         return $this->hasMany(StockLevel::class);
     }
 
+    /**
+     * @return HasMany<StockMovement, $this>
+     */
+    public function stock_movements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
     #[Override]
     public function getRules(): array
     {

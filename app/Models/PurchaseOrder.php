@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 
@@ -27,5 +28,13 @@ class PurchaseOrder extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * @return HasMany<PurchaseOrderLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderLine::class);
     }
 }

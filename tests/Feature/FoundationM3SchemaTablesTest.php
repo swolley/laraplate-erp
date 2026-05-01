@@ -13,5 +13,10 @@ it('creates M3 foundation tables for inventory and logistics', function (): void
         ->and(Schema::hasTable('stock_levels'))->toBeTrue()
         ->and(Schema::hasTable('delivery_notes'))->toBeTrue()
         ->and(Schema::hasTable('purchase_orders'))->toBeTrue()
-        ->and(Schema::hasTable('goods_receipts'))->toBeTrue();
+        ->and(Schema::hasTable('goods_receipts'))->toBeTrue()
+        ->and(Schema::hasTable('stock_movements'))->toBeTrue()
+        ->and(Schema::hasTable('stock_cost_layers'))->toBeTrue()
+        ->and(Schema::hasTable('delivery_note_lines'))->toBeTrue()
+        ->and(Schema::hasTable('purchase_order_lines'))->toBeTrue()
+        ->and(Schema::hasTable('goods_receipt_lines'))->toBeTrue();
 });
