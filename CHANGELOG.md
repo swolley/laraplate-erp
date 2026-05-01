@@ -4,9 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-### 🚜 Refactor
+### 🚀 Features
 
-- Rename module from **Business** to **ERP**: folder `Modules/ERP`, repo `laraplate-erp`, namespace `Modules\ERP`, config key `erp`, container binding `erp.current_company_id`, Filament nav group `ERP`.
+- *(business)* Add Filament resources for accounting domain
+- *(erp)* Complete CRM/SO baseline and add M3 foundation resources
+- *(erp)* Implement inventory management for stock movements and receipts
+
+## [1.1.0] - 2026-04-28
 
 ### 🚀 Features
 
