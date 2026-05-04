@@ -9,6 +9,9 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 
+/**
+ * @mixin IdeHelperStockCostLayer
+ */
 class StockCostLayer extends Model
 {
     use BelongsToCompany;

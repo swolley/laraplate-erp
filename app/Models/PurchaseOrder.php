@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 
+/**
+ * @mixin IdeHelperPurchaseOrder
+ */
 class PurchaseOrder extends Model
 {
     use BelongsToCompany;

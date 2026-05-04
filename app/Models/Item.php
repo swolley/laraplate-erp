@@ -10,6 +10,9 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 
+/**
+ * @mixin IdeHelperItem
+ */
 class Item extends Model
 {
     use BelongsToCompany;

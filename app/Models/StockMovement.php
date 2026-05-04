@@ -13,6 +13,9 @@ use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 
+/**
+ * @mixin IdeHelperStockMovement
+ */
 class StockMovement extends Model
 {
     use BelongsToCompany;

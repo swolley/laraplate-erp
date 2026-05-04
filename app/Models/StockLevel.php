@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 
+/**
+ * @mixin IdeHelperStockLevel
+ */
 class StockLevel extends Model
 {
     use BelongsToCompany;
