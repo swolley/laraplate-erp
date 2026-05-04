@@ -21,6 +21,8 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->string('reference', 64)->nullable();
             $table->timestamp('received_at')->nullable();
+            $table->timestamp('posted_at')->nullable();
+            $table->timestamp('inventory_posted_at')->nullable();
             $table->text('notes')->nullable();
 
             MigrateUtils::timestamps(

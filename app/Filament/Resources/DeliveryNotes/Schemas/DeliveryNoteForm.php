@@ -35,6 +35,8 @@ final class DeliveryNoteForm
                     ->nullable(),
                 DateTimePicker::make('delivered_at')
                     ->nullable(),
+                DateTimePicker::make('posted_at')
+                    ->nullable(),
                 Repeater::make('line_items')
                     ->schema([
                         Select::make('item_id')

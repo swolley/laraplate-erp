@@ -70,6 +70,7 @@ final class ItalianCoaProvider implements ChartOfAccountsProvider
             $d('190', 'Ratei e risconti attivi', AccountKind::Asset, '1'),
             $d('1901', 'Ratei attivi', AccountKind::Asset, '190'),
             $d('1902', 'Risconti attivi', AccountKind::Asset, '190'),
+            $d('146', 'Magazzino merci', AccountKind::Asset, '1', ['erp_role' => 'inventory_merchandise']),
 
             // Passivo (liabilities)
             $d('2', 'PASSIVO', AccountKind::Liability, null, ['pgc_section' => 'BS-LIAB']),
@@ -142,6 +143,7 @@ final class ItalianCoaProvider implements ChartOfAccountsProvider
             $d('580', 'Imposte e tasse sull’esercizio', AccountKind::Expense, '5'),
             $d('5801', 'Imposte dirette', AccountKind::Expense, '580'),
             $d('5802', 'Tributi minori', AccountKind::Expense, '580'),
+            $d('590', 'Costo delle merci vendute', AccountKind::Expense, '5', ['erp_role' => 'cost_of_goods_sold']),
         ];
     }
 }

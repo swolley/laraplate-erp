@@ -32,7 +32,12 @@ return new class extends Migration
                 ->nullOnDelete();
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true, hasLocks: false);
+
             $table->index(['goods_receipt_id'], 'goods_receipt_lines_goods_receipt_id_idx');
+            $table->index(
+                ['company_id', 'item_id', 'warehouse_id'],
+                'goods_receipt_lines_company_item_wh_idx',
+            );
         });
     }
 

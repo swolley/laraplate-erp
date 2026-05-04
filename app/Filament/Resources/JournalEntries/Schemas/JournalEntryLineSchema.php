@@ -43,7 +43,7 @@ final class JournalEntryLineSchema
                         ->mapWithKeys(static fn (Account $account): array => [$account->id => $account->code . ' — ' . $account->name])
                         ->all();
                 })
-                ->getOptionLabelUsing(static function ($value): ?string {
+                ->getOptionLabelUsing(static function (int $value): ?string {
                     $account = Account::query()->find($value);
 
                     return $account instanceof Account ? $account->code . ' — ' . $account->name : null;
@@ -69,7 +69,7 @@ final class JournalEntryLineSchema
                         ->mapWithKeys(static fn (TaxCode $tax_code): array => [$tax_code->id => $tax_code->code])
                         ->all();
                 })
-                ->getOptionLabelUsing(static function ($value): ?string {
+                ->getOptionLabelUsing(static function (int $value): ?string {
                     $tax_code = TaxCode::query()->withoutGlobalScopes()->find($value);
 
                     return $tax_code instanceof TaxCode ? $tax_code->code : null;

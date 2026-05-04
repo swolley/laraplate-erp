@@ -13,6 +13,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Casts\QuoteStatus;
+use Illuminate\Database\Query\Builder;
 
 final class QuotationForm
 {
@@ -45,7 +46,7 @@ final class QuotationForm
                     ->relationship(
                         'opportunity',
                         'name',
-                        modifyQueryUsing: static function ($query, $search, Get $get) {
+                        modifyQueryUsing: static function (Builder $query, string $search, Get $get): Builder {
                             $customer_id = (int) ($get('customer_id') ?? 0);
 
                             if ($customer_id === 0) {

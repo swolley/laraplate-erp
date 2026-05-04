@@ -35,6 +35,8 @@ final class GoodsReceiptForm
                     ->nullable(),
                 DateTimePicker::make('received_at')
                     ->nullable(),
+                DateTimePicker::make('posted_at')
+                    ->nullable(),
                 Repeater::make('line_items')
                     ->schema([
                         Select::make('item_id')

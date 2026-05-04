@@ -26,6 +26,7 @@ class DeliveryNote extends Model
         'delivered_at',
         'posted_at',
         'inventory_posted_at',
+        'cogs_journal_entry_id',
         'notes',
     ];
 
@@ -43,6 +44,14 @@ class DeliveryNote extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(DeliveryNoteLine::class);
+    }
+
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
+    public function cogs_journal_entry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'cogs_journal_entry_id');
     }
 
     protected function casts(): array

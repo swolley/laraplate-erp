@@ -10,6 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\AccountKind;
+use Illuminate\Database\Query\Builder;
 
 final class AccountForm
 {
@@ -40,8 +41,8 @@ final class AccountForm
                     ->relationship(
                         name: 'parent',
                         titleAttribute: 'code',
-                        modifyQueryUsing: static function ($query, ?string $search): void {
-                            $query->orderBy('code');
+                        modifyQueryUsing: static function (Builder $query, ?string $search): Builder {
+                            return $query->orderBy('code');
                         },
                     )
                     ->searchable()

@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\PurchaseOrders;
 use BackedEnum;
 use Coolsam\Modules\Resource;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -41,6 +42,18 @@ final class PurchaseOrderResource extends Resource
         return 'business/purchase-orders';
     }
 
+    /**
+     * @return Builder<\Modules\ERP\Models\PurchaseOrder>
+     */
+    #[Override]
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withCount('lines')
+            ->withSum('lines', 'qty_ordered')
+            ->withSum('lines', 'qty_received');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return PurchaseOrderForm::configure($schema);
@@ -64,5 +77,4 @@ final class PurchaseOrderResource extends Resource
             'edit' => EditPurchaseOrder::route('/{record}/edit'),
         ];
     }
-
 }

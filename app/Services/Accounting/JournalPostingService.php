@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Exceptions\CannotReverseUnpostedJournalException;
 use Modules\ERP\Exceptions\FiscalPeriodCompanyMismatchException;
@@ -36,6 +37,7 @@ final class JournalPostingService
      *     tax_rate?: string|float|null,
      *     tax_label?: string|null,
      * }>  $lines
+     * @param  Model|null  $reference  Optional morph source stored on the journal header.
      */
     public function post(
         Company $company,
@@ -43,6 +45,7 @@ final class JournalPostingService
         ?FiscalPeriod $fiscal_period = null,
         ?string $description = null,
         ?int $posted_by_user_id = null,
+        ?Model $reference = null,
     ): JournalEntry {
         $this->validateLinesForPosting($company, $lines, $fiscal_period);
 
@@ -55,6 +58,7 @@ final class JournalPostingService
             $description,
             $posted_by_user_id,
             $posted_at,
+            $reference,
         ): JournalEntry {
             return $this->persistPostedEntry(
                 $company,
@@ -65,6 +69,7 @@ final class JournalPostingService
                 $posted_at,
                 null,
                 null,
+                $reference,
             );
         });
     }
@@ -141,6 +146,7 @@ final class JournalPostingService
                 $posted_at,
                 (int) $posted_entry->getKey(),
                 $reversal_reason,
+                null,
             );
         });
     }
@@ -168,6 +174,7 @@ final class JournalPostingService
         CarbonImmutable $posted_at,
         ?int $reverses_journal_entry_id,
         ?string $reversal_reason,
+        ?Model $reference = null,
     ): JournalEntry {
         $entry = JournalEntry::withoutGlobalScopes()->create([
             'company_id' => $company->id,
@@ -177,6 +184,8 @@ final class JournalPostingService
             'description' => $description,
             'reverses_journal_entry_id' => $reverses_journal_entry_id,
             'reversal_reason' => $reversal_reason,
+            'reference_type' => $reference?->getMorphClass(),
+            'reference_id' => $reference?->getKey(),
         ]);
 
         $line_no = 1;

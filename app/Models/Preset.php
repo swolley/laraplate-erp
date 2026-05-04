@@ -41,11 +41,8 @@ final class Preset extends CorePreset
         $this->migrateRelatedModelsToLastVersion();
     }
 
-    /**
-     * @return Builder<static>
-     */
     #[Override]
-    public function newBaseQueryBuilder()
+    protected function newBaseQueryBuilder(): Builder
     {
         return parent::newBaseQueryBuilder()->whereExists(function (Builder $query): void {
             $query->select(DB::raw('1'))

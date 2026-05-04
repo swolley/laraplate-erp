@@ -6,6 +6,7 @@ namespace Modules\ERP\Filament\Resources\JournalEntries\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Illuminate\Database\Query\Builder;
 use Modules\ERP\Models\FiscalPeriod;
 
 final class JournalEntryHeaderFields
@@ -28,8 +29,8 @@ final class JournalEntryHeaderFields
                 ->relationship(
                     name: 'fiscal_period',
                     titleAttribute: 'period_no',
-                    modifyQueryUsing: static function ($query, ?string $search): void {
-                        $query->with('fiscal_year')->orderByDesc('fiscal_year_id')->orderBy('period_no');
+                    modifyQueryUsing: static function (Builder $query, ?string $search): Builder {
+                        return $query->with('fiscal_year')->orderByDesc('fiscal_year_id')->orderBy('period_no');
                     },
                 )
                 ->getOptionLabelFromRecordUsing(static function (FiscalPeriod $record): string {

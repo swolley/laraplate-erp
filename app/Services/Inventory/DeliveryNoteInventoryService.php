@@ -25,6 +25,7 @@ final class DeliveryNoteInventoryService
     public function __construct(
         private readonly StockMovementService $stock_movement_service,
         private readonly SalesOrderEvasionService $sales_order_evasion_service,
+        private readonly DeliveryNoteCogsJournalService $delivery_note_cogs_journal_service,
     ) {}
 
     /**
@@ -70,6 +71,8 @@ final class DeliveryNoteInventoryService
                     $line,
                 );
             }
+
+            $this->delivery_note_cogs_journal_service->postForDeliveryNoteIfNeeded($note, $lines);
 
             if ($locked->sales_order_id !== null) {
                 $quantities = [];

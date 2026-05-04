@@ -11,6 +11,7 @@ use Modules\ERP\Models\Customer;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\StockLevel;
@@ -322,4 +323,86 @@ it('rejects posting when line warehouse belongs to another company', function ()
 
     expect(fn () => $note->update(['posted_at' => now()]))
         ->toThrow(ValidationException::class);
+});
+
+it('posts a balanced COGS journal linked to the delivery note when inventory posts', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'ddn-cogs',
+        'name' => 'Ddn Cogs',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'WH',
+        'code' => 'WH-COGS',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Part',
+        'sku' => 'P-COGS',
+        'uom' => 'pcs',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    app(StockMovementService::class)
+        ->recordInbound($company->id, $item->id, $warehouse->id, 100, '2.0000');
+
+    $customer = Customer::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::CONFIRMED,
+    ]);
+
+    $so_line = SalesOrderLine::query()->create([
+        'sales_order_id' => $order->id,
+        'item_id' => $item->id,
+        'name' => 'Part',
+        'qty_ordered' => 20,
+        'qty_delivered' => 0,
+        'qty_invoiced' => 0,
+        'status' => SalesOrderLineStatus::OPEN,
+    ]);
+
+    $note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'sales_order_id' => $order->id,
+        'reference' => 'DDT-COGS',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 7,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $note->update(['posted_at' => now()]);
+    $note->refresh();
+
+    expect($note->cogs_journal_entry_id)->not->toBeNull();
+
+    $entry = JournalEntry::query()->withoutGlobalScopes()->findOrFail((int) $note->cogs_journal_entry_id);
+
+    expect((string) $entry->reference_type)->toBe((new DeliveryNote)->getMorphClass())
+        ->and((int) $entry->reference_id)->toBe((int) $note->id)
+        ->and($entry->lines)->toHaveCount(2);
+
+    $sum_local = 0.0;
+
+    foreach ($entry->lines as $jel) {
+        $sum_local += (float) $jel->amount_local;
+    }
+
+    expect($sum_local)->toBe(0.0);
 });

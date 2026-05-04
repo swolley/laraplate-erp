@@ -32,6 +32,20 @@ final class PurchaseOrdersTable
                     TextColumn::make('status')
                         ->badge()
                         ->sortable(),
+                    TextColumn::make('lines_count')
+                        ->label('Lines')
+                        ->numeric()
+                        ->sortable(),
+                    TextColumn::make('lines_sum_qty_ordered')
+                        ->label('Σ Qty ordered')
+                        ->numeric()
+                        ->sortable()
+                        ->default(0),
+                    TextColumn::make('lines_sum_qty_received')
+                        ->label('Σ Qty received')
+                        ->numeric()
+                        ->sortable()
+                        ->default(0),
                     TextColumn::make('ordered_at')
                         ->dateTime()
                         ->sortable(),

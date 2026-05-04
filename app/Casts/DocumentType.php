@@ -11,6 +11,7 @@ enum DocumentType: string
 {
     case Quotation = 'quotation';
     case SalesOrder = 'sales_order';
+    case PurchaseOrder = 'purchase_order';
     case SalesInvoice = 'sales_invoice';
     case PurchaseInvoice = 'purchase_invoice';
     case CreditNote = 'credit_note';
@@ -33,11 +34,12 @@ enum DocumentType: string
      * Whether a rollback of the surrounding transaction may leave numbering holes.
      *
      * Fiscal / legal streams keep false so operators treat each allocated number as consumed.
+     * Operational order streams (quotation, sales order, purchase order) allow gaps on rollbacks.
      */
     public function defaultGapAllowed(): bool
     {
         return match ($this) {
-            self::Quotation, self::SalesOrder => true,
+            self::Quotation, self::SalesOrder, self::PurchaseOrder => true,
             default => false,
         };
     }

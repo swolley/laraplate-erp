@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\ERP\Filament\Resources\PurchaseOrders\Pages;
 
 use Filament\Actions\CreateAction;

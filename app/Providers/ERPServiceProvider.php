@@ -13,6 +13,7 @@ use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
 use Modules\ERP\Services\Accounting\ItalianCoaProvider;
 use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Services\Currency\NoopCurrencyConverter;
+use Modules\ERP\Services\Inventory\DeliveryNoteCogsJournalService;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
 use Modules\ERP\Services\Inventory\StockMovementService;
@@ -24,7 +25,7 @@ use Override;
 class ERPServiceProvider extends ModuleServiceProvider
 {
     /**
-     * The name of the module.
+     * The name of the modulce.
      */
     protected string $name = 'ERP';
 
@@ -40,7 +41,7 @@ class ERPServiceProvider extends ModuleServiceProvider
 
         $this->app->singleton(CurrencyConverter::class, NoopCurrencyConverter::class);
         $this->app->singleton(ChartOfAccountsProvider::class, ItalianCoaProvider::class);
-        $this->app->singleton(ChartOfAccountsInstaller::class, fn ($app): ChartOfAccountsInstaller => new ChartOfAccountsInstaller(
+        $this->app->singleton(ChartOfAccountsInstaller::class, fn (\Illuminate\Contracts\Foundation\Application $app): ChartOfAccountsInstaller => new ChartOfAccountsInstaller(
             $app->make(ChartOfAccountsProvider::class),
         ));
         $this->app->singleton(FiscalCalendarInstaller::class);
@@ -50,6 +51,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(TaxLineCalculator::class);
         $this->app->singleton(TaxCodeSupersessionService::class);
         $this->app->singleton(StockMovementService::class);
+        $this->app->singleton(DeliveryNoteCogsJournalService::class);
         $this->app->singleton(DeliveryNoteInventoryService::class);
         $this->app->singleton(GoodsReceiptInventoryService::class);
     }

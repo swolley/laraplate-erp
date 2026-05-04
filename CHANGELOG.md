@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Implement COGS journal posting for delivery notes and enhance purchase order handling
+
+### ⚙️ Miscellaneous Tasks
+
+- *(models)* Add IDE helper annotations for Item, PurchaseOrder, StockCostLayer, StockLevel, StockMovement, and Warehouse models
+
+## [1.3.0] - 2026-05-01
+
+### 🚀 Features
+
 - *(erp)* Enhance delivery note and goods receipt forms with line items and validation
 
 ## [1.2.0] - 2026-05-01

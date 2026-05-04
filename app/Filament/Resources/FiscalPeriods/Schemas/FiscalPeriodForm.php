@@ -9,6 +9,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Query\Builder;
+use Modules\ERP\Models\FiscalYear;
 
 final class FiscalPeriodForm
 {
@@ -21,11 +23,11 @@ final class FiscalPeriodForm
                     ->relationship(
                         name: 'fiscal_year',
                         titleAttribute: 'year',
-                        modifyQueryUsing: static function ($query, ?string $search): void {
-                            $query->with('company')->orderBy('year', 'desc');
+                        modifyQueryUsing: static function (Builder $query, ?string $search): Builder {
+                            return $query->with('company')->orderBy('year', 'desc');
                         },
                     )
-                    ->getOptionLabelFromRecordUsing(static function ($record): string {
+                    ->getOptionLabelFromRecordUsing(static function (FiscalYear $record): string {
                         $company = $record->company->name ?? '—';
 
                         return "{$record->year} ({$company})";
