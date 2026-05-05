@@ -23,5 +23,7 @@ it('creates M3 foundation tables for inventory and logistics', function (): void
 
 it('adds logistics posting timestamps on delivery and receipt headers', function (): void {
     expect(Schema::hasColumns('delivery_notes', ['posted_at', 'inventory_posted_at', 'cogs_journal_entry_id']))->toBeTrue()
-        ->and(Schema::hasColumns('goods_receipts', ['posted_at', 'inventory_posted_at']))->toBeTrue();
+        ->and(Schema::hasColumns('goods_receipts', ['posted_at', 'inventory_posted_at']))->toBeTrue()
+        ->and(Schema::hasColumns('invoices', ['posted_at', 'journal_entry_id']))->toBeTrue()
+        ->and(Schema::hasColumns('invoice_lines', ['sales_order_line_id']))->toBeTrue();
 });

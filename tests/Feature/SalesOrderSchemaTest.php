@@ -14,6 +14,7 @@ use Modules\ERP\Models\Customer;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
@@ -210,4 +211,88 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
         ->and($order->status)->toBe(SalesOrderStatus::PARTIALLY_EVASED);
 
     expect(fn (): bool => $line->update(['qty_ordered' => 5]))->toThrow(ValidationException::class);
+});
+
+it('creates a draft amendment from a confirmed order with remaining quantities only', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'so-amend',
+        'name' => 'SO Amend',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $customer = Customer::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::CONFIRMED,
+    ]);
+
+    $line_full = $order->lines()->create([
+        'name' => 'Fully delivered',
+        'qty_ordered' => 2,
+        'qty_delivered' => 2,
+        'qty_invoiced' => 2,
+        'status' => SalesOrderLineStatus::FULLY_EVASED,
+    ]);
+
+    $line_partial = $order->lines()->create([
+        'name' => 'Partially delivered',
+        'qty_ordered' => 5,
+        'qty_delivered' => 2,
+        'qty_invoiced' => 1,
+        'status' => SalesOrderLineStatus::PARTIALLY_EVASED,
+    ]);
+
+    $service = app(SalesOrderAmendmentService::class);
+    $amendment = $service->amend($order);
+
+    expect($amendment->amends_sales_order_id)->toBe($order->id)
+        ->and($amendment->status)->toBe(SalesOrderStatus::DRAFT)
+        ->and($amendment->reference)->not->toBeNull()
+        ->and($amendment->lines)->toHaveCount(1)
+        ->and($amendment->lines->first()?->name)->toBe($line_partial->name)
+        ->and($amendment->lines->first()?->qty_ordered)->toBe(3)
+        ->and($amendment->lines->first()?->qty_delivered)->toBe(0)
+        ->and($amendment->lines->first()?->qty_invoiced)->toBe(0);
+
+    expect($line_full->fresh()?->qty_ordered)->toBe(2);
+});
+
+it('rejects amendment when order is not confirmed or partially evased', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'so-amend-draft',
+        'name' => 'SO Amend Draft',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $customer = Customer::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::DRAFT,
+    ]);
+
+    $order->lines()->create([
+        'name' => 'Widget',
+        'qty_ordered' => 1,
+        'qty_delivered' => 0,
+        'qty_invoiced' => 0,
+        'status' => SalesOrderLineStatus::OPEN,
+    ]);
+
+    $service = app(SalesOrderAmendmentService::class);
+
+    expect(fn () => $service->amend($order))->toThrow(ValidationException::class);
 });

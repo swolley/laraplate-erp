@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Enhance invoice management with posting, unposting, and amendment features
+
+### 🚜 Refactor
+
+- *(erp)* Consolidate opportunity stages and activities seeding into a single seeder
+
+## [1.4.0] - 2026-05-04
+
+### 🚀 Features
+
 - *(erp)* Implement COGS journal posting for delivery notes and enhance purchase order handling
 
 ### ⚙️ Miscellaneous Tasks

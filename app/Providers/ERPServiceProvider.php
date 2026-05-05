@@ -10,6 +10,7 @@ use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
+use Modules\ERP\Services\Accounting\InvoicePostingService;
 use Modules\ERP\Services\Accounting\ItalianCoaProvider;
 use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Services\Currency\NoopCurrencyConverter;
@@ -17,6 +18,7 @@ use Modules\ERP\Services\Inventory\DeliveryNoteCogsJournalService;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
 use Modules\ERP\Services\Inventory\StockMovementService;
+use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
 use Nwidart\Modules\Support\ModuleServiceProvider;
@@ -48,11 +50,13 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(FiscalPeriodCloser::class);
         $this->app->singleton(DocumentNumberAllocator::class);
         $this->app->singleton(JournalPostingService::class);
+        $this->app->singleton(InvoicePostingService::class);
         $this->app->singleton(TaxLineCalculator::class);
         $this->app->singleton(TaxCodeSupersessionService::class);
         $this->app->singleton(StockMovementService::class);
         $this->app->singleton(DeliveryNoteCogsJournalService::class);
         $this->app->singleton(DeliveryNoteInventoryService::class);
         $this->app->singleton(GoodsReceiptInventoryService::class);
+        $this->app->singleton(SalesOrderAmendmentService::class);
     }
 }

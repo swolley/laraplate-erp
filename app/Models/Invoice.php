@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Observers\InvoiceObserver;
 use Modules\Core\Overrides\Model;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -17,6 +19,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * @mixin IdeHelperInvoice
  */
+#[ObservedBy([InvoiceObserver::class])]
 class Invoice extends Model
 {
     use BelongsToCompany;
@@ -28,8 +31,17 @@ class Invoice extends Model
         'direction',
         'currency',
         'posted_at',
+        'journal_entry_id',
         'notes',
     ];
+
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
+    public function journal_entry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
 
     /**
      * @return HasMany<InvoiceLine, $this>
@@ -62,6 +74,7 @@ class Invoice extends Model
             'direction' => ['sometimes', 'string', InvoiceDirection::validationRule()],
             'currency' => ['sometimes', 'string', 'size:3'],
             'posted_at' => ['nullable', 'date'],
+            'journal_entry_id' => ['nullable', 'integer', 'exists:journal_entries,id'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -74,5 +87,10 @@ class Invoice extends Model
             'direction' => InvoiceDirection::class,
             'posted_at' => 'immutable_datetime',
         ];
+    }
+
+    protected function shouldVersioning(): bool
+    {
+        return false;
     }
 }

@@ -27,6 +27,12 @@ final class DeliveryNoteObserver
             return;
         }
 
+        if ($delivery_note->posted_at === null && $delivery_note->getOriginal('posted_at') !== null) {
+            $this->delivery_note_inventory_service->unpostInventory($delivery_note);
+
+            return;
+        }
+
         if ($delivery_note->posted_at === null) {
             return;
         }

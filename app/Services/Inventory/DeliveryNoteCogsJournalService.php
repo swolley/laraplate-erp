@@ -11,6 +11,7 @@ use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
+use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\JournalPostingService;
@@ -124,6 +125,33 @@ final class DeliveryNoteCogsJournalService
         );
 
         $delivery_note->cogs_journal_entry_id = (int) $entry->getKey();
+    }
+
+    public function reverseForDeliveryNoteIfNeeded(DeliveryNote $delivery_note): void
+    {
+        if ($delivery_note->cogs_journal_entry_id === null) {
+            return;
+        }
+
+        $company = Company::query()->withoutGlobalScopes()->whereKey((int) $delivery_note->company_id)->firstOrFail();
+        $entry = JournalEntry::query()
+            ->withoutGlobalScopes()
+            ->whereKey((int) $delivery_note->cogs_journal_entry_id)
+            ->first();
+
+        if ($entry === null) {
+            $delivery_note->cogs_journal_entry_id = null;
+
+            return;
+        }
+
+        $reference_label = $delivery_note->reference !== null && $delivery_note->reference !== ''
+            ? (string) $delivery_note->reference
+            : '#'.$delivery_note->getKey();
+        $reason = 'Delivery note unposted: '.$reference_label;
+
+        $this->journal_posting_service->reverse($entry, $company, $reason);
+        $delivery_note->cogs_journal_entry_id = null;
     }
 
     private function findAccountByMetaRole(Company $company, string $role): Account

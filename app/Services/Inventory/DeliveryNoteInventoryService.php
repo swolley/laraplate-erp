@@ -7,11 +7,13 @@ namespace Modules\ERP\Services\Inventory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
+use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
@@ -101,6 +103,61 @@ final class DeliveryNoteInventoryService
     }
 
     /**
+     * Reverts inventory effects for a previously posted delivery note.
+     *
+     * @throws ValidationException When original outbound movements cannot be matched.
+     */
+    public function unpostInventory(DeliveryNote $note): void
+    {
+        DB::transaction(function () use ($note): void {
+            /** @var DeliveryNote $locked */
+            $locked = DeliveryNote::query()->whereKey($note->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->inventory_posted_at === null) {
+                return;
+            }
+
+            $lines = DeliveryNoteLine::query()
+                ->where('delivery_note_id', $note->id)
+                ->orderBy('id')
+                ->get();
+
+            if ($lines->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'lines' => ['Delivery note must have at least one line before inventory unposting.'],
+                ]);
+            }
+
+            $this->revertStockMovements($locked, $lines);
+            $this->delivery_note_cogs_journal_service->reverseForDeliveryNoteIfNeeded($note);
+
+            if ($locked->sales_order_id !== null) {
+                $quantities = [];
+
+                foreach ($lines as $line) {
+                    if ($line->sales_order_line_id === null) {
+                        continue;
+                    }
+
+                    $line_id = (int) $line->sales_order_line_id;
+                    $quantities[$line_id] = ($quantities[$line_id] ?? 0) + (int) $line->quantity;
+                }
+
+                if ($quantities !== []) {
+                    $sales_order = SalesOrder::query()
+                        ->whereKey((int) $locked->sales_order_id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $this->sales_order_evasion_service->unregisterDelivery($sales_order, $quantities);
+                }
+            }
+
+            $note->inventory_posted_at = null;
+        });
+    }
+
+    /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
     private function validateSalesOrderLines(DeliveryNote $header, Collection $lines): void
@@ -170,6 +227,41 @@ final class DeliveryNoteInventoryService
                     'quantity' => ['Delivery quantity exceeds remaining quantity to deliver on the sales order line.'],
                 ]);
             }
+        }
+    }
+
+    /**
+     * @param  Collection<int, DeliveryNoteLine>  $lines
+     */
+    private function revertStockMovements(DeliveryNote $header, Collection $lines): void
+    {
+        $line_ids = $lines->pluck('id')->all();
+        $outbound_movements = StockMovement::query()
+            ->where('company_id', (int) $header->company_id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->whereIn('source_id', $line_ids)
+            ->where('direction', StockMovementDirection::OUT)
+            ->get()
+            ->keyBy(static fn (StockMovement $movement): int => (int) $movement->source_id);
+
+        foreach ($lines as $line) {
+            /** @var StockMovement|null $outbound */
+            $outbound = $outbound_movements->get((int) $line->id);
+
+            if ($outbound === null || $outbound->unit_cost === null) {
+                throw ValidationException::withMessages([
+                    'stock' => ['Cannot unpost delivery note: missing outbound movement or unit_cost for a line.'],
+                ]);
+            }
+
+            $this->stock_movement_service->recordInbound(
+                (int) $header->company_id,
+                (int) $line->item_id,
+                (int) $line->warehouse_id,
+                (int) $line->quantity,
+                (string) $outbound->unit_cost,
+                $line,
+            );
         }
     }
 }

@@ -22,9 +22,25 @@ final class SalesOrderEvasionService
     /**
      * @param  array<int, int>  $line_quantities
      */
+    public function unregisterDelivery(SalesOrder $sales_order, array $line_quantities): void
+    {
+        $this->applyQuantities($sales_order, $line_quantities, 'delivery_reversal');
+    }
+
+    /**
+     * @param  array<int, int>  $line_quantities
+     */
     public function registerInvoice(SalesOrder $sales_order, array $line_quantities): void
     {
         $this->applyQuantities($sales_order, $line_quantities, 'invoice');
+    }
+
+    /**
+     * @param  array<int, int>  $line_quantities
+     */
+    public function unregisterInvoice(SalesOrder $sales_order, array $line_quantities): void
+    {
+        $this->applyQuantities($sales_order, $line_quantities, 'invoice_reversal');
     }
 
     /**
@@ -42,6 +58,10 @@ final class SalesOrderEvasionService
 
             if ($mode === 'delivery') {
                 $line->qty_delivered = min($line->qty_ordered, $line->qty_delivered + $qty);
+            } elseif ($mode === 'delivery_reversal') {
+                $line->qty_delivered = max(0, $line->qty_delivered - $qty);
+            } elseif ($mode === 'invoice_reversal') {
+                $line->qty_invoiced = max(0, $line->qty_invoiced - $qty);
             } else {
                 $line->qty_invoiced = min($line->qty_ordered, $line->qty_invoiced + $qty);
             }
@@ -92,6 +112,11 @@ final class SalesOrderEvasionService
         if ($has_progress) {
             $sales_order->status = SalesOrderStatus::PARTIALLY_EVASED;
             $sales_order->saveQuietly();
+
+            return;
         }
+
+        $sales_order->status = SalesOrderStatus::CONFIRMED;
+        $sales_order->saveQuietly();
     }
 }

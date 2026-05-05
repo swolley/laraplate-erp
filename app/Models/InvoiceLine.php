@@ -25,6 +25,7 @@ class InvoiceLine extends Model
         'quantity',
         'unit_price',
         'tax_code_id',
+        'sales_order_line_id',
         'tax_code',
         'tax_rate',
         'tax_label',
@@ -46,6 +47,14 @@ class InvoiceLine extends Model
         return $this->belongsTo(TaxCode::class, 'tax_code_id');
     }
 
+    /**
+     * @return BelongsTo<SalesOrderLine, $this>
+     */
+    public function sales_order_line(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrderLine::class);
+    }
+
     #[Override]
     public function getRules(): array
     {
@@ -57,6 +66,7 @@ class InvoiceLine extends Model
             'quantity' => ['required', 'numeric', 'min:0'],
             'unit_price' => ['required', 'numeric'],
             'tax_code_id' => ['nullable', 'integer', 'exists:tax_codes,id'],
+            'sales_order_line_id' => ['nullable', 'integer', 'exists:sales_order_lines,id'],
             'tax_code' => ['nullable', 'string', 'max:64'],
             'tax_rate' => ['nullable', 'numeric'],
             'tax_label' => ['nullable', 'string', 'max:255'],
@@ -67,6 +77,7 @@ class InvoiceLine extends Model
             'quantity' => ['sometimes', 'numeric', 'min:0'],
             'unit_price' => ['sometimes', 'numeric'],
             'tax_code_id' => ['nullable', 'integer', 'exists:tax_codes,id'],
+            'sales_order_line_id' => ['nullable', 'integer', 'exists:sales_order_lines,id'],
             'tax_code' => ['nullable', 'string', 'max:64'],
             'tax_rate' => ['nullable', 'numeric'],
             'tax_label' => ['nullable', 'string', 'max:255'],
@@ -83,5 +94,10 @@ class InvoiceLine extends Model
             'unit_price' => 'decimal:4',
             'tax_rate' => 'decimal:4',
         ];
+    }
+
+    protected function shouldVersioning(): bool
+    {
+        return false;
     }
 }

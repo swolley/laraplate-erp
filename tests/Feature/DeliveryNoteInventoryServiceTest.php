@@ -406,3 +406,93 @@ it('posts a balanced COGS journal linked to the delivery note when inventory pos
 
     expect($sum_local)->toBe(0.0);
 });
+
+it('reverts stock, sales order delivery, and cogs journal when a posted delivery note is unposted', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'ddn-unpost',
+        'name' => 'Ddn Unpost',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'WH',
+        'code' => 'WH-UNP',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Part',
+        'sku' => 'P-UNP',
+        'uom' => 'pcs',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 20, '2.5000');
+
+    $customer = Customer::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'customer_id' => $customer->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::CONFIRMED,
+    ]);
+
+    $so_line = SalesOrderLine::query()->create([
+        'sales_order_id' => $order->id,
+        'item_id' => $item->id,
+        'name' => 'Part',
+        'qty_ordered' => 5,
+        'qty_delivered' => 0,
+        'qty_invoiced' => 0,
+        'status' => SalesOrderLineStatus::OPEN,
+    ]);
+
+    $note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'sales_order_id' => $order->id,
+        'reference' => 'DDT-UNP',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 5,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $note->update(['posted_at' => now()]);
+    $note->refresh();
+    $original_cogs_entry_id = (int) $note->cogs_journal_entry_id;
+
+    $note->update(['posted_at' => null]);
+    $note->refresh();
+    $so_line->refresh();
+
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect($level->quantity)->toBe(20)
+        ->and($note->inventory_posted_at)->toBeNull()
+        ->and($note->cogs_journal_entry_id)->toBeNull()
+        ->and($so_line->qty_delivered)->toBe(0)
+        ->and($so_line->status)->toBe(SalesOrderLineStatus::OPEN)
+        ->and($order->fresh()?->status)->toBe(SalesOrderStatus::CONFIRMED);
+
+    $reversal = JournalEntry::query()
+        ->withoutGlobalScopes()
+        ->where('reverses_journal_entry_id', $original_cogs_entry_id)
+        ->first();
+
+    expect($reversal)->not->toBeNull();
+});
