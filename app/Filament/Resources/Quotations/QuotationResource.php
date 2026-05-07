@@ -50,7 +50,7 @@ final class QuotationResource extends Resource
     public static function table(Table $table): Table
     {
         return QuotationsTable::configure($table)
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'customer', 'opportunity']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'party', 'opportunity']))
             ->defaultSort('id', direction: 'desc');
     }
 

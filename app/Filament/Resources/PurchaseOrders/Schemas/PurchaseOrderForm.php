@@ -33,9 +33,9 @@ final class PurchaseOrderForm
                     ->required()
                     ->live()
                     ->disabledOn('edit'),
-                Select::make('customer_id')
+                Select::make('party_id')
                     ->relationship(
-                        'customer',
+                        'party',
                         'name',
                         modifyQueryUsing: static function (Builder $query, ?string $search, Get $get): Builder {
                             $company_id = (int) ($get('company_id') ?? 0);
@@ -44,7 +44,7 @@ final class PurchaseOrderForm
                                 return $query->whereRaw('0 = 1');
                             }
 
-                            return $query->where('customers.company_id', $company_id);
+                            return $query->where('parties.company_id', $company_id)->suppliers();
                         },
                     )
                     ->searchable()

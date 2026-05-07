@@ -68,7 +68,7 @@ final class SalesOrderResource extends Resource
     public static function table(Table $table): Table
     {
         return SalesOrdersTable::configure($table)
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'customer', 'quotation', 'project']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'party', 'quotation', 'project']))
             ->defaultSort('id', direction: 'desc');
     }
 

@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\OpportunityStatus;
 
 final class OpportunityForm
@@ -33,8 +34,8 @@ final class OpportunityForm
                     ->searchable()
                     ->preload()
                     ->nullable(),
-                Select::make('customer_id')
-                    ->relationship('customer', 'name')
+                Select::make('party_id')
+                    ->relationship('party', 'name', modifyQueryUsing: static fn (Builder $query): Builder => $query->customers())
                     ->searchable()
                     ->preload()
                     ->required(),

@@ -16,7 +16,7 @@ use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
- * Customer sales order (M3.2) with optional links to a {@see Quotation} and {@see Project}.
+ * Party sales order (M3.2) with optional links to a {@see Quotation} and {@see Project}.
  *
  * @mixin IdeHelperSalesOrder
  */
@@ -29,7 +29,7 @@ class SalesOrder extends Model
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     protected $fillable = [
-        'customer_id',
+        'party_id',
         'quotation_id',
         'project_id',
         'amends_sales_order_id',
@@ -40,11 +40,11 @@ class SalesOrder extends Model
     ];
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -90,8 +90,18 @@ class SalesOrder extends Model
     protected static function booted(): void
     {
         static::saving(static function (SalesOrder $order): void {
+            if ($order->party_id !== null) {
+                $party = Party::query()->find($order->party_id);
+
+                if ($party !== null && ! $party->is_customer) {
+                    throw ValidationException::withMessages([
+                        'party_id' => ['The selected party must be a customer.'],
+                    ]);
+                }
+            }
+
             if ($order->exists && $order->isHeaderLocked() && $order->isDirty([
-                'customer_id',
+                'party_id',
                 'quotation_id',
                 'project_id',
                 'reference',
@@ -111,9 +121,9 @@ class SalesOrder extends Model
                     ]);
                 }
 
-                if ((int) $quotation->customer_id !== (int) $order->customer_id) {
+                if ((int) $quotation->party_id !== (int) $order->party_id) {
                     throw ValidationException::withMessages([
-                        'quotation_id' => ['The quotation must belong to the same customer as this order.'],
+                        'quotation_id' => ['The quotation must belong to the same party as this order.'],
                     ]);
                 }
 
@@ -133,9 +143,9 @@ class SalesOrder extends Model
                     ]);
                 }
 
-                if ((int) $project->customer_id !== (int) $order->customer_id) {
+                if ((int) $project->party_id !== (int) $order->party_id) {
                     throw ValidationException::withMessages([
-                        'project_id' => ['The project must belong to the same customer as this order.'],
+                        'project_id' => ['The project must belong to the same party as this order.'],
                     ]);
                 }
 
@@ -180,7 +190,7 @@ class SalesOrder extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_id' => ['required', 'integer', 'exists:parties,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'amends_sales_order_id' => ['nullable', 'integer', 'exists:sales_orders,id'],
@@ -190,7 +200,7 @@ class SalesOrder extends Model
             'notes' => ['nullable', 'string'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'amends_sales_order_id' => ['nullable', 'integer', 'exists:sales_orders,id'],

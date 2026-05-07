@@ -39,13 +39,13 @@ class Contact extends Model
     private ?User $tempUser = null;
 
     /**
-     * Customers this contact is linked to (pivot `contactables`).
+     * Parties this contact is linked to (pivot `contactables`).
      *
-     * @return BelongsToMany<Customer, $this>
+     * @return BelongsToMany<Party, $this>
      */
-    public function customers(): BelongsToMany
+    public function parties(): BelongsToMany
     {
-        return $this->belongsToMany(Customer::class, 'contactables')->withTimestamps();
+        return $this->belongsToMany(Party::class, 'contactables', 'contact_id', 'party_id')->withTimestamps();
     }
 
     /**

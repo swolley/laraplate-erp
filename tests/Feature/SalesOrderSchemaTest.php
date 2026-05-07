@@ -10,7 +10,7 @@ use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
@@ -33,14 +33,14 @@ it('persists a sales order with lines', function (): void {
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::DRAFT,
     ]);
@@ -78,7 +78,7 @@ it('allocates sales order document numbers with gap_allowed like quotations', fu
     expect((bool) $row->gap_allowed)->toBeTrue();
 });
 
-it('rejects a sales order linked to a quotation for another customer', function (): void {
+it('rejects a sales order linked to a quotation for another party', function (): void {
     $company = Company::query()->create([
         'slug' => 'so-val',
         'name' => 'SO Val',
@@ -86,19 +86,19 @@ it('rejects a sales order linked to a quotation for another customer', function 
         'default_currency' => 'EUR',
     ]);
 
-    $customer_one = Customer::query()->create([
+    $party_one = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'One',
     ]);
 
-    $customer_two = Customer::query()->create([
+    $party_two = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Two',
     ]);
 
     $quotation = Quotation::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer_one->id,
+        'party_id' => $party_one->id,
         'currency' => 'EUR',
         'status' => QuoteStatus::DRAFT,
         'version' => 0,
@@ -106,7 +106,7 @@ it('rejects a sales order linked to a quotation for another customer', function 
 
     expect(fn (): SalesOrder => SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer_two->id,
+        'party_id' => $party_two->id,
         'quotation_id' => $quotation->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::DRAFT,
@@ -121,14 +121,14 @@ it('locks quotation when sales order is confirmed', function (): void {
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $quotation = Quotation::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => QuoteStatus::DRAFT,
         'version' => 0,
@@ -136,7 +136,7 @@ it('locks quotation when sales order is confirmed', function (): void {
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'quotation_id' => $quotation->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::DRAFT,
@@ -155,14 +155,14 @@ it('rejects header field changes on confirmed sales orders', function (): void {
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -178,14 +178,14 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -221,14 +221,14 @@ it('creates a draft amendment from a confirmed order with remaining quantities o
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -272,14 +272,14 @@ it('rejects amendment when order is not confirmed or partially evased', function
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::DRAFT,
     ]);

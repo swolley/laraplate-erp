@@ -7,14 +7,14 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Opportunity;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Tests\Support\OpportunityStageTaxonomy;
 
 uses(RefreshDatabase::class);
 
-it('rejects a quotation when opportunity belongs to another customer', function (): void {
+it('rejects a quotation when opportunity belongs to another party', function (): void {
     $stage_id = OpportunityStageTaxonomy::insertMinimalId('quo-opp-align-stage');
 
     $company = Company::query()->create([
@@ -24,19 +24,19 @@ it('rejects a quotation when opportunity belongs to another customer', function 
         'default_currency' => 'EUR',
     ]);
 
-    $customer_one = Customer::query()->create([
+    $party_one = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'One',
     ]);
 
-    $customer_two = Customer::query()->create([
+    $party_two = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Two',
     ]);
 
     $opportunity = Opportunity::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer_two->id,
+        'party_id' => $party_two->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Deal B',
         'status' => OpportunityStatus::OPEN,
@@ -48,7 +48,7 @@ it('rejects a quotation when opportunity belongs to another customer', function 
     try {
         Quotation::query()->create([
             'company_id' => $company->id,
-            'customer_id' => $customer_one->id,
+            'party_id' => $party_one->id,
             'opportunity_id' => $opportunity->id,
             'currency' => 'EUR',
             'status' => QuoteStatus::DRAFT,
@@ -72,14 +72,14 @@ it('marks linked opportunity as won when quotation is accepted', function (): vo
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $opportunity = Opportunity::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Deal Won Path',
         'status' => OpportunityStatus::OPEN,
@@ -90,7 +90,7 @@ it('marks linked opportunity as won when quotation is accepted', function (): vo
 
     Quotation::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'opportunity_id' => $opportunity->id,
         'currency' => 'EUR',
         'status' => QuoteStatus::ACCEPTED,

@@ -50,7 +50,7 @@ final class LeadResource extends Resource
     public static function table(Table $table): Table
     {
         return LeadsTable::configure($table)
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'customer', 'contact']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'party', 'contact']))
             ->defaultSort('id', direction: 'desc');
     }
 

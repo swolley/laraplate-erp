@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
@@ -164,7 +164,7 @@ it('persists optional polymorphic source on movements', function (): void {
         'costing_method' => 'weighted_avg',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Acme',
     ]);
@@ -177,11 +177,11 @@ it('persists optional polymorphic source on movements', function (): void {
         $warehouse->id,
         4,
         '2.5000',
-        $customer,
+        $party,
     );
 
     $movement->refresh();
 
-    expect($movement->source_type)->toBe(Customer::class)
-        ->and((int) $movement->source_id)->toBe((int) $customer->id);
+    expect($movement->source_type)->toBe(Party::class)
+        ->and((int) $movement->source_id)->toBe((int) $party->id);
 });

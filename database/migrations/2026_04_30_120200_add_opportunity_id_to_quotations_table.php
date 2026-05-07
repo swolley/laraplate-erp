@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::table('quotations', function (Blueprint $table): void {
             $table->foreignId('opportunity_id')
                 ->nullable()
-                ->after('customer_id')
+                ->after('party_id')
                 ->constrained('opportunities', 'id', 'quotations_opportunity_id_FK')
                 ->nullOnDelete()
                 ->comment('Originating CRM opportunity when applicable');

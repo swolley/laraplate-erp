@@ -16,8 +16,8 @@ return new class extends Migration
         Schema::create('sales_orders', function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->foreignId('customer_id')
-                ->constrained('customers', 'id', 'sales_orders_customer_id_FK')
+            $table->foreignId('party_id')
+                ->constrained('parties', 'id', 'sales_orders_party_id_FK')
                 ->restrictOnDelete();
             $table->foreignId('quotation_id')
                 ->nullable()
@@ -48,7 +48,7 @@ return new class extends Migration
                 isValidityRequired: false,
             );
 
-            $table->index(['company_id', 'customer_id'], 'sales_orders_company_customer_idx');
+            $table->index(['company_id', 'party_id'], 'sales_orders_company_party_idx');
         });
     }
 

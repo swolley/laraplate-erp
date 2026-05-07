@@ -9,14 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\LeadStatus;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * CRM lead (M3.1): early-stage prospect before a formal {@see Opportunity}.
- *
- * Uses {@see Customer} / {@see Contact} FKs instead of a unified {@code parties} table until the purchasing-cycle migration lands.
  *
  * @mixin IdeHelperLead
  */
@@ -28,7 +27,7 @@ class Lead extends Model
 
     protected $fillable = [
         'company_id',
-        'customer_id',
+        'party_id',
         'contact_id',
         'title',
         'source',
@@ -39,11 +38,11 @@ class Lead extends Model
     ];
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -70,13 +69,30 @@ class Lead extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    protected static function booted(): void
+    {
+        static::saving(static function (Lead $lead): void {
+            if ($lead->party_id === null) {
+                return;
+            }
+
+            $party = Party::query()->find($lead->party_id);
+
+            if ($party !== null && ! $party->is_customer) {
+                throw ValidationException::withMessages([
+                    'party_id' => ['The selected party must be a customer.'],
+                ]);
+            }
+        });
+    }
+
     #[Override]
     public function getRules(): array
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'party_id' => ['nullable', 'integer', 'exists:parties,id'],
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'title' => ['required', 'string', 'max:255'],
             'source' => ['nullable', 'string', 'max:128'],
@@ -86,7 +102,7 @@ class Lead extends Model
             'converted_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'party_id' => ['nullable', 'integer', 'exists:parties,id'],
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'title' => ['sometimes', 'string', 'max:255'],
             'source' => ['nullable', 'string', 'max:128'],

@@ -7,7 +7,7 @@ namespace Modules\ERP\Filament\Resources\Contacts\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 
 final class ContactForm
 {
@@ -31,10 +31,10 @@ final class ContactForm
                 TextInput::make('phone')
                     ->maxLength(255)
                     ->nullable(),
-                Select::make('customer_ids')
-                    ->label('Customers')
+                Select::make('party_ids')
+                    ->label('Parties')
                     ->multiple()
-                    ->options(static fn (): array => Customer::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(static fn (): array => Party::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable()
                     ->preload(),
             ]);

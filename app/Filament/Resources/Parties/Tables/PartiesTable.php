@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\ERP\Filament\Resources\Customers\Tables;
+namespace Modules\ERP\Filament\Resources\Parties\Tables;
 
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -10,7 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Collection;
 use Modules\Core\Filament\Utils\HasTable;
 
-final class CustomersTable
+final class PartiesTable
 {
     use HasTable;
 
@@ -28,6 +28,12 @@ final class CustomersTable
                     TextColumn::make('name')
                         ->searchable()
                         ->sortable(),
+                    IconColumn::make('is_customer')
+                        ->boolean()
+                        ->label('Customer'),
+                    IconColumn::make('is_supplier')
+                        ->boolean()
+                        ->label('Supplier'),
                     IconColumn::make('is_active')
                         ->boolean()
                         ->label('Active'),

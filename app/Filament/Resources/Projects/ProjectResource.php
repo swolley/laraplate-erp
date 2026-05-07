@@ -50,7 +50,7 @@ final class ProjectResource extends Resource
     public static function table(Table $table): Table
     {
         return ProjectsTable::configure($table)
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'customer']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'party']))
             ->defaultSort('name');
     }
 

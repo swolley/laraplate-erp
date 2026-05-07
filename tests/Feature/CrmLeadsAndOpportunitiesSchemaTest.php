@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\LeadStatus;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Lead;
 use Modules\ERP\Models\Opportunity;
 use Modules\ERP\Tests\Support\OpportunityStageTaxonomy;
@@ -45,14 +45,14 @@ it('persists an opportunity when pipeline taxonomy exists', function (): void {
 
     $company = Company::query()->withoutGlobalScopes()->where('is_default', true)->firstOrFail();
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'CRM buyer',
     ]);
 
     $opportunity = Opportunity::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Enterprise rollout',
         'status' => OpportunityStatus::OPEN,
@@ -61,6 +61,6 @@ it('persists an opportunity when pipeline taxonomy exists', function (): void {
         'expected_fx_rate' => 1,
     ]);
 
-    expect($opportunity->customer_id)->toBe($customer->id)
+    expect($opportunity->party_id)->toBe($party->id)
         ->and($opportunity->stage_taxonomy_id)->toBe($stage_id);
 });

@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PurchaseOrder;
@@ -44,14 +44,14 @@ it('aggregates line counts and quantity sums for purchase order list queries', f
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => 'draft',
     ]);
@@ -79,7 +79,7 @@ it('aggregates line counts and quantity sums for purchase order list queries', f
         ->and((string) $aggregated->lines_sum_qty_received)->toBe('3');
 });
 
-it('rejects a purchase order whose customer belongs to another company', function (): void {
+it('rejects a purchase order whose party belongs to another company', function (): void {
     $company_a = Company::query()->create([
         'slug' => 'po-a',
         'name' => 'Po A',
@@ -94,14 +94,14 @@ it('rejects a purchase order whose customer belongs to another company', functio
         'default_currency' => 'EUR',
     ]);
 
-    $customer_b = Customer::query()->create([
+    $party_b = Party::query()->create([
         'company_id' => $company_b->id,
         'name' => 'Supplier B',
     ]);
 
     expect(fn () => PurchaseOrder::query()->create([
         'company_id' => $company_a->id,
-        'customer_id' => $customer_b->id,
+        'party_id' => $party_b->id,
         'currency' => 'EUR',
         'status' => 'draft',
     ]))->toThrow(ValidationException::class);
@@ -115,14 +115,14 @@ it('blocks qty_ordered changes after receipt progress on a purchase order line',
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => 'draft',
     ]);
@@ -154,7 +154,7 @@ it('rejects a purchase order line item from another company', function (): void 
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company_a->id,
         'name' => 'Supplier',
     ]);
@@ -169,7 +169,7 @@ it('rejects a purchase order line item from another company', function (): void 
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company_a->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => 'draft',
     ]);

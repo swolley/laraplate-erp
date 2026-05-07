@@ -30,7 +30,7 @@ class Quotation extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'customer_id',
+        'party_id',
         'opportunity_id',
         'currency',
         'notes',
@@ -39,11 +39,11 @@ class Quotation extends Model
     ];
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -73,6 +73,16 @@ class Quotation extends Model
     protected static function booted(): void
     {
         static::saving(static function (Quotation $quotation): void {
+            if ($quotation->party_id !== null) {
+                $party = Party::query()->find($quotation->party_id);
+
+                if ($party !== null && ! $party->is_customer) {
+                    throw ValidationException::withMessages([
+                        'party_id' => ['The selected party must be a customer.'],
+                    ]);
+                }
+            }
+
             if ($quotation->opportunity_id === null) {
                 return;
             }
@@ -85,9 +95,9 @@ class Quotation extends Model
                 ]);
             }
 
-            if ((int) $opportunity->customer_id !== (int) $quotation->customer_id) {
+            if ((int) $opportunity->party_id !== (int) $quotation->party_id) {
                 throw ValidationException::withMessages([
-                    'opportunity_id' => ['The opportunity must belong to the same customer as this quotation.'],
+                    'opportunity_id' => ['The opportunity must belong to the same party as this quotation.'],
                 ]);
             }
 
@@ -104,7 +114,7 @@ class Quotation extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_id' => ['required', 'integer', 'exists:parties,id'],
             'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
             'currency' => ['required', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],
@@ -112,7 +122,7 @@ class Quotation extends Model
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
             'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],

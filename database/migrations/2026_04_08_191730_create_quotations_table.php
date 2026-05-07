@@ -19,7 +19,7 @@ return new class extends Migration
         Schema::create('quotations', function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->foreignId('customer_id')->constrained('customers', 'id', 'quotations_customer_id_FK')->restrictOnDelete()->comment('The customer that the quotation belongs to');
+            $table->foreignId('party_id')->constrained('parties', 'id', 'quotations_party_id_FK')->restrictOnDelete()->comment('The party that the quotation belongs to');
             $table->char('currency', 3)->default('EUR')->comment('ISO 4217 for document amounts');
             $table->text('notes')->nullable(true)->comment('The notes of the quotation');
             $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::DRAFT->value)->index('quotations_status_IDX')->comment('The status of the quotation');

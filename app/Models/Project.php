@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
@@ -24,7 +25,7 @@ class Project extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'customer_id',
+        'party_id',
         'quotation_id',
         'name',
         'description',
@@ -33,11 +34,11 @@ class Project extends Model
     ];
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -72,6 +73,23 @@ class Project extends Model
         return $this->hasMany(TimeEntry::class);
     }
 
+    protected static function booted(): void
+    {
+        static::saving(static function (Project $project): void {
+            if ($project->party_id === null) {
+                return;
+            }
+
+            $party = Party::query()->find($project->party_id);
+
+            if ($party !== null && ! $party->is_customer) {
+                throw ValidationException::withMessages([
+                    'party_id' => ['The selected party must be a customer.'],
+                ]);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -85,7 +103,7 @@ class Project extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_id' => ['required', 'integer', 'exists:parties,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -93,7 +111,7 @@ class Project extends Model
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

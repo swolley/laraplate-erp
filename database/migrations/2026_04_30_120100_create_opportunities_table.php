@@ -20,9 +20,9 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('leads', 'id', 'opportunities_lead_id_FK')
                 ->nullOnDelete();
-            $table->foreignId('customer_id')
+            $table->foreignId('party_id')
                 ->nullable(false)
-                ->constrained('customers', 'id', 'opportunities_customer_id_FK')
+                ->constrained('parties', 'id', 'opportunities_party_id_FK')
                 ->restrictOnDelete();
             $table->foreignId('stage_taxonomy_id')
                 ->nullable(false)
@@ -51,7 +51,7 @@ return new class extends Migration
                 hasSoftDelete: true,
             );
 
-            $table->index(['company_id', 'customer_id'], 'opportunities_company_customer_idx');
+            $table->index(['company_id', 'party_id'], 'opportunities_company_party_idx');
         });
     }
 

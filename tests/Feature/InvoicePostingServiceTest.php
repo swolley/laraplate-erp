@@ -7,7 +7,7 @@ use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\SalesOrder;
@@ -24,14 +24,14 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -76,6 +76,8 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
     $so_line->refresh();
 
     expect($invoice->journal_entry_id)->not->toBeNull()
+        ->and($invoice->reference)->not->toBeNull()
+        ->and($invoice->reference)->toBeString()
         ->and($so_line->qty_invoiced)->toBe(2)
         ->and($so_line->status)->toBe(SalesOrderLineStatus::PARTIALLY_EVASED);
 
@@ -96,14 +98,14 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
         'default_currency' => 'EUR',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -139,6 +141,7 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
     $so_line->refresh();
 
     expect($invoice->journal_entry_id)->toBeNull()
+        ->and($invoice->reference)->toBeNull()
         ->and($so_line->qty_invoiced)->toBe(0)
         ->and($so_line->status)->toBe(SalesOrderLineStatus::OPEN);
 

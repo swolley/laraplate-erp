@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\ERP\Filament\Resources\Customers;
+namespace Modules\ERP\Filament\Resources\Parties;
 
 use BackedEnum;
 use Coolsam\Modules\Resource;
@@ -11,19 +11,19 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Modules\ERP\Filament\Resources\Customers\Pages\CreateCustomer;
-use Modules\ERP\Filament\Resources\Customers\Pages\EditCustomer;
-use Modules\ERP\Filament\Resources\Customers\Pages\ListCustomers;
-use Modules\ERP\Filament\Resources\Customers\Schemas\CustomerForm;
-use Modules\ERP\Filament\Resources\Customers\Tables\CustomersTable;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Filament\Resources\Parties\Pages\CreateParty;
+use Modules\ERP\Filament\Resources\Parties\Pages\EditParty;
+use Modules\ERP\Filament\Resources\Parties\Pages\ListParties;
+use Modules\ERP\Filament\Resources\Parties\Schemas\PartyForm;
+use Modules\ERP\Filament\Resources\Parties\Tables\PartiesTable;
+use Modules\ERP\Models\Party;
 use Override;
 use UnitEnum;
 
-final class CustomerResource extends Resource
+final class PartyResource extends Resource
 {
     #[Override]
-    protected static ?string $model = Customer::class;
+    protected static ?string $model = Party::class;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'name';
@@ -39,17 +39,17 @@ final class CustomerResource extends Resource
 
     public static function getSlug(?Panel $panel = null): string
     {
-        return 'business/customers';
+        return 'business/parties';
     }
 
     public static function form(Schema $schema): Schema
     {
-        return CustomerForm::configure($schema);
+        return PartyForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return CustomersTable::configure($table)
+        return PartiesTable::configure($table)
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('company'))
             ->defaultSort('name');
     }
@@ -62,9 +62,9 @@ final class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListCustomers::route('/'),
-            'create' => CreateCustomer::route('/create'),
-            'edit' => EditCustomer::route('/{record}/edit'),
+            'index' => ListParties::route('/'),
+            'create' => CreateParty::route('/create'),
+            'edit' => EditParty::route('/{record}/edit'),
         ];
     }
 }

@@ -15,8 +15,8 @@ return new class extends Migration
         Schema::create('purchase_orders', function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->foreignId('customer_id')
-                ->constrained('customers', 'id', 'purchase_orders_customer_id_FK')
+            $table->foreignId('party_id')
+                ->constrained('parties', 'id', 'purchase_orders_party_id_FK')
                 ->restrictOnDelete();
             $table->string('reference', 64)->nullable();
             $table->char('currency', 3)->default('EUR');

@@ -16,11 +16,11 @@ return new class extends Migration
         Schema::create('leads', function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->foreignId('customer_id')
+            $table->foreignId('party_id')
                 ->nullable()
-                ->constrained('customers', 'id', 'leads_customer_id_FK')
+                ->constrained('parties', 'id', 'leads_party_id_FK')
                 ->nullOnDelete()
-                ->comment('Linked customer once qualified (optional on cold leads)');
+                ->comment('Linked party once qualified (optional on cold leads)');
             $table->foreignId('contact_id')
                 ->nullable()
                 ->constrained('contacts', 'id', 'leads_contact_id_FK')
@@ -37,7 +37,7 @@ return new class extends Migration
                 ->constrained('users', 'id', 'leads_owner_user_id_FK')
                 ->nullOnDelete();
             $table->text('notes')->nullable();
-            $table->timestamp('converted_at')->nullable()->comment('When the lead moved to an opportunity or customer flow');
+            $table->timestamp('converted_at')->nullable()->comment('When the lead moved to an opportunity or party flow');
 
             MigrateUtils::timestamps(
                 $table,

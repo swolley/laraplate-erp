@@ -28,8 +28,8 @@ final class LeadsTable
                     TextColumn::make('status')
                         ->badge()
                         ->sortable(),
-                    TextColumn::make('customer.name')
-                        ->label('Customer')
+                    TextColumn::make('party.name')
+                        ->label('Party')
                         ->toggleable(),
                     TextColumn::make('source')
                         ->toggleable(isToggledHiddenByDefault: true),

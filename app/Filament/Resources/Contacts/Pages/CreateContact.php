@@ -18,12 +18,12 @@ final class CreateContact extends CreateRecord
     #[Override]
     protected function handleRecordCreation(array $data): Model
     {
-        $customer_ids = $data['customer_ids'] ?? [];
-        unset($data['customer_ids']);
+        $party_ids = $data['party_ids'] ?? [];
+        unset($data['party_ids']);
 
         /** @var Contact $record */
         $record = Contact::query()->create($data);
-        $record->customers()->sync($customer_ids);
+        $record->parties()->sync($party_ids);
 
         return $record;
     }

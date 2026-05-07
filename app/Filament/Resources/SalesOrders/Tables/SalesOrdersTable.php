@@ -25,8 +25,8 @@ final class SalesOrdersTable
                     TextColumn::make('reference')
                         ->searchable()
                         ->toggleable(),
-                    TextColumn::make('customer.name')
-                        ->label('Customer')
+                    TextColumn::make('party.name')
+                        ->label('Party')
                         ->searchable()
                         ->sortable(),
                     TextColumn::make('currency')

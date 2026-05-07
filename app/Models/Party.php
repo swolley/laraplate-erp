@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -11,34 +12,41 @@ use Modules\Core\Helpers\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 
-// use Modules\ERP\Database\Factories\CustomerFactory;
-
 /**
- * @mixin IdeHelperCustomer
+ * @mixin IdeHelperParty
  */
-class Customer extends Model
+class Party extends Model
 {
     use BelongsToCompany;
     use HasActivation;
+
+    protected $table = 'parties';
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
         'name',
+        'is_customer',
+        'is_supplier',
     ];
 
-    // protected static function newFactory(): CustomerFactory
-    // {
-    //     // return CustomerFactory::new();
-    // }
+    public function scopeCustomers(Builder $builder): Builder
+    {
+        return $builder->where('is_customer', true);
+    }
+
+    public function scopeSuppliers(Builder $builder): Builder
+    {
+        return $builder->where('is_supplier', true);
+    }
 
     /**
      * @return BelongsToMany<Contact, $this>
      */
     public function contacts(): BelongsToMany
     {
-        return $this->belongsToMany(Contact::class, 'contactables')->withTimestamps();
+        return $this->belongsToMany(Contact::class, 'contactables', 'party_id')->withTimestamps();
     }
 
     public function tasks(): HasManyThrough

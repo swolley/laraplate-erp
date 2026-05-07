@@ -22,8 +22,8 @@ final class QuotationsTable
                     TextColumn::make('company.name')
                         ->label('Company')
                         ->toggleable(),
-                    TextColumn::make('customer.name')
-                        ->label('Customer')
+                    TextColumn::make('party.name')
+                        ->label('Party')
                         ->searchable()
                         ->sortable(),
                     TextColumn::make('opportunity.name')

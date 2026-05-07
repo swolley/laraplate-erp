@@ -20,7 +20,7 @@ class PurchaseOrder extends Model
 
     protected $fillable = [
         'company_id',
-        'customer_id',
+        'party_id',
         'reference',
         'currency',
         'status',
@@ -28,11 +28,11 @@ class PurchaseOrder extends Model
     ];
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -49,14 +49,14 @@ class PurchaseOrder extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_id' => ['required', 'integer', 'exists:parties,id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['required', 'string', 'size:3'],
             'status' => ['required', 'string', 'in:draft,confirmed,partial,received'],
             'ordered_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'status' => ['sometimes', 'string', 'in:draft,confirmed,partial,received'],
@@ -69,19 +69,25 @@ class PurchaseOrder extends Model
     protected static function booted(): void
     {
         static::saving(static function (PurchaseOrder $purchase_order): void {
-            if ($purchase_order->customer_id === null) {
+            if ($purchase_order->party_id === null) {
                 return;
             }
 
-            $customer = Customer::query()->find($purchase_order->customer_id);
+            $party = Party::query()->find($purchase_order->party_id);
 
-            if ($customer === null) {
+            if ($party === null) {
                 return;
             }
 
-            if ((int) $customer->company_id !== (int) $purchase_order->company_id) {
+            if (! $party->is_supplier) {
                 throw ValidationException::withMessages([
-                    'customer_id' => ['The customer must belong to the same company as this purchase order.'],
+                    'party_id' => ['The selected party must be a supplier.'],
+                ]);
+            }
+
+            if ((int) $party->company_id !== (int) $purchase_order->company_id) {
+                throw ValidationException::withMessages([
+                    'party_id' => ['The party must belong to the same company as this purchase order.'],
                 ]);
             }
         });

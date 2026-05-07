@@ -11,9 +11,10 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Casts\QuoteStatus;
-use Illuminate\Database\Query\Builder;
 
 final class QuotationForm
 {
@@ -35,8 +36,8 @@ final class QuotationForm
                     ->preload()
                     ->required()
                     ->disabledOn('edit'),
-                Select::make('customer_id')
-                    ->relationship('customer', 'name')
+                Select::make('party_id')
+                    ->relationship('party', 'name', modifyQueryUsing: static fn (EloquentBuilder $query): EloquentBuilder => $query->customers())
                     ->searchable()
                     ->preload()
                     ->required()
@@ -47,13 +48,13 @@ final class QuotationForm
                         'opportunity',
                         'name',
                         modifyQueryUsing: static function (Builder $query, string $search, Get $get): Builder {
-                            $customer_id = (int) ($get('customer_id') ?? 0);
+                            $party_id = (int) ($get('party_id') ?? 0);
 
-                            if ($customer_id === 0) {
+                            if ($party_id === 0) {
                                 return $query->whereRaw('0 = 1');
                             }
 
-                            return $query->where('opportunities.customer_id', $customer_id);
+                            return $query->where('opportunities.party_id', $party_id);
                         },
                     )
                     ->searchable()

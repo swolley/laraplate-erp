@@ -15,18 +15,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contactables', function (Blueprint $table): void {
-            $table->foreignId('customer_id')
-                ->constrained('customers', 'id', 'contactables_customer_id_FK')
+            $table->foreignId('party_id')
+                ->constrained('parties', 'id', 'contactables_party_id_FK')
                 ->nullable(false)
                 ->cascadeOnDelete()
-                ->comment('The customer that the contact belongs to');
+                ->comment('The party that the contact belongs to');
             $table->foreignId('contact_id')
                 ->constrained('contacts', 'id', 'contactables_contact_id_FK')
                 ->nullable(false)
                 ->cascadeOnDelete()
                 ->comment('The contact that the contactable belongs to');
 
-            $table->primary(['customer_id', 'contact_id'])->comment('The primary key of the contactable relationship');
+            $table->primary(['party_id', 'contact_id'])->comment('The primary key of the contactable relationship');
 
             MigrateUtils::timestamps($table);
         });

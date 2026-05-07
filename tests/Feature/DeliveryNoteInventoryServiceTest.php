@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Item;
@@ -46,14 +46,14 @@ it('posts outbound stock and updates sales order lines when posted_at is set', f
     $stock = app(StockMovementService::class);
     $stock->recordInbound($company->id, $item->id, $warehouse->id, 100, '2.0000');
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -122,14 +122,14 @@ it('rejects delivery quantity above remaining on the sales order line', function
 
     app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 50, '1.0000');
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'C',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -189,14 +189,14 @@ it('does not duplicate outbound stock on subsequent updates after posting', func
 
     app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 20, '2.0000');
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -285,14 +285,14 @@ it('rejects posting when line warehouse belongs to another company', function ()
         'costing_method' => 'weighted_avg',
     ]);
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -350,14 +350,14 @@ it('posts a balanced COGS journal linked to the delivery note when inventory pos
     app(StockMovementService::class)
         ->recordInbound($company->id, $item->id, $warehouse->id, 100, '2.0000');
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);
@@ -431,14 +431,14 @@ it('reverts stock, sales order delivery, and cogs journal when a posted delivery
 
     app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 20, '2.5000');
 
-    $customer = Customer::query()->create([
+    $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Buyer',
     ]);
 
     $order = SalesOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $customer->id,
+        'party_id' => $party->id,
         'currency' => 'EUR',
         'status' => SalesOrderStatus::CONFIRMED,
     ]);

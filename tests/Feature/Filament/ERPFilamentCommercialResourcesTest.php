@@ -8,7 +8,7 @@ use Modules\ERP\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
 use Modules\ERP\Filament\Resources\Contacts\ContactResource;
-use Modules\ERP\Filament\Resources\Customers\CustomerResource;
+use Modules\ERP\Filament\Resources\Parties\PartyResource;
 use Modules\ERP\Filament\Resources\Leads\LeadResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Projects\ProjectResource;
@@ -18,15 +18,15 @@ use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
 
-it('defines Filament pages for customer resource', function (): void {
-    expect(CustomerResource::getPages())
+it('defines Filament pages for party resource', function (): void {
+    expect(PartyResource::getPages())
         ->toHaveKey('index')
         ->toHaveKey('create')
         ->toHaveKey('edit');
 });
 
-it('customer resource form includes core fields', function (): void {
-    $schema = CustomerResource::form(new Schema());
+it('party resource form includes core fields', function (): void {
+    $schema = PartyResource::form(new Schema());
     $names = array_map(
         static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
         $schema->getComponents(),
@@ -34,6 +34,8 @@ it('customer resource form includes core fields', function (): void {
 
     expect($names)->toContain('company_id')
         ->and($names)->toContain('name')
+        ->and($names)->toContain('is_customer')
+        ->and($names)->toContain('is_supplier')
         ->and($names)->toContain('is_active');
 });
 
@@ -44,7 +46,7 @@ it('defines Filament pages for contact resource', function (): void {
         ->toHaveKey('edit');
 });
 
-it('contact resource form includes customer linkage field', function (): void {
+it('contact resource form includes party linkage field', function (): void {
     $schema = ContactResource::form(new Schema());
     $names = array_map(
         static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
@@ -52,7 +54,7 @@ it('contact resource form includes customer linkage field', function (): void {
     );
 
     expect($names)->toContain('company_id')
-        ->and($names)->toContain('customer_ids');
+        ->and($names)->toContain('party_ids');
 });
 
 it('defines Filament pages for quotation resource', function (): void {
@@ -70,7 +72,7 @@ it('quotation resource form includes line items repeater', function (): void {
     );
 
     expect($names)->toContain('line_items')
-        ->and($names)->toContain('customer_id')
+        ->and($names)->toContain('party_id')
         ->and($names)->toContain('opportunity_id');
 });
 
@@ -103,7 +105,7 @@ it('sales order resource form includes line items repeater', function (): void {
     );
 
     expect($names)->toContain('line_items')
-        ->and($names)->toContain('customer_id');
+        ->and($names)->toContain('party_id');
 });
 
 it('defines Filament pages for project resource', function (): void {
@@ -198,7 +200,7 @@ it('purchase order resource form includes core fields', function (): void {
         $schema->getComponents(),
     );
 
-    expect($names)->toContain('customer_id')
+    expect($names)->toContain('party_id')
         ->and($names)->toContain('status')
         ->and($names)->toContain('line_items');
 });

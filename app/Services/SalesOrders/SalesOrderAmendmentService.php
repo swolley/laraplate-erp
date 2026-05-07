@@ -53,7 +53,7 @@ final class SalesOrderAmendmentService
             /** @var SalesOrder $amendment */
             $amendment = SalesOrder::query()->create([
                 'company_id' => (int) $locked_source->company_id,
-                'customer_id' => (int) $locked_source->customer_id,
+                'party_id' => (int) $locked_source->party_id,
                 'quotation_id' => $locked_source->quotation_id,
                 'project_id' => $locked_source->project_id,
                 'amends_sales_order_id' => (int) $locked_source->id,

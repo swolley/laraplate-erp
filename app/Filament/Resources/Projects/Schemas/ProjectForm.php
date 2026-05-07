@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Models\Quotation;
 
@@ -28,8 +29,8 @@ final class ProjectForm
                     ->preload()
                     ->required()
                     ->disabledOn('edit'),
-                Select::make('customer_id')
-                    ->relationship('customer', 'name')
+                Select::make('party_id')
+                    ->relationship('party', 'name', modifyQueryUsing: static fn (Builder $query): Builder => $query->customers())
                     ->searchable()
                     ->preload()
                     ->required(),

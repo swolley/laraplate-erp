@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Customer;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\Item;
@@ -39,14 +39,14 @@ it('posts inbound stock and updates purchase order lines when posted_at is set',
         'costing_method' => 'weighted_avg',
     ]);
 
-    $supplier = Customer::query()->create([
+    $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $supplier->id,
+        'party_id' => $supplier->id,
         'currency' => 'EUR',
         'status' => 'confirmed',
     ]);
@@ -114,14 +114,14 @@ it('rejects receipt quantity above remaining on the purchase order line', functi
         'costing_method' => 'weighted_avg',
     ]);
 
-    $supplier = Customer::query()->create([
+    $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'S',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $supplier->id,
+        'party_id' => $supplier->id,
         'currency' => 'EUR',
         'status' => 'confirmed',
     ]);
@@ -178,14 +178,14 @@ it('does not duplicate inbound stock on subsequent updates after posting', funct
         'costing_method' => 'weighted_avg',
     ]);
 
-    $supplier = Customer::query()->create([
+    $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $supplier->id,
+        'party_id' => $supplier->id,
         'currency' => 'EUR',
         'status' => 'confirmed',
     ]);
@@ -273,14 +273,14 @@ it('rejects posting when line item belongs to another company', function (): voi
         'costing_method' => 'weighted_avg',
     ]);
 
-    $supplier = Customer::query()->create([
+    $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $supplier->id,
+        'party_id' => $supplier->id,
         'currency' => 'EUR',
         'status' => 'confirmed',
     ]);
@@ -325,14 +325,14 @@ it('marks purchase order as received when all lines are fully received', functio
         'costing_method' => 'weighted_avg',
     ]);
 
-    $supplier = Customer::query()->create([
+    $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
     ]);
 
     $po = PurchaseOrder::query()->create([
         'company_id' => $company->id,
-        'customer_id' => $supplier->id,
+        'party_id' => $supplier->id,
         'currency' => 'EUR',
         'status' => 'confirmed',
     ]);

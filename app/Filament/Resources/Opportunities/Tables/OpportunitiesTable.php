@@ -31,8 +31,8 @@ final class OpportunitiesTable
                     TextColumn::make('stage.name')
                         ->label('Stage')
                         ->toggleable(),
-                    TextColumn::make('customer.name')
-                        ->label('Customer')
+                    TextColumn::make('party.name')
+                        ->label('Party')
                         ->toggleable(),
                     TextColumn::make('expected_close_date')
                         ->date()

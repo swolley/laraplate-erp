@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Modules\ERP\Filament\Resources\Customers\Schemas;
+namespace Modules\ERP\Filament\Resources\Parties\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
-final class CustomerForm
+final class PartyForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -24,6 +24,10 @@ final class CustomerForm
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Toggle::make('is_customer')
+                    ->default(true),
+                Toggle::make('is_supplier')
+                    ->default(false),
                 Toggle::make('is_active')
                     ->label('Active')
                     ->default(true),

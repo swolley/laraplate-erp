@@ -50,7 +50,7 @@ final class OpportunityResource extends Resource
     public static function table(Table $table): Table
     {
         return OpportunitiesTable::configure($table)
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'customer', 'lead', 'stage']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['company', 'party', 'lead', 'stage']))
             ->defaultSort('id', direction: 'desc');
     }
 

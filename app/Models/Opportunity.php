@@ -7,13 +7,14 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
- * CRM opportunity (M3.1): qualified deal linked to a {@see Customer} and pipeline {@see OpportunityStage}.
+ * CRM opportunity (M3.1): qualified deal linked to a {@see Party} and pipeline {@see OpportunityStage}.
  *
  * @mixin IdeHelperOpportunity
  */
@@ -26,7 +27,7 @@ class Opportunity extends Model
     protected $fillable = [
         'company_id',
         'lead_id',
-        'customer_id',
+        'party_id',
         'stage_taxonomy_id',
         'name',
         'status',
@@ -51,11 +52,11 @@ class Opportunity extends Model
     }
 
     /**
-     * @return BelongsTo<Customer, $this>
+     * @return BelongsTo<Party, $this>
      */
-    public function customer(): BelongsTo
+    public function party(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Party::class);
     }
 
     /**
@@ -74,6 +75,23 @@ class Opportunity extends Model
         return $this->hasMany(Quotation::class);
     }
 
+    protected static function booted(): void
+    {
+        static::saving(static function (Opportunity $opportunity): void {
+            if ($opportunity->party_id === null) {
+                return;
+            }
+
+            $party = Party::query()->find($opportunity->party_id);
+
+            if ($party !== null && ! $party->is_customer) {
+                throw ValidationException::withMessages([
+                    'party_id' => ['The selected party must be a customer.'],
+                ]);
+            }
+        });
+    }
+
     #[Override]
     public function getRules(): array
     {
@@ -81,7 +99,7 @@ class Opportunity extends Model
         $rules['create'] = array_merge($rules['create'], [
             'company_id' => ['required', 'integer', 'exists:companies,id'],
             'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_id' => ['required', 'integer', 'exists:parties,id'],
             'stage_taxonomy_id' => ['required', 'integer', 'exists:taxonomies,id'],
             'name' => ['required', 'string', 'max:255'],
             'status' => ['required', 'string', OpportunityStatus::validationRule()],
@@ -98,7 +116,7 @@ class Opportunity extends Model
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
-            'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
             'stage_taxonomy_id' => ['sometimes', 'integer', 'exists:taxonomies,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'status' => ['sometimes', 'string', OpportunityStatus::validationRule()],

@@ -20,7 +20,7 @@ final class EditContact extends EditRecord
     {
         /** @var Contact $contact */
         $contact = $this->record;
-        $data['customer_ids'] = $contact->customers()->pluck('id')->all();
+        $data['party_ids'] = $contact->parties()->pluck('id')->all();
 
         return $data;
     }
@@ -28,12 +28,12 @@ final class EditContact extends EditRecord
     #[Override]
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $customer_ids = $data['customer_ids'] ?? [];
-        unset($data['customer_ids']);
+        $party_ids = $data['party_ids'] ?? [];
+        unset($data['party_ids']);
 
         /** @var Contact $record */
         $record->update($data);
-        $record->customers()->sync($customer_ids);
+        $record->parties()->sync($party_ids);
 
         return $record;
     }

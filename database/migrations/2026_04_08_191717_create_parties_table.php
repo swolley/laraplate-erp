@@ -15,11 +15,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table): void {
+        Schema::create('parties', function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->string('name')->comment('The name of the customer');
-            $table->boolean('is_active')->default(true)->comment('Whether the customer is active');
+            $table->string('name')->comment('The name of the party');
+            $table->boolean('is_customer')->default(true)->comment('Whether the party is a customer');
+            $table->boolean('is_supplier')->default(false)->comment('Whether the party is a supplier');
+            $table->boolean('is_active')->default(true)->comment('Whether the party is active');
 
             MigrateUtils::timestamps(
                 $table,
@@ -34,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::dropIfExists('parties');
     }
 };
