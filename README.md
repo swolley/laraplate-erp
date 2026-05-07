@@ -93,11 +93,133 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   **Composer package:** `swolley/laraplate-erp`
 -   **Web / API routes:** `Modules/ERP/routes/web.php`, `Modules/ERP/routes/api.php`
 
+### M0 — Multi-tenancy & Multi-currency Foundation
+
+-   `companies` table with functional currency
+-   `BelongsToCompany` trait + global scope for tenant isolation
+-   Dual-currency columns via `ERPMigrateUtils::moneyColumns()` (amount_doc / currency_doc / amount_local / fx_rate)
+-   `CurrencyConverter` service (no-op in M0, pluggable for live FX)
+
+### M0 — Versioning
+
+-   `HasVersions` trait with `VersionStrategy::DIFF` on accounting models
+-   Immutable version strategy on contabile models (cannot be overridden via settings)
+
+### M1 — Accounting Backbone
+
+-   Chart of Accounts (`accounts` table, `Account` model, `ChartOfAccountsProvider` interface, Italian PDC default)
+-   Journal Entries (`JournalEntry` / `JournalEntryLine`, `JournalPostingService::post/reverse`, immutability after posting)
+-   Fiscal Calendar (`FiscalYear`, `FiscalPeriod`, `FiscalPeriodCloser` with re-open audit)
+-   Document Sequences (`DocumentSequence`, `DocumentNumberAllocator`, `DocumentType` enum with gap policy)
+
+### M2 — Tax & Invoice Foundation
+
+-   Tax Codes (`TaxCode`, `TaxKind` enum, immutable fiscal snapshot, `TaxLineCalculator`, `TaxCodeSupersessionService`)
+-   `ItalianTaxCodesSeeder` baseline
+-   Invoice / InvoiceLine stub with tax snapshot columns
+
+### M3.1 — CRM
+
+-   Leads (`Lead` model, `LeadStatus` enum)
+-   Opportunities (`Opportunity`, `OpportunityStatus`, `OpportunityStage` taxonomy)
+-   `OpportunityLifecycleService` + `QuotationObserver` (auto-win on quotation accepted)
+
+### M3.2 — Sales Order Processing
+
+-   `SalesOrder` / `SalesOrderLine` with lock-chain progression
+-   `SalesOrderEvasionService` (delivery + invoice qty tracking, status management)
+-   `SalesOrderAmendmentService` (creates amendment SO from confirmed / partially evaded orders)
+-   Lock propagation: confirming SO locks linked Quotation
+
+### M3.3 — Inventory Management
+
+-   Items, Warehouses, StockLevels
+-   `StockMovement` / `stock_cost_layers` tables
+-   `StockMovementService` with FIFO and weighted-average costing
+-   COGS calculation integrated with delivery posting
+
+### M3.4 — Delivery Notes
+
+-   `DeliveryNote` / `DeliveryNoteLine` with SO line linking
+-   `DeliveryNoteInventoryService` (stock posting + rollback)
+-   `DeliveryNoteCogsJournalService` (COGS journal on posting, full reversal on unpost)
+-   Automatic SO qty_delivered updates
+
+### M3.5 — Invoice Posting & DDT Integration
+
+-   `InvoicePostingService` with full journal post / unpost cycle
+-   `DocumentNumberAllocator` integration at posting time (reference assigned on post, cleared on unpost)
+-   Tax snapshot on invoice lines (tax_code, tax_rate, tax_label frozen at posting)
+-   SO qty_invoiced tracking via `SalesOrderEvasionService`
+-   Pivot `invoice_line_delivery_note_line` for flexible Invoice↔DDT linking
+-   `InvoiceCompactionService` (compact / expand invoice lines by item)
+
+### M3.6 — Purchasing Cycle
+
+-   Unified `Party` entity (replaces `Customer`) with `is_customer` / `is_supplier` boolean flags
+-   Party type validation on all models (saving callback) + filtered Filament dropdowns
+-   `PurchaseOrder` / `PurchaseOrderLine`, `GoodsReceipt` / `GoodsReceiptLine`
+-   `ThreeWayMatchService` with configurable price / quantity tolerances
+-   `MatchStatus` enum (matched, tolerance, forced, unmatched)
+
+### M3+ — Database Lock Triggers
+
+-   MySQL `BEFORE UPDATE` / `BEFORE DELETE` triggers on `quotations` and `sales_orders`
+-   Safety net preventing modification of locked records at DB level
+-   Coexists with application-level observer locks
+
+### M5.1 — Payment Schedule & Receivables
+
+-   `PaymentTerm` model (rate_lines JSON with days / percent / payment_method)
+-   `PaymentScheduleLine` (auto-generated at invoice posting)
+-   `Payment` / `PaymentAllocation` (allocation to schedule lines)
+-   `PaymentScheduleGeneratorService` (integrated in InvoicePostingService)
+-   `PaymentAllocationService` (allocate / deallocate with status tracking)
+-   `AgingReportService` (AR / AP aging by 30 / 60 / 90 / 120+ day buckets)
+
+### M5.2 — Credit & Debit Notes
+
+-   `InvoiceType` enum (invoice, credit_note, debit_note)
+-   Separate document numbering (SalesCreditNote, PurchaseCreditNote, SalesDebitNote, PurchaseDebitNote)
+-   `CreditNoteService` (create CN from posted invoice, line copying, total validation)
+-   Inverted journal entries on credit note posting
+-   Filament "Create Credit Note" action on invoice page
+
+### M5.3 — VAT Registers & Settlement (Italian Compliance)
+
+-   `VatRegisterEntry` with progressive protocol numbers per register / year
+-   `VatRegisterService` (auto-registration at invoice posting, one entry per tax code)
+-   `VatSettlement` (IVA debito − IVA credito − credito precedente)
+-   `VatSettlementService` (compute + confirm with carry-forward)
+-   Filament read-only register and settlement pages
+
+### M5.4 — Financial Statements
+
+-   `TrialBalanceService` (debit / credit balance per account at date)
+-   `BalanceSheetService` (assets = liabilities + equity + net income)
+-   `IncomeStatementService` (revenue − expenses for date range)
+-   Filament pages with Blade templates for tabular reports
+
+### E-Invoice Interface
+
+-   `EInvoiceProvider` contract (prepare, submit, remoteStatus)
+-   `EInvoiceSubmission` model + `EInvoiceSubmissionStatus` enum
+-   No SDI / PEPPOL binding yet (planned M6.3)
+
+### Filament Admin UI
+
+-   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, PaymentTerm, Payment, VatRegister (read-only), VatSettlement (read-only)
+-   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
+-   **Report pages:** Trial Balance, Balance Sheet, Income Statement
+
 ### Roadmap
 
--   Full CRM, inventory, and invoicing UI where not yet covered
--   E-invoice provider contracts (implementations as separate packages)
--   Deeper integration with Core auth, roles, and auditing
+-   M6.1: Bank reconciliation (import statements, auto-match, journal for differences)
+-   M6.2: Returns management (customer / supplier returns, DDT reso, auto credit note)
+-   M6.3: SDI e-invoice binding (FatturaPA XML generation, submit / status tracking)
+-   M7.1: Advanced pricelists (time-based validity, party-specific discounts, cascade discounts)
+-   M4: Policies & permissions (posting, period close, tax code management)
+-   Comprehensive test plan (accounting golden master, concurrency, fiscal invariants)
 
 ## Scripts
 
@@ -164,8 +286,11 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 
 ## TODO
 
-High-level items for early development:
-
-- [ ] Expand domain coverage (CRM, stock, billing) per roadmap
-- [ ] API resources and form requests where needed
-- [ ] Documentation for integration with Core (users, teams, permissions)
+- [ ] M6.1 — Bank reconciliation and statement import
+- [ ] M6.2 — Returns management (customer and supplier)
+- [ ] M6.3 — SDI e-invoice binding (FatturaPA XML)
+- [ ] M7.1 — Advanced pricelists with party-specific pricing
+- [ ] M4 — Policies and permissions (RBAC on ERP operations)
+- [ ] API resources and form requests
+- [ ] Comprehensive accounting test plan (golden master)
+- [ ] Export CSV/PDF for financial reports

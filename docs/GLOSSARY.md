@@ -43,12 +43,122 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **DocumentSequence** / **DocumentNumberAllocator** | Per-company, per-type, per-fiscal-year counters with pessimistic lock; optional `format_pattern` / `suffix`. |
 | **DocumentType** | Stream key for numbering (quotation, invoices, etc.). `defaultGapAllowed()` encodes whether gaps on transaction rollback are acceptable. |
 
-## Invoices (M2 stub / M3.5 full)
+## Parties (M3.6 — unified customer/supplier)
 
 | Term | Meaning |
 |------|---------|
-| **Invoice** | Minimal header in M2 (`direction` sale/purchase, `currency`, `posted_at`). Full workflow arrives in M3.5. |
-| **InvoiceLine** | Commercial line with `quantity`, `unit_price`, optional `tax_code_id`, and **snapshot** columns after posting. |
+| **Party** | Unified entity replacing `Customer`. Flags `is_customer` / `is_supplier` (both booleans, both can be true). Table: `parties`. |
+| **scopeCustomers()** | Scope on `Party` model filtering `is_customer = true`. Used by sales-side Filament dropdowns. |
+| **scopeSuppliers()** | Scope on `Party` model filtering `is_supplier = true`. Used by purchase-side Filament dropdowns. |
+
+## CRM (M3.1)
+
+| Term | Meaning |
+|------|---------|
+| **Lead** | Early-stage prospect with `LeadStatus` lifecycle (new, contacted, qualified, converted, lost). |
+| **Opportunity** | Qualified deal linked to a party with `OpportunityStatus` (open, won, lost) and taxonomy-based pipeline stages. |
+| **OpportunityLifecycleService** | Manages opportunity status transitions. |
+| **QuotationObserver** | Auto-marks opportunity as `won` when linked quotation status = accepted. |
+
+## Sales orders (M3.2)
+
+| Term | Meaning |
+|------|---------|
+| **SalesOrder / SalesOrderLine** | Customer order with lock-chain progression. Lines track `qty_ordered`, `qty_delivered`, `qty_invoiced`. |
+| **SalesOrderEvasionService** | Tracks delivery and invoice quantities against SO lines; manages status transitions (draft → confirmed → partially_evased → fully_evased). |
+| **SalesOrderAmendmentService** | Creates a new draft SO from a confirmed/partially-evased SO, cloning only residual qty lines. |
+
+## Inventory (M3.3)
+
+| Term | Meaning |
+|------|---------|
+| **Item** | Product or service with SKU and `costing_method` (fifo, weighted_average). |
+| **Warehouse** | Physical storage location per company. |
+| **StockLevel** | Current quantity per item+warehouse, derived from movements. |
+| **StockMovement** | Inbound or outbound stock change with document reference and cost data. |
+| **StockMovementService** | Handles inbound/outbound postings with FIFO or weighted-average cost layer management. |
+| **stock_cost_layers** | Per-item cost layers for FIFO costing; weighted average recalculated on each inbound. |
+
+## Delivery notes (M3.4)
+
+| Term | Meaning |
+|------|---------|
+| **DeliveryNote / DeliveryNoteLine** | Outbound shipping document (DDT). Lines link to `SalesOrderLine`. |
+| **DeliveryNoteInventoryService** | Posts outbound stock movements on DDT confirmation; creates compensating inbound on rollback. |
+| **DeliveryNoteCogsJournalService** | Creates COGS journal entry aggregating unit costs from outbound movements; full reversal on unpost. |
+
+## Invoices (M3.5 full / M5.2 extended)
+
+| Term | Meaning |
+|------|---------|
+| **Invoice** | Header with `direction` (sale/purchase), `invoice_type` (invoice, credit_note, debit_note), `currency`, `posted_at`, `reference` (assigned by `DocumentNumberAllocator` at posting). |
+| **InvoiceLine** | Commercial line with quantity, unit_price, optional tax_code_id, and **snapshot** columns (tax_code, tax_rate, tax_label) frozen at posting. |
+| **InvoicePostingService** | Orchestrates posting: journal entry, document numbering, tax snapshot, payment schedule generation, VAT registration, SO evasion tracking. Full reversal on unpost. |
+| **InvoiceCompactionService** | Compacts expanded invoice lines (from multiple DDTs) into aggregated lines per item, or expands back. |
+| **InvoiceType** | Enum: `invoice`, `credit_note`, `debit_note`. Determines document numbering stream and journal sign. |
+
+## Invoice ↔ DDT linking (M3.5)
+
+| Term | Meaning |
+|------|---------|
+| **invoice_line_delivery_note_line** | Pivot table linking invoice lines to delivery note lines (M:N). Supports both expanded and compacted views. |
+
+## Purchasing (M3.6)
+
+| Term | Meaning |
+|------|---------|
+| **PurchaseOrder / PurchaseOrderLine** | Supplier order with document numbering and qty tracking. |
+| **GoodsReceipt / GoodsReceiptLine** | Inbound receiving document; posts stock via `StockMovementService`. |
+| **ThreeWayMatchService** | Validates PO/GR/Invoice line consistency with configurable price/quantity tolerances. |
+| **MatchStatus** | Enum: `matched` (within 0%), `tolerance` (within configured %), `forced` (user override), `unmatched`. |
+
+## Payment schedule & receivables (M5.1)
+
+| Term | Meaning |
+|------|---------|
+| **PaymentTerm** | Template defining installment rules via `rate_lines` JSON: `[{days, percent, payment_method}]`. |
+| **PaymentScheduleLine** | Auto-generated at invoice posting: one line per installment with `due_date`, `amount`, `status`. |
+| **Payment** | Actual cash receipt or disbursement. Direction: `inbound` (AR) or `outbound` (AP). |
+| **PaymentAllocation** | Links a `Payment` to one or more `PaymentScheduleLine` rows; tracks allocated amounts. |
+| **PaymentScheduleGeneratorService** | Generates schedule lines from `PaymentTerm` at invoice posting; removes them on unpost (if no allocations). |
+| **PaymentAllocationService** | Allocates/deallocates payments to schedule lines; updates line status (open → partial → paid). |
+| **AgingReportService** | AR/AP aging grouped by party in 30/60/90/120+ day buckets. |
+| **PaymentScheduleStatus** | Enum: `open`, `partial`, `paid`, `cancelled`. |
+| **PaymentDirection** | Enum: `inbound`, `outbound`. |
+
+## Credit & debit notes (M5.2)
+
+| Term | Meaning |
+|------|---------|
+| **CreditNoteService** | Creates a credit note from a posted invoice; copies lines, validates total ≤ remaining creditable amount. |
+| **credited_invoice_id** | FK on `invoices` linking a credit/debit note to the original invoice. |
+| **Inverted journal** | Credit notes produce journal entries with flipped debits/credits (negative amounts in `buildJournalLines`). |
+
+## VAT registers & settlement (M5.3 — Italian compliance)
+
+| Term | Meaning |
+|------|---------|
+| **VatRegisterEntry** | One row per tax code per invoice in the VAT register; `protocol_number` is sequential per company/type/year. |
+| **VatRegisterService** | Auto-registers invoices at posting time (called by `InvoicePostingService`); removes entries on unpost. |
+| **VatSettlement** | Periodic computation: sales VAT − purchase VAT − previous credit = amount due (or carry-forward credit). |
+| **VatSettlementService** | Computes settlement (`compute()`) and confirms with carry-forward logic (`confirm()`). |
+| **VatRegisterType** | Enum: `sales`, `purchases`. |
+| **VatSettlementStatus** | Enum: `draft`, `confirmed`. |
+
+## Financial statements (M5.4)
+
+| Term | Meaning |
+|------|---------|
+| **TrialBalanceService** | Debit/credit balance per account at a given date, derived from posted journal entries. |
+| **BalanceSheetService** | Assets = Liabilities + Equity + Net Income. Uses `TrialBalanceService` data. |
+| **IncomeStatementService** | Revenue − Expenses for a date range. |
+
+## Lock mechanisms
+
+| Term | Meaning |
+|------|---------|
+| **HasLocks** | Core trait for application-level record locking on business events. |
+| **DB triggers** | MySQL `BEFORE UPDATE` / `BEFORE DELETE` on `quotations` and `sales_orders` as safety net. Coexists with observer locks. |
 
 ## Cash / Tricount adapters (M2+)
 
@@ -60,3 +170,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 - `EntityType` enum PHPDoc in `app/Casts/EntityType.php`
 - `TaxCode` / `TaxLineCalculator` PHPDoc in `app/Models/TaxCode.php` and `app/Services/Taxation/`
+- `InvoicePostingService` in `app/Services/Accounting/InvoicePostingService.php` (central orchestrator)
+- `CreditNoteService` in `app/Services/Accounting/CreditNoteService.php`
+- `VatRegisterService` / `VatSettlementService` in `app/Services/Accounting/`
+- `PaymentScheduleGeneratorService` / `PaymentAllocationService` / `AgingReportService` in `app/Services/Payments/`
+- `TrialBalanceService` / `BalanceSheetService` / `IncomeStatementService` in `app/Services/Reporting/`

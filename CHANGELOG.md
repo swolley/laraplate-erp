@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Add invoice-DDT pivot, compaction, 3-way match, and DB triggers
+- *(erp)* Implement M5 financial cycle
+
+### 🚜 Refactor
+
+- *(erp)* [**breaking**] Replace customers with unified parties entity
+
+### 📚 Documentation
+
+- *(erp)* Update module documentation with complete M0-M5 feature coverage
+
+## [1.5.0] - 2026-05-05
+
+### 🚀 Features
+
 - *(erp)* Enhance invoice management with posting, unposting, and amendment features
 
 ### 🚜 Refactor
