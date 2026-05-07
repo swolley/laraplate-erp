@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Casts\MatchStatus;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -29,6 +31,10 @@ class InvoiceLine extends Model
         'tax_code',
         'tax_rate',
         'tax_label',
+        'purchase_order_line_id',
+        'goods_receipt_line_id',
+        'match_status',
+        'match_discrepancy',
     ];
 
     /**
@@ -53,6 +59,33 @@ class InvoiceLine extends Model
     public function sales_order_line(): BelongsTo
     {
         return $this->belongsTo(SalesOrderLine::class);
+    }
+
+    /**
+     * @return BelongsTo<PurchaseOrderLine, $this>
+     */
+    public function purchase_order_line(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderLine::class);
+    }
+
+    /**
+     * @return BelongsTo<GoodsReceiptLine, $this>
+     */
+    public function goods_receipt_line(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceiptLine::class);
+    }
+
+    /**
+     * @return BelongsToMany<DeliveryNoteLine, $this>
+     */
+    public function delivery_note_lines(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            DeliveryNoteLine::class,
+            'invoice_line_delivery_note_line',
+        )->withPivot('quantity');
     }
 
     #[Override]
@@ -93,6 +126,8 @@ class InvoiceLine extends Model
             'quantity' => 'decimal:4',
             'unit_price' => 'decimal:4',
             'tax_rate' => 'decimal:4',
+            'match_status' => MatchStatus::class,
+            'match_discrepancy' => 'array',
         ];
     }
 

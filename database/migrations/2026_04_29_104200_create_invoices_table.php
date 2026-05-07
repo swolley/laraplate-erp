@@ -20,6 +20,7 @@ return new class extends Migration
                 static fn (InvoiceDirection $d): string => $d->value,
                 InvoiceDirection::cases(),
             ));
+            $table->string('reference', 64)->nullable()->comment('Assigned by DocumentNumberAllocator at posting time');
             $table->char('currency', 3);
             $table->timestamp('posted_at')->nullable()->index();
             $table->text('notes')->nullable();

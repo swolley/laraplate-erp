@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 
@@ -56,6 +57,17 @@ class DeliveryNoteLine extends Model
     public function sales_order_line(): BelongsTo
     {
         return $this->belongsTo(SalesOrderLine::class);
+    }
+
+    /**
+     * @return BelongsToMany<InvoiceLine, $this>
+     */
+    public function invoice_lines(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            InvoiceLine::class,
+            'invoice_line_delivery_note_line',
+        )->withPivot('quantity');
     }
 
     protected function shouldVersioning(): bool

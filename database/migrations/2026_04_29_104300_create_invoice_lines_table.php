@@ -28,6 +28,17 @@ return new class extends Migration
             $table->decimal('tax_rate', 8, 4)->nullable()->comment('Snapshot: percentage frozen at posting');
             $table->string('tax_label')->nullable()->comment('Snapshot: human label at posting');
 
+            $table->foreignId('purchase_order_line_id')
+                ->nullable()
+                ->constrained('purchase_order_lines', 'id', 'invoice_lines_po_line_id_FK')
+                ->nullOnDelete();
+            $table->foreignId('goods_receipt_line_id')
+                ->nullable()
+                ->constrained('goods_receipt_lines', 'id', 'invoice_lines_gr_line_id_FK')
+                ->nullOnDelete();
+            $table->string('match_status', 20)->nullable()->comment('Three-way match result');
+            $table->json('match_discrepancy')->nullable()->comment('Details of price/qty discrepancies');
+
             $table->unique(['invoice_id', 'line_no'], 'invoice_lines_invoice_line_UN');
 
             MigrateUtils::timestamps(
