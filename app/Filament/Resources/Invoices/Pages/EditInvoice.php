@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Filament\Resources\Invoices\Pages;
 
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
+use Modules\ERP\Services\Accounting\CreditNoteService;
 use Override;
 
 final class EditInvoice extends EditRecord
@@ -71,6 +75,17 @@ final class EditInvoice extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('create_credit_note')
+                ->label('Create Credit Note')
+                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record->journal_entry_id !== null
+                    && $this->record->invoice_type === InvoiceType::Invoice)
+                ->action(function (): void {
+                    $service = app(CreditNoteService::class);
+                    $credit_note = $service->createFromInvoice($this->record);
+                    $this->redirect(InvoiceResource::getUrl('edit', ['record' => $credit_note]));
+                }),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),

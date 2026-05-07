@@ -14,7 +14,10 @@ enum DocumentType: string
     case PurchaseOrder = 'purchase_order';
     case SalesInvoice = 'sales_invoice';
     case PurchaseInvoice = 'purchase_invoice';
-    case CreditNote = 'credit_note';
+    case SalesCreditNote = 'sales_credit_note';
+    case PurchaseCreditNote = 'purchase_credit_note';
+    case SalesDebitNote = 'sales_debit_note';
+    case PurchaseDebitNote = 'purchase_debit_note';
     case InternalJournal = 'internal_journal';
 
     /**

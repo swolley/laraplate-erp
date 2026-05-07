@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Invoice;
@@ -20,8 +23,11 @@ final class InvoicePostingService
 {
     public function __construct(
         private readonly ChartOfAccountsInstaller $chart_of_accounts_installer,
+        private readonly CreditNoteService $credit_note_service,
+        private readonly DocumentNumberAllocator $document_number_allocator,
         private readonly JournalPostingService $journal_posting_service,
         private readonly SalesOrderEvasionService $sales_order_evasion_service,
+        private readonly VatRegisterService $vat_register_service,
     ) {}
 
     public function post(Invoice $invoice): void
@@ -48,16 +54,44 @@ final class InvoicePostingService
                 ]);
             }
 
+            $document_type = $locked->direction === InvoiceDirection::Sale
+                ? DocumentType::SalesInvoice
+                : DocumentType::PurchaseInvoice;
+
+            if ($locked->invoice_type === InvoiceType::CreditNote) {
+                $document_type = $locked->direction === InvoiceDirection::Sale
+                    ? DocumentType::SalesCreditNote
+                    : DocumentType::PurchaseCreditNote;
+            } elseif ($locked->invoice_type === InvoiceType::DebitNote) {
+                $document_type = $locked->direction === InvoiceDirection::Sale
+                    ? DocumentType::SalesDebitNote
+                    : DocumentType::PurchaseDebitNote;
+            }
+
+            $fiscal_year = CarbonImmutable::now()->year;
+            $reference = $this->document_number_allocator->next($company, $document_type, $fiscal_year);
+            $invoice->reference = $reference;
+
             [$net_total, $tax_total, $gross_total] = $this->resolveAndSnapshotTaxes($lines);
+
+            if ($locked->invoice_type === InvoiceType::CreditNote) {
+                $this->credit_note_service->validateCreditNoteTotal($locked);
+                $net_total = $this->neg($net_total);
+                $tax_total = $this->neg($tax_total);
+                $gross_total = $this->neg($gross_total);
+            }
+
             $journal_lines = $this->buildJournalLines($company, $locked->direction, $locked->currency, $net_total, $tax_total, $gross_total);
             $entry = $this->journal_posting_service->post(
                 $company,
                 $journal_lines,
                 null,
-                'Invoice posted #' . (int) $locked->id,
+                'Invoice posted ' . $reference,
                 null,
                 $locked,
             );
+
+            $this->vat_register_service->register($invoice);
 
             $this->applySalesOrderInvoicingProgress($locked, $lines, true);
             $invoice->journal_entry_id = (int) $entry->getKey();
@@ -80,12 +114,18 @@ final class InvoicePostingService
 
                 if ($entry !== null) {
                     $company = Company::query()->withoutGlobalScopes()->findOrFail((int) $locked->company_id);
-                    $this->journal_posting_service->reverse($entry, $company, 'Invoice unposted #' . (int) $locked->id);
+                    $reason = $locked->reference !== null && $locked->reference !== ''
+                        ? 'Invoice unposted ' . $locked->reference
+                        : 'Invoice unposted #' . (int) $locked->id;
+                    $this->journal_posting_service->reverse($entry, $company, $reason);
                 }
             }
 
+            $this->vat_register_service->unregister($locked);
+
             $this->applySalesOrderInvoicingProgress($locked, $lines, false);
 
+            $invoice->reference = null;
             $invoice->journal_entry_id = null;
         });
     }
@@ -145,7 +185,7 @@ final class InvoicePostingService
                 $this->line((int) $revenue->id, $this->neg($net_total), $currency, $fx_rate, 'Sales revenue'),
             ];
 
-            if ($this->asFloat($tax_total) > 0) {
+            if (abs($this->asFloat($tax_total)) > 0) {
                 $lines[] = $this->line((int) $vat_output->id, $this->neg($tax_total), $currency, $fx_rate, 'VAT output');
             }
 
@@ -160,7 +200,7 @@ final class InvoicePostingService
             $this->line((int) $expense->id, $net_total, $currency, $fx_rate, 'Purchase expense'),
         ];
 
-        if ($this->asFloat($tax_total) > 0) {
+        if (abs($this->asFloat($tax_total)) > 0) {
             $lines[] = $this->line((int) $vat_input->id, $tax_total, $currency, $fx_rate, 'VAT input');
         }
 
