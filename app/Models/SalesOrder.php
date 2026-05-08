@@ -40,15 +40,15 @@ class SalesOrder extends Model
     ];
 
     /**
-     * @return BelongsTo<Party, $this>
+     * @return BelongsTo<Party,$this>
      */
-    public function party(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(Party::class);
+        return $this->belongsTo(Party::class)->where('is_customer', true);
     }
 
     /**
-     * @return BelongsTo<Quotation, $this>
+     * @return BelongsTo<Quotation,$this>
      */
     public function quotation(): BelongsTo
     {
@@ -56,7 +56,7 @@ class SalesOrder extends Model
     }
 
     /**
-     * @return BelongsTo<Project, $this>
+     * @return BelongsTo<Project,$this>
      */
     public function project(): BelongsTo
     {
@@ -64,7 +64,7 @@ class SalesOrder extends Model
     }
 
     /**
-     * @return BelongsTo<SalesOrder, $this>
+     * @return BelongsTo<SalesOrder,$this>
      */
     public function amended_from(): BelongsTo
     {
@@ -72,7 +72,7 @@ class SalesOrder extends Model
     }
 
     /**
-     * @return HasMany<SalesOrder, $this>
+     * @return HasMany<SalesOrder,$this>
      */
     public function amendments(): HasMany
     {
@@ -80,7 +80,7 @@ class SalesOrder extends Model
     }
 
     /**
-     * @return HasMany<SalesOrderLine, $this>
+     * @return HasMany<SalesOrderLine,$this>
      */
     public function lines(): HasMany
     {

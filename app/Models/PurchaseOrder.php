@@ -28,11 +28,11 @@ class PurchaseOrder extends Model
     ];
 
     /**
-     * @return BelongsTo<Party, $this>
+     * @return BelongsTo<Party,$this>
      */
-    public function party(): BelongsTo
+    public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Party::class);
+        return $this->belongsTo(Party::class)->where('is_supplier', true);
     }
 
     /**
