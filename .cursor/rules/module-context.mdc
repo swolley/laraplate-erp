@@ -1,0 +1,14 @@
+---
+alwaysApply: false
+---
+
+# ERP module context (caveman)
+
+- Path: Modules/ERP only.
+- Root rules = base law. Always follow.
+- This file = extra ERP law.
+
+- Focus ERP domain: orders, invoices, accounting, operations.
+- Keep ERP boundaries clean.
+- Reuse Core shared pieces before creating new ones.
+- Touch other modules only when user asks.
