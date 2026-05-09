@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Add migration for invoice_lines table
+- *(models)* Enhance FiscalPeriod model with validation and versioning capabilities
+
+### 🚜 Refactor
+
+- *(models)* Rename party methods to clarify roles and update return type annotations
+
+### 📚 Documentation
+
+- *(rules)* Remove deprecated AI module rules and add ERP module context
+
+## [1.6.0] - 2026-05-07
+
+### 🚀 Features
+
 - *(erp)* Add invoice-DDT pivot, compaction, 3-way match, and DB triggers
 - *(erp)* Implement M5 financial cycle
 
