@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Core\Overrides\Model;
+use Modules\Core\Helpers\HasValidations;
+use Modules\Core\Helpers\HasVersions;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -18,6 +21,12 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  */
 class FiscalPeriod extends Model
 {
+    use HasFactory;
+    use HasValidations {
+        HasValidations::getRules as private validationsHasRules;
+    }
+    use HasVersions;
+
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     protected $fillable = [
@@ -36,10 +45,9 @@ class FiscalPeriod extends Model
         return $this->belongsTo(FiscalYear::class);
     }
 
-    #[Override]
     public function getRules(): array
     {
-        $rules = parent::getRules();
+        $rules =$this->validationsHasRules();
         $rules['create'] = array_merge($rules['create'], [
             'fiscal_year_id' => ['required', 'integer', 'exists:fiscal_years,id'],
             'period_no' => ['required', 'integer', 'min:1', 'max:366'],
