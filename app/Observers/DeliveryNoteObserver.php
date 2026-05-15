@@ -7,10 +7,10 @@ namespace Modules\ERP\Observers;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 
-final class DeliveryNoteObserver
+final readonly class DeliveryNoteObserver
 {
     public function __construct(
-        private readonly DeliveryNoteInventoryService $delivery_note_inventory_service,
+        private DeliveryNoteInventoryService $delivery_note_inventory_service,
     ) {}
 
     /**

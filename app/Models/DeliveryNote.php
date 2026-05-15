@@ -9,16 +9,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
+use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNote
  */
 #[ObservedBy([DeliveryNoteObserver::class])]
-class DeliveryNote extends Model
+final class DeliveryNote extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::DeliveryNotes->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'sales_order_id',

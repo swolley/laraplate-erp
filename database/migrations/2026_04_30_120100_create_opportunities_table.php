@@ -5,35 +5,38 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Helpers\MigrateUtils;
 use Modules\ERP\Casts\OpportunityStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('opportunities', function (Blueprint $table): void {
+        $opportunities_table = ERPTables::Opportunities->value;
+        Schema::create($opportunities_table, function (Blueprint $table) use ($opportunities_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('lead_id')
                 ->nullable()
-                ->constrained('leads', 'id', 'opportunities_lead_id_FK')
+                ->constrained(ERPTables::Leads->value, 'id', "{$opportunities_table}_lead_id_FK")
                 ->nullOnDelete();
             $table->foreignId('party_id')
                 ->nullable(false)
-                ->constrained('parties', 'id', 'opportunities_party_id_FK')
+                ->constrained(ERPTables::Parties->value, 'id', "{$opportunities_table}_party_id_FK")
                 ->restrictOnDelete();
             $table->foreignId('stage_taxonomy_id')
                 ->nullable(false)
-                ->constrained('taxonomies', 'id', 'opportunities_stage_taxonomy_id_FK')
+                ->constrained(CoreTables::Taxonomies->value, 'id', "{$opportunities_table}_stage_taxonomy_id_FK")
                 ->restrictOnDelete()
-                ->comment('Pipeline stage; use EntityType::OPPORTUNITY_STAGES tree');
+                ->comment('Pipeline stage; use EntityType::OpportunityStages tree');
             $table->string('name')->comment('Opportunity title');
             $table->enum('status', array_map(
                 static fn (OpportunityStatus $s): string => $s->value,
                 OpportunityStatus::cases(),
-            ))->default(OpportunityStatus::OPEN->value)->index('opportunities_status_IDX');
+            ))->default(OpportunityStatus::Open->value)->index("{$opportunities_table}_status_IDX");
             $table->date('expected_close_date')->nullable();
             $table->decimal('expected_value_doc', 15, 4)->nullable()->comment('Weighted expected value in document currency');
             $table->char('expected_currency_doc', 3)->default('EUR');
@@ -51,12 +54,12 @@ return new class extends Migration
                 hasSoftDelete: true,
             );
 
-            $table->index(['company_id', 'party_id'], 'opportunities_company_party_idx');
+            $table->index(['company_id', 'party_id'], "{$opportunities_table}_company_party_idx");
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('opportunities');
+        Schema::dropIfExists(ERPTables::Opportunities->value);
     }
 };

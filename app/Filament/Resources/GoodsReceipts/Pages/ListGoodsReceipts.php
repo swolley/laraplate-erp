@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\ERP\Filament\Resources\GoodsReceipts\Pages;
 
 use Filament\Actions\CreateAction;
@@ -8,6 +10,7 @@ use Modules\ERP\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 
 class ListGoodsReceipts extends ListRecords
 {
+    #[\Override]
     protected static string $resource = GoodsReceiptResource::class;
 
     protected function getHeaderActions(): array

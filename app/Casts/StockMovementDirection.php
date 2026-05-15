@@ -6,8 +6,8 @@ namespace Modules\ERP\Casts;
 
 enum StockMovementDirection: string
 {
-    case IN = 'in';
-    case OUT = 'out';
+    case In = 'in';
+    case Out = 'out';
 
     /**
      * @return array<int, string>

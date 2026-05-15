@@ -7,10 +7,10 @@ namespace Modules\ERP\Observers;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Services\Accounting\InvoicePostingService;
 
-final class InvoiceObserver
+final readonly class InvoiceObserver
 {
     public function __construct(
-        private readonly InvoicePostingService $invoice_posting_service,
+        private InvoicePostingService $invoice_posting_service,
     ) {}
 
     public function saving(Invoice $invoice): void

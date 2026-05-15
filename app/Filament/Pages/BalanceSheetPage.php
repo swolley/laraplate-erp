@@ -23,12 +23,16 @@ final class BalanceSheetPage extends Page
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
+    #[\Override]
     protected static ?int $navigationSort = 81;
 
+    #[\Override]
     protected static ?string $navigationLabel = 'Balance Sheet';
 
+    #[\Override]
     protected static ?string $title = 'Balance Sheet';
 
+    #[\Override]
     protected static string $view = 'erp::filament.pages.balance-sheet';
 
     public ?array $data = [];
@@ -62,7 +66,7 @@ final class BalanceSheetPage extends Page
     {
         $state = $this->form->getState();
 
-        $service = app(BalanceSheetService::class);
+        $service = resolve(BalanceSheetService::class);
 
         $this->report_data = $service->generate(
             (int) $state['company_id'],

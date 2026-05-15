@@ -39,7 +39,7 @@ it('rejects a quotation when opportunity belongs to another party', function ():
         'party_id' => $party_two->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Deal B',
-        'status' => OpportunityStatus::OPEN,
+        'status' => OpportunityStatus::Open,
         'expected_currency_doc' => 'EUR',
         'expected_currency_local' => 'EUR',
         'expected_fx_rate' => 1,
@@ -51,7 +51,7 @@ it('rejects a quotation when opportunity belongs to another party', function ():
             'party_id' => $party_one->id,
             'opportunity_id' => $opportunity->id,
             'currency' => 'EUR',
-            'status' => QuoteStatus::DRAFT,
+            'status' => QuoteStatus::Draft,
             'version' => 0,
         ]);
         expect(false)->toBeTrue('expected ValidationException was not thrown');
@@ -82,7 +82,7 @@ it('marks linked opportunity as won when quotation is accepted', function (): vo
         'party_id' => $party->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Deal Won Path',
-        'status' => OpportunityStatus::OPEN,
+        'status' => OpportunityStatus::Open,
         'expected_currency_doc' => 'EUR',
         'expected_currency_local' => 'EUR',
         'expected_fx_rate' => 1,
@@ -93,12 +93,12 @@ it('marks linked opportunity as won when quotation is accepted', function (): vo
         'party_id' => $party->id,
         'opportunity_id' => $opportunity->id,
         'currency' => 'EUR',
-        'status' => QuoteStatus::ACCEPTED,
+        'status' => QuoteStatus::Accepted,
         'version' => 1,
     ]);
 
     $opportunity->refresh();
 
-    expect($opportunity->status)->toBe(OpportunityStatus::WON)
+    expect($opportunity->status)->toBe(OpportunityStatus::Won)
         ->and($opportunity->won_at)->not->toBeNull();
 });

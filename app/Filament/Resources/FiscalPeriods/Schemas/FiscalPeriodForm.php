@@ -23,9 +23,7 @@ final class FiscalPeriodForm
                     ->relationship(
                         name: 'fiscal_year',
                         titleAttribute: 'year',
-                        modifyQueryUsing: static function (Builder $query, ?string $search): Builder {
-                            return $query->with('company')->orderBy('year', 'desc');
-                        },
+                        modifyQueryUsing: static fn(Builder $query, ?string $search): Builder => $query->with('company')->orderBy('year', 'desc'),
                     )
                     ->getOptionLabelFromRecordUsing(static function (FiscalYear $record): string {
                         $company = $record->company->name ?? '—';

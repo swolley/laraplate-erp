@@ -6,43 +6,45 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('goods_receipt_lines', function (Blueprint $table): void {
+        $goods_receipt_lines_table = ERPTables::GoodsReceiptLines->value;
+        Schema::create($goods_receipt_lines_table, function (Blueprint $table) use ($goods_receipt_lines_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('goods_receipt_id')
-                ->constrained('goods_receipts', 'id', 'goods_receipt_lines_goods_receipt_id_FK')
+                ->constrained(ERPTables::GoodsReceipts->value, 'id', "{$goods_receipt_lines_table}_goods_receipt_id_FK")
                 ->cascadeOnDelete();
             $table->foreignId('item_id')
-                ->constrained('items', 'id', 'goods_receipt_lines_item_id_FK')
+                ->constrained(ERPTables::Items->value, 'id', "{$goods_receipt_lines_table}_item_id_FK")
                 ->restrictOnDelete();
             $table->foreignId('warehouse_id')
-                ->constrained('warehouses', 'id', 'goods_receipt_lines_warehouse_id_FK')
+                ->constrained(ERPTables::Warehouses->value, 'id', "{$goods_receipt_lines_table}_warehouse_id_FK")
                 ->restrictOnDelete();
             $table->unsignedInteger('quantity');
             $table->decimal('unit_cost', 15, 4);
             $table->foreignId('purchase_order_line_id')
                 ->nullable()
-                ->constrained('purchase_order_lines', 'id', 'goods_receipt_lines_purchase_order_line_id_FK')
+                ->constrained(ERPTables::PurchaseOrderLines->value, 'id', "{$goods_receipt_lines_table}_purchase_order_line_id_FK")
                 ->nullOnDelete();
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true, hasLocks: false);
 
-            $table->index(['goods_receipt_id'], 'goods_receipt_lines_goods_receipt_id_idx');
+            $table->index(['goods_receipt_id'], "{$goods_receipt_lines_table}_goods_receipt_id_idx");
             $table->index(
                 ['company_id', 'item_id', 'warehouse_id'],
-                'goods_receipt_lines_company_item_wh_idx',
+                "{$goods_receipt_lines_table}_company_item_wh_idx",
             );
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('goods_receipt_lines');
+        Schema::dropIfExists(ERPTables::GoodsReceiptLines->value);
     }
 };

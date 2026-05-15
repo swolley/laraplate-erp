@@ -17,7 +17,7 @@ final class OpportunityLifecycleService
             return;
         }
 
-        if ($quotation->status !== QuoteStatus::ACCEPTED) {
+        if ($quotation->status !== QuoteStatus::Accepted) {
             return;
         }
 
@@ -28,11 +28,11 @@ final class OpportunityLifecycleService
             return;
         }
 
-        if ($opportunity->status === OpportunityStatus::WON && $opportunity->won_at !== null) {
+        if ($opportunity->status === OpportunityStatus::Won && $opportunity->won_at !== null) {
             return;
         }
 
-        $opportunity->status = OpportunityStatus::WON;
+        $opportunity->status = OpportunityStatus::Won;
         $opportunity->won_at ??= now();
         $opportunity->saveQuietly();
     }

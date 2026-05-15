@@ -9,17 +9,26 @@ use Illuminate\Validation\ValidationException;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\VatSettlementStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperVatSettlement
  */
-class VatSettlement extends Model
+final class VatSettlement extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::VatSettlements->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[\Override]
     protected $fillable = [
         'company_id',
         'fiscal_period_id',
@@ -31,27 +40,6 @@ class VatSettlement extends Model
         'confirmed_at',
         'confirmed_by',
     ];
-
-    protected static function booted(): void
-    {
-        static::saving(static function (VatSettlement $settlement): void {
-            if (! $settlement->exists) {
-                return;
-            }
-
-            if ($settlement->getOriginal('status') !== VatSettlementStatus::Confirmed->value) {
-                return;
-            }
-
-            if (! $settlement->isDirty()) {
-                return;
-            }
-
-            throw ValidationException::withMessages([
-                'status' => ['A confirmed VAT settlement cannot be modified.'],
-            ]);
-        });
-    }
 
     /**
      * @return BelongsTo<FiscalPeriod, $this>
@@ -66,8 +54,8 @@ class VatSettlement extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'fiscal_period_id' => ['required', 'integer', 'exists:fiscal_periods,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'fiscal_period_id' => ['required', 'integer', 'exists:'.ERPTables::FiscalPeriods->value.',id'],
             'vat_sales' => ['sometimes', 'numeric'],
             'vat_purchases' => ['sometimes', 'numeric'],
             'previous_credit' => ['sometimes', 'numeric'],
@@ -75,7 +63,7 @@ class VatSettlement extends Model
             'status' => ['sometimes', 'string', VatSettlementStatus::validationRule()],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'fiscal_period_id' => ['sometimes', 'integer', 'exists:fiscal_periods,id'],
+            'fiscal_period_id' => ['sometimes', 'integer', 'exists:'.ERPTables::FiscalPeriods->value.',id'],
             'vat_sales' => ['sometimes', 'numeric'],
             'vat_purchases' => ['sometimes', 'numeric'],
             'previous_credit' => ['sometimes', 'numeric'],
@@ -84,6 +72,27 @@ class VatSettlement extends Model
         ]);
 
         return $rules;
+    }
+
+    protected static function booted(): void
+    {
+        self::saving(static function (VatSettlement $settlement): void {
+            if (! $settlement->exists) {
+                return;
+            }
+
+            if (VatSettlementStatus::Confirmed->value !== $settlement->getOriginal('status')) {
+                return;
+            }
+
+            if (! $settlement->isDirty()) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'status' => ['A confirmed VAT settlement cannot be modified.'],
+            ]);
+        });
     }
 
     protected function casts(): array

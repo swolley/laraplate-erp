@@ -7,10 +7,10 @@ namespace Modules\ERP\Services\Reporting;
 /**
  * Generates a balance sheet (stato patrimoniale) at a given date.
  */
-final class BalanceSheetService
+final readonly class BalanceSheetService
 {
     public function __construct(
-        private readonly TrialBalanceService $trial_balance_service,
+        private TrialBalanceService $trial_balance_service,
     ) {}
 
     /**

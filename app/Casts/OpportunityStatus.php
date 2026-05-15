@@ -6,10 +6,10 @@ namespace Modules\ERP\Casts;
 
 enum OpportunityStatus: string
 {
-    case OPEN = 'open';
-    case WON = 'won';
-    case LOST = 'lost';
-    case CANCELLED = 'cancelled';
+    case Open = 'open';
+    case Won = 'won';
+    case Lost = 'lost';
+    case Cancelled = 'cancelled';
 
     /**
      * @return array<int, string>

@@ -40,9 +40,7 @@ final class ProjectForm
                     ->preload()
                     ->nullable()
                     ->label('Quotation')
-                    ->getOptionLabelFromRecordUsing(static function (Quotation $record): string {
-                        return sprintf('#%d — %s', $record->id, $record->currency);
-                    }),
+                    ->getOptionLabelFromRecordUsing(static fn(Quotation $record): string => sprintf('#%d — %s', $record->id, $record->currency)),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -53,7 +51,7 @@ final class ProjectForm
                 Select::make('status')
                     ->options($status_options)
                     ->required()
-                    ->default(ProjectStatus::ACTIVE->value),
+                    ->default(ProjectStatus::Active->value),
                 TextInput::make('version')
                     ->numeric()
                     ->default(0)

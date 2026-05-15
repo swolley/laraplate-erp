@@ -6,11 +6,11 @@ namespace Modules\ERP\Casts;
 
 enum LeadStatus: string
 {
-    case NEW = 'new';
-    case CONTACTED = 'contacted';
-    case QUALIFIED = 'qualified';
-    case DISQUALIFIED = 'disqualified';
-    case CONVERTED = 'converted';
+    case New = 'new';
+    case Contacted = 'contacted';
+    case Qualified = 'qualified';
+    case Disqualified = 'disqualified';
+    case Converted = 'converted';
 
     /**
      * @return array<int, string>

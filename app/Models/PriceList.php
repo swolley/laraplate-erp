@@ -5,24 +5,28 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperPriceList
  */
-class PriceList extends Model
+final class PriceList extends Model
 {
     use BelongsToCompany;
     use HasValidity;
 
-    protected $table = 'price_lists';
+    #[Override]
+    protected $table = ERPTables::PriceLists->value;
 
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'name',
         'currency',

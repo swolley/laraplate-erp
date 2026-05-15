@@ -12,22 +12,28 @@ use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Party sales order (M3.2) with optional links to a {@see Quotation} and {@see Project}.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperSalesOrder
  */
-class SalesOrder extends Model
+final class SalesOrder extends Model
 {
     use BelongsToCompany;
     use HasLocks;
     use HasValidity;
 
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    #[Override]
+    protected $table = ERPTables::SalesOrders->value;
 
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+
+    #[\Override]
     protected $fillable = [
         'party_id',
         'quotation_id',
@@ -87,9 +93,38 @@ class SalesOrder extends Model
         return $this->hasMany(SalesOrderLine::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'amends_sales_order_id' => ['nullable', 'integer', 'exists:'.ERPTables::SalesOrders->value.',id'],
+            'reference' => ['nullable', 'string', 'max:64'],
+            'currency' => ['required', 'string', 'size:3'],
+            'status' => ['required', 'string', SalesOrderStatus::validationRule()],
+            'notes' => ['nullable', 'string'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'amends_sales_order_id' => ['nullable', 'integer', 'exists:'.ERPTables::SalesOrders->value.',id'],
+            'reference' => ['nullable', 'string', 'max:64'],
+            'currency' => ['sometimes', 'string', 'size:3'],
+            'status' => ['sometimes', 'string', SalesOrderStatus::validationRule()],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
-        static::saving(static function (SalesOrder $order): void {
+        self::saving(static function (SalesOrder $order): void {
             if ($order->party_id !== null) {
                 $party = Party::query()->find($order->party_id);
 
@@ -165,8 +200,8 @@ class SalesOrder extends Model
             }
         });
 
-        static::saved(static function (SalesOrder $order): void {
-            if ($order->status !== SalesOrderStatus::CONFIRMED) {
+        self::saved(static function (SalesOrder $order): void {
+            if ($order->status !== SalesOrderStatus::Confirmed) {
                 return;
             }
 
@@ -184,35 +219,6 @@ class SalesOrder extends Model
         });
     }
 
-    #[Override]
-    public function getRules(): array
-    {
-        $rules = parent::getRules();
-        $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'party_id' => ['required', 'integer', 'exists:parties,id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'amends_sales_order_id' => ['nullable', 'integer', 'exists:sales_orders,id'],
-            'reference' => ['nullable', 'string', 'max:64'],
-            'currency' => ['required', 'string', 'size:3'],
-            'status' => ['required', 'string', SalesOrderStatus::validationRule()],
-            'notes' => ['nullable', 'string'],
-        ]);
-        $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'amends_sales_order_id' => ['nullable', 'integer', 'exists:sales_orders,id'],
-            'reference' => ['nullable', 'string', 'max:64'],
-            'currency' => ['sometimes', 'string', 'size:3'],
-            'status' => ['sometimes', 'string', SalesOrderStatus::validationRule()],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        return $rules;
-    }
-
     protected function casts(): array
     {
         return [
@@ -220,17 +226,17 @@ class SalesOrder extends Model
         ];
     }
 
-    private function isHeaderLocked(): bool
-    {
-        return in_array($this->status, [
-            SalesOrderStatus::CONFIRMED,
-            SalesOrderStatus::PARTIALLY_EVASED,
-            SalesOrderStatus::FULLY_EVASED,
-        ], true);
-    }
-
     protected function shouldVersioning(): bool
     {
         return false;
+    }
+
+    private function isHeaderLocked(): bool
+    {
+        return in_array($this->status, [
+            SalesOrderStatus::Confirmed,
+            SalesOrderStatus::PartiallyEvased,
+            SalesOrderStatus::FullyEvased,
+        ], true);
     }
 }

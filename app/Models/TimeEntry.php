@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
+use Modules\Core\Enums\CoreTables;
 
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -10,20 +11,26 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\TimeEntryObserver;
 use Modules\ERP\Rules\TimeEntryOverlap;
-use Modules\Core\Overrides\Model;
 use Override;
 
 #[ObservedBy([TimeEntryObserver::class])]
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperTimeEntry
  */
-class TimeEntry extends Model
+final class TimeEntry extends Model
 {
+    #[Override]
+    protected $table = ERPTables::TimeEntries->value;
+
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'user_id',
         'taxonomy_id',
@@ -33,6 +40,29 @@ class TimeEntry extends Model
         'started_at',
         'ended_at',
     ];
+
+    /**
+     * Whether any other (non-soft-deleted) TimeEntry of the given user
+     * overlaps the half-open interval [startedAt, endedAt).
+     *
+     * `endedAt = null` means an open-ended session (treated as future infinity).
+     */
+    public static function existsOverlapFor(
+        int $userId,
+        DateTimeInterface|string $startedAt,
+        DateTimeInterface|string|null $endedAt,
+        ?int $excludeId = null,
+    ): bool {
+        $query = self::query()
+            ->forUser($userId)
+            ->overlapping($startedAt, $endedAt);
+
+        if ($excludeId !== null) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
+    }
 
     /**
      * @return BelongsTo<\Modules\Core\Models\User, $this>
@@ -74,27 +104,30 @@ class TimeEntry extends Model
         return $this->belongsTo(QuotationItem::class, 'quotation_item_id');
     }
 
-    /**
-     * Whether any other (non-soft-deleted) TimeEntry of the given user
-     * overlaps the half-open interval [startedAt, endedAt).
-     *
-     * `endedAt = null` means an open-ended session (treated as future infinity).
-     */
-    public static function existsOverlapFor(
-        int $userId,
-        DateTimeInterface|string $startedAt,
-        DateTimeInterface|string|null $endedAt,
-        ?int $excludeId = null,
-    ): bool {
-        $query = static::query()
-            ->forUser($userId)
-            ->overlapping($startedAt, $endedAt);
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'user_id' => ['required', 'integer', 'exists:'.CoreTables::Users->value.',id'],
+            'taxonomy_id' => ['required', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
+            'task_id' => ['nullable', 'integer', 'exists:'.ERPTables::Tasks->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
+            'started_at' => ['required', 'date'],
+            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap()],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'user_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Users->value.',id'],
+            'taxonomy_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
+            'task_id' => ['nullable', 'integer', 'exists:'.ERPTables::Tasks->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
+            'started_at' => ['sometimes', 'date'],
+            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($this->getKey())],
+        ]);
 
-        if ($excludeId !== null) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        return $query->exists();
+        return $rules;
     }
 
     /**
@@ -117,12 +150,12 @@ class TimeEntry extends Model
         DateTimeInterface|string $startedAt,
         DateTimeInterface|string|null $endedAt,
     ): Builder {
-        $start = $startedAt instanceof DateTimeInterface ? $startedAt : Carbon::parse($startedAt);
+        $start = $startedAt instanceof DateTimeInterface ? $startedAt : \Illuminate\Support\Facades\Date::parse($startedAt);
         $end = $endedAt === null
             ? null
-            : ($endedAt instanceof DateTimeInterface ? $endedAt : Carbon::parse($endedAt));
+            : ($endedAt instanceof DateTimeInterface ? $endedAt : \Illuminate\Support\Facades\Date::parse($endedAt));
 
-        if ($end !== null) {
+        if ($end instanceof \DateTimeInterface) {
             $query->where('started_at', '<', $end);
         }
 
@@ -148,31 +181,5 @@ class TimeEntry extends Model
             'started_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
         ];
-    }
-
-    #[Override]
-    public function getRules(): array
-    {
-        $rules = parent::getRules();
-        $rules['create'] = array_merge($rules['create'], [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'taxonomy_id' => ['required', 'integer', 'exists:taxonomies,id'],
-            'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
-            'started_at' => ['required', 'date'],
-            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap()],
-        ]);
-        $rules['update'] = array_merge($rules['update'], [
-            'user_id' => ['sometimes', 'integer', 'exists:users,id'],
-            'taxonomy_id' => ['sometimes', 'integer', 'exists:taxonomies,id'],
-            'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:quotations_items,id'],
-            'started_at' => ['sometimes', 'date'],
-            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($this->getKey())],
-        ]);
-
-        return $rules;
     }
 }

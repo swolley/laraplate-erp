@@ -7,15 +7,24 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperPaymentTerm
  */
-class PaymentTerm extends Model
+final class PaymentTerm extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::PaymentTerms->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'name',
@@ -37,7 +46,7 @@ class PaymentTerm extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
             'name' => ['required', 'string', 'max:128'],
             'description' => ['nullable', 'string'],
             'rate_lines' => ['required', 'array'],

@@ -11,18 +11,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
+use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Models\Item;
 
 final class PurchaseOrderForm
 {
     public static function configure(Schema $schema): Schema
     {
-        $status_options = [
-            'draft' => 'draft',
-            'confirmed' => 'confirmed',
-            'partial' => 'partial',
-            'received' => 'received',
-        ];
+        $status_options = collect(PurchaseOrderStatus::cases())
+            ->mapWithKeys(static fn (PurchaseOrderStatus $status): array => [$status->value => $status->value])
+            ->all();
 
         return $schema
             ->components([
@@ -60,7 +58,7 @@ final class PurchaseOrderForm
                 Select::make('status')
                     ->options($status_options)
                     ->required()
-                    ->default('draft'),
+                    ->default(PurchaseOrderStatus::Draft->value),
                 DateTimePicker::make('ordered_at')
                     ->nullable(),
                 Repeater::make('line_items')

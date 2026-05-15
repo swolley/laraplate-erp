@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Casts;
 
-enum SalesOrderStatus: string
+enum PurchaseOrderStatus: string
 {
     case Draft = 'draft';
     case Confirmed = 'confirmed';
-    case PartiallyEvased = 'partially_evased';
-    case FullyEvased = 'fully_evased';
-    case Cancelled = 'cancelled';
-    case Amended = 'amended';
+    case Partial = 'partial';
+    case Received = 'received';
 
     /**
      * @return array<int, string>
@@ -23,6 +21,6 @@ enum SalesOrderStatus: string
 
     public static function validationRule(): string
     {
-        return 'in:'.implode(',', self::values());
+        return 'in:' . implode(',', self::values());
     }
 }

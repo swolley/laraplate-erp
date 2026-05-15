@@ -7,10 +7,10 @@ namespace Modules\ERP\Observers;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Services\CRM\OpportunityLifecycleService;
 
-final class QuotationObserver
+final readonly class QuotationObserver
 {
     public function __construct(
-        private readonly OpportunityLifecycleService $opportunity_lifecycle_service,
+        private OpportunityLifecycleService $opportunity_lifecycle_service,
     ) {}
 
     public function saved(Quotation $quotation): void

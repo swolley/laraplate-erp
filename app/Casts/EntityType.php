@@ -15,12 +15,12 @@ enum EntityType: string implements IDynamicEntityTypable
     /**
      * Work-log and list/catalog activities ({@see Activity} / `taxonomies`).
      */
-    case ACTIVITIES = 'activities';
+    case Activities = 'activities';
 
     /**
      * CRM pipeline stages ({@see OpportunityStage} / `taxonomies`) for opportunities.
      */
-    case OPPORTUNITY_STAGES = 'opportunity_stages';
+    case OpportunityStages = 'opportunity_stages';
 
     /**
      * Get all values as array.

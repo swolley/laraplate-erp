@@ -7,15 +7,24 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperStockCostLayer
  */
-class StockCostLayer extends Model
+final class StockCostLayer extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::StockCostLayers->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[\Override]
     protected $fillable = [
         'company_id',
         'item_id',
@@ -24,18 +33,6 @@ class StockCostLayer extends Model
         'qty_remaining',
         'unit_cost',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'qty_remaining' => 'integer',
-            'unit_cost' => 'decimal:4',
-        ];
-    }
 
     /**
      * @return BelongsTo<Item, $this>
@@ -59,6 +56,18 @@ class StockCostLayer extends Model
     public function stock_movement(): BelongsTo
     {
         return $this->belongsTo(StockMovement::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'qty_remaining' => 'integer',
+            'unit_cost' => 'decimal:4',
+        ];
     }
 
     protected function shouldVersioning(): bool

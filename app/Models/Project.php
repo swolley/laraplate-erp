@@ -7,23 +7,29 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
-use Modules\ERP\Casts\ProjectStatus;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Casts\ProjectStatus;
+use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperProject
  */
-class Project extends Model
+final class Project extends Model
 {
     use BelongsToCompany;
     use HasValidity;
 
+    #[Override]
+    protected $table = ERPTables::Projects->value;
+
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'party_id',
         'quotation_id',
@@ -73,9 +79,33 @@ class Project extends Model
         return $this->hasMany(TimeEntry::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'status' => ['required', 'string', ProjectStatus::validationRule()],
+            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'status' => ['sometimes', 'string', ProjectStatus::validationRule()],
+            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
-        static::saving(static function (Project $project): void {
+        self::saving(static function (Project $project): void {
             if ($project->party_id === null) {
                 return;
             }
@@ -96,29 +126,5 @@ class Project extends Model
             'status' => ProjectStatus::class,
             'version' => 'integer',
         ];
-    }
-
-    #[Override]
-    public function getRules(): array
-    {
-        $rules = parent::getRules();
-        $rules['create'] = array_merge($rules['create'], [
-            'party_id' => ['required', 'integer', 'exists:parties,id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['required', 'string', ProjectStatus::validationRule()],
-            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
-        ]);
-        $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
-            'name' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['sometimes', 'string', ProjectStatus::validationRule()],
-            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
-        ]);
-
-        return $rules;
     }
 }

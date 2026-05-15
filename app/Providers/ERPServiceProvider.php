@@ -29,11 +29,13 @@ class ERPServiceProvider extends ModuleServiceProvider
     /**
      * The name of the modulce.
      */
+    #[\Override]
     protected string $name = 'ERP';
 
     /**
      * The lowercase version of the module name.
      */
+    #[\Override]
     protected string $nameLower = 'erp';
 
     #[Override]

@@ -5,15 +5,17 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\ERP\Casts\DocumentType;
-use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('document_sequences', function (Blueprint $table): void {
+        $document_sequences_table = ERPTables::DocumentSequences->value;
+        Schema::create($document_sequences_table, function (Blueprint $table) use ($document_sequences_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->enum('document_type', array_map(
@@ -30,7 +32,7 @@ return new class extends Migration
 
             $table->unique(
                 ['company_id', 'document_type', 'fiscal_year'],
-                'document_sequences_company_type_fy_UN',
+                "{$document_sequences_table}_company_type_fy_UN",
             );
 
             MigrateUtils::timestamps(
@@ -43,6 +45,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('document_sequences');
+        Schema::dropIfExists(ERPTables::DocumentSequences->value);
     }
 };

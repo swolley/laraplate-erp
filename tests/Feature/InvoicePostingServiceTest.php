@@ -33,7 +33,7 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -42,7 +42,7 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
         'qty_ordered' => 5,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $vat = TaxCode::query()->create([
@@ -79,7 +79,7 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
         ->and($invoice->reference)->not->toBeNull()
         ->and($invoice->reference)->toBeString()
         ->and($so_line->qty_invoiced)->toBe(2)
-        ->and($so_line->status)->toBe(SalesOrderLineStatus::PARTIALLY_EVASED);
+        ->and($so_line->status)->toBe(SalesOrderLineStatus::PartiallyEvased);
 
     $line = $invoice->lines()->firstOrFail();
     expect($line->tax_code)->toBe('VAT22')
@@ -107,7 +107,7 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -116,7 +116,7 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
         'qty_ordered' => 3,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $invoice = Invoice::query()->create([
@@ -143,7 +143,7 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
     expect($invoice->journal_entry_id)->toBeNull()
         ->and($invoice->reference)->toBeNull()
         ->and($so_line->qty_invoiced)->toBe(0)
-        ->and($so_line->status)->toBe(SalesOrderLineStatus::OPEN);
+        ->and($so_line->status)->toBe(SalesOrderLineStatus::Open);
 
     $reversal = JournalEntry::query()->withoutGlobalScopes()
         ->where('reverses_journal_entry_id', $posted_journal_id)

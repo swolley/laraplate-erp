@@ -3,21 +3,26 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
+use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperPriceListItem
  */
-class PriceListItem extends Model
+final class PriceListItem extends Model
 {
-    protected $table = 'price_list_items';
+    #[Override]
+    protected $table = ERPTables::PriceListItems->value;
 
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'price_list_id',
         'taxonomy_id',
@@ -42,32 +47,32 @@ class PriceListItem extends Model
         return $this->belongsTo(PriceList::class);
     }
 
-    protected function casts(): array
-    {
-        return [
-            'unit_price' => 'decimal:4',
-        ];
-    }
-
     #[Override]
     public function getRules(): array
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'price_list_id' => ['required', 'integer', 'exists:price_lists,id'],
-            'taxonomy_id' => ['required', 'integer', 'exists:taxonomies,id'],
+            'price_list_id' => ['required', 'integer', 'exists:'.ERPTables::PriceLists->value.',id'],
+            'taxonomy_id' => ['required', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
             'name' => ['required', 'string', 'max:255'],
             'uom' => ['nullable', 'string', 'max:64'],
             'unit_price' => ['required', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'price_list_id' => ['sometimes', 'integer', 'exists:price_lists,id'],
-            'taxonomy_id' => ['sometimes', 'integer', 'exists:taxonomies,id'],
+            'price_list_id' => ['sometimes', 'integer', 'exists:'.ERPTables::PriceLists->value.',id'],
+            'taxonomy_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'uom' => ['nullable', 'string', 'max:64'],
             'unit_price' => ['sometimes', 'numeric', 'min:0'],
         ]);
 
         return $rules;
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'unit_price' => 'decimal:4',
+        ];
     }
 }

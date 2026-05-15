@@ -40,7 +40,7 @@ final class CreateDeliveryNote extends CreateRecord
         $record->refresh();
 
         if ($record->posted_at !== null && $record->inventory_posted_at === null) {
-            app(DeliveryNoteInventoryService::class)->postInventory($record);
+            resolve(DeliveryNoteInventoryService::class)->postInventory($record);
             $record->saveQuietly();
         }
 

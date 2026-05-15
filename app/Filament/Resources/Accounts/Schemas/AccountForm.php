@@ -41,9 +41,7 @@ final class AccountForm
                     ->relationship(
                         name: 'parent',
                         titleAttribute: 'code',
-                        modifyQueryUsing: static function (Builder $query, ?string $search): Builder {
-                            return $query->orderBy('code');
-                        },
+                        modifyQueryUsing: static fn(Builder $query, ?string $search): Builder => $query->orderBy('code'),
                     )
                     ->searchable()
                     ->preload()

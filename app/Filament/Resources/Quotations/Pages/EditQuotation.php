@@ -25,15 +25,13 @@ final class EditQuotation extends EditRecord
         $data['line_items'] = $quotation->quotation_items()
             ->orderBy('id')
             ->get()
-            ->map(static function (QuotationItem $item): array {
-                return [
-                    'name' => $item->name,
-                    'billing_mode' => $item->billing_mode->value,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'price_list_item_id' => $item->price_list_item_id,
-                ];
-            })
+            ->map(static fn(QuotationItem $item): array => [
+                'name' => $item->name,
+                'billing_mode' => $item->billing_mode->value,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'price_list_item_id' => $item->price_list_item_id,
+            ])
             ->all();
 
         return $data;

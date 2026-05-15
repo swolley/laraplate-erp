@@ -9,15 +9,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperPaymentScheduleLine
  */
-class PaymentScheduleLine extends Model
+final class PaymentScheduleLine extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::PaymentScheduleLines->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'invoice_id',
@@ -56,8 +65,8 @@ class PaymentScheduleLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
             'due_date' => ['required', 'date'],
             'amount_doc' => ['required', 'numeric', 'min:0.0001'],
             'currency_doc' => ['required', 'string', 'size:3'],
@@ -70,7 +79,7 @@ class PaymentScheduleLine extends Model
             'paid_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'invoice_id' => ['sometimes', 'integer', 'exists:invoices,id'],
+            'invoice_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
             'due_date' => ['sometimes', 'date'],
             'amount_doc' => ['sometimes', 'numeric', 'min:0.0001'],
             'currency_doc' => ['sometimes', 'string', 'size:3'],

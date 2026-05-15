@@ -7,10 +7,10 @@ namespace Modules\ERP\Observers;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
 
-final class GoodsReceiptObserver
+final readonly class GoodsReceiptObserver
 {
     public function __construct(
-        private readonly GoodsReceiptInventoryService $goods_receipt_inventory_service,
+        private GoodsReceiptInventoryService $goods_receipt_inventory_service,
     ) {}
 
     /**

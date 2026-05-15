@@ -6,8 +6,8 @@ namespace Modules\ERP\Casts;
 
 enum BillingMode: string
 {
-    case UNIT = 'unit';
-    case FIXED = 'fixed';
+    case Unit = 'unit';
+    case Fixed = 'fixed';
 
     /**
      * @return array<int, string>

@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Enums\ERPTables;
 
 /**
  * Extends {@see DocumentType} values on `document_sequences` for MySQL installs.
@@ -20,12 +21,13 @@ return new class extends Migration
         }
 
         $values = implode(',', array_map(
-            static fn (DocumentType $t): string => "'".$t->value."'",
+            static fn (DocumentType $t): string => "'" . $t->value . "'",
             DocumentType::cases(),
         ));
 
+        $document_sequences_table = ERPTables::DocumentSequences->value;
         DB::statement(
-            "ALTER TABLE document_sequences MODIFY document_type ENUM({$values}) NOT NULL COMMENT 'Which document stream this row advances'",
+            "ALTER TABLE {$document_sequences_table} MODIFY document_type ENUM({$values}) NOT NULL COMMENT 'Which document stream this row advances'",
         );
     }
 

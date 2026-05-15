@@ -7,15 +7,24 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrderLine
  */
-class PurchaseOrderLine extends Model
+final class PurchaseOrderLine extends Model
 {
+    #[Override]
+    protected $table = ERPTables::PurchaseOrderLines->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'purchase_order_id',
         'item_id',
@@ -46,16 +55,16 @@ class PurchaseOrderLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'purchase_order_id' => ['required', 'integer', 'exists:purchase_orders,id'],
-            'item_id' => ['nullable', 'integer', 'exists:items,id'],
+            'purchase_order_id' => ['required', 'integer', 'exists:'.ERPTables::PurchaseOrders->value.',id'],
+            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
             'name' => ['required', 'string', 'max:255'],
             'qty_ordered' => ['required', 'integer', 'min:1'],
             'qty_received' => ['sometimes', 'integer', 'min:0'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'purchase_order_id' => ['sometimes', 'integer', 'exists:purchase_orders,id'],
-            'item_id' => ['nullable', 'integer', 'exists:items,id'],
+            'purchase_order_id' => ['sometimes', 'integer', 'exists:'.ERPTables::PurchaseOrders->value.',id'],
+            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'qty_ordered' => ['sometimes', 'integer', 'min:1'],
             'qty_received' => ['sometimes', 'integer', 'min:0'],
@@ -67,7 +76,7 @@ class PurchaseOrderLine extends Model
 
     protected static function booted(): void
     {
-        static::saving(static function (PurchaseOrderLine $line): void {
+        self::saving(static function (PurchaseOrderLine $line): void {
             $line_is_progressed = $line->qty_received > 0;
 
             if ($line->exists && $line_is_progressed && $line->isDirty('qty_ordered')) {

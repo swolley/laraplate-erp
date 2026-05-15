@@ -46,7 +46,7 @@ final class VatSettlementService
             $previous_period = FiscalPeriod::query()
                 ->where('fiscal_year_id', $fiscal_year_id)
                 ->where('start_date', '<', $fiscal_period->start_date)
-                ->orderByDesc('start_date')
+                ->latest('start_date')
                 ->first();
 
             if ($previous_period !== null) {

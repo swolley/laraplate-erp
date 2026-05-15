@@ -19,10 +19,10 @@ use Modules\ERP\Models\Warehouse;
  * {@see StockMovement} rows (sourced from {@see GoodsReceiptLine}) and optional
  * purchase order line receipt quantities when the receipt is linked to a PO.
  */
-final class GoodsReceiptInventoryService
+final readonly class GoodsReceiptInventoryService
 {
     public function __construct(
-        private readonly StockMovementService $stock_movement_service,
+        private StockMovementService $stock_movement_service,
     ) {}
 
     /**

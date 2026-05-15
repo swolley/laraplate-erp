@@ -8,16 +8,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrder
  */
-class PurchaseOrder extends Model
+final class PurchaseOrder extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::PurchaseOrders->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'party_id',
@@ -48,18 +58,18 @@ class PurchaseOrder extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'party_id' => ['required', 'integer', 'exists:parties,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['required', 'string', 'size:3'],
-            'status' => ['required', 'string', 'in:draft,confirmed,partial,received'],
+            'status' => ['required', PurchaseOrderStatus::validationRule()],
             'ordered_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
+            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['sometimes', 'string', 'size:3'],
-            'status' => ['sometimes', 'string', 'in:draft,confirmed,partial,received'],
+            'status' => ['sometimes', PurchaseOrderStatus::validationRule()],
             'ordered_at' => ['nullable', 'date'],
         ]);
 
@@ -68,7 +78,7 @@ class PurchaseOrder extends Model
 
     protected static function booted(): void
     {
-        static::saving(static function (PurchaseOrder $purchase_order): void {
+        self::saving(static function (PurchaseOrder $purchase_order): void {
             if ($purchase_order->party_id === null) {
                 return;
             }

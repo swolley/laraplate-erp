@@ -22,12 +22,12 @@ use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
  * {@see StockMovement} rows (sourced from {@see DeliveryNoteLine}) and optional
  * {@see SalesOrderEvasionService::registerDelivery} when the note is linked to a SO.
  */
-final class DeliveryNoteInventoryService
+final readonly class DeliveryNoteInventoryService
 {
     public function __construct(
-        private readonly StockMovementService $stock_movement_service,
-        private readonly SalesOrderEvasionService $sales_order_evasion_service,
-        private readonly DeliveryNoteCogsJournalService $delivery_note_cogs_journal_service,
+        private StockMovementService $stock_movement_service,
+        private SalesOrderEvasionService $sales_order_evasion_service,
+        private DeliveryNoteCogsJournalService $delivery_note_cogs_journal_service,
     ) {}
 
     /**
@@ -240,7 +240,7 @@ final class DeliveryNoteInventoryService
             ->where('company_id', (int) $header->company_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
-            ->where('direction', StockMovementDirection::OUT)
+            ->where('direction', StockMovementDirection::Out)
             ->get()
             ->keyBy(static fn (StockMovement $movement): int => (int) $movement->source_id);
 

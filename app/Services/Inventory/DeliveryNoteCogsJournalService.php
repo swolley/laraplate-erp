@@ -20,15 +20,15 @@ use Modules\ERP\Services\Accounting\JournalPostingService;
  * Posts a balanced COGS / inventory relief journal when a {@see DeliveryNote}
  * inventory posting creates outbound {@see StockMovement} rows with unit costs.
  */
-final class DeliveryNoteCogsJournalService
+final readonly class DeliveryNoteCogsJournalService
 {
     public const string META_ROLE_INVENTORY_MERCHANDISE = 'inventory_merchandise';
 
     public const string META_ROLE_COST_OF_GOODS_SOLD = 'cost_of_goods_sold';
 
     public function __construct(
-        private readonly ChartOfAccountsInstaller $chart_of_accounts_installer,
-        private readonly JournalPostingService $journal_posting_service,
+        private ChartOfAccountsInstaller $chart_of_accounts_installer,
+        private JournalPostingService $journal_posting_service,
     ) {}
 
     /**
@@ -60,7 +60,7 @@ final class DeliveryNoteCogsJournalService
             ->where('company_id', $company->id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
-            ->where('direction', StockMovementDirection::OUT)
+            ->where('direction', StockMovementDirection::Out)
             ->get();
 
         if ($movements->isEmpty()) {

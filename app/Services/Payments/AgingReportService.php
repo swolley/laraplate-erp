@@ -16,7 +16,7 @@ final class AgingReportService
      */
     public function generate(int $company_id, string $direction, ?\DateTimeInterface $as_of_date = null): array
     {
-        $as_of = $as_of_date !== null ? Carbon::instance($as_of_date) : Carbon::today();
+        $as_of = $as_of_date instanceof \DateTimeInterface ? \Illuminate\Support\Facades\Date::instance($as_of_date) : \Illuminate\Support\Facades\Date::today();
 
         $invoice_direction = $direction === 'receivable'
             ? InvoiceDirection::Sale
@@ -50,7 +50,7 @@ final class AgingReportService
                 continue;
             }
 
-            $due_date = Carbon::parse($line->due_date);
+            $due_date = \Illuminate\Support\Facades\Date::parse($line->due_date);
             $days_overdue = (int) $due_date->diffInDays($as_of, false);
             $bucket = $this->resolveBucket($days_overdue);
 

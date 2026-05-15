@@ -9,10 +9,10 @@ namespace Modules\ERP\Data\EInvoice;
  */
 enum EInvoiceRemoteStatus: string
 {
-    case UNKNOWN = 'unknown';
-    case PENDING = 'pending';
-    case PROCESSING = 'processing';
-    case DELIVERED = 'delivered';
-    case ACCEPTED = 'accepted';
-    case REJECTED = 'rejected';
+    case Unknown = 'unknown';
+    case Pending = 'pending';
+    case Processing = 'processing';
+    case Delivered = 'delivered';
+    case Accepted = 'accepted';
+    case Rejected = 'rejected';
 }

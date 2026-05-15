@@ -11,32 +11,39 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Core\Helpers\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperParty
  */
-class Party extends Model
+final class Party extends Model
 {
     use BelongsToCompany;
     use HasActivation;
 
-    protected $table = 'parties';
+    #[Override]
+    protected $table = ERPTables::Parties->value;
 
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'name',
         'is_customer',
         'is_supplier',
     ];
 
-    public function scopeCustomers(Builder $builder): Builder
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function customers(Builder $builder): Builder
     {
         return $builder->where('is_customer', true);
     }
 
-    public function scopeSuppliers(Builder $builder): Builder
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function suppliers(Builder $builder): Builder
     {
         return $builder->where('is_supplier', true);
     }

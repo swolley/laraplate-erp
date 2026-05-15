@@ -51,27 +51,17 @@ final class JournalPostingService
 
         $posted_at = CarbonImmutable::now();
 
-        return DB::transaction(function () use (
+        return DB::transaction(fn(): JournalEntry => $this->persistPostedEntry(
             $company,
             $lines,
             $fiscal_period,
             $description,
             $posted_by_user_id,
             $posted_at,
+            null,
+            null,
             $reference,
-        ): JournalEntry {
-            return $this->persistPostedEntry(
-                $company,
-                $lines,
-                $fiscal_period,
-                $description,
-                $posted_by_user_id,
-                $posted_at,
-                null,
-                null,
-                $reference,
-            );
-        });
+        ));
     }
 
     /**
@@ -83,7 +73,7 @@ final class JournalPostingService
         string $reversal_reason,
         ?int $posted_by_user_id = null,
     ): JournalEntry {
-        $posted_entry = JournalEntry::withoutGlobalScopes()
+        $posted_entry = JournalEntry::query()->withoutGlobalScopes()
             ->whereKey($posted_entry->getKey())
             ->with('lines')
             ->firstOrFail();
@@ -99,7 +89,7 @@ final class JournalPostingService
             );
         }
 
-        $reversal_exists = JournalEntry::withoutGlobalScopes()
+        $reversal_exists = JournalEntry::query()->withoutGlobalScopes()
             ->where('reverses_journal_entry_id', $posted_entry->getKey())
             ->exists();
 
@@ -128,27 +118,16 @@ final class JournalPostingService
         $posted_at = CarbonImmutable::now();
         $description = 'Reversal of journal #' . $posted_entry->getKey() . ': ' . $reversal_reason;
 
-        return DB::transaction(function () use (
+        return DB::transaction(fn(): JournalEntry => $this->persistPostedEntry(
             $company,
             $storno_lines,
-            $posted_entry,
+            $posted_entry->fiscal_period,
             $description,
             $posted_by_user_id,
             $posted_at,
+            (int) $posted_entry->getKey(),
             $reversal_reason,
-        ): JournalEntry {
-            return $this->persistPostedEntry(
-                $company,
-                $storno_lines,
-                $posted_entry->fiscal_period,
-                $description,
-                $posted_by_user_id,
-                $posted_at,
-                (int) $posted_entry->getKey(),
-                $reversal_reason,
-                null,
-            );
-        });
+        ));
     }
 
     /**
@@ -176,7 +155,7 @@ final class JournalPostingService
         ?string $reversal_reason,
         ?Model $reference = null,
     ): JournalEntry {
-        $entry = JournalEntry::withoutGlobalScopes()->create([
+        $entry = JournalEntry::query()->withoutGlobalScopes()->create([
             'company_id' => $company->id,
             'fiscal_period_id' => $fiscal_period?->getKey(),
             'posted_at' => $posted_at,
@@ -224,7 +203,7 @@ final class JournalPostingService
         );
         JournalLineBalance::assertBalanced($amount_locals);
 
-        if ($fiscal_period !== null) {
+        if ($fiscal_period instanceof \Modules\ERP\Models\FiscalPeriod) {
             if ($fiscal_period->is_closed) {
                 throw PostingToClosedFiscalPeriodException::forPeriod((int) $fiscal_period->getKey());
             }

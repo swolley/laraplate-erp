@@ -34,7 +34,7 @@ final class InvoiceCompactionService
             }
 
             $groups = $lines->groupBy(
-                static fn (InvoiceLine $line): string => ((string) ($line->item_id ?? '')) . '|' . ((string) $line->unit_price)
+                static fn (InvoiceLine $line): string => (($line->item_id ?? '')) . '|' . ($line->unit_price)
             );
 
             $line_no = 0;

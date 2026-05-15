@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\LeadStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Party;
@@ -15,9 +16,9 @@ use Modules\ERP\Tests\Support\OpportunityStageTaxonomy;
 uses(RefreshDatabase::class);
 
 it('creates leads and opportunities tables with quotation opportunity link', function (): void {
-    expect(Schema::hasTable('leads'))->toBeTrue()
-        ->and(Schema::hasTable('opportunities'))->toBeTrue()
-        ->and(Schema::hasColumn('quotations', 'opportunity_id'))->toBeTrue();
+    expect(Schema::hasTable(ERPTables::Leads->value))->toBeTrue()
+        ->and(Schema::hasTable(ERPTables::Opportunities->value))->toBeTrue()
+        ->and(Schema::hasColumn(ERPTables::Quotations->value, 'opportunity_id'))->toBeTrue();
 });
 
 it('persists a lead with company scope fields', function (): void {
@@ -31,12 +32,12 @@ it('persists a lead with company scope fields', function (): void {
     $lead = Lead::query()->create([
         'company_id' => $company->id,
         'title' => 'Inbound widget inquiry',
-        'status' => LeadStatus::NEW,
+        'status' => LeadStatus::New,
         'source' => 'web',
     ]);
 
     expect($lead->company_id)->toBe($company->id)
-        ->and($lead->status)->toBe(LeadStatus::NEW)
+        ->and($lead->status)->toBe(LeadStatus::New)
         ->and($company->leads)->toHaveCount(1);
 });
 
@@ -55,7 +56,7 @@ it('persists an opportunity when pipeline taxonomy exists', function (): void {
         'party_id' => $party->id,
         'stage_taxonomy_id' => $stage_id,
         'name' => 'Enterprise rollout',
-        'status' => OpportunityStatus::OPEN,
+        'status' => OpportunityStatus::Open,
         'expected_currency_doc' => 'EUR',
         'expected_currency_local' => 'EUR',
         'expected_fx_rate' => 1,

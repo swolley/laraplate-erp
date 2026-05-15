@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Overrides\Seeder;
 use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\TaxCode;
-use Modules\Core\Overrides\Seeder;
 
 /**
  * Dev / default Italian VAT and sample withholding rows for a {@see Company}.
@@ -30,7 +31,9 @@ final class ItalianTaxCodesSeeder extends Seeder
 
     public function run(): void
     {
-        if (! Schema::hasTable('tax_codes')) {
+        $tax_codes_table = ERPTables::TaxCodes->value;
+
+        if (! Schema::hasTable($tax_codes_table)) {
             $this->command?->warn('ItalianTaxCodesSeeder skipped: tax_codes table is missing.');
 
             return;

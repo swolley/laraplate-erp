@@ -6,17 +6,19 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('vat_settlements', function (Blueprint $table): void {
+        $vat_settlements_table = ERPTables::VatSettlements->value;
+        Schema::create($vat_settlements_table, function (Blueprint $table) use ($vat_settlements_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('fiscal_period_id')
-                ->constrained('fiscal_periods', 'id', 'vat_settlements_fiscal_period_id_FK')
+                ->constrained(ERPTables::FiscalPeriods->value, 'id', "{$vat_settlements_table}_fiscal_period_id_FK")
                 ->restrictOnDelete();
             $table->decimal('vat_sales', 15, 4)->default(0);
             $table->decimal('vat_purchases', 15, 4)->default(0);
@@ -28,7 +30,7 @@ return new class extends Migration
 
             $table->unique(
                 ['company_id', 'fiscal_period_id'],
-                'vat_settlement_period_unique',
+                "{$vat_settlements_table}_period_unique",
             );
 
             MigrateUtils::timestamps(
@@ -41,6 +43,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('vat_settlements');
+        Schema::dropIfExists(ERPTables::VatSettlements->value);
     }
 };

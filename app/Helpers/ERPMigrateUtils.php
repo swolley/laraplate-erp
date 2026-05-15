@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Helpers;
 
 use Illuminate\Database\Schema\Blueprint;
+use Modules\ERP\Enums\ERPTables;
 
 /**
  * Schema helpers specific to the Business / ERP domain.
@@ -81,7 +82,7 @@ final class ERPMigrateUtils
         $table_name = $table->getTable();
         $foreign_name = "{$table_name}_company_id_FK";
 
-        $column->constrained('companies', 'id', $foreign_name)->restrictOnDelete();
+        $column->constrained(ERPTables::Companies->value, 'id', $foreign_name)->restrictOnDelete();
 
         if ($indexed) {
             $table->index('company_id', "{$table_name}_company_id_idx");

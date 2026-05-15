@@ -3,25 +3,32 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
+use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 // use Modules\ERP\Database\Factories\TaskFactory;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperTask
  */
-class Task extends Model
+final class Task extends Model
 {
     use HasValidity;
+
+    #[Override]
+    protected $table = ERPTables::Tasks->value;
 
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'project_id',
         'site_id',
@@ -65,14 +72,14 @@ class Task extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'site_id' => ['nullable', 'integer', 'exists:sites,id'],
-            'taxonomy_id' => ['required', 'integer', 'exists:taxonomies,id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'site_id' => ['nullable', 'integer', 'exists:'.ERPTables::Sites->value.',id'],
+            'taxonomy_id' => ['required', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'site_id' => ['nullable', 'integer', 'exists:sites,id'],
-            'taxonomy_id' => ['sometimes', 'integer', 'exists:taxonomies,id'],
+            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
+            'site_id' => ['nullable', 'integer', 'exists:'.ERPTables::Sites->value.',id'],
+            'taxonomy_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
         ]);
 
         return $rules;

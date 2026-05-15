@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\Core\Overrides\Seeder;
 use Modules\ERP\Casts\EntityType;
@@ -17,7 +18,7 @@ use Modules\ERP\Models\OpportunityStage;
 use Modules\ERP\Models\Pivot\Presettable;
 
 /**
- * Dev fixture: default CRM pipeline stages ({@see EntityType::OPPORTUNITY_STAGES}).
+ * Dev fixture: default CRM pipeline stages ({@see EntityType::OpportunityStages}).
  */
 final class DevERPDatabaseSeeder extends Seeder
 {
@@ -49,7 +50,7 @@ final class DevERPDatabaseSeeder extends Seeder
         $entity_id = Entity::query()
             ->withoutGlobalScopes()
             ->where('name', 'opportunity_stage')
-            ->where('type', EntityType::OPPORTUNITY_STAGES->value)
+            ->where('type', EntityType::OpportunityStages->value)
             ->select('id')
             ->first()?->id;
 
@@ -105,7 +106,10 @@ final class DevERPDatabaseSeeder extends Seeder
 
     private function seedActivities(): void
     {
-        if (! Schema::hasTable('taxonomies') || ! Schema::hasTable('taxonomies_translations')) {
+        $taxonomies_table = CoreTables::Taxonomies->value;
+        $taxonomies_translations_table = CoreTables::TaxonomiesTranslations->value;
+
+        if (! Schema::hasTable($taxonomies_table) || ! Schema::hasTable($taxonomies_translations_table)) {
             $this->command?->warn('Skipping activities: taxonomies tables are missing.');
 
             return;
@@ -127,7 +131,7 @@ final class DevERPDatabaseSeeder extends Seeder
         $entity_id = Entity::query()
             ->withoutGlobalScopes()
             ->where('name', 'activity')
-            ->where('type', EntityType::ACTIVITIES->value)
+            ->where('type', EntityType::Activities->value)
             ->select('id')
             ->first()?->id;
 

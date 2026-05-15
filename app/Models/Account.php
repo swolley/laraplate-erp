@@ -6,26 +6,35 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Concerns\BelongsToCompany;
-use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * General ledger account node (chart of accounts).
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperAccount
  */
-class Account extends Model
+final class Account extends Model
 {
     use BelongsToCompany;
 
     /**
      * Accounting models always version with DIFF; overrides any Setting row.
      */
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    #[Override]
+    protected $table = ERPTables::Accounts->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'code',
@@ -57,11 +66,11 @@ class Account extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
             'code' => ['required', 'string', 'max:32'],
             'name' => ['required', 'string', 'max:255'],
             'kind' => ['required', 'string', AccountKind::validationRule()],
-            'parent_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'parent_id' => ['nullable', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
             'meta' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -69,7 +78,7 @@ class Account extends Model
             'code' => ['sometimes', 'string', 'max:32'],
             'name' => ['sometimes', 'string', 'max:255'],
             'kind' => ['sometimes', 'string', AccountKind::validationRule()],
-            'parent_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'parent_id' => ['nullable', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
             'meta' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ]);

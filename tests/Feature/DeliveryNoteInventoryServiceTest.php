@@ -55,7 +55,7 @@ it('posts outbound stock and updates sales order lines when posted_at is set', f
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -65,7 +65,7 @@ it('posts outbound stock and updates sales order lines when posted_at is set', f
         'qty_ordered' => 20,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -131,7 +131,7 @@ it('rejects delivery quantity above remaining on the sales order line', function
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -141,7 +141,7 @@ it('rejects delivery quantity above remaining on the sales order line', function
         'qty_ordered' => 3,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -198,7 +198,7 @@ it('does not duplicate outbound stock on subsequent updates after posting', func
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -208,7 +208,7 @@ it('does not duplicate outbound stock on subsequent updates after posting', func
         'qty_ordered' => 5,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -294,7 +294,7 @@ it('rejects posting when line warehouse belongs to another company', function ()
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -304,7 +304,7 @@ it('rejects posting when line warehouse belongs to another company', function ()
         'qty_ordered' => 2,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -359,7 +359,7 @@ it('posts a balanced COGS journal linked to the delivery note when inventory pos
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -369,7 +369,7 @@ it('posts a balanced COGS journal linked to the delivery note when inventory pos
         'qty_ordered' => 20,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -440,7 +440,7 @@ it('reverts stock, sales order delivery, and cogs journal when a posted delivery
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $so_line = SalesOrderLine::query()->create([
@@ -450,7 +450,7 @@ it('reverts stock, sales order delivery, and cogs journal when a posted delivery
         'qty_ordered' => 5,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $note = DeliveryNote::query()->create([
@@ -486,8 +486,8 @@ it('reverts stock, sales order delivery, and cogs journal when a posted delivery
         ->and($note->inventory_posted_at)->toBeNull()
         ->and($note->cogs_journal_entry_id)->toBeNull()
         ->and($so_line->qty_delivered)->toBe(0)
-        ->and($so_line->status)->toBe(SalesOrderLineStatus::OPEN)
-        ->and($order->fresh()?->status)->toBe(SalesOrderStatus::CONFIRMED);
+        ->and($so_line->status)->toBe(SalesOrderLineStatus::Open)
+        ->and($order->fresh()?->status)->toBe(SalesOrderStatus::Confirmed);
 
     $reversal = JournalEntry::query()
         ->withoutGlobalScopes()

@@ -6,18 +6,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('goods_receipts', function (Blueprint $table): void {
+        $goods_receipts_table = ERPTables::GoodsReceipts->value;
+        Schema::create($goods_receipts_table, function (Blueprint $table) use ($goods_receipts_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('purchase_order_id')
                 ->nullable()
-                ->constrained('purchase_orders', 'id', 'goods_receipts_purchase_order_id_FK')
+                ->constrained(ERPTables::PurchaseOrders->value, 'id', "{$goods_receipts_table}_purchase_order_id_FK")
                 ->nullOnDelete();
             $table->string('reference', 64)->nullable();
             $table->timestamp('received_at')->nullable();
@@ -38,6 +40,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('goods_receipts');
+        Schema::dropIfExists(ERPTables::GoodsReceipts->value);
     }
 };

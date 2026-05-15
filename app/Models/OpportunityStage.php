@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
-use Modules\ERP\Casts\EntityType;
 use Modules\Core\Contracts\IDynamicEntityTypable;
 use Modules\Core\Models\Taxonomy;
+use Modules\ERP\Casts\EntityType;
 use Override;
 
 /**
- * CRM pipeline stage node (M3.1); rows live in `taxonomies` with {@see EntityType::OPPORTUNITY_STAGES}.
+ * CRM pipeline stage node (M3.1); rows live in `taxonomies` with {@see EntityType::OpportunityStages}.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperOpportunityStage
  */
-class OpportunityStage extends Taxonomy
+final class OpportunityStage extends Taxonomy
 {
     #[Override]
     public static function getEntityModelClass(): string
@@ -25,6 +26,6 @@ class OpportunityStage extends Taxonomy
     #[Override]
     protected static function getEntityType(): IDynamicEntityTypable
     {
-        return EntityType::OPPORTUNITY_STAGES;
+        return EntityType::OpportunityStages;
     }
 }

@@ -68,7 +68,7 @@ final class SalesOrderForm
                 Select::make('status')
                     ->options($order_status_options)
                     ->required()
-                    ->default(SalesOrderStatus::DRAFT->value),
+                    ->default(SalesOrderStatus::Draft->value),
                 Repeater::make('line_items')
                     ->schema([
                         TextInput::make('name')
@@ -95,7 +95,7 @@ final class SalesOrderForm
                         Select::make('status')
                             ->options($line_status_options)
                             ->required()
-                            ->default(SalesOrderLineStatus::OPEN->value),
+                            ->default(SalesOrderLineStatus::Open->value),
                     ])
                     ->defaultItems(1)
                     ->minItems(1)

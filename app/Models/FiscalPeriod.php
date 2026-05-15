@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Helpers\HasValidations;
 use Modules\Core\Helpers\HasVersions;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -17,9 +18,10 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * Scoped through {@see FiscalYear} for multi-company isolation.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperFiscalPeriod
  */
-class FiscalPeriod extends Model
+final class FiscalPeriod extends Model
 {
     use HasFactory;
     use HasValidations {
@@ -27,8 +29,18 @@ class FiscalPeriod extends Model
     }
     use HasVersions;
 
+    /**
+     * Accounting models always version with DIFF; overrides any Setting row.
+     */
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    #[Override]
+    protected $table = ERPTables::FiscalPeriods->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'fiscal_year_id',
         'period_no',
@@ -47,9 +59,9 @@ class FiscalPeriod extends Model
 
     public function getRules(): array
     {
-        $rules =$this->validationsHasRules();
+        $rules = $this->validationsHasRules();
         $rules['create'] = array_merge($rules['create'], [
-            'fiscal_year_id' => ['required', 'integer', 'exists:fiscal_years,id'],
+            'fiscal_year_id' => ['required', 'integer', 'exists:'.ERPTables::FiscalYears->value.',id'],
             'period_no' => ['required', 'integer', 'min:1', 'max:366'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],

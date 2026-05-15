@@ -6,25 +6,38 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\LeadStatus;
-use Illuminate\Validation\ValidationException;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * CRM lead (M3.1): early-stage prospect before a formal {@see Opportunity}.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperLead
  */
-class Lead extends Model
+final class Lead extends Model
 {
     use BelongsToCompany;
 
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::Leads->value;
 
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[\Override]
     protected $fillable = [
         'company_id',
         'party_id',
@@ -69,9 +82,38 @@ class Lead extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'party_id' => ['nullable', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'contact_id' => ['nullable', 'integer', 'exists:' . ERPTables::Contacts->value . ',id'],
+            'title' => ['required', 'string', 'max:255'],
+            'source' => ['nullable', 'string', 'max:128'],
+            'status' => ['required', 'string', LeadStatus::validationRule()],
+            'owner_user_id' => ['nullable', 'integer', 'exists:' . CoreTables::Users->value . ',id'],
+            'notes' => ['nullable', 'string'],
+            'converted_at' => ['nullable', 'date'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'party_id' => ['nullable', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'contact_id' => ['nullable', 'integer', 'exists:' . ERPTables::Contacts->value . ',id'],
+            'title' => ['sometimes', 'string', 'max:255'],
+            'source' => ['nullable', 'string', 'max:128'],
+            'status' => ['sometimes', 'string', LeadStatus::validationRule()],
+            'owner_user_id' => ['nullable', 'integer', 'exists:' . CoreTables::Users->value . ',id'],
+            'notes' => ['nullable', 'string'],
+            'converted_at' => ['nullable', 'date'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
-        static::saving(static function (Lead $lead): void {
+        self::saving(static function (Lead $lead): void {
             if ($lead->party_id === null) {
                 return;
             }
@@ -84,35 +126,6 @@ class Lead extends Model
                 ]);
             }
         });
-    }
-
-    #[Override]
-    public function getRules(): array
-    {
-        $rules = parent::getRules();
-        $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'party_id' => ['nullable', 'integer', 'exists:parties,id'],
-            'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'source' => ['nullable', 'string', 'max:128'],
-            'status' => ['required', 'string', LeadStatus::validationRule()],
-            'owner_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'notes' => ['nullable', 'string'],
-            'converted_at' => ['nullable', 'date'],
-        ]);
-        $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['nullable', 'integer', 'exists:parties,id'],
-            'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
-            'title' => ['sometimes', 'string', 'max:255'],
-            'source' => ['nullable', 'string', 'max:128'],
-            'status' => ['sometimes', 'string', LeadStatus::validationRule()],
-            'owner_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'notes' => ['nullable', 'string'],
-            'converted_at' => ['nullable', 'date'],
-        ]);
-
-        return $rules;
     }
 
     protected function casts(): array

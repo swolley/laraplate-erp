@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
@@ -15,13 +16,21 @@ use Override;
  * Holds fiscal identity (tax_id, fiscal_country) and the functional currency
  * used as `amount_local` for double-entry journal balancing.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperCompany
  */
-class Company extends Model
+final class Company extends Model
 {
+    /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::Companies->value;
+
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'slug',
         'name',
@@ -39,7 +48,7 @@ class Company extends Model
      */
     public static function default(): ?self
     {
-        return static::query()->withoutGlobalScopes()
+        return self::query()->withoutGlobalScopes()
             ->where('is_default', true)
             ->orderBy('id')
             ->first();
@@ -114,7 +123,7 @@ class Company extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'slug' => ['required', 'string', 'max:64', 'unique:companies,slug'],
+            'slug' => ['required', 'string', 'max:64', 'unique:' . ERPTables::Companies->value . ',slug'],
             'name' => ['required', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
             'tax_id' => ['nullable', 'string', 'max:32'],
@@ -124,7 +133,7 @@ class Company extends Model
             'is_default' => ['sometimes', 'boolean'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'slug' => ['sometimes', 'string', 'max:64', 'unique:companies,slug,' . $this->getKey()],
+            'slug' => ['sometimes', 'string', 'max:64', 'unique:' . ERPTables::Companies->value . ',slug,' . $this->getKey()],
             'name' => ['sometimes', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
             'tax_id' => ['nullable', 'string', 'max:32'],
@@ -141,15 +150,14 @@ class Company extends Model
      * Enforce a single default company invariant: when a row is flipped to
      * `is_default = true`, every other row is reset to false.
      */
-    #[Override]
     protected static function booted(): void
     {
-        static::saving(function (Company $company): void {
+        self::saving(function (Company $company): void {
             if (! $company->is_default) {
                 return;
             }
 
-            static::query()->withoutGlobalScopes()
+            self::query()->withoutGlobalScopes()
                 ->where('id', '!=', $company->getKey() ?? 0)
                 ->where('is_default', true)
                 ->update(['is_default' => false]);

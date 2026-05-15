@@ -11,24 +11,34 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperContact
  */
-class Contact extends Model
+final class Contact extends Model
 {
     use BelongsToCompany;
 
     /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::Contacts->value;
+
+    /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'name',
         'email',
         'phone',
     ];
 
+    #[\Override]
     protected $hidden = [
         'user_id',
         'user',

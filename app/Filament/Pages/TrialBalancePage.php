@@ -23,12 +23,16 @@ final class TrialBalancePage extends Page
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
+    #[\Override]
     protected static ?int $navigationSort = 80;
 
+    #[\Override]
     protected static ?string $navigationLabel = 'Trial Balance';
 
+    #[\Override]
     protected static ?string $title = 'Trial Balance';
 
+    #[\Override]
     protected static string $view = 'erp::filament.pages.trial-balance';
 
     public ?array $data = [];
@@ -62,7 +66,7 @@ final class TrialBalancePage extends Page
     {
         $state = $this->form->getState();
 
-        $service = app(TrialBalanceService::class);
+        $service = resolve(TrialBalanceService::class);
 
         $this->report_data = $service->generate(
             (int) $state['company_id'],

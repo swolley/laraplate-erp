@@ -6,13 +6,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('payment_terms', function (Blueprint $table): void {
+        Schema::create(ERPTables::PaymentTerms->value, function (Blueprint $table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->string('name', 128);
@@ -30,6 +31,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('payment_terms');
+        Schema::dropIfExists(ERPTables::PaymentTerms->value);
     }
 };

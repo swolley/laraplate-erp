@@ -3,20 +3,30 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
+use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperItem
  */
-class Item extends Model
+final class Item extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::Items->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'name',
@@ -55,12 +65,12 @@ class Item extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'max:64'],
             'uom' => ['required', 'string', 'max:16'],
             'costing_method' => ['required', 'string', 'in:fifo,weighted_avg'],
-            'taxonomy_id' => ['nullable', 'integer', 'exists:taxonomies,id'],
+            'taxonomy_id' => ['nullable', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
         ]);
 
         return $rules;

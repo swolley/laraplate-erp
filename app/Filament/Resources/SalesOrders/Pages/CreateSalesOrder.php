@@ -27,7 +27,7 @@ final class CreateSalesOrder extends CreateRecord
 
         if (blank($data['reference'] ?? null)) {
             $company = Company::query()->findOrFail((int) $data['company_id']);
-            $data['reference'] = app(DocumentNumberAllocator::class)
+            $data['reference'] = resolve(DocumentNumberAllocator::class)
                 ->next($company, DocumentType::SalesOrder, 0);
         }
 

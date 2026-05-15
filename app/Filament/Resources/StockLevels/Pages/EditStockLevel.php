@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\ERP\Filament\Resources\StockLevels\Pages;
 
 use Filament\Actions\DeleteAction;
@@ -10,6 +12,7 @@ use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 
 class EditStockLevel extends EditRecord
 {
+    #[\Override]
     protected static string $resource = StockLevelResource::class;
 
     protected function getHeaderActions(): array

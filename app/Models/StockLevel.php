@@ -7,14 +7,24 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperStockLevel
  */
-class StockLevel extends Model
+final class StockLevel extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::StockLevels->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'item_id',

@@ -8,14 +8,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperWarehouse
  */
-class Warehouse extends Model
+final class Warehouse extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::Warehouses->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'name',

@@ -32,7 +32,7 @@ final class ListVatSettlements extends ListRecords
                         ->label('Fiscal Period')
                         ->options(
                             FiscalPeriod::query()
-                                ->orderByDesc('start_date')
+                                ->latest('start_date')
                                 ->get()
                                 ->mapWithKeys(fn (FiscalPeriod $period): array => [
                                     (int) $period->id => 'P' . $period->period_no . ' (' . $period->start_date->format('Y-m-d') . ')',
@@ -48,7 +48,7 @@ final class ListVatSettlements extends ListRecords
                         return;
                     }
 
-                    app(VatSettlementService::class)->compute($company_id, (int) $data['fiscal_period_id']);
+                    resolve(VatSettlementService::class)->compute($company_id, (int) $data['fiscal_period_id']);
                     $this->dispatch('$refresh');
                 }),
         ];

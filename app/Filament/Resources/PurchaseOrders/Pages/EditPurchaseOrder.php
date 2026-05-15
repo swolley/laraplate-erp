@@ -38,15 +38,13 @@ final class EditPurchaseOrder extends EditRecord
         $data['line_items'] = $purchase_order->lines()
             ->orderBy('id')
             ->get()
-            ->map(static function (PurchaseOrderLine $line): array {
-                return [
-                    'item_id' => $line->item_id,
-                    'name' => $line->name,
-                    'qty_ordered' => $line->qty_ordered,
-                    'qty_received' => $line->qty_received,
-                    'unit_price' => $line->unit_price,
-                ];
-            })
+            ->map(static fn(PurchaseOrderLine $line): array => [
+                'item_id' => $line->item_id,
+                'name' => $line->name,
+                'qty_ordered' => $line->qty_ordered,
+                'qty_received' => $line->qty_received,
+                'unit_price' => $line->unit_price,
+            ])
             ->all();
 
         return $data;

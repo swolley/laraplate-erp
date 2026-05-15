@@ -46,12 +46,12 @@ final class StockMovementService
                 'company_id' => $company_id,
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
-                'direction' => StockMovementDirection::IN,
+                'direction' => StockMovementDirection::In,
                 'quantity' => $quantity,
                 'unit_cost' => $unit_cost_string,
             ]);
 
-            if ($source !== null) {
+            if ($source instanceof \Illuminate\Database\Eloquent\Model) {
                 $movement->source()->associate($source);
             }
 
@@ -130,12 +130,12 @@ final class StockMovementService
                 'company_id' => $company_id,
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
-                'direction' => StockMovementDirection::OUT,
+                'direction' => StockMovementDirection::Out,
                 'quantity' => $quantity,
                 'unit_cost' => null,
             ]);
 
-            if ($source !== null) {
+            if ($source instanceof \Illuminate\Database\Eloquent\Model) {
                 $movement->source()->associate($source);
             }
 

@@ -6,11 +6,11 @@ namespace Modules\ERP\Casts;
 
 enum ProjectStatus: string
 {
-    case ACTIVE = 'active'; // work in progress
-    case ON_HOLD = 'on_hold'; // waiting for something
-    case COMPLETED = 'completed'; // project is completed, no more activities and waiting for payment
-    case CANCELLED = 'cancelled'; // project is cancelled, no more activities and not completed
-    case ARCHIVED = 'archived'; // project is closed, no more activities and paid
+    case Active = 'active'; // work in progress
+    case OnHold = 'on_hold'; // waiting for something
+    case Completed = 'completed'; // project is completed, no more activities and waiting for payment
+    case Cancelled = 'cancelled'; // project is cancelled, no more activities and not completed
+    case Archived = 'archived'; // project is closed, no more activities and paid
 
     /**
      * @return array<int, string>

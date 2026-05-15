@@ -7,16 +7,26 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
  * Line on a {@see GoodsReceipt} driving stock-in and optional PO receipt progress.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperGoodsReceiptLine
  */
-class GoodsReceiptLine extends Model
+final class GoodsReceiptLine extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::GoodsReceiptLines->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'goods_receipt_id',

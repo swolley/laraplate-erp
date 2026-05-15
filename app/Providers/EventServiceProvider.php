@@ -13,6 +13,7 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<string, array<int, string>>
      */
+    #[\Override]
     protected $listen = [];
 
     /**
@@ -20,10 +21,6 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var bool
      */
+    #[\Override]
     protected static $shouldDiscoverEvents = true;
-
-    /**
-     * Configure the proper event listeners for email verification.
-     */
-    protected function configureEmailVerification(): void {}
 }

@@ -6,12 +6,12 @@ namespace Modules\ERP\Casts;
 
 enum EInvoiceSubmissionStatus: string
 {
-    case DRAFT = 'draft';
-    case QUEUED = 'queued';
-    case SUBMITTED = 'submitted';
-    case ACCEPTED = 'accepted';
-    case REJECTED = 'rejected';
-    case ERROR = 'error';
+    case Draft = 'draft';
+    case Queued = 'queued';
+    case Submitted = 'submitted';
+    case Accepted = 'accepted';
+    case Rejected = 'rejected';
+    case Error = 'error';
 
     /**
      * @return array<int, string>

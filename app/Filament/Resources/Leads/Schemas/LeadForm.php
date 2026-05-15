@@ -48,7 +48,7 @@ final class LeadForm
                 Select::make('status')
                     ->options($status_options)
                     ->required()
-                    ->default(LeadStatus::NEW->value),
+                    ->default(LeadStatus::New->value),
                 Select::make('owner_user_id')
                     ->relationship('owner', 'email')
                     ->searchable()

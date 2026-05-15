@@ -16,10 +16,10 @@ use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 /**
  * Creates a new draft amendment order from an existing sales order.
  */
-final class SalesOrderAmendmentService
+final readonly class SalesOrderAmendmentService
 {
     public function __construct(
-        private readonly DocumentNumberAllocator $document_number_allocator,
+        private DocumentNumberAllocator $document_number_allocator,
     ) {}
 
     public function amend(SalesOrder $source_order): SalesOrder
@@ -33,8 +33,8 @@ final class SalesOrderAmendmentService
                 ->firstOrFail();
 
             if (! in_array($locked_source->status, [
-                SalesOrderStatus::CONFIRMED,
-                SalesOrderStatus::PARTIALLY_EVASED,
+                SalesOrderStatus::Confirmed,
+                SalesOrderStatus::PartiallyEvased,
             ], true)) {
                 throw ValidationException::withMessages([
                     'status' => ['Only confirmed or partially evased sales orders can be amended.'],
@@ -59,7 +59,7 @@ final class SalesOrderAmendmentService
                 'amends_sales_order_id' => (int) $locked_source->id,
                 'reference' => $new_reference,
                 'currency' => (string) $locked_source->currency,
-                'status' => SalesOrderStatus::DRAFT,
+                'status' => SalesOrderStatus::Draft,
                 'notes' => $locked_source->notes,
             ]);
 
@@ -79,7 +79,7 @@ final class SalesOrderAmendmentService
                     'qty_delivered' => 0,
                     'qty_invoiced' => 0,
                     'unit_price' => $source_line->unit_price,
-                    'status' => SalesOrderLineStatus::OPEN,
+                    'status' => SalesOrderLineStatus::Open,
                 ]);
             }
 

@@ -10,6 +10,7 @@ use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 
 class ListPurchaseOrders extends ListRecords
 {
+    #[\Override]
     protected static string $resource = PurchaseOrderResource::class;
 
     protected function getHeaderActions(): array

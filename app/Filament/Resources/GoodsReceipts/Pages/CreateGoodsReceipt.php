@@ -41,7 +41,7 @@ final class CreateGoodsReceipt extends CreateRecord
         $record->refresh();
 
         if ($record->posted_at !== null && $record->inventory_posted_at === null) {
-            app(GoodsReceiptInventoryService::class)->postInventory($record);
+            resolve(GoodsReceiptInventoryService::class)->postInventory($record);
             $record->saveQuietly();
         }
 

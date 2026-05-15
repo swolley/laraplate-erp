@@ -6,6 +6,7 @@ namespace Modules\ERP\Services\Taxation;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\TaxCode;
 
 /**
@@ -17,15 +18,12 @@ final class TaxCodeSupersessionService
 {
     public function linkReplacement(TaxCode $obsolete, TaxCode $replacement): void
     {
-        if ((int) $obsolete->company_id !== (int) $replacement->company_id) {
-            throw new InvalidArgumentException('Tax codes must belong to the same company.');
-        }
+        throw_if((int) $obsolete->company_id !== (int) $replacement->company_id, InvalidArgumentException::class, 'Tax codes must belong to the same company.');
 
-        if ((int) $obsolete->getKey() === (int) $replacement->getKey()) {
-            throw new InvalidArgumentException('Cannot link a tax code as replacement of itself.');
-        }
+        throw_if((int) $obsolete->getKey() === (int) $replacement->getKey(), InvalidArgumentException::class, 'Cannot link a tax code as replacement of itself.');
 
-        DB::table('tax_codes')
+        $tax_codes_table = ERPTables::TaxCodes->value;
+        DB::table($tax_codes_table)
             ->where('id', $obsolete->getKey())
             ->update([
                 'is_active' => false,

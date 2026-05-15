@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Modules\ERP\Enums\ERPTables;
 
 /**
  * Installs BEFORE UPDATE and BEFORE DELETE triggers on lockable tables
@@ -17,8 +18,10 @@ use Illuminate\Support\Facades\DB;
  */
 return new class extends Migration
 {
-    /** @var list<string> */
-    private const array LOCKABLE_TABLES = ['quotations', 'sales_orders'];
+    /**
+     * @var list<string>
+     */
+    private const array LOCKABLE_TABLES = [ERPTables::Quotations->value, ERPTables::SalesOrders->value];
 
     public function up(): void
     {

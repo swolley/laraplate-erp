@@ -8,20 +8,22 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Enums\CoreTables;
+use Modules\Core\Overrides\Seeder;
+use Modules\Core\Services\PresetVersioningService;
 use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
-use Modules\Core\Overrides\Seeder;
-use Modules\Core\Services\PresetVersioningService;
 
 /**
  * Bootstraps the ERP module: default company (tenant), Activity and opportunity-stage
  * entities, Italian chart of accounts, calendar fiscal year (via FiscalCalendarInstaller),
  * and default Italian tax codes. Taxonomy trees for activities and opportunity stages are
- * seeded by dev fixtures ({@see \Modules\ERP\Database\Seeders\DevERPTaxonomySeeder}).
+ * seeded by dev fixtures ({@see DevERPTaxonomySeeder}).
  */
 final class ERPDatabaseSeeder extends Seeder
 {
@@ -35,13 +37,21 @@ final class ERPDatabaseSeeder extends Seeder
         /** @var Company|null $company */
         $company = null;
 
-        if (Schema::hasTable('companies')) {
+        $companies_table = ERPTables::Companies->value;
+        $entities_table = CoreTables::Entities->value;
+        $presets_table = CoreTables::Presets->value;
+        $presettables_table = CoreTables::Presettables->value;
+        $accounts_table = ERPTables::Accounts->value;
+        $fiscal_years_table = ERPTables::FiscalYears->value;
+        $tax_codes_table = ERPTables::TaxCodes->value;
+
+        if (Schema::hasTable($companies_table)) {
             Model::unguarded(function () use (&$company): void {
                 $company = $this->ensureDefaultCompany();
             });
         }
 
-        if (! Schema::hasTable('entities') || ! Schema::hasTable('presets') || ! Schema::hasTable('presettables')) {
+        if (! Schema::hasTable($entities_table) || ! Schema::hasTable($presets_table) || ! Schema::hasTable($presettables_table)) {
             $this->command?->warn('Skipping ERP entity bootstrap: prerequisite Core tables (entities/presets/presettables) are missing.');
         } else {
             Model::unguarded(function (): void {
@@ -49,19 +59,19 @@ final class ERPDatabaseSeeder extends Seeder
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable('accounts')) {
+        if ($company instanceof Company && Schema::hasTable($accounts_table)) {
             Model::unguarded(function () use ($company): void {
                 resolve(ChartOfAccountsInstaller::class)->installWhenEmpty($company);
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable('fiscal_years')) {
+        if ($company instanceof Company && Schema::hasTable($fiscal_years_table)) {
             Model::unguarded(function () use ($company): void {
                 resolve(FiscalCalendarInstaller::class)->ensureCalendarYear($company, (int) now()->year);
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable('tax_codes')) {
+        if ($company instanceof Company && Schema::hasTable($tax_codes_table)) {
             Model::unguarded(function () use ($company): void {
                 resolve(ItalianTaxCodesSeeder::class)->seedForCompany($company);
             });
@@ -107,12 +117,12 @@ final class ERPDatabaseSeeder extends Seeder
             $entities = [
                 [
                     'name' => 'activity',
-                    'type' => EntityType::ACTIVITIES,
+                    'type' => EntityType::Activities,
                     'preset' => 'standard',
                 ],
                 [
                     'name' => 'opportunity_stage',
-                    'type' => EntityType::OPPORTUNITY_STAGES,
+                    'type' => EntityType::OpportunityStages,
                     'preset' => 'standard',
                 ],
             ];

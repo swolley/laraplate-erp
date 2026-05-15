@@ -5,9 +5,10 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\ERP\Casts\QuoteStatus;
-use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Casts\QuoteStatus;
+use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
@@ -16,13 +17,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('quotations', function (Blueprint $table): void {
+        $quotations_table = ERPTables::Quotations->value;
+        Schema::create($quotations_table, function (Blueprint $table) use ($quotations_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
-            $table->foreignId('party_id')->constrained('parties', 'id', 'quotations_party_id_FK')->restrictOnDelete()->comment('The party that the quotation belongs to');
-            $table->char('currency', 3)->default('EUR')->comment('ISO 4217 for document amounts');
+            $table->foreignId('party_id')->constrained(ERPTables::Parties->value, 'id', "{$quotations_table}_party_id_FK")->restrictOnDelete()->comment('The party that the quotation belongs to');
+            $table->char('currency', 3)->default('EUR')->index("{$quotations_table}_currency_idx")->comment('ISO 4217 for document amounts');
             $table->text('notes')->nullable(true)->comment('The notes of the quotation');
-            $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::DRAFT->value)->index('quotations_status_IDX')->comment('The status of the quotation');
+            $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::Draft->value)->index("{$quotations_table}_status_IDX")->comment('The status of the quotation');
             $table->unsignedTinyInteger('version')->default(0)->comment('The revision number of the quotation');
 
             MigrateUtils::timestamps(
@@ -41,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('quotations');
+        Schema::dropIfExists(ERPTables::Quotations->value);
     }
 };

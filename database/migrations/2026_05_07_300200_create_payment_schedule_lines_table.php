@@ -7,23 +7,25 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
 use Modules\ERP\Casts\PaymentScheduleStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('payment_schedule_lines', function (Blueprint $table): void {
+        $payment_schedule_lines_table = ERPTables::PaymentScheduleLines->value;
+        Schema::create($payment_schedule_lines_table, function (Blueprint $table) use ($payment_schedule_lines_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('invoice_id')
-                ->constrained('invoices', 'id', 'payment_schedule_lines_invoice_id_FK')
+                ->constrained(ERPTables::Invoices->value, 'id', "{$payment_schedule_lines_table}_invoice_id_FK")
                 ->cascadeOnDelete();
-            $table->date('due_date')->index('payment_schedule_lines_due_date_idx');
+            $table->date('due_date')->index("{$payment_schedule_lines_table}_due_date_idx");
             ERPMigrateUtils::moneyColumns($table);
             $table->decimal('paid_amount_doc', 15, 4)->default(0);
             $table->decimal('paid_amount_local', 15, 4)->default(0);
-            $table->string('status', 32)->default(PaymentScheduleStatus::Open->value);
+            $table->enum('status', PaymentScheduleStatus::values())->default(PaymentScheduleStatus::Open->value)->index("{$payment_schedule_lines_table}_status_IDX");
             $table->timestamp('paid_at')->nullable();
 
             MigrateUtils::timestamps(
@@ -36,6 +38,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('payment_schedule_lines');
+        Schema::dropIfExists(ERPTables::PaymentScheduleLines->value);
     }
 };

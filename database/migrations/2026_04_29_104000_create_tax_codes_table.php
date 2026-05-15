@@ -5,15 +5,17 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Modules\ERP\Casts\TaxKind;
-use Modules\ERP\Helpers\ERPMigrateUtils;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Casts\TaxKind;
+use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tax_codes', function (Blueprint $table): void {
+        $tax_codes_table = ERPTables::TaxCodes->value;
+        Schema::create($tax_codes_table, function (Blueprint $table) use ($tax_codes_table): void {
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->string('code', 64)->comment('Immutable business key (e.g. IT_VAT_22); supersession uses a new code');
@@ -28,11 +30,11 @@ return new class extends Migration
             $table->date('effective_from')->comment('First calendar day this row may apply');
             $table->foreignId('replaced_by_tax_code_id')
                 ->nullable()
-                ->constrained('tax_codes', 'id', 'tax_codes_replaced_by_id_FK')
+                ->constrained($tax_codes_table, 'id', "{$tax_codes_table}_replaced_by_id_FK")
                 ->nullOnDelete();
             $table->json('meta')->nullable()->comment('Extensions e.g. SDI regime codes');
 
-            $table->unique(['company_id', 'code'], 'tax_codes_company_code_UN');
+            $table->unique(['company_id', 'code'], "{$tax_codes_table}_company_code_UN");
 
             MigrateUtils::timestamps(
                 $table,
@@ -44,6 +46,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('tax_codes');
+        Schema::dropIfExists(ERPTables::TaxCodes->value);
     }
 };

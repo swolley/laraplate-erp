@@ -7,6 +7,7 @@ namespace Modules\ERP\Tests\Support;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Core\Enums\CoreTables;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Pivot\Presettable;
@@ -37,7 +38,7 @@ final class OpportunityStageTaxonomy
 
         $now = now();
 
-        $stage_id = DB::table('taxonomies')->insertGetId([
+        $stage_id = DB::table(CoreTables::Taxonomies->value)->insertGetId([
             'entity_id' => $entity->id,
             'presettable_id' => $presettable->id,
             'shared_components' => null,
@@ -55,7 +56,7 @@ final class OpportunityStageTaxonomy
             'valid_to' => null,
         ]);
 
-        DB::table('taxonomies_translations')->insert([
+        DB::table(CoreTables::TaxonomiesTranslations->value)->insert([
             'taxonomy_id' => $stage_id,
             'locale' => 'en',
             'name' => 'New',

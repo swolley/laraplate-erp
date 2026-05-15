@@ -8,20 +8,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Tracks outbound e-invoice submission attempts per invoice and logical provider.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperEInvoiceSubmission
  */
-class EInvoiceSubmission extends Model
+final class EInvoiceSubmission extends Model
 {
     use BelongsToCompany;
 
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    /**
+     * Accounting models always version with DIFF; overrides any Setting row.
+     */
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    #[Override]
+    protected $table = ERPTables::EInvoiceSubmissions->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'invoice_id',
@@ -45,9 +57,10 @@ class EInvoiceSubmission extends Model
     public function getRules(): array
     {
         $rules = parent::getRules();
+
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
             'provider_code' => ['required', 'string', 'max:64'],
             'external_id' => ['nullable', 'string', 'max:191'],
             'status' => ['required', 'string', EInvoiceSubmissionStatus::validationRule()],
@@ -55,8 +68,9 @@ class EInvoiceSubmission extends Model
             'submitted_at' => ['nullable', 'date'],
             'response_payload' => ['nullable', 'array'],
         ]);
+
         $rules['update'] = array_merge($rules['update'], [
-            'invoice_id' => ['sometimes', 'integer', 'exists:invoices,id'],
+            'invoice_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
             'provider_code' => ['sometimes', 'string', 'max:64'],
             'external_id' => ['nullable', 'string', 'max:191'],
             'status' => ['sometimes', 'string', EInvoiceSubmissionStatus::validationRule()],

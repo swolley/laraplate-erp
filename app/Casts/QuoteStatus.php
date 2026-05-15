@@ -6,10 +6,10 @@ namespace Modules\ERP\Casts;
 
 enum QuoteStatus: string
 {
-    case DRAFT = 'draft';
-    case SENT = 'sent';
-    case ACCEPTED = 'accepted';
-    case REJECTED = 'rejected';
+    case Draft = 'draft';
+    case Sent = 'sent';
+    case Accepted = 'accepted';
+    case Rejected = 'rejected';
 
     /**
      * @return array<int, string>

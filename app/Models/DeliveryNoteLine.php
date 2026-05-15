@@ -8,16 +8,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
  * Line on a {@see DeliveryNote} driving stock-out and optional SO evasion.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNoteLine
  */
-class DeliveryNoteLine extends Model
+final class DeliveryNoteLine extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::DeliveryNoteLines->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'delivery_note_id',

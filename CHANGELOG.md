@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### ⚙️ Miscellaneous Tasks
+
+- Update project configuration and enhance enums
+
+## [1.7.0] - 2026-05-09
+
 ### 🚀 Features
 
 - *(erp)* Add migration for invoice_lines table

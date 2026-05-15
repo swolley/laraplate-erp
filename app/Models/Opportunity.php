@@ -6,24 +6,34 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Core\Overrides\Model;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Enums\CoreTables;
+use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * CRM opportunity (M3.1): qualified deal linked to a {@see Party} and pipeline {@see OpportunityStage}.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperOpportunity
  */
-class Opportunity extends Model
+final class Opportunity extends Model
 {
     use BelongsToCompany;
 
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    #[Override]
+    protected $table = ERPTables::Opportunities->value;
 
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[\Override]
     protected $fillable = [
         'company_id',
         'lead_id',
@@ -75,32 +85,15 @@ class Opportunity extends Model
         return $this->hasMany(Quotation::class);
     }
 
-    protected static function booted(): void
-    {
-        static::saving(static function (Opportunity $opportunity): void {
-            if ($opportunity->party_id === null) {
-                return;
-            }
-
-            $party = Party::query()->find($opportunity->party_id);
-
-            if ($party !== null && ! $party->is_customer) {
-                throw ValidationException::withMessages([
-                    'party_id' => ['The selected party must be a customer.'],
-                ]);
-            }
-        });
-    }
-
     #[Override]
     public function getRules(): array
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
-            'party_id' => ['required', 'integer', 'exists:parties,id'],
-            'stage_taxonomy_id' => ['required', 'integer', 'exists:taxonomies,id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'lead_id' => ['nullable', 'integer', 'exists:' . ERPTables::Leads->value . ',id'],
+            'party_id' => ['required', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'stage_taxonomy_id' => ['required', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'status' => ['required', 'string', OpportunityStatus::validationRule()],
             'expected_close_date' => ['nullable', 'date'],
@@ -115,9 +108,9 @@ class Opportunity extends Model
             'lost_reason' => ['nullable', 'string'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
-            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
-            'stage_taxonomy_id' => ['sometimes', 'integer', 'exists:taxonomies,id'],
+            'lead_id' => ['nullable', 'integer', 'exists:' . ERPTables::Leads->value . ',id'],
+            'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'stage_taxonomy_id' => ['sometimes', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'status' => ['sometimes', 'string', OpportunityStatus::validationRule()],
             'expected_close_date' => ['nullable', 'date'],
@@ -133,6 +126,23 @@ class Opportunity extends Model
         ]);
 
         return $rules;
+    }
+
+    protected static function booted(): void
+    {
+        self::saving(static function (Opportunity $opportunity): void {
+            if ($opportunity->party_id === null) {
+                return;
+            }
+
+            $party = Party::query()->find($opportunity->party_id);
+
+            if ($party !== null && ! $party->is_customer) {
+                throw ValidationException::withMessages([
+                    'party_id' => ['The selected party must be a customer.'],
+                ]);
+            }
+        });
     }
 
     protected function casts(): array

@@ -38,14 +38,12 @@ final class EditDeliveryNote extends EditRecord
         $data['line_items'] = $delivery_note->lines()
             ->orderBy('id')
             ->get()
-            ->map(static function (DeliveryNoteLine $line): array {
-                return [
-                    'item_id' => $line->item_id,
-                    'warehouse_id' => $line->warehouse_id,
-                    'quantity' => $line->quantity,
-                    'sales_order_line_id' => $line->sales_order_line_id,
-                ];
-            })
+            ->map(static fn(DeliveryNoteLine $line): array => [
+                'item_id' => $line->item_id,
+                'warehouse_id' => $line->warehouse_id,
+                'quantity' => $line->quantity,
+                'sales_order_line_id' => $line->sales_order_line_id,
+            ])
             ->all();
 
         return $data;

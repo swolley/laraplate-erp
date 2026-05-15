@@ -9,23 +9,35 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Modules\ERP\Concerns\BelongsToCompany;
-use Modules\ERP\Exceptions\PostedJournalImmutableException;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Exceptions\PostedJournalImmutableException;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Header for a posted double-entry journal voucher.
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperJournalEntry
  */
-class JournalEntry extends Model
+final class JournalEntry extends Model
 {
     use BelongsToCompany;
 
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::JournalEntries->value;
 
+    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[\Override]
     protected $fillable = [
         'company_id',
         'fiscal_period_id',
@@ -37,33 +49,6 @@ class JournalEntry extends Model
         'reverses_journal_entry_id',
         'reversal_reason',
     ];
-
-    protected static function booted(): void
-    {
-        static::updating(function (JournalEntry $entry): void {
-            if ($entry->getOriginal('posted_at') === null) {
-                return;
-            }
-
-            if ($entry->isDirty('deleted_at')) {
-                throw PostedJournalImmutableException::make();
-            }
-
-            $dirty_keys = array_keys($entry->getDirty());
-
-            if (array_diff($dirty_keys, ['updated_at']) !== []) {
-                throw PostedJournalImmutableException::make();
-            }
-        });
-
-        static::deleting(function (JournalEntry $entry): void {
-            if ($entry->posted_at === null) {
-                return;
-            }
-
-            throw PostedJournalImmutableException::make();
-        });
-    }
 
     /**
      * @return BelongsTo<FiscalPeriod, $this>
@@ -114,28 +99,55 @@ class JournalEntry extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
-            'fiscal_period_id' => ['nullable', 'integer', 'exists:fiscal_periods,id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'fiscal_period_id' => ['nullable', 'integer', 'exists:' . ERPTables::FiscalPeriods->value . ',id'],
             'posted_at' => ['nullable', 'date'],
             'posted_by' => ['nullable', 'integer'],
             'reference_type' => ['nullable', 'string', 'max:255'],
             'reference_id' => ['nullable', 'integer'],
             'description' => ['nullable', 'string'],
-            'reverses_journal_entry_id' => ['nullable', 'integer', 'exists:journal_entries,id'],
+            'reverses_journal_entry_id' => ['nullable', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],
             'reversal_reason' => ['nullable', 'string'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'fiscal_period_id' => ['nullable', 'integer', 'exists:fiscal_periods,id'],
+            'fiscal_period_id' => ['nullable', 'integer', 'exists:' . ERPTables::FiscalPeriods->value . ',id'],
             'posted_at' => ['nullable', 'date'],
             'posted_by' => ['nullable', 'integer'],
             'reference_type' => ['nullable', 'string', 'max:255'],
             'reference_id' => ['nullable', 'integer'],
             'description' => ['nullable', 'string'],
-            'reverses_journal_entry_id' => ['nullable', 'integer', 'exists:journal_entries,id'],
+            'reverses_journal_entry_id' => ['nullable', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],
             'reversal_reason' => ['nullable', 'string'],
         ]);
 
         return $rules;
+    }
+
+    protected static function booted(): void
+    {
+        self::updating(function (JournalEntry $entry): void {
+            if ($entry->getOriginal('posted_at') === null) {
+                return;
+            }
+
+            if ($entry->isDirty('deleted_at')) {
+                throw PostedJournalImmutableException::make();
+            }
+
+            $dirty_keys = array_keys($entry->getDirty());
+
+            if (array_diff($dirty_keys, ['updated_at']) !== []) {
+                throw PostedJournalImmutableException::make();
+            }
+        });
+
+        self::deleting(function (JournalEntry $entry): void {
+            if ($entry->posted_at === null) {
+                return;
+            }
+
+            throw PostedJournalImmutableException::make();
+        });
     }
 
     protected function casts(): array

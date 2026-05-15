@@ -23,12 +23,16 @@ final class IncomeStatementPage extends Page
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
+    #[\Override]
     protected static ?int $navigationSort = 82;
 
+    #[\Override]
     protected static ?string $navigationLabel = 'Income Statement';
 
+    #[\Override]
     protected static ?string $title = 'Income Statement';
 
+    #[\Override]
     protected static string $view = 'erp::filament.pages.income-statement';
 
     public ?array $data = [];
@@ -66,7 +70,7 @@ final class IncomeStatementPage extends Page
     {
         $state = $this->form->getState();
 
-        $service = app(IncomeStatementService::class);
+        $service = resolve(IncomeStatementService::class);
 
         $this->report_data = $service->generate(
             (int) $state['company_id'],

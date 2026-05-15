@@ -13,22 +13,28 @@ use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\QuotationObserver;
 use Override;
 
 #[ObservedBy([QuotationObserver::class])]
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperQuotation
  */
-class Quotation extends Model
+final class Quotation extends Model
 {
     use BelongsToCompany;
     use HasLocks;
     use HasValidity;
 
+    #[Override]
+    protected $table = ERPTables::Quotations->value;
+
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'party_id',
         'opportunity_id',
@@ -70,9 +76,33 @@ class Quotation extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:'.ERPTables::Opportunities->value.',id'],
+            'currency' => ['required', 'string', 'size:3'],
+            'notes' => ['nullable', 'string'],
+            'status' => ['required', 'string', QuoteStatus::validationRule()],
+            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:'.ERPTables::Opportunities->value.',id'],
+            'currency' => ['sometimes', 'string', 'size:3'],
+            'notes' => ['nullable', 'string'],
+            'status' => ['sometimes', 'string', QuoteStatus::validationRule()],
+            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
-        static::saving(static function (Quotation $quotation): void {
+        self::saving(static function (Quotation $quotation): void {
             if ($quotation->party_id !== null) {
                 $party = Party::query()->find($quotation->party_id);
 
@@ -107,30 +137,6 @@ class Quotation extends Model
                 ]);
             }
         });
-    }
-
-    #[Override]
-    public function getRules(): array
-    {
-        $rules = parent::getRules();
-        $rules['create'] = array_merge($rules['create'], [
-            'party_id' => ['required', 'integer', 'exists:parties,id'],
-            'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
-            'currency' => ['required', 'string', 'size:3'],
-            'notes' => ['nullable', 'string'],
-            'status' => ['required', 'string', QuoteStatus::validationRule()],
-            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
-        ]);
-        $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:parties,id'],
-            'opportunity_id' => ['nullable', 'integer', 'exists:opportunities,id'],
-            'currency' => ['sometimes', 'string', 'size:3'],
-            'notes' => ['nullable', 'string'],
-            'status' => ['sometimes', 'string', QuoteStatus::validationRule()],
-            'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
-        ]);
-
-        return $rules;
     }
 
     protected function casts(): array

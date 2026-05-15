@@ -52,7 +52,7 @@ final class OpportunityForm
                 Select::make('status')
                     ->options($status_options)
                     ->required()
-                    ->default(OpportunityStatus::OPEN->value),
+                    ->default(OpportunityStatus::Open->value),
                 DatePicker::make('expected_close_date')
                     ->nullable(),
                 TextInput::make('expected_value_doc')

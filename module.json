@@ -10,5 +10,8 @@
     "providers": [
         "Modules\\ERP\\Providers\\ERPServiceProvider"
     ],
-    "files": []
+    "files": [],
+    "requires": [
+        "Core"
+    ]
 }

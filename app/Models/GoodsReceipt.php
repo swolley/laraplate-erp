@@ -9,16 +9,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\GoodsReceiptObserver;
+use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperGoodsReceipt
  */
 #[ObservedBy([GoodsReceiptObserver::class])]
-class GoodsReceipt extends Model
+final class GoodsReceipt extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::GoodsReceipts->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'purchase_order_id',

@@ -14,9 +14,9 @@ use Modules\ERP\Models\Company;
  * Idempotent loader that materialises a {@see ChartOfAccountsProvider} definition set
  * under a {@see Company}.
  */
-final class ChartOfAccountsInstaller
+final readonly class ChartOfAccountsInstaller
 {
-    public function __construct(private readonly ChartOfAccountsProvider $provider) {}
+    public function __construct(private ChartOfAccountsProvider $provider) {}
 
     /**
      * Insert all accounts for the company when the chart is still empty.
@@ -91,9 +91,7 @@ final class ChartOfAccountsInstaller
             }
         }
 
-        if ($queue === []) {
-            throw new InvalidArgumentException('Chart definitions must contain at least one root account (parent_code null).');
-        }
+        throw_if($queue === [], InvalidArgumentException::class, 'Chart definitions must contain at least one root account (parent_code null).');
 
         while ($queue !== []) {
             /** @var string $code */
@@ -107,9 +105,7 @@ final class ChartOfAccountsInstaller
             }
         }
 
-        if (count($sorted) !== count($definitions)) {
-            throw new InvalidArgumentException('Chart definitions contain a cycle or a missing parent_code reference.');
-        }
+        throw_if(count($sorted) !== count($definitions), InvalidArgumentException::class, 'Chart definitions contain a cycle or a missing parent_code reference.');
 
         return $sorted;
     }

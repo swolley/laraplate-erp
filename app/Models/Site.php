@@ -3,25 +3,33 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
+use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\Core\Models\Place;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
+use Override;
 
 /**
  * Physical premise (branch) for on-site work; optional LOCATION for calendar exports (ICS).
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperSite
  */
-class Site extends Model
+final class Site extends Model
 {
     use BelongsToCompany;
+
+    #[Override]
+    protected $table = ERPTables::Sites->value;
 
     /**
      * The attributes that are mass assignable.
      */
+    #[\Override]
     protected $fillable = [
         'name',
         'place_id',
@@ -48,11 +56,11 @@ class Site extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'name' => ['required', 'string', 'max:255'],
-            'place_id' => ['required', 'integer', 'exists:places,id'],
+            'place_id' => ['required', 'integer', 'exists:'.CoreTables::Places->value.',id'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'name' => ['sometimes', 'string', 'max:255'],
-            'place_id' => ['sometimes', 'integer', 'exists:places,id'],
+            'place_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Places->value.',id'],
         ]);
 
         return $rules;

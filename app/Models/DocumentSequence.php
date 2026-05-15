@@ -4,20 +4,29 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Concerns\BelongsToCompany;
-use Modules\Core\Overrides\Model;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
  * Per-company document number sequence state (increments under row lock).
  *
+ * @mixin \Eloquent
  * @mixin IdeHelperDocumentSequence
  */
-class DocumentSequence extends Model
+final class DocumentSequence extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::DocumentSequences->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'document_type',
@@ -35,7 +44,7 @@ class DocumentSequence extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:companies,id'],
+            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
             'document_type' => ['required', 'string', DocumentType::validationRule()],
             'fiscal_year' => ['required', 'integer', 'min:0', 'max:2100'],
             'last_number' => ['required', 'integer', 'min:0'],

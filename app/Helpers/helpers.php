@@ -26,7 +26,7 @@ function current_company_id(): ?int
 {
     $container = container_or_null();
 
-    if ($container !== null && $container->bound('erp.current_company_id')) {
+    if ($container instanceof \Illuminate\Contracts\Container\Container && $container->bound('erp.current_company_id')) {
         try {
             $bound = $container->make('erp.current_company_id');
 
@@ -43,7 +43,7 @@ function current_company_id(): ?int
     }
 
     try {
-        $user = $container?->bound('auth') ? $container->make('auth')->user() : null;
+        $user = $container?->bound('auth') ? $container->make(\Illuminate\Contracts\Auth\Factory::class)->user() : null;
     } catch (Throwable) {
         $user = null;
     }
@@ -70,7 +70,7 @@ function with_company(int $companyId, callable $callback)
 {
     $container = container_or_null();
 
-    if ($container === null) {
+    if (!$container instanceof \Illuminate\Contracts\Container\Container) {
         return $callback();
     }
 

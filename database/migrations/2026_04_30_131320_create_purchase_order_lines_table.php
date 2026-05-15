@@ -6,19 +6,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Enums\ERPTables;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('purchase_order_lines', function (Blueprint $table): void {
+        $purchase_order_lines_table = ERPTables::PurchaseOrderLines->value;
+        Schema::create($purchase_order_lines_table, function (Blueprint $table) use ($purchase_order_lines_table): void {
             $table->id();
             $table->foreignId('purchase_order_id')
-                ->constrained('purchase_orders', 'id', 'purchase_order_lines_purchase_order_id_FK')
+                ->constrained(ERPTables::PurchaseOrders->value, 'id', "{$purchase_order_lines_table}_purchase_order_id_FK")
                 ->cascadeOnDelete();
             $table->foreignId('item_id')
                 ->nullable()
-                ->constrained('items', 'id', 'purchase_order_lines_item_id_FK')
+                ->constrained(ERPTables::Items->value, 'id', "{$purchase_order_lines_table}_item_id_FK")
                 ->nullOnDelete();
             $table->string('name');
             $table->unsignedInteger('qty_ordered')->default(1);
@@ -31,6 +33,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('purchase_order_lines');
+        Schema::dropIfExists(ERPTables::PurchaseOrderLines->value);
     }
 };

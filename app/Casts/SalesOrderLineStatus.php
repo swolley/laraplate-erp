@@ -6,10 +6,10 @@ namespace Modules\ERP\Casts;
 
 enum SalesOrderLineStatus: string
 {
-    case OPEN = 'open';
-    case PARTIALLY_EVASED = 'partially_evased';
-    case FULLY_EVASED = 'fully_evased';
-    case CANCELLED = 'cancelled';
+    case Open = 'open';
+    case PartiallyEvased = 'partially_evased';
+    case FullyEvased = 'fully_evased';
+    case Cancelled = 'cancelled';
 
     /**
      * @return array<int, string>

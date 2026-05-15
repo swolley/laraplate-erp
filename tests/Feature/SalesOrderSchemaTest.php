@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
@@ -21,8 +22,8 @@ use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 uses(RefreshDatabase::class);
 
 it('creates sales order tables', function (): void {
-    expect(Schema::hasTable('sales_orders'))->toBeTrue()
-        ->and(Schema::hasTable('sales_order_lines'))->toBeTrue();
+    expect(Schema::hasTable(ERPTables::SalesOrders->value))->toBeTrue()
+        ->and(Schema::hasTable(ERPTables::SalesOrderLines->value))->toBeTrue();
 });
 
 it('persists a sales order with lines', function (): void {
@@ -42,7 +43,7 @@ it('persists a sales order with lines', function (): void {
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::DRAFT,
+        'status' => SalesOrderStatus::Draft,
     ]);
 
     $order->lines()->create([
@@ -50,11 +51,11 @@ it('persists a sales order with lines', function (): void {
         'qty_ordered' => 2,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     expect($order->lines)->toHaveCount(1)
-        ->and($order->status)->toBe(SalesOrderStatus::DRAFT);
+        ->and($order->status)->toBe(SalesOrderStatus::Draft);
 });
 
 it('allocates sales order document numbers with gap_allowed like quotations', function (): void {
@@ -100,7 +101,7 @@ it('rejects a sales order linked to a quotation for another party', function ():
         'company_id' => $company->id,
         'party_id' => $party_one->id,
         'currency' => 'EUR',
-        'status' => QuoteStatus::DRAFT,
+        'status' => QuoteStatus::Draft,
         'version' => 0,
     ]);
 
@@ -109,7 +110,7 @@ it('rejects a sales order linked to a quotation for another party', function ():
         'party_id' => $party_two->id,
         'quotation_id' => $quotation->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::DRAFT,
+        'status' => SalesOrderStatus::Draft,
     ]))->toThrow(ValidationException::class);
 });
 
@@ -130,7 +131,7 @@ it('locks quotation when sales order is confirmed', function (): void {
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => QuoteStatus::DRAFT,
+        'status' => QuoteStatus::Draft,
         'version' => 0,
     ]);
 
@@ -139,10 +140,10 @@ it('locks quotation when sales order is confirmed', function (): void {
         'party_id' => $party->id,
         'quotation_id' => $quotation->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::DRAFT,
+        'status' => SalesOrderStatus::Draft,
     ]);
 
-    $order->update(['status' => SalesOrderStatus::CONFIRMED]);
+    $order->update(['status' => SalesOrderStatus::Confirmed]);
 
     expect($quotation->fresh()?->isLocked())->toBeTrue();
 });
@@ -164,7 +165,7 @@ it('rejects header field changes on confirmed sales orders', function (): void {
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     expect(fn (): bool => $order->update(['currency' => 'USD']))->toThrow(ValidationException::class);
@@ -187,7 +188,7 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $line = $order->lines()->create([
@@ -195,7 +196,7 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
         'qty_ordered' => 3,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $service = new SalesOrderEvasionService;
@@ -207,8 +208,8 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
 
     expect($line->qty_delivered)->toBe(1)
         ->and($line->qty_invoiced)->toBe(1)
-        ->and($line->status)->toBe(SalesOrderLineStatus::PARTIALLY_EVASED)
-        ->and($order->status)->toBe(SalesOrderStatus::PARTIALLY_EVASED);
+        ->and($line->status)->toBe(SalesOrderLineStatus::PartiallyEvased)
+        ->and($order->status)->toBe(SalesOrderStatus::PartiallyEvased);
 
     expect(fn (): bool => $line->update(['qty_ordered' => 5]))->toThrow(ValidationException::class);
 });
@@ -230,7 +231,7 @@ it('creates a draft amendment from a confirmed order with remaining quantities o
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::CONFIRMED,
+        'status' => SalesOrderStatus::Confirmed,
     ]);
 
     $line_full = $order->lines()->create([
@@ -238,7 +239,7 @@ it('creates a draft amendment from a confirmed order with remaining quantities o
         'qty_ordered' => 2,
         'qty_delivered' => 2,
         'qty_invoiced' => 2,
-        'status' => SalesOrderLineStatus::FULLY_EVASED,
+        'status' => SalesOrderLineStatus::FullyEvased,
     ]);
 
     $line_partial = $order->lines()->create([
@@ -246,14 +247,14 @@ it('creates a draft amendment from a confirmed order with remaining quantities o
         'qty_ordered' => 5,
         'qty_delivered' => 2,
         'qty_invoiced' => 1,
-        'status' => SalesOrderLineStatus::PARTIALLY_EVASED,
+        'status' => SalesOrderLineStatus::PartiallyEvased,
     ]);
 
     $service = app(SalesOrderAmendmentService::class);
     $amendment = $service->amend($order);
 
     expect($amendment->amends_sales_order_id)->toBe($order->id)
-        ->and($amendment->status)->toBe(SalesOrderStatus::DRAFT)
+        ->and($amendment->status)->toBe(SalesOrderStatus::Draft)
         ->and($amendment->reference)->not->toBeNull()
         ->and($amendment->lines)->toHaveCount(1)
         ->and($amendment->lines->first()?->name)->toBe($line_partial->name)
@@ -281,7 +282,7 @@ it('rejects amendment when order is not confirmed or partially evased', function
         'company_id' => $company->id,
         'party_id' => $party->id,
         'currency' => 'EUR',
-        'status' => SalesOrderStatus::DRAFT,
+        'status' => SalesOrderStatus::Draft,
     ]);
 
     $order->lines()->create([
@@ -289,7 +290,7 @@ it('rejects amendment when order is not confirmed or partially evased', function
         'qty_ordered' => 1,
         'qty_delivered' => 0,
         'qty_invoiced' => 0,
-        'status' => SalesOrderLineStatus::OPEN,
+        'status' => SalesOrderLineStatus::Open,
     ]);
 
     $service = app(SalesOrderAmendmentService::class);

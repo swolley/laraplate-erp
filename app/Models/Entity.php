@@ -11,6 +11,7 @@ use Modules\Core\Models\Entity as CoreEntity;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperEntity
  */
 final class Entity extends CoreEntity

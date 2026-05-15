@@ -11,15 +11,24 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @mixin \Eloquent
  * @mixin IdeHelperStockMovement
  */
-class StockMovement extends Model
+final class StockMovement extends Model
 {
     use BelongsToCompany;
 
+    #[Override]
+    protected $table = ERPTables::StockMovements->value;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    #[Override]
     protected $fillable = [
         'company_id',
         'item_id',
@@ -30,19 +39,6 @@ class StockMovement extends Model
         'source_type',
         'source_id',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'direction' => StockMovementDirection::class,
-            'quantity' => 'integer',
-            'unit_cost' => 'decimal:4',
-        ];
-    }
 
     /**
      * @return BelongsTo<Item, $this>
@@ -74,6 +70,19 @@ class StockMovement extends Model
     public function cost_layers(): HasMany
     {
         return $this->hasMany(StockCostLayer::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'direction' => StockMovementDirection::class,
+            'quantity' => 'integer',
+            'unit_cost' => 'decimal:4',
+        ];
     }
 
     protected function shouldVersioning(): bool

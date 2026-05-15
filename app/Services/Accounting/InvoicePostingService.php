@@ -19,15 +19,15 @@ use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
-final class InvoicePostingService
+final readonly class InvoicePostingService
 {
     public function __construct(
-        private readonly ChartOfAccountsInstaller $chart_of_accounts_installer,
-        private readonly CreditNoteService $credit_note_service,
-        private readonly DocumentNumberAllocator $document_number_allocator,
-        private readonly JournalPostingService $journal_posting_service,
-        private readonly SalesOrderEvasionService $sales_order_evasion_service,
-        private readonly VatRegisterService $vat_register_service,
+        private ChartOfAccountsInstaller $chart_of_accounts_installer,
+        private CreditNoteService $credit_note_service,
+        private DocumentNumberAllocator $document_number_allocator,
+        private JournalPostingService $journal_posting_service,
+        private SalesOrderEvasionService $sales_order_evasion_service,
+        private VatRegisterService $vat_register_service,
     ) {}
 
     public function post(Invoice $invoice): void

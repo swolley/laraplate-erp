@@ -107,7 +107,7 @@ final class ThreeWayMatchService
             return ['status' => MatchStatus::Forced, 'discrepancies' => $discrepancies];
         }
 
-        if (! empty($discrepancies)) {
+        if ($discrepancies !== []) {
             return ['status' => MatchStatus::Tolerance, 'discrepancies' => $discrepancies];
         }
 

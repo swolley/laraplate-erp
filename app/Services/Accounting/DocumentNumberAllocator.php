@@ -32,7 +32,7 @@ final class DocumentNumberAllocator
                 ->first();
 
             if ($existing !== null) {
-                return self::incrementAndFormat($existing, $fiscal_year);
+                return $this->incrementAndFormat($existing, $fiscal_year);
             }
 
             try {
@@ -48,9 +48,7 @@ final class DocumentNumberAllocator
                     'suffix' => '',
                 ]);
             } catch (QueryException $exception) {
-                if (! self::isUniqueConstraintViolation($exception)) {
-                    throw $exception;
-                }
+                throw_unless($this->isUniqueConstraintViolation($exception), $exception);
 
                 $row = DocumentSequence::query()
                     ->withoutGlobalScopes()
@@ -60,7 +58,7 @@ final class DocumentNumberAllocator
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                return self::incrementAndFormat($row, $fiscal_year);
+                return $this->incrementAndFormat($row, $fiscal_year);
             }
 
             $inserted = DocumentSequence::query()
@@ -74,7 +72,7 @@ final class DocumentNumberAllocator
         });
     }
 
-    private static function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
+    private function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
     {
         DocumentSequence::query()->withoutGlobalScopes()->whereKey($row->id)->update([
             'last_number' => DB::raw('last_number + 1'),
@@ -85,7 +83,7 @@ final class DocumentNumberAllocator
         return DocumentNumberFormatter::format($row, $fiscal_year, $row->last_number);
     }
 
-    private static function isUniqueConstraintViolation(QueryException $exception): bool
+    private function isUniqueConstraintViolation(QueryException $exception): bool
     {
         $sql_state = (string) ($exception->errorInfo[0] ?? '');
 

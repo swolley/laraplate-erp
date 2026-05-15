@@ -71,7 +71,7 @@ final class QuotationForm
                 Select::make('status')
                     ->options($status_options)
                     ->required()
-                    ->default(QuoteStatus::DRAFT->value),
+                    ->default(QuoteStatus::Draft->value),
                 TextInput::make('version')
                     ->numeric()
                     ->default(0)
@@ -90,7 +90,7 @@ final class QuotationForm
                         Select::make('billing_mode')
                             ->options($billing_mode_options)
                             ->required()
-                            ->default(BillingMode::UNIT->value),
+                            ->default(BillingMode::Unit->value),
                         TextInput::make('quantity')
                             ->numeric()
                             ->required()

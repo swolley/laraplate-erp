@@ -32,15 +32,13 @@ final class EditInvoice extends EditRecord
         $data['line_items'] = $invoice->lines()
             ->orderBy('line_no')
             ->get()
-            ->map(static function (InvoiceLine $line): array {
-                return [
-                    'sales_order_line_id' => $line->sales_order_line_id,
-                    'description' => $line->description,
-                    'quantity' => $line->quantity,
-                    'unit_price' => $line->unit_price,
-                    'tax_code_id' => $line->tax_code_id,
-                ];
-            })
+            ->map(static fn(InvoiceLine $line): array => [
+                'sales_order_line_id' => $line->sales_order_line_id,
+                'description' => $line->description,
+                'quantity' => $line->quantity,
+                'unit_price' => $line->unit_price,
+                'tax_code_id' => $line->tax_code_id,
+            ])
             ->all();
 
         return $data;
@@ -82,7 +80,7 @@ final class EditInvoice extends EditRecord
                 ->visible(fn (): bool => $this->record->journal_entry_id !== null
                     && $this->record->invoice_type === InvoiceType::Invoice)
                 ->action(function (): void {
-                    $service = app(CreditNoteService::class);
+                    $service = resolve(CreditNoteService::class);
                     $credit_note = $service->createFromInvoice($this->record);
                     $this->redirect(InvoiceResource::getUrl('edit', ['record' => $credit_note]));
                 }),
