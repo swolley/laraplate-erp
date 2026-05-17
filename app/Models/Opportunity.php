@@ -25,15 +25,18 @@ final class Opportunity extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Opportunities->value;
 
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'lead_id',

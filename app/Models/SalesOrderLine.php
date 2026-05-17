@@ -22,13 +22,16 @@ final class SalesOrderLine extends Model
 {
     use HasLocks;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::SalesOrderLines->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'sales_order_id',
         'quotation_item_id',
@@ -70,9 +73,9 @@ final class SalesOrderLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'sales_order_id' => ['required', 'integer', 'exists:'.ERPTables::SalesOrders->value.',id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
-            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
+            'sales_order_id' => ['required', 'integer', 'exists:' . ERPTables::SalesOrders->value . ',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
+            'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'qty_ordered' => ['required', 'integer', 'min:1'],
             'qty_delivered' => ['sometimes', 'integer', 'min:0'],
@@ -81,9 +84,9 @@ final class SalesOrderLine extends Model
             'status' => ['required', 'string', SalesOrderLineStatus::validationRule()],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'sales_order_id' => ['sometimes', 'integer', 'exists:'.ERPTables::SalesOrders->value.',id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
-            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
+            'sales_order_id' => ['sometimes', 'integer', 'exists:' . ERPTables::SalesOrders->value . ',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
+            'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'qty_ordered' => ['sometimes', 'integer', 'min:1'],
             'qty_delivered' => ['sometimes', 'integer', 'min:0'],

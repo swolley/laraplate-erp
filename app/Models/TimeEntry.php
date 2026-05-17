@@ -3,14 +3,13 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
-use Modules\Core\Enums\CoreTables;
 
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\TimeEntryObserver;
@@ -24,13 +23,16 @@ use Override;
  */
 final class TimeEntry extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::TimeEntries->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'user_id',
         'taxonomy_id',
@@ -109,20 +111,20 @@ final class TimeEntry extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'user_id' => ['required', 'integer', 'exists:'.CoreTables::Users->value.',id'],
-            'taxonomy_id' => ['required', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
-            'task_id' => ['nullable', 'integer', 'exists:'.ERPTables::Tasks->value.',id'],
-            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
+            'user_id' => ['required', 'integer', 'exists:' . CoreTables::Users->value . ',id'],
+            'taxonomy_id' => ['required', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
+            'task_id' => ['nullable', 'integer', 'exists:' . ERPTables::Tasks->value . ',id'],
+            'project_id' => ['nullable', 'integer', 'exists:' . ERPTables::Projects->value . ',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
             'started_at' => ['required', 'date'],
             'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap()],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'user_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Users->value.',id'],
-            'taxonomy_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
-            'task_id' => ['nullable', 'integer', 'exists:'.ERPTables::Tasks->value.',id'],
-            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
-            'quotation_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::QuotationItems->value.',id'],
+            'user_id' => ['sometimes', 'integer', 'exists:' . CoreTables::Users->value . ',id'],
+            'taxonomy_id' => ['sometimes', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
+            'task_id' => ['nullable', 'integer', 'exists:' . ERPTables::Tasks->value . ',id'],
+            'project_id' => ['nullable', 'integer', 'exists:' . ERPTables::Projects->value . ',id'],
+            'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
             'started_at' => ['sometimes', 'date'],
             'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($this->getKey())],
         ]);
@@ -155,7 +157,7 @@ final class TimeEntry extends Model
             ? null
             : ($endedAt instanceof DateTimeInterface ? $endedAt : \Illuminate\Support\Facades\Date::parse($endedAt));
 
-        if ($end instanceof \DateTimeInterface) {
+        if ($end instanceof DateTimeInterface) {
             $query->where('started_at', '<', $end);
         }
 

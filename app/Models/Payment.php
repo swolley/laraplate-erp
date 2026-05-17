@@ -21,6 +21,9 @@ final class Payment extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Payments->value;
 
@@ -83,8 +86,8 @@ final class Payment extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'party_id' => ['required', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'direction' => ['required', 'string', PaymentDirection::validationRule()],
             'payment_date' => ['required', 'date'],
             'amount_doc' => ['required', 'numeric', 'min:0.0001'],
@@ -94,11 +97,11 @@ final class Payment extends Model
             'fx_rate' => ['required', 'numeric', 'min:0'],
             'reference' => ['nullable', 'string', 'max:64'],
             'bank_account_id' => ['nullable', 'integer'],
-            'journal_entry_id' => ['nullable', 'integer', 'exists:'.ERPTables::JournalEntries->value.',id'],
+            'journal_entry_id' => ['nullable', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],
             'notes' => ['nullable', 'string'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'direction' => ['sometimes', 'string', PaymentDirection::validationRule()],
             'payment_date' => ['sometimes', 'date'],
             'amount_doc' => ['sometimes', 'numeric', 'min:0.0001'],
@@ -108,7 +111,7 @@ final class Payment extends Model
             'fx_rate' => ['sometimes', 'numeric', 'min:0'],
             'reference' => ['nullable', 'string', 'max:64'],
             'bank_account_id' => ['nullable', 'integer'],
-            'journal_entry_id' => ['nullable', 'integer', 'exists:'.ERPTables::JournalEntries->value.',id'],
+            'journal_entry_id' => ['nullable', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],
             'notes' => ['nullable', 'string'],
         ]);
 

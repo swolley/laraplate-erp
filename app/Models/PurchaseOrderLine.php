@@ -18,6 +18,9 @@ use Override;
  */
 final class PurchaseOrderLine extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PurchaseOrderLines->value;
 
@@ -55,16 +58,16 @@ final class PurchaseOrderLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'purchase_order_id' => ['required', 'integer', 'exists:'.ERPTables::PurchaseOrders->value.',id'],
-            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
+            'purchase_order_id' => ['required', 'integer', 'exists:' . ERPTables::PurchaseOrders->value . ',id'],
+            'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'qty_ordered' => ['required', 'integer', 'min:1'],
             'qty_received' => ['sometimes', 'integer', 'min:0'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'purchase_order_id' => ['sometimes', 'integer', 'exists:'.ERPTables::PurchaseOrders->value.',id'],
-            'item_id' => ['nullable', 'integer', 'exists:'.ERPTables::Items->value.',id'],
+            'purchase_order_id' => ['sometimes', 'integer', 'exists:' . ERPTables::PurchaseOrders->value . ',id'],
+            'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'qty_ordered' => ['sometimes', 'integer', 'min:1'],
             'qty_received' => ['sometimes', 'integer', 'min:0'],

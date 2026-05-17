@@ -20,6 +20,9 @@ final class DocumentSequence extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::DocumentSequences->value;
 
@@ -44,7 +47,7 @@ final class DocumentSequence extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'document_type' => ['required', 'string', DocumentType::validationRule()],
             'fiscal_year' => ['required', 'integer', 'min:0', 'max:2100'],
             'last_number' => ['required', 'integer', 'min:0'],

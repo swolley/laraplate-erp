@@ -25,8 +25,11 @@ final class EInvoiceSubmission extends Model
     /**
      * Accounting models always version with DIFF; overrides any Setting row.
      */
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::EInvoiceSubmissions->value;
 
@@ -59,8 +62,8 @@ final class EInvoiceSubmission extends Model
         $rules = parent::getRules();
 
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'invoice_id' => ['required', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'provider_code' => ['required', 'string', 'max:64'],
             'external_id' => ['nullable', 'string', 'max:191'],
             'status' => ['required', 'string', EInvoiceSubmissionStatus::validationRule()],
@@ -70,7 +73,7 @@ final class EInvoiceSubmission extends Model
         ]);
 
         $rules['update'] = array_merge($rules['update'], [
-            'invoice_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'invoice_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'provider_code' => ['sometimes', 'string', 'max:64'],
             'external_id' => ['nullable', 'string', 'max:191'],
             'status' => ['sometimes', 'string', EInvoiceSubmissionStatus::validationRule()],

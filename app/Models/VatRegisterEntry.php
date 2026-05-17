@@ -21,13 +21,16 @@ final class VatRegisterEntry extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::VatRegisterEntries->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'invoice_id',
@@ -69,23 +72,23 @@ final class VatRegisterEntry extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'invoice_id' => ['required', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'register_type' => ['required', 'string', VatRegisterType::validationRule()],
             'protocol_number' => ['required', 'integer', 'min:1'],
             'registration_date' => ['required', 'date'],
-            'fiscal_year_id' => ['required', 'integer', 'exists:'.ERPTables::FiscalYears->value.',id'],
-            'tax_code_id' => ['required', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'fiscal_year_id' => ['required', 'integer', 'exists:' . ERPTables::FiscalYears->value . ',id'],
+            'tax_code_id' => ['required', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'taxable_amount' => ['required', 'numeric'],
             'tax_amount' => ['required', 'numeric'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'invoice_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'invoice_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'register_type' => ['sometimes', 'string', VatRegisterType::validationRule()],
             'protocol_number' => ['sometimes', 'integer', 'min:1'],
             'registration_date' => ['sometimes', 'date'],
-            'fiscal_year_id' => ['sometimes', 'integer', 'exists:'.ERPTables::FiscalYears->value.',id'],
-            'tax_code_id' => ['sometimes', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'fiscal_year_id' => ['sometimes', 'integer', 'exists:' . ERPTables::FiscalYears->value . ',id'],
+            'tax_code_id' => ['sometimes', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'taxable_amount' => ['sometimes', 'numeric'],
             'tax_amount' => ['sometimes', 'numeric'],
         ]);

@@ -21,18 +21,21 @@ final class FiscalYear extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::FiscalYears->value;
 
     /**
      * Accounting models always version with DIFF; overrides any Setting row.
      */
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'year',
@@ -54,7 +57,7 @@ final class FiscalYear extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'year' => ['required', 'integer', 'min:1900', 'max:2100'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],

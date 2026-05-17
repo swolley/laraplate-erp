@@ -20,6 +20,9 @@ final class PaymentScheduleLine extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PaymentScheduleLines->value;
 
@@ -65,8 +68,8 @@ final class PaymentScheduleLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'invoice_id' => ['required', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'due_date' => ['required', 'date'],
             'amount_doc' => ['required', 'numeric', 'min:0.0001'],
             'currency_doc' => ['required', 'string', 'size:3'],
@@ -79,7 +82,7 @@ final class PaymentScheduleLine extends Model
             'paid_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'invoice_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'invoice_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'due_date' => ['sometimes', 'date'],
             'amount_doc' => ['sometimes', 'numeric', 'min:0.0001'],
             'currency_doc' => ['sometimes', 'string', 'size:3'],

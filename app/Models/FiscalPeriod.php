@@ -34,6 +34,9 @@ final class FiscalPeriod extends Model
      */
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::FiscalPeriods->value;
 
@@ -61,7 +64,7 @@ final class FiscalPeriod extends Model
     {
         $rules = $this->validationsHasRules();
         $rules['create'] = array_merge($rules['create'], [
-            'fiscal_year_id' => ['required', 'integer', 'exists:'.ERPTables::FiscalYears->value.',id'],
+            'fiscal_year_id' => ['required', 'integer', 'exists:' . ERPTables::FiscalYears->value . ',id'],
             'period_no' => ['required', 'integer', 'min:1', 'max:366'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],

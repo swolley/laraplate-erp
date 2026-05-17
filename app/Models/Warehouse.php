@@ -19,6 +19,9 @@ final class Warehouse extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Warehouses->value;
 

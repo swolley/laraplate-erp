@@ -23,30 +23,21 @@ final class Party extends Model
     use BelongsToCompany;
     use HasActivation;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Parties->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'name',
         'is_customer',
         'is_supplier',
     ];
-
-    #[\Illuminate\Database\Eloquent\Attributes\Scope]
-    protected function customers(Builder $builder): Builder
-    {
-        return $builder->where('is_customer', true);
-    }
-
-    #[\Illuminate\Database\Eloquent\Attributes\Scope]
-    protected function suppliers(Builder $builder): Builder
-    {
-        return $builder->where('is_supplier', true);
-    }
 
     /**
      * @return BelongsToMany<Contact, $this>
@@ -106,5 +97,17 @@ final class Party extends Model
         ]);
 
         return $rules;
+    }
+
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function customers(Builder $builder): Builder
+    {
+        return $builder->where('is_customer', true);
+    }
+
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function suppliers(Builder $builder): Builder
+    {
+        return $builder->where('is_supplier', true);
     }
 }

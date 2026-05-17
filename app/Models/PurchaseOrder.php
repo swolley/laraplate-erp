@@ -21,6 +21,9 @@ final class PurchaseOrder extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PurchaseOrders->value;
 
@@ -58,15 +61,15 @@ final class PurchaseOrder extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'party_id' => ['required', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['required', 'string', 'size:3'],
             'status' => ['required', PurchaseOrderStatus::validationRule()],
             'ordered_at' => ['nullable', 'date'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
+            'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'reference' => ['nullable', 'string', 'max:64'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'status' => ['sometimes', PurchaseOrderStatus::validationRule()],

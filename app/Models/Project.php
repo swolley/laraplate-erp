@@ -23,13 +23,16 @@ final class Project extends Model
     use BelongsToCompany;
     use HasValidity;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Projects->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'party_id',
         'quotation_id',
@@ -84,16 +87,16 @@ final class Project extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'party_id' => ['required', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'string', ProjectStatus::validationRule()],
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
-            'quotation_id' => ['nullable', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
+            'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'quotation_id' => ['nullable', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', ProjectStatus::validationRule()],

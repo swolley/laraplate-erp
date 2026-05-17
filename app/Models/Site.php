@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
-use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Place;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -23,13 +23,16 @@ final class Site extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Sites->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'name',
         'place_id',
@@ -56,11 +59,11 @@ final class Site extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'name' => ['required', 'string', 'max:255'],
-            'place_id' => ['required', 'integer', 'exists:'.CoreTables::Places->value.',id'],
+            'place_id' => ['required', 'integer', 'exists:' . CoreTables::Places->value . ',id'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'name' => ['sometimes', 'string', 'max:255'],
-            'place_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Places->value.',id'],
+            'place_id' => ['sometimes', 'integer', 'exists:' . CoreTables::Places->value . ',id'],
         ]);
 
         return $rules;

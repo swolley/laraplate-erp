@@ -15,13 +15,16 @@ use Override;
  */
 final class PaymentAllocation extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PaymentAllocations->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'payment_id',
         'payment_schedule_line_id',
@@ -50,14 +53,14 @@ final class PaymentAllocation extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'payment_id' => ['required', 'integer', 'exists:'.ERPTables::Payments->value.',id'],
-            'payment_schedule_line_id' => ['required', 'integer', 'exists:'.ERPTables::PaymentScheduleLines->value.',id'],
+            'payment_id' => ['required', 'integer', 'exists:' . ERPTables::Payments->value . ',id'],
+            'payment_schedule_line_id' => ['required', 'integer', 'exists:' . ERPTables::PaymentScheduleLines->value . ',id'],
             'allocated_amount_doc' => ['required', 'numeric', 'min:0.0001'],
             'allocated_amount_local' => ['required', 'numeric', 'min:0.0001'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'payment_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Payments->value.',id'],
-            'payment_schedule_line_id' => ['sometimes', 'integer', 'exists:'.ERPTables::PaymentScheduleLines->value.',id'],
+            'payment_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Payments->value . ',id'],
+            'payment_schedule_line_id' => ['sometimes', 'integer', 'exists:' . ERPTables::PaymentScheduleLines->value . ',id'],
             'allocated_amount_doc' => ['sometimes', 'numeric', 'min:0.0001'],
             'allocated_amount_local' => ['sometimes', 'numeric', 'min:0.0001'],
         ]);

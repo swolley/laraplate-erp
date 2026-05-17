@@ -10,7 +10,6 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Enums\ERPTables;
 use Override;
-use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Invoice line with optional live FK and immutable fiscal snapshot at posting.
@@ -20,13 +19,16 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  */
 final class InvoiceLine extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::InvoiceLines->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'invoice_id',
         'line_no',
@@ -100,13 +102,13 @@ final class InvoiceLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'invoice_id' => ['required', 'integer', 'exists:'.ERPTables::Invoices->value.',id'],
+            'invoice_id' => ['required', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'line_no' => ['required', 'integer', 'min:1', 'max:65535'],
             'description' => ['nullable', 'string'],
             'quantity' => ['required', 'numeric', 'min:0'],
             'unit_price' => ['required', 'numeric'],
-            'tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
-            'sales_order_line_id' => ['nullable', 'integer', 'exists:'.ERPTables::SalesOrderLines->value.',id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
+            'sales_order_line_id' => ['nullable', 'integer', 'exists:' . ERPTables::SalesOrderLines->value . ',id'],
             'tax_code' => ['nullable', 'string', 'max:64'],
             'tax_rate' => ['nullable', 'numeric'],
             'tax_label' => ['nullable', 'string', 'max:255'],
@@ -116,8 +118,8 @@ final class InvoiceLine extends Model
             'description' => ['nullable', 'string'],
             'quantity' => ['sometimes', 'numeric', 'min:0'],
             'unit_price' => ['sometimes', 'numeric'],
-            'tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
-            'sales_order_line_id' => ['nullable', 'integer', 'exists:'.ERPTables::SalesOrderLines->value.',id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
+            'sales_order_line_id' => ['nullable', 'integer', 'exists:' . ERPTables::SalesOrderLines->value . ',id'],
             'tax_code' => ['nullable', 'string', 'max:64'],
             'tax_rate' => ['nullable', 'numeric'],
             'tax_label' => ['nullable', 'string', 'max:255'],

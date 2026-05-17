@@ -21,6 +21,9 @@ final class DeliveryNoteLine extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::DeliveryNoteLines->value;
 

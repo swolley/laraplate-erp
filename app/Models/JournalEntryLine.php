@@ -9,7 +9,6 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Exceptions\PostedJournalImmutableException;
 use Override;
-use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
@@ -19,13 +18,16 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  */
 final class JournalEntryLine extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::JournalEntryLines->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'journal_entry_id',
         'line_no',
@@ -71,10 +73,10 @@ final class JournalEntryLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'journal_entry_id' => ['required', 'integer', 'exists:'.ERPTables::JournalEntries->value.',id'],
+            'journal_entry_id' => ['required', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],
             'line_no' => ['required', 'integer', 'min:1', 'max:65535'],
-            'account_id' => ['required', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
-            'tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'account_id' => ['required', 'integer', 'exists:' . ERPTables::Accounts->value . ',id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'amount_doc' => ['required', 'numeric'],
             'currency_doc' => ['required', 'string', 'size:3'],
             'amount_local' => ['required', 'numeric'],
@@ -87,8 +89,8 @@ final class JournalEntryLine extends Model
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'line_no' => ['sometimes', 'integer', 'min:1', 'max:65535'],
-            'account_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
-            'tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'account_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Accounts->value . ',id'],
+            'tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'amount_doc' => ['sometimes', 'numeric'],
             'currency_doc' => ['sometimes', 'string', 'size:3'],
             'amount_local' => ['sometimes', 'numeric'],

@@ -24,12 +24,15 @@ final class TaxCode extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::TaxCodes->value;
 
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'code',
@@ -64,7 +67,7 @@ final class TaxCode extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'code' => ['required', 'string', 'max:64'],
             'kind' => ['required', 'string', TaxKind::validationRule()],
             'country' => ['required', 'string', 'size:2'],
@@ -72,12 +75,12 @@ final class TaxCode extends Model
             'label' => ['required', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
             'effective_from' => ['required', 'date'],
-            'replaced_by_tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'replaced_by_tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'meta' => ['nullable', 'array'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'is_active' => ['sometimes', 'boolean'],
-            'replaced_by_tax_code_id' => ['nullable', 'integer', 'exists:'.ERPTables::TaxCodes->value.',id'],
+            'replaced_by_tax_code_id' => ['nullable', 'integer', 'exists:' . ERPTables::TaxCodes->value . ',id'],
             'meta' => ['nullable', 'array'],
         ]);
 

@@ -20,6 +20,9 @@ final class GoodsReceiptLine extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::GoodsReceiptLines->value;
 

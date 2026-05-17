@@ -34,7 +34,7 @@ final class Invoice extends Model
     #[Override]
     protected $table = ERPTables::Invoices->value;
 
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     #[\Override]
     protected $fillable = [

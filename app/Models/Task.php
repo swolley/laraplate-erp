@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
-use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Helpers\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
@@ -22,13 +22,16 @@ final class Task extends Model
 {
     use HasValidity;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Tasks->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'project_id',
         'site_id',
@@ -72,14 +75,14 @@ final class Task extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
-            'site_id' => ['nullable', 'integer', 'exists:'.ERPTables::Sites->value.',id'],
-            'taxonomy_id' => ['required', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:' . ERPTables::Projects->value . ',id'],
+            'site_id' => ['nullable', 'integer', 'exists:' . ERPTables::Sites->value . ',id'],
+            'taxonomy_id' => ['required', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'project_id' => ['nullable', 'integer', 'exists:'.ERPTables::Projects->value.',id'],
-            'site_id' => ['nullable', 'integer', 'exists:'.ERPTables::Sites->value.',id'],
-            'taxonomy_id' => ['sometimes', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
+            'project_id' => ['nullable', 'integer', 'exists:' . ERPTables::Projects->value . ',id'],
+            'site_id' => ['nullable', 'integer', 'exists:' . ERPTables::Sites->value . ',id'],
+            'taxonomy_id' => ['sometimes', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
         ]);
 
         return $rules;

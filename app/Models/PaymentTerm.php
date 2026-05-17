@@ -18,6 +18,9 @@ final class PaymentTerm extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PaymentTerms->value;
 
@@ -46,7 +49,7 @@ final class PaymentTerm extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'name' => ['required', 'string', 'max:128'],
             'description' => ['nullable', 'string'],
             'rate_lines' => ['required', 'array'],

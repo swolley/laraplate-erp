@@ -26,7 +26,7 @@ final class Account extends Model
     /**
      * Accounting models always version with DIFF; overrides any Setting row.
      */
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     #[Override]
     protected $table = ERPTables::Accounts->value;

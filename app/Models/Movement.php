@@ -19,13 +19,16 @@ final class Movement extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Movements->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [];
 
     // protected static function newFactory(): MovementFactory

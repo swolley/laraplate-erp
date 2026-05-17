@@ -16,13 +16,16 @@ use Override;
  */
 final class QuotationItem extends Model
 {
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::QuotationItems->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'quotation_id',
         'price_list_item_id',
@@ -53,16 +56,16 @@ final class QuotationItem extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'quotation_id' => ['required', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
-            'price_list_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::PriceListItems->value.',id'],
+            'quotation_id' => ['required', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
+            'price_list_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::PriceListItems->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'billing_mode' => ['required', 'string', BillingMode::validationRule()],
             'quantity' => ['required', 'integer', 'min:1', 'max:65535'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'quotation_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Quotations->value.',id'],
-            'price_list_item_id' => ['nullable', 'integer', 'exists:'.ERPTables::PriceListItems->value.',id'],
+            'quotation_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
+            'price_list_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::PriceListItems->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'billing_mode' => ['sometimes', 'string', BillingMode::validationRule()],
             'quantity' => ['sometimes', 'integer', 'min:1', 'max:65535'],

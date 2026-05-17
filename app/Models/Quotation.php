@@ -28,13 +28,16 @@ final class Quotation extends Model
     use HasLocks;
     use HasValidity;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Quotations->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'party_id',
         'opportunity_id',
@@ -81,16 +84,16 @@ final class Quotation extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'party_id' => ['required', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
-            'opportunity_id' => ['nullable', 'integer', 'exists:'.ERPTables::Opportunities->value.',id'],
+            'party_id' => ['required', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:' . ERPTables::Opportunities->value . ',id'],
             'currency' => ['required', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'string', QuoteStatus::validationRule()],
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'party_id' => ['sometimes', 'integer', 'exists:'.ERPTables::Parties->value.',id'],
-            'opportunity_id' => ['nullable', 'integer', 'exists:'.ERPTables::Opportunities->value.',id'],
+            'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
+            'opportunity_id' => ['nullable', 'integer', 'exists:' . ERPTables::Opportunities->value . ',id'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', QuoteStatus::validationRule()],

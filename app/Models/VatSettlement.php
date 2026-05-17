@@ -22,13 +22,16 @@ final class VatSettlement extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::VatSettlements->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'fiscal_period_id',
@@ -54,8 +57,8 @@ final class VatSettlement extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
-            'fiscal_period_id' => ['required', 'integer', 'exists:'.ERPTables::FiscalPeriods->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'fiscal_period_id' => ['required', 'integer', 'exists:' . ERPTables::FiscalPeriods->value . ',id'],
             'vat_sales' => ['sometimes', 'numeric'],
             'vat_purchases' => ['sometimes', 'numeric'],
             'previous_credit' => ['sometimes', 'numeric'],
@@ -63,7 +66,7 @@ final class VatSettlement extends Model
             'status' => ['sometimes', 'string', VatSettlementStatus::validationRule()],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'fiscal_period_id' => ['sometimes', 'integer', 'exists:'.ERPTables::FiscalPeriods->value.',id'],
+            'fiscal_period_id' => ['sometimes', 'integer', 'exists:' . ERPTables::FiscalPeriods->value . ',id'],
             'vat_sales' => ['sometimes', 'numeric'],
             'vat_purchases' => ['sometimes', 'numeric'],
             'previous_credit' => ['sometimes', 'numeric'],

@@ -20,13 +20,16 @@ final class PriceList extends Model
     use BelongsToCompany;
     use HasValidity;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::PriceLists->value;
 
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'name',
         'currency',

@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 namespace Modules\ERP\Models;
-use Modules\Core\Enums\CoreTables;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Enums\CoreTables;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -20,6 +20,9 @@ final class Item extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::Items->value;
 
@@ -65,12 +68,12 @@ final class Item extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'max:64'],
             'uom' => ['required', 'string', 'max:16'],
             'costing_method' => ['required', 'string', 'in:fifo,weighted_avg'],
-            'taxonomy_id' => ['nullable', 'integer', 'exists:'.CoreTables::Taxonomies->value.',id'],
+            'taxonomy_id' => ['nullable', 'integer', 'exists:' . CoreTables::Taxonomies->value . ',id'],
         ]);
 
         return $rules;

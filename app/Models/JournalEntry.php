@@ -32,7 +32,7 @@ final class JournalEntry extends Model
     #[Override]
     protected $table = ERPTables::JournalEntries->value;
 
-    private VersionStrategy $versionStrategy = VersionStrategy::DIFF;
+    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     /**
      * The attributes that are mass assignable.

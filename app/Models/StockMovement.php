@@ -22,6 +22,9 @@ final class StockMovement extends Model
 {
     use BelongsToCompany;
 
+    /**
+     * @var string
+     */
     #[Override]
     protected $table = ERPTables::StockMovements->value;
 
