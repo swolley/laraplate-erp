@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Modules\Core\Contracts\IDynamicEntityTypable;
 use Modules\Core\Models\Taxonomy;
 use Modules\ERP\Casts\EntityType;
+use Modules\ERP\Models\Pivot\Presettable;
 use Override;
 
 /**
@@ -21,6 +22,12 @@ final class OpportunityStage extends Taxonomy
     public static function getEntityModelClass(): string
     {
         return Entity::class;
+    }
+
+    #[Override]
+    public static function getPresettableClass(): string
+    {
+        return Presettable::class;
     }
 
     #[Override]

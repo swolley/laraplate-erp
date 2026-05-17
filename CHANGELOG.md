@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(models)* Implement getPresettableClass method in OpportunityStage model
+
+### ⚙️ Miscellaneous Tasks
+
+- *(models)* Update access modifiers and add type hints for clarity
+
+## [1.8.0] - 2026-05-15
+
 ### ⚙️ Miscellaneous Tasks
 
 - Update project configuration and enhance enums
