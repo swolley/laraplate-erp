@@ -93,7 +93,7 @@ final class InvoiceLine extends Model
     {
         return $this->belongsToMany(
             DeliveryNoteLine::class,
-            'invoice_line_delivery_note_line',
+            ERPTables::InvoiceLineDeliveryNoteLine->value,
         )->withPivot('quantity');
     }
 

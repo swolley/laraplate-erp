@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Invoice;
@@ -43,6 +44,7 @@ it('returns matched when invoice line matches PO line exactly', function (): voi
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
         'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -89,6 +91,7 @@ it('throws validation exception when price exceeds tolerance', function (): void
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
         'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -134,6 +137,7 @@ it('returns forced when force flag overrides breach', function (): void {
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
         'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 

@@ -112,9 +112,13 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Invoice**                  | Header with `direction` (sale/purchase), `invoice_type` (invoice, credit_note, debit_note), `currency`, `posted_at`, `reference` (assigned by `DocumentNumberAllocator` at posting). |
 | **InvoiceLine**              | Commercial line with quantity, unit_price, optional tax_code_id, and **snapshot** columns (tax_code, tax_rate, tax_label) frozen at posting.                                         |
-| **InvoicePostingService**    | Orchestrates posting: journal entry, document numbering, tax snapshot, payment schedule generation, VAT registration, SO evasion tracking. Full reversal on unpost.                  |
+| **InvoicePostingService**    | Orchestrates posting: journal entry, document numbering, tax snapshot, payment schedule generation, VAT registration, SO evasion tracking, DDT validation (sale), three-way match (purchase). Full reversal on unpost. Triggered by `InvoiceObserver` when `posted_at` changes. |
+| **InvoiceObserver**          | On `posted_at` change: calls `InvoicePostingService::post()` or `::unpost()`. Keeps UI actions and domain logic in sync.                                                          |
+| **InvoicePostingActions**    | Filament **Post** / **Unpost** actions (edit page + list). Purchase Post modal includes **Force three-way match** checkbox.                                                       |
+| **InvoiceDeliveryNoteValidationService** | Optional sale-invoice rules at posting: linked DDT must be posted, pivot qty ≤ line qty, cumulative invoiced qty ≤ delivered qty, SO line consistency.              |
 | **InvoiceCompactionService** | Compacts expanded invoice lines (from multiple DDTs) into aggregated lines per item, or expands back.                                                                                |
 | **InvoiceType**              | Enum: `invoice`, `credit_note`, `debit_note`. Determines document numbering stream and journal sign.                                                                                 |
+| **forceThreeWayMatchOnPosting** | Transient flag on `Invoice` (not persisted). When true, purchase posting calls `ThreeWayMatchService` with `force=true`. Set from Filament or code before posting.          |
 
 
 ## Invoice ↔ DDT linking
@@ -122,7 +126,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 | Term                                | Meaning                                                                                                     |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **invoice_line_delivery_note_line** | Pivot table linking invoice lines to delivery note lines (M:N). Supports both expanded and compacted views. |
+| **invoice_line_delivery_note_line** | Pivot table (`erp_invoice_line_delivery_note_line`) linking invoice lines to delivery note lines (M:N) with pivot `quantity`. Optional at posting; validated by `InvoiceDeliveryNoteValidationService`. |
 
 
 ## Purchasing (M3.6)
@@ -132,8 +136,10 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | **PurchaseOrder / PurchaseOrderLine** | Supplier order with document numbering and qty tracking.                                               |
 | **GoodsReceipt / GoodsReceiptLine**   | Inbound receiving document; posts stock via `StockMovementService`.                                    |
-| **ThreeWayMatchService**              | Validates PO/GR/Invoice line consistency with configurable price/quantity tolerances.                  |
-| **MatchStatus**                       | Enum: `matched` (within 0%), `tolerance` (within configured %), `forced` (user override), `unmatched`. |
+| **ThreeWayMatchService**              | Validates PO/GR/Invoice line qty/price at purchase posting. Persists `match_status` / `match_discrepancy` on `InvoiceLine`. |
+| **ErpCompanySettings**                | Reads per-company keys from `Company.settings` JSON (dot notation). Used for three-way tolerances and invoice generation mode. |
+| **MatchStatus**                       | Enum: `matched`, `tolerance`, `forced`, `unmatched`. Written at purchase invoice posting. |
+| **erp.three_way_match.***             | Company settings keys: `price_tolerance_percent`, `qty_tolerance_percent` in `companies.settings`. Default 0. |
 
 
 ## Payment schedule & receivables

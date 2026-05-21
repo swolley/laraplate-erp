@@ -15,6 +15,7 @@ use Modules\ERP\Filament\Resources\Invoices\Pages\EditInvoice;
 use Modules\ERP\Filament\Resources\Invoices\Pages\ListInvoices;
 use Modules\ERP\Filament\Resources\Invoices\Schemas\InvoiceForm;
 use Modules\ERP\Filament\Resources\Invoices\Tables\InvoicesTable;
+use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Models\Invoice;
 use Override;
 use UnitEnum;
@@ -65,4 +66,13 @@ final class InvoiceResource extends Resource
         ];
     }
 
+    #[Override]
+    public static function canDelete(Model $record): bool
+    {
+        if (! parent::canDelete($record)) {
+            return false;
+        }
+
+        return $record instanceof Invoice && $record->journal_entry_id === null;
+    }
 }

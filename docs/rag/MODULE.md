@@ -152,8 +152,88 @@ classDiagram
 | Quotation     | `Quotation`, `QuotationItem`       | —                                                                | HasLocks, HasValidity, lock on SO confirmation                                   |
 | Sales Order   | `SalesOrder`, `SalesOrderLine`     | `SalesOrderEvasionService`, `SalesOrderAmendmentService`         | Lock-chain, qty tracking (ordered/delivered/invoiced), amendment from confirmed  |
 | Delivery Note | `DeliveryNote`, `DeliveryNoteLine` | `DeliveryNoteInventoryService`, `DeliveryNoteCogsJournalService` | Stock posting (outbound), COGS journal, full rollback on unpost                  |
-| Invoice       | `Invoice`, `InvoiceLine`           | `InvoicePostingService`, `InvoiceCompactionService`              | Journal posting, tax snapshot, document numbering at posting, pivot to DDT lines |
+| Invoice       | `Invoice`, `InvoiceLine`           | `InvoicePostingService`, `InvoiceCompactionService`, `InvoiceDeliveryNoteValidationService` | Journal posting, tax snapshot, document numbering at posting, optional DDT pivot, Filament Post/Unpost |
 | Payment       | `Payment`, `PaymentAllocation`     | `PaymentAllocationService`                                       | Allocate to schedule lines, status tracking                                      |
+
+
+#### Invoice posting workflow (M3.5 + Filament)
+
+Posting is **not** done by editing `posted_at` in the form. Operators use Filament **Post** / **Unpost** actions (`InvoicePostingActions`) on the invoice edit page and list table. Setting `posted_at` triggers `InvoiceObserver`, which delegates to `InvoicePostingService::post()` or `::unpost()`.
+
+**Draft → Posted (`InvoicePostingService::post()` inside a DB transaction):**
+
+1. Lock invoice row (`lockForUpdate`).
+2. Load lines; fail if empty.
+3. **Sale only:** `InvoiceDeliveryNoteValidationService::validateForPosting()` — optional pivot `invoice_line_delivery_note_line` links must reference posted DDT lines, respect delivered qty caps, and align `sales_order_line_id` when present.
+4. **Purchase only:** `ThreeWayMatchService::validate()` per line — compares qty/price to linked `PurchaseOrderLine` / `GoodsReceiptLine`; persists `match_status` + `match_discrepancy` on each `InvoiceLine`. Tolerances from `ErpCompanySettings` reading `companies.settings` JSON (`erp.three_way_match.price_tolerance_percent`, `erp.three_way_match.qty_tolerance_percent`, default 0%). Throws `ValidationException` on breach unless `Invoice::$forceThreeWayMatchOnPosting` is true (Filament checkbox on Post).
+5. Allocate fiscal `reference` via `DocumentNumberAllocator::next()` — `DocumentType` from `direction` + `invoice_type` (SalesInvoice, PurchaseInvoice, credit/debit note streams; `gap_allowed=false`).
+6. Snapshot tax columns on lines (`tax_code`, `tax_rate`, `tax_label`).
+7. Credit notes: `CreditNoteService::validateCreditNoteTotal()` + negated amounts for journal.
+8. `JournalPostingService::post()` — balanced entry; invoice stored as `reference` on journal.
+9. `VatRegisterService::register()`.
+10. `PaymentScheduleGeneratorService::generate()` — schedule lines from `payment_term_id` or single immediate line.
+11. **Sale only:** `SalesOrderEvasionService::registerInvoice()` from `sales_order_line_id` on lines.
+12. Set `journal_entry_id` on invoice header.
+
+**Posted → Draft (`::unpost()`):** reverse journal, unregister VAT, `PaymentScheduleGeneratorService::removeAll()` (blocked if schedule lines have allocations), rollback SO invoicing, clear `reference` and `journal_entry_id`.
+
+**Filament UX rules:**
+
+- Form shows `posted_at_display` placeholder (read-only); `posted_at` is not edited manually.
+- Line repeater disabled when `journal_entry_id` is set.
+- Purchase lines expose `purchase_order_line_id`, `goods_receipt_line_id`, read-only `match_status` after posting.
+- Sale lines expose nested `delivery_note_line_links` repeater (DDT line + qty).
+- `InvoiceResource::canDelete()` false when posted.
+
+```mermaid
+sequenceDiagram
+  participant UI as Filament Post/Unpost
+  participant Obs as InvoiceObserver
+  participant IPS as InvoicePostingService
+  participant DDN as InvoiceDeliveryNoteValidationService
+  participant TWM as ThreeWayMatchService
+  participant DNA as DocumentNumberAllocator
+  participant JPS as JournalPostingService
+  participant VAT as VatRegisterService
+  participant PSG as PaymentScheduleGeneratorService
+
+  UI->>Obs: update posted_at
+  alt posting
+    Obs->>IPS: post(invoice)
+    IPS->>DDN: validateForPosting (sale)
+    IPS->>TWM: validate per line (purchase)
+    IPS->>DNA: next(reference)
+    IPS->>JPS: post(journal lines)
+    IPS->>VAT: register
+    IPS->>PSG: generate(gross_total)
+  else unposting
+    Obs->>IPS: unpost(invoice)
+    IPS->>JPS: reverse
+    IPS->>VAT: unregister
+    IPS->>PSG: removeAll
+  end
+```
+
+#### Sale invoice ↔ DDT linking (optional)
+
+Pivot `erp_invoice_line_delivery_note_line` links `InvoiceLine` to `DeliveryNoteLine` with a pivot `quantity`. Linking is **optional** (lines without pivot still post). When links exist, `InvoiceDeliveryNoteValidationService` requires: parent DDT `posted_at` set; sum of pivot qty on the invoice line ≤ line `quantity`; total invoiced qty on the DDT line (other posted invoices + current) ≤ DDT line `quantity`; matching `sales_order_line_id` when both sides set. Filament: nested repeater **Delivery note lines** on sale invoice line items.
+
+```mermaid
+flowchart LR
+  DDT["DeliveryNote posted"]
+  DNL[DeliveryNoteLine]
+  IL[InvoiceLine draft]
+  Pivot["invoice_line_delivery_note_line"]
+  Post[Filament Post]
+  IPS[InvoicePostingService]
+
+  DDT --> DNL
+  IL --> Pivot
+  Pivot --> DNL
+  Post --> IPS
+  IPS --> Validate[InvoiceDeliveryNoteValidationService]
+  Validate --> Journal[Journal + reference]
+```
 
 
 #### End-to-end document flow to Journal
@@ -289,7 +369,7 @@ flowchart LR
 
 #### 3-Way match flow
 
-`ThreeWayMatchService::validate()` cross-checks `PurchaseOrderLine`, `GoodsReceiptLine` and `InvoiceLine` qty/price triplets at purchase invoice posting. Each `InvoiceLine` carries `purchase_order_line_id` and `goods_receipt_line_id` plus `match_status` (`MatchStatus` enum: `matched`, `tolerance`, `forced`, `unmatched`) and a `match_discrepancy` JSON column. Tolerances are configurable (default 0%); exceeding them throws `ValidationException` unless `force=true` is explicitly passed. The matched status is persisted on the line for audit.
+`ThreeWayMatchService::validate()` cross-checks `PurchaseOrderLine`, `GoodsReceiptLine` and `InvoiceLine` qty/price triplets. It is invoked automatically from `InvoicePostingService::applyThreeWayMatch()` when `Invoice.direction = purchase` (before journal creation). Each `InvoiceLine` carries `purchase_order_line_id` and `goods_receipt_line_id` plus `match_status` (`MatchStatus` enum: `matched`, `tolerance`, `forced`, `unmatched`) and a `match_discrepancy` JSON column. Tolerances come from `companies.settings` via `ErpCompanySettings` (default 0%). Exceeding tolerance throws `ValidationException` unless `Invoice::$forceThreeWayMatchOnPosting` is true (set via Filament Post modal checkbox **Force three-way match** or programmatically before `posted_at` update). GR quantity comparison uses `GoodsReceiptLine.quantity`. Results are persisted on the line for audit before the invoice is considered posted.
 
 ```mermaid
 flowchart TB
@@ -529,7 +609,7 @@ Company, Account, JournalEntry (view page), FiscalYear, FiscalPeriod, DocumentSe
 
 ### Commercial group
 
-Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt
+Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice (Post/Unpost header + table actions), PurchaseOrder, GoodsReceipt
 
 ### Financial group
 
@@ -544,11 +624,15 @@ Trial Balance, Balance Sheet, Income Statement
 - **Which service posts inventory when a delivery note is confirmed?**
 → `DeliveryNoteInventoryService` creates outbound stock movements and updates SO qty_delivered.
 - **How does invoice posting work?**
-→ `InvoicePostingService::post()` in a DB transaction: locks invoice, allocates document number, snapshots tax on lines, creates balanced journal entry, generates payment schedule lines, registers in VAT register, and tracks SO qty_invoiced.
+→ Filament **Post** sets `posted_at`; `InvoiceObserver` calls `InvoicePostingService::post()` in a DB transaction: DDT validation (sale), three-way match (purchase), document number, tax snapshot, journal, VAT register, payment schedule, SO qty_invoiced. **Unpost** reverses the chain (schedule removal blocked if allocations exist).
+- **How do I post an invoice from the UI?**
+→ Use **Post** on the invoice edit page or list (`InvoicePostingActions`). Do not set `posted_at` manually in the form.
+- **How does optional Invoice ↔ DDT linking work?**
+→ Pivot `erp_invoice_line_delivery_note_line` (qty per link). Optional at posting; `InvoiceDeliveryNoteValidationService` enforces posted DDT, qty caps, and SO line consistency when links exist.
 - **How do purchase receipts affect stock and accounting?**
 → GoodsReceipt posting creates inbound `StockMovement` entries, updates PO line quantities, and creates cost layers.
 - **How does the 3-way match work?**
-→ `ThreeWayMatchService::validate()` compares invoice line qty/price against PO and GR lines. Configurable tolerances (default 0%). Exceeding tolerance throws ValidationException unless force=true.
+→ On purchase invoice posting, `InvoicePostingService` calls `ThreeWayMatchService::validate()` per line. Tolerances: `ErpCompanySettings` on `companies.settings`. Exceeding tolerance blocks posting unless **Force three-way match** is checked (sets `forceThreeWayMatchOnPosting`). Status stored in `match_status` / `match_discrepancy`.
 - **How are credit notes handled?**
 → `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
 - **How do payment schedules work?**

@@ -36,6 +36,11 @@ final class Invoice extends Model
 
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
+    /**
+     * When true, purchase invoice posting skips three-way match hard failures.
+     */
+    public bool $forceThreeWayMatchOnPosting = false;
+
     #[\Override]
     protected $fillable = [
         'company_id',

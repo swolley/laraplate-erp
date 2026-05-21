@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Enums\CoreTables;
+use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
 use Modules\ERP\Casts\EntityType;
@@ -18,6 +19,7 @@ use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 
 /**
  * Bootstraps the ERP module: default company (tenant), Activity and opportunity-stage
@@ -76,6 +78,12 @@ final class ERPDatabaseSeeder extends Seeder
                 resolve(ItalianTaxCodesSeeder::class)->seedForCompany($company);
             });
         }
+
+        if (Schema::hasTable(CoreTables::Settings->value)) {
+            Model::unguarded(function (): void {
+                $this->ensureGlobalErpSettings();
+            });
+        }
     }
 
     private function ensureDefaultCompany(): Company
@@ -86,6 +94,7 @@ final class ERPDatabaseSeeder extends Seeder
 
         if ($existing instanceof Company) {
             $this->command?->line('    - default company already exists');
+            $this->ensureCompanySettings($existing);
 
             return $existing;
         }
@@ -98,13 +107,41 @@ final class ERPDatabaseSeeder extends Seeder
             'tax_id' => null,
             'fiscal_country' => 'IT',
             'default_currency' => 'EUR',
-            'settings' => null,
             'is_default' => true,
         ]);
+        $company->settings = ErpCompanySettings::defaultSettings();
+        $company->save();
 
         $this->command?->line('    - default company <fg=green>created</>');
 
         return $company;
+    }
+
+    private function ensureGlobalErpSettings(): void
+    {
+        foreach (ErpCompanySettings::globalSettingDefinitions() as $definition) {
+            if (Setting::query()->withoutGlobalScopes()->where('name', $definition['name'])->exists()) {
+                continue;
+            }
+
+            Setting::factory()->persistedWithoutApprovalCapture()->create($definition);
+            $this->command?->line("    - global ERP setting <fg=green>{$definition['name']}</> created");
+        }
+    }
+
+    private function ensureCompanySettings(Company $company): void
+    {
+        $erp_company_settings = resolve(ErpCompanySettings::class);
+        $merged = $erp_company_settings->mergeWithDefaults($company);
+
+        if ($company->settings === $merged) {
+            return;
+        }
+
+        $company->settings = $merged;
+        $company->save();
+
+        $this->command?->line('    - default company ERP settings <fg=green>initialized</>');
     }
 
     private function defaultEntities(): void

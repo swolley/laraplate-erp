@@ -165,7 +165,174 @@ Effetti tipici:
 4. Al posting, la NC genera movimenti contabili invertiti (debiti↔crediti)
 5. Numerazione dedicata (sezionale): SalesCreditNote, PurchaseCreditNote, ecc.
 
-## 4.7 Workflow report finanziari
+## 4.7 Workflow posting fattura (vendita e acquisto)
+
+Questa sezione descrive il ciclo di vita operativo-contabile della fattura nel modulo ERP: dalla bozza al posting, con le azioni UI e i controlli automatici.
+
+### Stati della fattura
+
+| Stato | Cosa significa | Cosa vedi in interfaccia |
+| ----- | -------------- | ------------------------ |
+| **Bozza (draft)** | Documento commerciale salvato ma non contabilizzato | Nessun `reference` fiscale, nessuna scrittura contabile |
+| **Postata (posted)** | Registrazione ufficiale completata | `reference` assegnato, journal collegato, scadenzario e registro IVA aggiornati |
+
+La fattura **non** va postata modificando manualmente un campo data: si usano i pulsanti **Post** / **Unpost** (pagina modifica fattura e lista fatture in Filament).
+
+### Cosa succede quando premi «Post»
+
+Ordine logico (tutto in una transazione database):
+
+1. **Validazioni pre-posting**
+   - almeno una riga fattura
+   - (vendita) eventuali collegamenti a righe DDT: DDT gia postato, quantita coerenti, non si supera il consegnato gia fatturato
+   - (acquisto) three-way match su ogni riga collegata a ordine fornitore e/o ricezione merce
+2. **Numerazione fiscale** — `reference` assegnato da `DocumentNumberAllocator` (stream separato vendita/acquisto/NC/ND; senza «buchi» ammessi sui documenti fiscali)
+3. **Snapshot IVA sulle righe** — codice, aliquota ed etichetta congelati sulla riga
+4. **Scrittura contabile** — `JournalEntry` bilanciata (ricavi/IVA/clienti o costi/IVA/fornitori)
+5. **Registro IVA** — una riga per codice IVA con protocollo progressivo
+6. **Scadenzario** — righe scadenza da `PaymentTerm` (o scadenza unica immediata se assente)
+7. **Evasione ordine** — (solo vendita con riga ordine collegata) aggiornamento `qty_invoiced` sull'ordine cliente
+
+### Cosa succede quando premi «Unpost»
+
+1. Storno della scrittura contabile (journal di rettifica)
+2. Rimozione voci registro IVA
+3. Rimozione scadenze **solo se** non ci sono gia pagamenti allocati
+4. Rollback quantita fatturate sull'ordine cliente (vendita)
+5. Azzeramento `reference` e sblocco modifica righe (in bozza)
+
+### Workflow fattura vendita con collegamento DDT (opzionale)
+
+Il collegamento fattura ↔ DDT e **opzionale**: puoi fatturare senza DDT (es. servizi) o collegare una o piu righe DDT per tracciare cosa stai fatturando del consegnato.
+
+```mermaid
+flowchart TB
+  SO[Ordine cliente confermato]
+  DDT[DDT postato - scarico magazzino]
+  INV_Bozza[Fattura vendita - bozza]
+  Link[Pivot righe fattura ↔ righe DDT]
+  Post[Azione Post]
+  Posted[Fattura postata con reference]
+
+  SO --> DDT
+  DDT --> INV_Bozza
+  INV_Bozza --> Link
+  Link --> Post
+  Post --> Posted
+  Posted --> Scad[Scadenzario]
+  Posted --> IVA[Registro IVA vendite]
+  Posted --> SO_qty[Aggiorna qty_invoiced]
+```
+
+**Regole principali (vendita + DDT):**
+
+- il DDT deve essere **gia postato** prima di poterlo collegare in fattura
+- la somma delle quantita collegate al DDT su una riga fattura non puo superare la quantita della riga fattura
+- la quantita totale fatturata su una riga DDT (tutte le fatture postate) non puo superare la quantita consegnata su quella riga DDT
+- se la riga fattura ha anche `sales_order_line_id`, deve essere coerente con la riga ordine del DDT collegato
+
+In Filament, su ogni riga fattura vendita puoi aggiungere uno o piu **Delivery note lines** (riga DDT + quantita).
+
+### Workflow fattura acquisto con three-way match
+
+Per le fatture fornitore (`direction = purchase`), al posting ogni riga viene confrontata con:
+
+- la riga **ordine fornitore** (`purchase_order_line_id`), se presente — prezzo e quantita
+- la riga **ricezione merce** (`goods_receipt_line_id`), se presente — quantita
+
+```mermaid
+flowchart TB
+  PO[Ordine fornitore]
+  GR[Ricezione merce postata]
+  INV_Bozza[Fattura acquisto - bozza]
+  TWM[Three-way match]
+  Post[Azione Post]
+  Posted[Fattura postata]
+
+  PO --> GR
+  GR --> INV_Bozza
+  INV_Bozza --> TWM
+  TWM -->|matched / tolerance| Post
+  TWM -->|scarto oltre tolleranza| Block[Blocco posting]
+  TWM -->|force in UI| Post
+  Post --> Posted
+  Posted --> IVA_AP[Registro IVA acquisti]
+  Posted --> Scad_AP[Scadenzario pagamenti]
+```
+
+**Esiti del match (salvati su ogni riga fattura):**
+
+| `match_status` | Significato |
+| -------------- | ----------- |
+| `matched` | Prezzo e quantita allineati a PO/GR entro tolleranza |
+| `tolerance` | Piccole differenze entro la percentuale configurata |
+| `forced` | Differenze oltre tolleranza ma posting forzato dall'operatore |
+| `unmatched` | Nessun collegamento PO/GR sulla riga (consentito, ma senza confronto) |
+
+**Tolleranze** (per company, in `companies.settings` JSON, default 0%):
+
+- `erp.three_way_match.price_tolerance_percent` — scarto prezzo massimo %
+- `erp.three_way_match.qty_tolerance_percent` — scarto quantita massimo %
+
+Esempio JSON sulla company:
+
+```json
+{
+  "erp": {
+    "three_way_match": {
+      "price_tolerance_percent": 2,
+      "qty_tolerance_percent": 1
+    }
+  }
+}
+```
+
+Se il match fallisce e non forzi: il posting viene bloccato con errore di validazione.
+
+In Filament, all'azione **Post** su fatture acquisto compare la checkbox **Force three-way match** per autorizzare lo scarto controllato (stato `forced` + dettaglio in `match_discrepancy` JSON).
+
+### Interfaccia Filament (riepilogo operatore)
+
+| Azione | Dove | Quando visibile |
+| ------ | ---- | ----------------- |
+| **Post** | Modifica fattura / lista | Fattura in bozza (`journal_entry_id` assente) |
+| **Unpost** | Modifica fattura / lista | Fattura gia postata |
+| **Create Credit Note** | Modifica fattura | Fattura vendita postata di tipo `invoice` |
+
+Dopo il posting: righe fattura e campi strutturali sono in sola lettura; restano modificabili solo campi di testata non critici (es. note) secondo le regole del form.
+
+### Diagramma unificato posting / unpost
+
+```mermaid
+sequenceDiagram
+  participant U as Operatore
+  participant UI as Filament Post/Unpost
+  participant Obs as InvoiceObserver
+  participant IPS as InvoicePostingService
+  participant DDN as InvoiceDeliveryNoteValidation
+  participant TWM as ThreeWayMatchService
+  participant JE as JournalPostingService
+
+  U->>UI: Post
+  UI->>Obs: posted_at = now
+  Obs->>IPS: post(invoice)
+  IPS->>DDN: validate DDT links (sale only)
+  IPS->>TWM: validate PO/GR (purchase only)
+  IPS->>IPS: allocate reference + tax snapshot
+  IPS->>JE: balanced journal entry
+  IPS->>IPS: VAT register + payment schedule + SO invoicing
+  IPS-->>UI: reference assigned
+
+  U->>UI: Unpost
+  UI->>Obs: posted_at = null
+  Obs->>IPS: unpost(invoice)
+  IPS->>JE: reverse journal
+  IPS->>IPS: clear VAT, schedule, reference, SO qty
+```
+
+---
+
+## 4.8 Workflow report finanziari
 
 1. **Bilancio di verifica**: saldi dare/avere per ogni conto, a una data scelta
 2. **Stato patrimoniale**: attivita = passivita + patrimonio netto + utile netto
@@ -322,7 +489,9 @@ Approccio consigliato:
 - **COGS**: costo del venduto
 - **Posting**: registrazione ufficiale in contabilita
 - **Partita doppia**: ogni scrittura ha dare/avere bilanciati
-- **3-way match**: confronto ordine, ricezione, fattura fornitore
+- **3-way match**: confronto ordine, ricezione, fattura fornitore al posting
+- **Post / Unpost**: azioni Filament per contabilizzare o stornare una fattura (non usare posted_at a mano)
+- **Force three-way match**: override controllato quando prezzo/qty acquisto superano la tolleranza
 - **Party**: soggetto commerciale unificato (cliente e/o fornitore)
 - **Payment Term**: condizione di pagamento (rate, scadenze, metodo)
 - **Scadenzario**: elenco scadenze generate dalla fattura con stato pagamento

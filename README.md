@@ -65,7 +65,7 @@ When the module is active, configuration is published under the **`erp`** key (f
 config('erp.name'); // "ERP"
 ```
 
-Add environment-driven settings here as features are implemented.
+Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpCompanySettings` to read dotted keys (e.g. `erp.three_way_match.price_tolerance_percent`). The `config/erp.php` file only exposes module metadata.
 
 ## Features
 
@@ -147,20 +147,25 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### M3.5 — Invoice Posting & DDT Integration
 
--   `InvoicePostingService` with full journal post / unpost cycle
+-   `InvoicePostingService` with full journal post / unpost cycle (observer-driven via `posted_at`)
 -   `DocumentNumberAllocator` integration at posting time (reference assigned on post, cleared on unpost)
 -   Tax snapshot on invoice lines (tax_code, tax_rate, tax_label frozen at posting)
 -   SO qty_invoiced tracking via `SalesOrderEvasionService`
 -   Pivot `invoice_line_delivery_note_line` for flexible Invoice↔DDT linking
+-   `InvoiceDeliveryNoteValidationService` — optional DDT linkage rules at posting (posted DDT, qty caps, SO line consistency)
 -   `InvoiceCompactionService` (compact / expand invoice lines by item)
+-   Filament **Post** / **Unpost** actions on invoice edit page and list (no manual `posted_at` editing)
+-   See `docs/ERP_GUIDA_SEMPLICE.md` §4.7 and `docs/rag/MODULE.md` § Invoice posting workflow for end-to-end flows
 
 ### M3.6 — Purchasing Cycle
 
 -   Unified `Party` entity (replaces `Customer`) with `is_customer` / `is_supplier` boolean flags
 -   Party type validation on all models (saving callback) + filtered Filament dropdowns
 -   `PurchaseOrder` / `PurchaseOrderLine`, `GoodsReceipt` / `GoodsReceiptLine`
--   `ThreeWayMatchService` with configurable price / quantity tolerances
--   `MatchStatus` enum (matched, tolerance, forced, unmatched)
+-   `ThreeWayMatchService` with configurable price / quantity tolerances (wired in `InvoicePostingService` on purchase posting)
+-   `MatchStatus` enum (matched, tolerance, forced, unmatched) persisted on `invoice_lines` with `match_discrepancy` JSON
+-   Filament **Force three-way match** checkbox on purchase invoice Post action
+-   Per-company settings via `ErpCompanySettings` on `companies.settings` JSON (`erp.three_way_match.*`, default 0%)
 
 ### M3+ — Database Lock Triggers
 

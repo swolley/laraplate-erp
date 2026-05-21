@@ -17,6 +17,9 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Services\Company\ErpCompanySettings;
+use Modules\ERP\Services\Payments\PaymentScheduleGeneratorService;
+use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
 final readonly class InvoicePostingService
@@ -25,8 +28,12 @@ final readonly class InvoicePostingService
         private ChartOfAccountsInstaller $chart_of_accounts_installer,
         private CreditNoteService $credit_note_service,
         private DocumentNumberAllocator $document_number_allocator,
+        private InvoiceDeliveryNoteValidationService $invoice_delivery_note_validation_service,
         private JournalPostingService $journal_posting_service,
+        private PaymentScheduleGeneratorService $payment_schedule_generator_service,
         private SalesOrderEvasionService $sales_order_evasion_service,
+        private ErpCompanySettings $erp_company_settings,
+        private ThreeWayMatchService $three_way_match_service,
         private VatRegisterService $vat_register_service,
     ) {}
 
@@ -53,6 +60,9 @@ final readonly class InvoicePostingService
                     'lines' => ['Invoice must have at least one line before posting.'],
                 ]);
             }
+
+            $this->invoice_delivery_note_validation_service->validateForPosting($locked, $lines);
+            $this->applyThreeWayMatch($company, $invoice, $lines);
 
             $document_type = $locked->direction === InvoiceDirection::Sale
                 ? DocumentType::SalesInvoice
@@ -92,6 +102,8 @@ final readonly class InvoicePostingService
             );
 
             $this->vat_register_service->register($invoice);
+
+            $this->payment_schedule_generator_service->generate($locked, $gross_total);
 
             $this->applySalesOrderInvoicingProgress($locked, $lines, true);
             $invoice->journal_entry_id = (int) $entry->getKey();
@@ -207,6 +219,33 @@ final readonly class InvoicePostingService
         $lines[] = $this->line((int) $payable->id, $this->neg($gross_total), $currency, $fx_rate, 'Trade payable');
 
         return $lines;
+    }
+
+    /**
+     * @param  Collection<int, InvoiceLine>  $lines
+     */
+    private function applyThreeWayMatch(Company $company, Invoice $invoice, Collection $lines): void
+    {
+        if ($invoice->direction !== InvoiceDirection::Purchase) {
+            return;
+        }
+
+        $price_tolerance = $this->erp_company_settings->priceTolerancePercent($company);
+        $qty_tolerance = $this->erp_company_settings->qtyTolerancePercent($company);
+        $force = $invoice->forceThreeWayMatchOnPosting;
+
+        foreach ($lines as $line) {
+            $result = $this->three_way_match_service->validate(
+                $line,
+                $price_tolerance,
+                $qty_tolerance,
+                $force,
+            );
+
+            $line->match_status = $result['status'];
+            $line->match_discrepancy = $result['discrepancies'] !== [] ? $result['discrepancies'] : null;
+            $line->save();
+        }
     }
 
     /**

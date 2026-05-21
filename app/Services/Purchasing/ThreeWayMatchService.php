@@ -79,7 +79,7 @@ final class ThreeWayMatchService
         }
 
         if ($gr_line !== null) {
-            $qty_diff = $this->percentDiff((float) $invoice_line->quantity, (float) $gr_line->qty_received);
+            $qty_diff = $this->percentDiff((float) $invoice_line->quantity, (float) $gr_line->quantity);
 
             if ($qty_diff > $qty_tolerance_percent) {
                 $has_breach = true;
@@ -87,7 +87,7 @@ final class ThreeWayMatchService
 
             if ($qty_diff > 0) {
                 $discrepancies['gr_qty'] = [
-                    'expected' => (string) $gr_line->qty_received,
+                    'expected' => (string) $gr_line->quantity,
                     'actual' => (string) $invoice_line->quantity,
                     'diff_percent' => round($qty_diff, 4),
                     'within_tolerance' => $qty_diff <= $qty_tolerance_percent,
