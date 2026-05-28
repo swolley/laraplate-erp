@@ -22,6 +22,7 @@ final class InvoicePostingActions
             ->requiresConfirmation()
             ->modalHeading('Post invoice')
             ->modalDescription('Assigns the fiscal reference, posts journal entries, and locks the invoice.')
+            ->authorize(static fn (Invoice $record): bool => auth()->user()?->can('post', $record) ?? false)
             ->visible(static fn (Invoice $record): bool => $record->journal_entry_id === null)
             ->form(static fn (Invoice $record): array => $record->direction === InvoiceDirection::Purchase
                 ? [
@@ -44,6 +45,7 @@ final class InvoicePostingActions
             ->requiresConfirmation()
             ->modalHeading('Unpost invoice')
             ->modalDescription('Reverses the journal entry, removes payment schedule lines, and clears the fiscal reference.')
+            ->authorize(static fn (Invoice $record): bool => auth()->user()?->can('unpost', $record) ?? false)
             ->visible(static fn (Invoice $record): bool => $record->journal_entry_id !== null)
             ->action(static function (Invoice $record): void {
                 self::unpostInvoice($record);

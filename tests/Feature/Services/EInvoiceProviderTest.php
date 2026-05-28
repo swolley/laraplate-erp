@@ -1,0 +1,119 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\EInvoiceSubmissionStatus;
+use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
+use Modules\ERP\Contracts\EInvoiceProvider;
+use Modules\ERP\Data\EInvoice\EInvoicePayload;
+use Modules\ERP\Data\EInvoice\EInvoiceRemoteStatus;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\EInvoiceSubmission;
+use Modules\ERP\Models\Invoice;
+use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
+use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
+
+uses(RefreshDatabase::class);
+
+function createEInvoiceCompany(string $slug = 'einvoice'): Company
+{
+    return Company::query()->create([
+        'slug' => $slug,
+        'name' => ucfirst($slug),
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+}
+
+function createEInvoiceInvoice(Company $company, InvoiceDirection $direction = InvoiceDirection::Sale, bool $posted = true): Invoice
+{
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => $direction,
+        'invoice_type' => InvoiceType::Invoice->value,
+        'reference' => $posted ? 'INV-001' : null,
+        'currency' => 'EUR',
+        'posted_at' => $posted ? now() : null,
+    ]);
+
+    $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Service',
+        'quantity' => '2.0000',
+        'unit_price' => '50.0000',
+    ]);
+
+    return $invoice;
+}
+
+it('resolves the stub e-invoice provider by default', function (): void {
+    expect(app(EInvoiceProvider::class))->toBeInstanceOf(StubEInvoiceProvider::class);
+});
+
+it('prepares a neutral payload without requiring fatturapa fields', function (): void {
+    $company = createEInvoiceCompany();
+    $invoice = createEInvoiceInvoice($company);
+
+    $payload = app(EInvoiceProvider::class)->prepare($invoice);
+
+    expect($payload)->toBeInstanceOf(EInvoicePayload::class)
+        ->and($payload->document['invoice_id'])->toBe($invoice->id)
+        ->and($payload->document['company_id'])->toBe($company->id)
+        ->and($payload->document['direction'])->toBe(InvoiceDirection::Sale->value)
+        ->and($payload->document['lines'])->toHaveCount(1);
+});
+
+it('submits stub payloads with a deterministic external id', function (): void {
+    $company = createEInvoiceCompany();
+    $invoice = createEInvoiceInvoice($company);
+    $payload = app(EInvoiceProvider::class)->prepare($invoice);
+
+    $result = app(EInvoiceProvider::class)->submit($payload);
+
+    expect($result->success)->toBeTrue()
+        ->and($result->externalId)->toBe('STUB-' . $invoice->id)
+        ->and($result->raw['provider'])->toBe('stub');
+});
+
+it('maps stub remote status for known external ids', function (): void {
+    expect(app(EInvoiceProvider::class)->remoteStatus('STUB-1'))->toBe(EInvoiceRemoteStatus::Accepted)
+        ->and(app(EInvoiceProvider::class)->remoteStatus('OTHER-1'))->toBe(EInvoiceRemoteStatus::Unknown);
+});
+
+it('persists an e-invoice submission for a posted sale invoice', function (): void {
+    $company = createEInvoiceCompany();
+    $invoice = createEInvoiceInvoice($company);
+
+    $submission = app(EInvoiceSubmissionService::class)->submit($invoice);
+
+    expect($submission)->toBeInstanceOf(EInvoiceSubmission::class)
+        ->and($submission->company_id)->toBe($company->id)
+        ->and($submission->invoice_id)->toBe($invoice->id)
+        ->and($submission->provider_code)->toBe('stub')
+        ->and($submission->external_id)->toBe('STUB-' . $invoice->id)
+        ->and($submission->status)->toBe(EInvoiceSubmissionStatus::Submitted);
+});
+
+it('rejects unposted or purchase invoices', function (): void {
+    $company = createEInvoiceCompany('einvoice-invalid');
+    $unposted = createEInvoiceInvoice($company, posted: false);
+    $purchase = createEInvoiceInvoice($company, InvoiceDirection::Purchase);
+
+    expect(fn () => app(EInvoiceSubmissionService::class)->submit($unposted))
+        ->toThrow(ValidationException::class)
+        ->and(fn () => app(EInvoiceSubmissionService::class)->submit($purchase))
+        ->toThrow(ValidationException::class);
+});
+
+it('refreshes a submitted stub e-invoice to accepted', function (): void {
+    $company = createEInvoiceCompany();
+    $invoice = createEInvoiceInvoice($company);
+    $submission = app(EInvoiceSubmissionService::class)->submit($invoice);
+
+    $refreshed = app(EInvoiceSubmissionService::class)->refresh($submission);
+
+    expect($refreshed->status)->toBe(EInvoiceSubmissionStatus::Accepted);
+});

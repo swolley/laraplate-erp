@@ -64,5 +64,4 @@ final class GoodsReceiptResource extends Resource
             'edit' => EditGoodsReceipt::route('/{record}/edit'),
         ];
     }
-
 }

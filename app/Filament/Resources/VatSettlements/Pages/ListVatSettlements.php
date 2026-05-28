@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Filament\Resources\VatSettlements\Pages;
 
+use function Modules\ERP\Helpers\current_company_id;
+
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
@@ -11,8 +13,6 @@ use Modules\ERP\Filament\Resources\VatSettlements\VatSettlementResource;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Services\Accounting\VatSettlementService;
 use Override;
-
-use function Modules\ERP\Helpers\current_company_id;
 
 final class ListVatSettlements extends ListRecords
 {
@@ -37,7 +37,7 @@ final class ListVatSettlements extends ListRecords
                                 ->mapWithKeys(fn (FiscalPeriod $period): array => [
                                     (int) $period->id => 'P' . $period->period_no . ' (' . $period->start_date->format('Y-m-d') . ')',
                                 ])
-                                ->all()
+                                ->all(),
                         )
                         ->required(),
                 ])

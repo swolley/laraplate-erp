@@ -40,7 +40,7 @@ final class ProjectForm
                     ->preload()
                     ->nullable()
                     ->label('Quotation')
-                    ->getOptionLabelFromRecordUsing(static fn(Quotation $record): string => sprintf('#%d — %s', $record->id, $record->currency)),
+                    ->getOptionLabelFromRecordUsing(static fn (Quotation $record): string => sprintf('#%d — %s', $record->id, $record->currency)),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),

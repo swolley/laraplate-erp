@@ -66,11 +66,11 @@ final class Account extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'company_id' => ['required', 'integer', 'exists:'.ERPTables::Companies->value.',id'],
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'code' => ['required', 'string', 'max:32'],
             'name' => ['required', 'string', 'max:255'],
             'kind' => ['required', 'string', AccountKind::validationRule()],
-            'parent_id' => ['nullable', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
+            'parent_id' => ['nullable', 'integer', 'exists:' . ERPTables::Accounts->value . ',id'],
             'meta' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -78,7 +78,7 @@ final class Account extends Model
             'code' => ['sometimes', 'string', 'max:32'],
             'name' => ['sometimes', 'string', 'max:255'],
             'kind' => ['sometimes', 'string', AccountKind::validationRule()],
-            'parent_id' => ['nullable', 'integer', 'exists:'.ERPTables::Accounts->value.',id'],
+            'parent_id' => ['nullable', 'integer', 'exists:' . ERPTables::Accounts->value . ',id'],
             'meta' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ]);

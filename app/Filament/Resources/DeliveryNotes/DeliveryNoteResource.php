@@ -64,5 +64,4 @@ final class DeliveryNoteResource extends Resource
             'edit' => EditDeliveryNote::route('/{record}/edit'),
         ];
     }
-
 }

@@ -34,18 +34,19 @@ final class InvoiceCompactionService
             }
 
             $groups = $lines->groupBy(
-                static fn (InvoiceLine $line): string => (($line->item_id ?? '')) . '|' . ($line->unit_price)
+                static fn (InvoiceLine $line): string => (($line->item_id ?? '')) . '|' . ($line->unit_price),
             );
 
             $line_no = 0;
 
             foreach ($groups as $group_lines) {
                 $line_no++;
+
                 /** @var InvoiceLine $keeper */
                 $keeper = $group_lines->first();
 
                 if ($group_lines->count() === 1) {
-                    if ((int) $keeper->line_no !== $line_no) {
+                    if ($line_no !== (int) $keeper->line_no) {
                         $keeper->update(['line_no' => $line_no]);
                     }
 
@@ -96,7 +97,7 @@ final class InvoiceCompactionService
                 if ($dn_lines->count() <= 1) {
                     $line_no++;
 
-                    if ((int) $line->line_no !== $line_no) {
+                    if ($line_no !== (int) $line->line_no) {
                         $line->update(['line_no' => $line_no]);
                     }
 

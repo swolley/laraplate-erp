@@ -9,10 +9,11 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
+use Override;
 
 class EditStockLevel extends EditRecord
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = StockLevelResource::class;
 
     protected function getHeaderActions(): array

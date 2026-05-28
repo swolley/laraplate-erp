@@ -8,10 +8,13 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
+use Modules\ERP\Services\Pricing\PriceResolverService;
 
 final class SalesOrderForm
 {
@@ -71,6 +74,12 @@ final class SalesOrderForm
                     ->default(SalesOrderStatus::Draft->value),
                 Repeater::make('line_items')
                     ->schema([
+                        Select::make('item_id')
+                            ->relationship('item', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(static fn (Get $get, Set $set, ?int $state): null => self::applyResolvedPrice($get, $set, $state)),
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
@@ -102,5 +111,33 @@ final class SalesOrderForm
                     ->addActionLabel('Add line')
                     ->columnSpanFull(),
             ]);
+    }
+
+    private static function applyResolvedPrice(Get $get, Set $set, ?int $item_id): null
+    {
+        if ($item_id === null || filled($get('unit_price'))) {
+            return null;
+        }
+
+        $company_id = $get('../../company_id');
+
+        if ($company_id === null) {
+            return null;
+        }
+
+        try {
+            $result = app(PriceResolverService::class)->resolve(
+                company_id: (int) $company_id,
+                item_id: $item_id,
+                party_id: $get('../../party_id') !== null ? (int) $get('../../party_id') : null,
+                currency: (string) ($get('../../currency') ?? 'EUR'),
+            );
+        } catch (\Illuminate\Validation\ValidationException) {
+            return null;
+        }
+
+        $set('unit_price', $result->resolvedUnitPrice);
+
+        return null;
     }
 }

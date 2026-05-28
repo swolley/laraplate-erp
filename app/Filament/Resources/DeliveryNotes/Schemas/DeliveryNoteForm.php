@@ -63,7 +63,7 @@ final class DeliveryNoteForm
                                 ->orderBy('id')
                                 ->get()
                                 ->mapWithKeys(static fn (SalesOrderLine $line): array => [
-                                    (string) $line->id => trim("{$line->id} - {$line->name}"),
+                                    (string) $line->id => mb_trim("{$line->id} - {$line->name}"),
                                 ])
                                 ->all())
                             ->searchable()

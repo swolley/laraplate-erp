@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Enhance invoice posting workflow with delivery note integration
+- *(tests)* Add integration tests for ERP services and models
+- *(erp)* Introduce bank account and bank statement resources
+
+## [1.8.1] - 2026-05-17
+
+### 🚀 Features
+
 - *(models)* Implement getPresettableClass method in OpportunityStage model
 
 ### ⚙️ Miscellaneous Tasks

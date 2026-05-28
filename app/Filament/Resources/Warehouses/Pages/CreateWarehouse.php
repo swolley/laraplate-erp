@@ -6,9 +6,10 @@ namespace Modules\ERP\Filament\Resources\Warehouses\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
+use Override;
 
 class CreateWarehouse extends CreateRecord
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = WarehouseResource::class;
 }

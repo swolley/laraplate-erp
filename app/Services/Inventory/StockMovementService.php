@@ -51,7 +51,7 @@ final class StockMovementService
                 'unit_cost' => $unit_cost_string,
             ]);
 
-            if ($source instanceof \Illuminate\Database\Eloquent\Model) {
+            if ($source instanceof Model) {
                 $movement->source()->associate($source);
             }
 
@@ -135,7 +135,7 @@ final class StockMovementService
                 'unit_cost' => null,
             ]);
 
-            if ($source instanceof \Illuminate\Database\Eloquent\Model) {
+            if ($source instanceof Model) {
                 $movement->source()->associate($source);
             }
 

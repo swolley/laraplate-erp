@@ -8,11 +8,13 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Filament\Forms\Components\Checkbox;
+use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Filament\Resources\Invoices\Actions\InvoicePostingActions;
@@ -20,6 +22,7 @@ use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
+use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Override;
 
 final class EditInvoice extends EditRecord
@@ -86,33 +89,13 @@ final class EditInvoice extends EditRecord
                 'tax_code_id',
             ]);
             $payload['line_no'] = $index + 1;
+
             /** @var InvoiceLine $invoice_line */
             $invoice_line = $record->lines()->create($payload);
             $this->syncDeliveryNoteLineLinks($invoice_line, $line);
         }
 
         return $record;
-    }
-
-    /**
-     * @param  array<string, mixed>  $line_data
-     */
-    private function syncDeliveryNoteLineLinks(InvoiceLine $invoice_line, array $line_data): void
-    {
-        $links = $line_data['delivery_note_line_links'] ?? [];
-        $pivot = [];
-
-        foreach ($links as $link) {
-            $delivery_note_line_id = $link['delivery_note_line_id'] ?? null;
-
-            if ($delivery_note_line_id === null || $delivery_note_line_id === '') {
-                continue;
-            }
-
-            $pivot[(int) $delivery_note_line_id] = ['quantity' => (int) $link['quantity']];
-        }
-
-        $invoice_line->delivery_note_lines()->sync($pivot);
     }
 
     #[Override]
@@ -126,6 +109,7 @@ final class EditInvoice extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Post invoice')
                 ->modalDescription('Assigns the fiscal reference, posts journal entries, and locks the invoice.')
+                ->authorize(fn (): bool => auth()->user()?->can('post', $this->record) ?? false)
                 ->visible(fn (): bool => $this->record->journal_entry_id === null)
                 ->form(fn (): array => $this->record->direction === InvoiceDirection::Purchase
                     ? [
@@ -148,6 +132,7 @@ final class EditInvoice extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Unpost invoice')
                 ->modalDescription('Reverses the journal entry, removes payment schedule lines, and clears the fiscal reference.')
+                ->authorize(fn (): bool => auth()->user()?->can('unpost', $this->record) ?? false)
                 ->visible(fn (): bool => $this->record->journal_entry_id !== null)
                 ->action(function (): void {
                     InvoicePostingActions::unpostInvoice($this->record);
@@ -164,9 +149,79 @@ final class EditInvoice extends EditRecord
                     $credit_note = $service->createFromInvoice($this->record);
                     $this->redirect(InvoiceResource::getUrl('edit', ['record' => $credit_note]));
                 }),
+            Action::make('send_einvoice')
+                ->label('Send e-invoice')
+                ->icon(Heroicon::OutlinedPaperAirplane)
+                ->color('primary')
+                ->requiresConfirmation()
+                ->authorize(fn (): bool => auth()->user()?->can('submitEInvoice', $this->record) ?? false)
+                ->visible(fn (): bool => $this->record->posted_at !== null
+                    && $this->record->direction === InvoiceDirection::Sale
+                    && ! $this->record->eInvoiceSubmissions()
+                        ->whereIn('status', [
+                            EInvoiceSubmissionStatus::Submitted->value,
+                            EInvoiceSubmissionStatus::Accepted->value,
+                        ])
+                        ->exists())
+                ->action(function (): void {
+                    $service = resolve(EInvoiceSubmissionService::class);
+                    $submission = $service->submit($this->record);
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('E-invoice submitted: ' . $submission->provider_code . ' / ' . ($submission->external_id ?? 'pending'))
+                        ->success()
+                        ->send();
+                }),
+            Action::make('refresh_einvoice_status')
+                ->label('Refresh e-invoice')
+                ->icon(Heroicon::OutlinedArrowPath)
+                ->color('gray')
+                ->authorize(fn (): bool => auth()->user()?->can('refreshEInvoice', $this->record) ?? false)
+                ->visible(fn (): bool => $this->record->eInvoiceSubmissions()
+                    ->where('status', EInvoiceSubmissionStatus::Submitted->value)
+                    ->whereNotNull('external_id')
+                    ->exists())
+                ->action(function (): void {
+                    $submission = $this->record->eInvoiceSubmissions()
+                        ->where('status', EInvoiceSubmissionStatus::Submitted->value)
+                        ->whereNotNull('external_id')
+                        ->latest('id')
+                        ->firstOrFail();
+
+                    $service = resolve(EInvoiceSubmissionService::class);
+                    $service->refresh($submission);
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('E-invoice status refreshed')
+                        ->success()
+                        ->send();
+                }),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $line_data
+     */
+    private function syncDeliveryNoteLineLinks(InvoiceLine $invoice_line, array $line_data): void
+    {
+        $links = $line_data['delivery_note_line_links'] ?? [];
+        $pivot = [];
+
+        foreach ($links as $link) {
+            $delivery_note_line_id = $link['delivery_note_line_id'] ?? null;
+
+            if ($delivery_note_line_id === null || $delivery_note_line_id === '') {
+                continue;
+            }
+
+            $pivot[(int) $delivery_note_line_id] = ['quantity' => (int) $link['quantity']];
+        }
+
+        $invoice_line->delivery_note_lines()->sync($pivot);
     }
 }

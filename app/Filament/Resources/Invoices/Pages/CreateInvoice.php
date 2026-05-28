@@ -37,6 +37,7 @@ final class CreateInvoice extends CreateRecord
                 'tax_code_id',
             ]);
             $payload['line_no'] = $index + 1;
+
             /** @var InvoiceLine $invoice_line */
             $invoice_line = $invoice->lines()->create($payload);
             $this->syncDeliveryNoteLineLinks($invoice_line, $line);

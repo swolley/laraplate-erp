@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Reporting;
 
+use DateTimeInterface;
+
 /**
  * Generates a balance sheet (stato patrimoniale) at a given date.
  */
@@ -25,7 +27,7 @@ final readonly class BalanceSheetService
      *     is_balanced: bool,
      * }
      */
-    public function generate(int $company_id, \DateTimeInterface $as_of_date): array
+    public function generate(int $company_id, DateTimeInterface $as_of_date): array
     {
         $trial_balance = $this->trial_balance_service->generate($company_id, $as_of_date);
 

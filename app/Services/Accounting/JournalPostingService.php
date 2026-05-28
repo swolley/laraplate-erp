@@ -51,7 +51,7 @@ final class JournalPostingService
 
         $posted_at = CarbonImmutable::now();
 
-        return DB::transaction(fn(): JournalEntry => $this->persistPostedEntry(
+        return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
             $company,
             $lines,
             $fiscal_period,
@@ -118,7 +118,7 @@ final class JournalPostingService
         $posted_at = CarbonImmutable::now();
         $description = 'Reversal of journal #' . $posted_entry->getKey() . ': ' . $reversal_reason;
 
-        return DB::transaction(fn(): JournalEntry => $this->persistPostedEntry(
+        return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
             $company,
             $storno_lines,
             $posted_entry->fiscal_period,
@@ -203,7 +203,7 @@ final class JournalPostingService
         );
         JournalLineBalance::assertBalanced($amount_locals);
 
-        if ($fiscal_period instanceof \Modules\ERP\Models\FiscalPeriod) {
+        if ($fiscal_period instanceof FiscalPeriod) {
             if ($fiscal_period->is_closed) {
                 throw PostingToClosedFiscalPeriodException::forPeriod((int) $fiscal_period->getKey());
             }

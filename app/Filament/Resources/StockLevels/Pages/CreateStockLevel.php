@@ -6,9 +6,10 @@ namespace Modules\ERP\Filament\Resources\StockLevels\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
+use Override;
 
 class CreateStockLevel extends CreateRecord
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = StockLevelResource::class;
 }

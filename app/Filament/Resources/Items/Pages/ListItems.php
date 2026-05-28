@@ -7,10 +7,11 @@ namespace Modules\ERP\Filament\Resources\Items\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
+use Override;
 
 class ListItems extends ListRecords
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = ItemResource::class;
 
     protected function getHeaderActions(): array

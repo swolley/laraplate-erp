@@ -10,7 +10,6 @@ use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
-use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Tracks outbound e-invoice submission attempts per invoice and logical provider.
@@ -21,11 +20,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 final class EInvoiceSubmission extends Model
 {
     use BelongsToCompany;
-
-    /**
-     * Accounting models always version with DIFF; overrides any Setting row.
-     */
-    protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
     /**
      * @var string
@@ -69,7 +63,7 @@ final class EInvoiceSubmission extends Model
             'status' => ['required', 'string', EInvoiceSubmissionStatus::validationRule()],
             'last_payload_path' => ['nullable', 'string'],
             'submitted_at' => ['nullable', 'date'],
-            'response_payload' => ['nullable', 'array'],
+            'response_payload' => ['nullable', 'json'],
         ]);
 
         $rules['update'] = array_merge($rules['update'], [
@@ -79,7 +73,7 @@ final class EInvoiceSubmission extends Model
             'status' => ['sometimes', 'string', EInvoiceSubmissionStatus::validationRule()],
             'last_payload_path' => ['nullable', 'string'],
             'submitted_at' => ['nullable', 'date'],
-            'response_payload' => ['nullable', 'array'],
+            'response_payload' => ['nullable', 'json'],
         ]);
 
         return $rules;
@@ -92,5 +86,10 @@ final class EInvoiceSubmission extends Model
             'submitted_at' => 'immutable_datetime',
             'response_payload' => 'array',
         ];
+    }
+
+    protected function shouldVersioning(): bool
+    {
+        return false;
     }
 }

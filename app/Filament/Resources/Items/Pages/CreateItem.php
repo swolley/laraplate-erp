@@ -6,9 +6,10 @@ namespace Modules\ERP\Filament\Resources\Items\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
+use Override;
 
 class CreateItem extends CreateRecord
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = ItemResource::class;
 }

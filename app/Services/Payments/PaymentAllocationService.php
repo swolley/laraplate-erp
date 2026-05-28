@@ -15,7 +15,7 @@ use Modules\ERP\Models\PaymentScheduleLine;
 final class PaymentAllocationService
 {
     /**
-     * @param array<int, string> $allocations [schedule_line_id => allocated_amount_doc]
+     * @param  array<int, string>  $allocations  [schedule_line_id => allocated_amount_doc]
      */
     public function allocate(Payment $payment, array $allocations): void
     {
@@ -78,10 +78,10 @@ final class PaymentAllocationService
                 ->firstOrFail();
 
             $new_paid_doc = $this->round4(
-                (float) $schedule_line->paid_amount_doc - (float) $allocation->allocated_amount_doc
+                (float) $schedule_line->paid_amount_doc - (float) $allocation->allocated_amount_doc,
             );
             $new_paid_local = $this->round4(
-                (float) $schedule_line->paid_amount_local - (float) $allocation->allocated_amount_local
+                (float) $schedule_line->paid_amount_local - (float) $allocation->allocated_amount_local,
             );
 
             $schedule_line->paid_amount_doc = $new_paid_doc;

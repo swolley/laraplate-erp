@@ -56,6 +56,7 @@ final class CreditNoteService
                 ->get();
 
             $line_no = 1;
+
             foreach ($original_lines as $original_line) {
                 $quantity = $line_overrides[$original_line->id]['quantity']
                     ?? (string) $original_line->quantity;
@@ -115,9 +116,11 @@ final class CreditNoteService
             ->get();
 
         $total = 0.0;
+
         foreach ($lines as $line) {
             $line_net = (float) $line->quantity * (float) $line->unit_price;
             $line_tax = 0.0;
+
             if ($line->tax_rate !== null && $line->tax_rate !== '') {
                 $line_tax = round($line_net * (float) $line->tax_rate / 100, 4);
             }
@@ -145,8 +148,10 @@ final class CreditNoteService
         }
 
         $total = 0.0;
+
         foreach ($cn_ids as $cn_id) {
             $cn = Invoice::query()->withoutGlobalScopes()->find($cn_id);
+
             if ($cn !== null) {
                 $total += (float) $this->getInvoiceGrossTotal($cn);
             }

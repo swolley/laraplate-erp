@@ -29,6 +29,11 @@ final class Invoice extends Model
     use BelongsToCompany;
 
     /**
+     * When true, purchase invoice posting skips three-way match hard failures.
+     */
+    public bool $forceThreeWayMatchOnPosting = false;
+
+    /**
      * @var string
      */
     #[Override]
@@ -36,12 +41,7 @@ final class Invoice extends Model
 
     protected VersionStrategy $versionStrategy = VersionStrategy::DIFF;
 
-    /**
-     * When true, purchase invoice posting skips three-way match hard failures.
-     */
-    public bool $forceThreeWayMatchOnPosting = false;
-
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'direction',

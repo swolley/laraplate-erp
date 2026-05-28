@@ -30,7 +30,7 @@ final class Company extends Model
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'slug',
         'name',

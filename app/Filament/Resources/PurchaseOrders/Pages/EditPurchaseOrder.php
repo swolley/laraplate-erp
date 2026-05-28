@@ -38,7 +38,7 @@ final class EditPurchaseOrder extends EditRecord
         $data['line_items'] = $purchase_order->lines()
             ->orderBy('id')
             ->get()
-            ->map(static fn(PurchaseOrderLine $line): array => [
+            ->map(static fn (PurchaseOrderLine $line): array => [
                 'item_id' => $line->item_id,
                 'name' => $line->name,
                 'qty_ordered' => $line->qty_ordered,

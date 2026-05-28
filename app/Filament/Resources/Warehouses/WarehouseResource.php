@@ -64,5 +64,4 @@ final class WarehouseResource extends Resource
             'edit' => EditWarehouse::route('/{record}/edit'),
         ];
     }
-
 }

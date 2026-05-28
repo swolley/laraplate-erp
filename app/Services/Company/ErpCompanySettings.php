@@ -79,6 +79,7 @@ final class ErpCompanySettings
                 'type' => SettingTypeEnum::String,
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Invoice line generation mode (expanded or compact)',
+                'choices' => [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT],
             ],
         ];
     }

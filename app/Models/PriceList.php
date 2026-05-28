@@ -31,6 +31,7 @@ final class PriceList extends Model
      */
     #[Override]
     protected $fillable = [
+        'company_id',
         'name',
         'currency',
     ];
@@ -48,6 +49,7 @@ final class PriceList extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
+            'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'currency' => ['required', 'string', 'size:3'],
         ]);

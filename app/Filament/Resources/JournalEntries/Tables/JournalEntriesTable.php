@@ -9,9 +9,9 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
+use Modules\Core\Filament\Utils\HasTable;
 use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
 use Modules\ERP\Models\JournalEntry;
-use Modules\Core\Filament\Utils\HasTable;
 
 final class JournalEntriesTable
 {

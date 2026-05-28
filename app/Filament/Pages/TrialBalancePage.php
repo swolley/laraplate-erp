@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
+use DateTimeImmutable;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\DatePicker;
 use Filament\Schemas\Components\Select;
@@ -17,28 +18,30 @@ use UnitEnum;
 
 final class TrialBalancePage extends Page
 {
+    public ?array $data = [];
+
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    public array $report_data = [];
+
     #[Override]
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
-    #[\Override]
+    #[Override]
     protected static ?int $navigationSort = 80;
 
-    #[\Override]
+    #[Override]
     protected static ?string $navigationLabel = 'Trial Balance';
 
-    #[\Override]
+    #[Override]
     protected static ?string $title = 'Trial Balance';
 
-    #[\Override]
+    #[Override]
     protected static string $view = 'erp::filament.pages.trial-balance';
-
-    public ?array $data = [];
-
-    /** @var array<int, array<string, mixed>> */
-    public array $report_data = [];
 
     public function mount(): void
     {
@@ -70,7 +73,7 @@ final class TrialBalancePage extends Page
 
         $this->report_data = $service->generate(
             (int) $state['company_id'],
-            new \DateTimeImmutable($state['as_of_date']),
+            new DateTimeImmutable($state['as_of_date']),
         );
     }
 }

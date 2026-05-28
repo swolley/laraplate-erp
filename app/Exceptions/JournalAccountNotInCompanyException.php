@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Exceptions;
 
+use function sprintf;
+
 use RuntimeException;
 
 /**
@@ -14,7 +16,7 @@ final class JournalAccountNotInCompanyException extends RuntimeException
     public static function forAccount(int $account_id, int $company_id): self
     {
         return new self(
-            \sprintf(
+            sprintf(
                 'Account id %d is not part of company id %d',
                 $account_id,
                 $company_id,

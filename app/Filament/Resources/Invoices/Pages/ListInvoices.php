@@ -7,10 +7,11 @@ namespace Modules\ERP\Filament\Resources\Invoices\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
+use Override;
 
 class ListInvoices extends ListRecords
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = InvoiceResource::class;
 
     protected function getHeaderActions(): array

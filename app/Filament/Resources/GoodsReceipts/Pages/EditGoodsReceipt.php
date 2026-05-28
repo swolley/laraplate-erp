@@ -38,7 +38,7 @@ final class EditGoodsReceipt extends EditRecord
         $data['line_items'] = $goods_receipt->lines()
             ->orderBy('id')
             ->get()
-            ->map(static fn(GoodsReceiptLine $line): array => [
+            ->map(static fn (GoodsReceiptLine $line): array => [
                 'item_id' => $line->item_id,
                 'warehouse_id' => $line->warehouse_id,
                 'quantity' => $line->quantity,

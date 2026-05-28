@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Reporting;
 
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Models\JournalEntryLine;
 
@@ -21,7 +22,7 @@ final class IncomeStatementService
      *     net_income: string,
      * }
      */
-    public function generate(int $company_id, \DateTimeInterface $from_date, \DateTimeInterface $to_date): array
+    public function generate(int $company_id, DateTimeInterface $from_date, DateTimeInterface $to_date): array
     {
         $rows = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
@@ -58,6 +59,7 @@ final class IncomeStatementService
                     'balance' => number_format(round($display_balance, 4), 4, '.', ''),
                 ];
                 $total_revenue += $display_balance;
+
                 continue;
             }
 

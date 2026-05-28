@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Reporting;
 
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Models\JournalEntryLine;
 
@@ -23,7 +24,7 @@ final class TrialBalanceService
      *     balance: string,
      * }>
      */
-    public function generate(int $company_id, \DateTimeInterface $as_of_date): array
+    public function generate(int $company_id, DateTimeInterface $as_of_date): array
     {
         $rows = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')

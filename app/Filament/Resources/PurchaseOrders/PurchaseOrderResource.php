@@ -7,10 +7,10 @@ namespace Modules\ERP\Filament\Resources\PurchaseOrders;
 use BackedEnum;
 use Coolsam\Modules\Resource;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
 use Modules\ERP\Filament\Resources\PurchaseOrders\Pages\EditPurchaseOrder;
 use Modules\ERP\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
@@ -43,7 +43,7 @@ final class PurchaseOrderResource extends Resource
     }
 
     /**
-     * @return Builder<\Modules\ERP\Models\PurchaseOrder>
+     * @return Builder<PurchaseOrder>
      */
     #[Override]
     public static function getEloquentQuery(): Builder

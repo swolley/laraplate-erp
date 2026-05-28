@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Modules\Core\Models\Entity as CoreEntity;
 use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Pivot\Presettable;
-use Modules\Core\Models\Entity as CoreEntity;
 use Override;
 
 /**

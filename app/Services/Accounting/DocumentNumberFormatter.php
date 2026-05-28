@@ -17,7 +17,7 @@ final class DocumentNumberFormatter
     public static function format(DocumentSequence $row, int $fiscal_year, int $counter): string
     {
         $padding = max(1, (int) $row->padding);
-        $number = str_pad((string) $counter, $padding, '0', STR_PAD_LEFT);
+        $number = mb_str_pad((string) $counter, $padding, '0', STR_PAD_LEFT);
         $year_segment = $fiscal_year > 0 ? (string) $fiscal_year : '';
         $pattern = $row->format_pattern;
 

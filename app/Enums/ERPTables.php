@@ -60,4 +60,12 @@ enum ERPTables: string
     case PaymentAllocations = 'erp_payment_allocations';
     case VatRegisterEntries = 'erp_vat_register_entries';
     case VatSettlements = 'erp_vat_settlements';
+    case BankAccounts = 'erp_bank_accounts';
+    case BankStatements = 'erp_bank_statements';
+    case BankStatementLines = 'erp_bank_statement_lines';
+    case ReturnOrders = 'erp_return_orders';
+    case ReturnOrderLines = 'erp_return_order_lines';
+    case SupplierReturns = 'erp_supplier_returns';
+    case SupplierReturnLines = 'erp_supplier_return_lines';
+    case PartyPriceRules = 'erp_party_price_rules';
 }

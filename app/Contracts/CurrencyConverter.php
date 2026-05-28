@@ -23,9 +23,9 @@ interface CurrencyConverter
      * Convert `$amount` expressed in `$fromCurrency` into `$toCurrency`.
      *
      * @param  string  $fromCurrency  ISO 4217 source currency code
-     * @param  string  $toCurrency    ISO 4217 target currency code
-     * @param  float|string|int  $amount        Amount in the source currency
-     * @param  DateTimeInterface|null  $at      Reference date for the rate (defaults to "now")
+     * @param  string  $toCurrency  ISO 4217 target currency code
+     * @param  float|string|int  $amount  Amount in the source currency
+     * @param  DateTimeInterface|null  $at  Reference date for the rate (defaults to "now")
      * @return array{rate: float, amount: float}
      */
     public function convert(

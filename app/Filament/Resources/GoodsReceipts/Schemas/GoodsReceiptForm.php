@@ -68,7 +68,7 @@ final class GoodsReceiptForm
                                 ->orderBy('id')
                                 ->get()
                                 ->mapWithKeys(static fn (PurchaseOrderLine $line): array => [
-                                    (string) $line->id => trim("{$line->id} - {$line->name}"),
+                                    (string) $line->id => mb_trim("{$line->id} - {$line->name}"),
                                 ])
                                 ->all())
                             ->searchable()

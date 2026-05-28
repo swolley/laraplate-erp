@@ -28,15 +28,6 @@ final class JournalLineBalance
         }
     }
 
-    private static function normalizeToDecimalString(string|int|float $value): string
-    {
-        if (is_string($value)) {
-            return $value;
-        }
-
-        return number_format((float) $value, 4, '.', '');
-    }
-
     /**
      * Decimal string with the opposite sign (for reversal lines).
      */
@@ -46,5 +37,14 @@ final class JournalLineBalance
             ->multipliedBy(-1)
             ->toScale(4)
             ->__toString();
+    }
+
+    private static function normalizeToDecimalString(string|int|float $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        return number_format((float) $value, 4, '.', '');
     }
 }

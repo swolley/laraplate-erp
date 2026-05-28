@@ -62,7 +62,7 @@ final class VatSettlementService
             }
 
             $settlement_amount = $this->round4(
-                (float) $vat_sales - (float) $vat_purchases - (float) $previous_credit
+                (float) $vat_sales - (float) $vat_purchases - (float) $previous_credit,
             );
 
             $existing = VatSettlement::query()

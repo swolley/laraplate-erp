@@ -45,7 +45,7 @@ final class SalesOrderResource extends Resource
     }
 
     #[Override]
-    public static function getRecordTitle(?Model $record): string | Htmlable | null
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
     {
         if (! $record instanceof SalesOrder) {
             return parent::getRecordTitle($record);
@@ -57,7 +57,7 @@ final class SalesOrderResource extends Resource
             return (string) $reference;
         }
 
-        return '#'.$record->getKey();
+        return '#' . $record->getKey();
     }
 
     public static function form(Schema $schema): Schema

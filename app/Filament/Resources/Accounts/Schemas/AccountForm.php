@@ -9,8 +9,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
-use Modules\ERP\Casts\AccountKind;
 use Illuminate\Database\Query\Builder;
+use Modules\ERP\Casts\AccountKind;
 
 final class AccountForm
 {
@@ -41,7 +41,7 @@ final class AccountForm
                     ->relationship(
                         name: 'parent',
                         titleAttribute: 'code',
-                        modifyQueryUsing: static fn(Builder $query, ?string $search): Builder => $query->orderBy('code'),
+                        modifyQueryUsing: static fn (Builder $query, ?string $search): Builder => $query->orderBy('code'),
                     )
                     ->searchable()
                     ->preload()

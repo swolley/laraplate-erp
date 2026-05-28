@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Scopes;
 
+use function Modules\ERP\Helpers\current_company_id;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Override;
-
-use function Modules\ERP\Helpers\current_company_id;
 
 /**
  * Restricts queries on tenant-aware Business models to the active company.

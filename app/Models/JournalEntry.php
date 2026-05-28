@@ -37,7 +37,7 @@ final class JournalEntry extends Model
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'company_id',
         'fiscal_period_id',

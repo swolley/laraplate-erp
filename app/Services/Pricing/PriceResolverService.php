@@ -1,0 +1,130 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\ERP\Services\Pricing;
+
+use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\DiscountType;
+use Modules\ERP\Data\Pricing\PriceResolutionResult;
+use Modules\ERP\Models\Item;
+use Modules\ERP\Models\PartyPriceRule;
+use Modules\ERP\Models\PriceListItem;
+
+final class PriceResolverService
+{
+    public function resolve(
+        int $company_id,
+        int $item_id,
+        ?int $party_id = null,
+        string $currency = 'EUR',
+        ?CarbonInterface $date = null,
+    ): PriceResolutionResult {
+        $date ??= Date::now();
+
+        /** @var Item|null $item */
+        $item = Item::query()
+            ->whereKey($item_id)
+            ->where('company_id', $company_id)
+            ->first();
+
+        if ($item === null || $item->taxonomy_id === null) {
+            throw ValidationException::withMessages([
+                'item_id' => ['The item is missing or has no pricing taxonomy.'],
+            ]);
+        }
+
+        /** @var PriceListItem|null $price_list_item */
+        $price_list_item = PriceListItem::query()
+            ->where('taxonomy_id', $item->taxonomy_id)
+            ->where(function ($query) use ($date): void {
+                $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
+            })
+            ->where(function ($query) use ($date): void {
+                $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
+            })
+            ->whereHas('price_list', function ($query) use ($company_id, $currency, $date): void {
+                $query->where('company_id', $company_id)
+                    ->where('currency', $currency)
+                    ->where(function ($query) use ($date): void {
+                        $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
+                    })
+                    ->where(function ($query) use ($date): void {
+                        $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
+                    });
+            })
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($price_list_item === null) {
+            throw ValidationException::withMessages([
+                'item_id' => ['No active price list item matches the item taxonomy.'],
+            ]);
+        }
+
+        $rule = $this->resolveRule($company_id, $item, $party_id, $date);
+        $base_price = (string) $price_list_item->unit_price;
+
+        return new PriceResolutionResult(
+            priceListItem: $price_list_item,
+            baseUnitPrice: $base_price,
+            resolvedUnitPrice: $this->applyRule($base_price, $rule),
+            appliedRule: $rule,
+        );
+    }
+
+    private function resolveRule(int $company_id, Item $item, ?int $party_id, CarbonInterface $date): ?PartyPriceRule
+    {
+        /** @var PartyPriceRule|null $rule */
+        $rule = PartyPriceRule::query()
+            ->where('company_id', $company_id)
+            ->where(function ($query) use ($party_id): void {
+                $query->whereNull('party_id');
+
+                if ($party_id !== null) {
+                    $query->orWhere('party_id', $party_id);
+                }
+            })
+            ->where(function ($query) use ($item): void {
+                $query->where('item_id', $item->getKey());
+
+                if ($item->taxonomy_id !== null) {
+                    $query->orWhere('taxonomy_id', $item->taxonomy_id);
+                }
+            })
+            ->where(function ($query) use ($date): void {
+                $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
+            })
+            ->where(function ($query) use ($date): void {
+                $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
+            })
+            ->orderByDesc('party_id')
+            ->orderByDesc('item_id')
+            ->orderBy('priority')
+            ->orderByDesc('id')
+            ->first();
+
+        return $rule;
+    }
+
+    private function applyRule(string $base_price, ?PartyPriceRule $rule): string
+    {
+        if ($rule === null) {
+            return number_format((float) $base_price, 4, '.', '');
+        }
+
+        $value = (float) $rule->discount_value;
+        $base = (float) $base_price;
+
+        $resolved = match ($rule->discount_type) {
+            DiscountType::Percent => $base * (1 - ($value / 100)),
+            DiscountType::FixedAmount => $base - $value,
+            DiscountType::OverridePrice => $value,
+        };
+
+        return number_format(max(0, $resolved), 4, '.', '');
+    }
+}

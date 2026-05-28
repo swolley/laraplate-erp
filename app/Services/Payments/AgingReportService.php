@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Payments;
 
-use Carbon\Carbon;
+use DateTimeInterface;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\PaymentScheduleLine;
@@ -14,9 +14,9 @@ final class AgingReportService
     /**
      * @return array<int, array{party_id: int, party_name: string, current: string, days_30: string, days_60: string, days_90: string, days_120_plus: string, total: string}>
      */
-    public function generate(int $company_id, string $direction, ?\DateTimeInterface $as_of_date = null): array
+    public function generate(int $company_id, string $direction, ?DateTimeInterface $as_of_date = null): array
     {
-        $as_of = $as_of_date instanceof \DateTimeInterface ? \Illuminate\Support\Facades\Date::instance($as_of_date) : \Illuminate\Support\Facades\Date::today();
+        $as_of = $as_of_date instanceof DateTimeInterface ? \Illuminate\Support\Facades\Date::instance($as_of_date) : \Illuminate\Support\Facades\Date::today();
 
         $invoice_direction = $direction === 'receivable'
             ? InvoiceDirection::Sale

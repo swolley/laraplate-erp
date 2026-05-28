@@ -29,7 +29,7 @@ final class JournalEntryHeaderFields
                 ->relationship(
                     name: 'fiscal_period',
                     titleAttribute: 'period_no',
-                    modifyQueryUsing: static fn(Builder $query, ?string $search): Builder => $query->with('fiscal_year')->orderByDesc('fiscal_year_id')->orderBy('period_no'),
+                    modifyQueryUsing: static fn (Builder $query, ?string $search): Builder => $query->with('fiscal_year')->orderByDesc('fiscal_year_id')->orderBy('period_no'),
                 )
                 ->getOptionLabelFromRecordUsing(static function (FiscalPeriod $record): string {
                     $year = $record->fiscal_year->year ?? '?';

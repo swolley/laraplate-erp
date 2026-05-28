@@ -26,7 +26,7 @@ function current_company_id(): ?int
 {
     $container = container_or_null();
 
-    if ($container instanceof \Illuminate\Contracts\Container\Container && $container->bound('erp.current_company_id')) {
+    if ($container instanceof ContainerContract && $container->bound('erp.current_company_id')) {
         try {
             $bound = $container->make('erp.current_company_id');
 
@@ -64,13 +64,12 @@ function current_company_id(): ?int
  * @template TReturn
  *
  * @param  callable():TReturn  $callback
- * @return TReturn
  */
-function with_company(int $companyId, callable $callback)
+function with_company(int $companyId, callable $callback): TReturn
 {
     $container = container_or_null();
 
-    if (!$container instanceof \Illuminate\Contracts\Container\Container) {
+    if (! $container instanceof ContainerContract) {
         return $callback();
     }
 

@@ -51,9 +51,11 @@ final class SalesOrderEvasionService
         foreach ($line_quantities as $line_id => $qty) {
             /** @var SalesOrderLine|null $line */
             $line = $sales_order->lines()->find($line_id);
+
             if ($line === null) {
                 continue;
             }
+
             if ($qty <= 0) {
                 continue;
             }
@@ -97,7 +99,7 @@ final class SalesOrderEvasionService
         }
 
         $all_fully_evased = $lines->every(
-            static fn (SalesOrderLine $line): bool => $line->status === SalesOrderLineStatus::FullyEvased
+            static fn (SalesOrderLine $line): bool => $line->status === SalesOrderLineStatus::FullyEvased,
         );
 
         if ($all_fully_evased) {
@@ -108,7 +110,7 @@ final class SalesOrderEvasionService
         }
 
         $has_progress = $lines->contains(
-            static fn (SalesOrderLine $line): bool => $line->qty_delivered > 0 || $line->qty_invoiced > 0
+            static fn (SalesOrderLine $line): bool => $line->qty_delivered > 0 || $line->qty_invoiced > 0,
         );
 
         if ($has_progress) {

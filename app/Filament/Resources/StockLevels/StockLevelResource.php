@@ -64,5 +64,4 @@ final class StockLevelResource extends Resource
             'edit' => EditStockLevel::route('/{record}/edit'),
         ];
     }
-
 }

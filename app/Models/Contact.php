@@ -31,14 +31,14 @@ final class Contact extends Model
     /**
      * The attributes that are mass assignable.
      */
-    #[\Override]
+    #[Override]
     protected $fillable = [
         'name',
         'email',
         'phone',
     ];
 
-    #[\Override]
+    #[Override]
     protected $hidden = [
         'user_id',
         'user',

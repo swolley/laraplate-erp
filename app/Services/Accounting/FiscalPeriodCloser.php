@@ -30,6 +30,19 @@ final class FiscalPeriodCloser
         });
     }
 
+    public function reopenPeriod(FiscalPeriod $period): void
+    {
+        if (! $period->is_closed) {
+            return;
+        }
+
+        DB::transaction(function () use ($period): void {
+            $period->is_closed = false;
+            $period->setSkipValidation(true);
+            $period->save();
+        });
+    }
+
     public function closeYear(FiscalYear $year): void
     {
         if ($year->is_closed) {

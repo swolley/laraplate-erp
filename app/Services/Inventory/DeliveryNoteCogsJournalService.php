@@ -112,8 +112,8 @@ final readonly class DeliveryNoteCogsJournalService
 
         $reference_label = $delivery_note->reference !== null && $delivery_note->reference !== ''
             ? (string) $delivery_note->reference
-            : '#'.$delivery_note->getKey();
-        $description = 'COGS — Delivery note '.$reference_label;
+            : '#' . $delivery_note->getKey();
+        $description = 'COGS — Delivery note ' . $reference_label;
 
         $entry = $this->journal_posting_service->post(
             $company,
@@ -147,8 +147,8 @@ final readonly class DeliveryNoteCogsJournalService
 
         $reference_label = $delivery_note->reference !== null && $delivery_note->reference !== ''
             ? (string) $delivery_note->reference
-            : '#'.$delivery_note->getKey();
-        $reason = 'Delivery note unposted: '.$reference_label;
+            : '#' . $delivery_note->getKey();
+        $reason = 'Delivery note unposted: ' . $reference_label;
 
         $this->journal_posting_service->reverse($entry, $company, $reason);
         $delivery_note->cogs_journal_entry_id = null;
@@ -165,7 +165,7 @@ final readonly class DeliveryNoteCogsJournalService
 
         if ($account === null) {
             throw ValidationException::withMessages([
-                'accounts' => ['Chart of accounts is missing account meta erp_role='.$role.'.'],
+                'accounts' => ['Chart of accounts is missing account meta erp_role=' . $role . '.'],
             ]);
         }
 

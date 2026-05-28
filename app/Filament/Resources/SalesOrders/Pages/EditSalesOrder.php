@@ -25,7 +25,7 @@ final class EditSalesOrder extends EditRecord
         $data['line_items'] = $sales_order->lines()
             ->orderBy('id')
             ->get()
-            ->map(static fn(SalesOrderLine $line): array => [
+            ->map(static fn (SalesOrderLine $line): array => [
                 'name' => $line->name,
                 'qty_ordered' => $line->qty_ordered,
                 'qty_delivered' => $line->qty_delivered,

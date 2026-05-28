@@ -64,6 +64,14 @@ final class Payment extends Model
     }
 
     /**
+     * @return BelongsTo<BankAccount, $this>
+     */
+    public function bank_account(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
+    }
+
+    /**
      * @return HasMany<PaymentAllocation, $this>
      */
     public function allocations(): HasMany

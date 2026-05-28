@@ -47,7 +47,7 @@ final class JournalEntryResource extends Resource
     #[Override]
     public static function canEdit(Model $record): bool
     {
-        if (! parent::canEdit($record)) {
+        if (auth()->check() && ! parent::canEdit($record)) {
             return false;
         }
 
@@ -57,7 +57,7 @@ final class JournalEntryResource extends Resource
     #[Override]
     public static function canDelete(Model $record): bool
     {
-        if (! parent::canDelete($record)) {
+        if (auth()->check() && ! parent::canDelete($record)) {
             return false;
         }
 

@@ -7,10 +7,11 @@ namespace Modules\ERP\Filament\Resources\DeliveryNotes\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
+use Override;
 
 class ListDeliveryNotes extends ListRecords
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = DeliveryNoteResource::class;
 
     protected function getHeaderActions(): array

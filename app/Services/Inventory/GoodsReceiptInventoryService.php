@@ -105,7 +105,7 @@ final readonly class GoodsReceiptInventoryService
         $company_id = (int) $header->company_id;
 
         foreach ($lines as $line) {
-            if ((int) $line->company_id !== $company_id) {
+            if ($company_id !== (int) $line->company_id) {
                 throw ValidationException::withMessages([
                     'company_id' => ['Goods receipt line company does not match goods receipt company.'],
                 ]);
@@ -169,7 +169,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            if ((int) $po_line->purchase_order_id !== $purchase_order_id) {
+            if ($purchase_order_id !== (int) $po_line->purchase_order_id) {
                 throw ValidationException::withMessages([
                     'purchase_order_line_id' => ['Purchase order line does not belong to the goods receipt purchase order.'],
                 ]);
@@ -177,7 +177,7 @@ final readonly class GoodsReceiptInventoryService
 
             $remaining = (int) $po_line->qty_ordered - (int) $po_line->qty_received;
 
-            if ((int) $line->quantity > $remaining) {
+            if ($remaining < (int) $line->quantity) {
                 throw ValidationException::withMessages([
                     'quantity' => ['Receipt quantity exceeds remaining quantity to receive on the purchase order line.'],
                 ]);
@@ -222,7 +222,7 @@ final readonly class GoodsReceiptInventoryService
         }
 
         $all_received = $lines->every(
-            static fn (PurchaseOrderLine $line): bool => $line->qty_received >= $line->qty_ordered
+            static fn (PurchaseOrderLine $line): bool => $line->qty_received >= $line->qty_ordered,
         );
 
         if ($all_received) {
@@ -233,7 +233,7 @@ final readonly class GoodsReceiptInventoryService
         }
 
         $has_progress = $lines->contains(
-            static fn (PurchaseOrderLine $line): bool => $line->qty_received > 0
+            static fn (PurchaseOrderLine $line): bool => $line->qty_received > 0,
         );
 
         if ($has_progress) {

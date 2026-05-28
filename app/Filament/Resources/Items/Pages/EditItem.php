@@ -9,10 +9,11 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
+use Override;
 
 class EditItem extends EditRecord
 {
-    #[\Override]
+    #[Override]
     protected static string $resource = ItemResource::class;
 
     protected function getHeaderActions(): array

@@ -165,7 +165,7 @@ final readonly class DeliveryNoteInventoryService
         $company_id = (int) $header->company_id;
 
         foreach ($lines as $line) {
-            if ((int) $line->company_id !== $company_id) {
+            if ($company_id !== (int) $line->company_id) {
                 throw ValidationException::withMessages([
                     'company_id' => ['Delivery note line company does not match delivery note company.'],
                 ]);
@@ -214,7 +214,7 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            if ((int) $so_line->sales_order_id !== $sales_order_id) {
+            if ($sales_order_id !== (int) $so_line->sales_order_id) {
                 throw ValidationException::withMessages([
                     'sales_order_line_id' => ['Sales order line does not belong to the delivery note sales order.'],
                 ]);
@@ -222,7 +222,7 @@ final readonly class DeliveryNoteInventoryService
 
             $remaining = (int) $so_line->qty_ordered - (int) $so_line->qty_delivered;
 
-            if ((int) $line->quantity > $remaining) {
+            if ($remaining < (int) $line->quantity) {
                 throw ValidationException::withMessages([
                     'quantity' => ['Delivery quantity exceeds remaining quantity to deliver on the sales order line.'],
                 ]);

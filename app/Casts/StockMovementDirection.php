@@ -19,6 +19,6 @@ enum StockMovementDirection: string
 
     public static function validationRule(): string
     {
-        return 'in:'.implode(',', self::values());
+        return 'in:' . implode(',', self::values());
     }
 }

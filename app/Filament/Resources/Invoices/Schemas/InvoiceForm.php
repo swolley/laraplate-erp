@@ -48,11 +48,7 @@ final class InvoiceForm
                     ->relationship('credited_invoice', 'reference')
                     ->searchable()
                     ->preload()
-                    ->nullable()
-                    ->visible(static fn (Get $get): bool => in_array($get('invoice_type'), [
-                        InvoiceType::CreditNote->value,
-                        InvoiceType::DebitNote->value,
-                    ], true)),
+                    ->nullable(),
                 TextInput::make('currency')
                     ->length(3)
                     ->required()

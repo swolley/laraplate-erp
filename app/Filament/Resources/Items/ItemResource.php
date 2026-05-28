@@ -64,5 +64,4 @@ final class ItemResource extends Resource
             'edit' => EditItem::route('/{record}/edit'),
         ];
     }
-
 }

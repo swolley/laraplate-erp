@@ -43,18 +43,18 @@ final class Preset extends CorePreset
         $this->migrateRelatedModelsToLastVersion();
     }
 
+    protected static function getRelatedModelClass(): string
+    {
+        return Activity::class;
+    }
+
     #[Override]
     protected function newBaseQueryBuilder(): Builder
     {
         return parent::newBaseQueryBuilder()->whereExists(function (Builder $query): void {
             $query->select(DB::raw('1'))
                 ->from(CoreTables::Entities->value)
-                ->whereIn(CoreTables::Entities->value.'.type', EntityType::values());
+                ->whereIn(CoreTables::Entities->value . '.type', EntityType::values());
         });
-    }
-
-    protected static function getRelatedModelClass(): string
-    {
-        return Activity::class;
     }
 }
