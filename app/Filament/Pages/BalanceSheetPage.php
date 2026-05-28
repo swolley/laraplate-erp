@@ -41,7 +41,7 @@ final class BalanceSheetPage extends Page
     protected static ?string $title = 'Balance Sheet';
 
     #[Override]
-    protected static string $view = 'erp::filament.pages.balance-sheet';
+    protected string $view = 'erp::filament.pages.balance-sheet';
 
     public function mount(): void
     {

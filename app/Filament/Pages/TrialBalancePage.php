@@ -41,7 +41,7 @@ final class TrialBalancePage extends Page
     protected static ?string $title = 'Trial Balance';
 
     #[Override]
-    protected static string $view = 'erp::filament.pages.trial-balance';
+    protected string $view = 'erp::filament.pages.trial-balance';
 
     public function mount(): void
     {

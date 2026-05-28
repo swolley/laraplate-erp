@@ -80,11 +80,7 @@ final readonly class BalanceSheetService
 
         $net_income = -($revenue_balance + $expense_balance);
 
-        $is_balanced = bccomp(
-            number_format(round($total_assets, 4), 4, '.', ''),
-            number_format(round($total_liabilities + $total_equity + $net_income, 4), 4, '.', ''),
-            4,
-        ) === 0;
+        $is_balanced = abs(round($total_assets, 4) - round($total_liabilities + $total_equity + $net_income, 4)) < 0.0001;
 
         return [
             'assets' => $assets,

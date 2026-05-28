@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Filament\Schemas\Schema;
+use Modules\ERP\Filament\Pages\BankReconciliationPage;
+use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
+use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
 use Modules\ERP\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
@@ -14,8 +17,10 @@ use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Projects\ProjectResource;
 use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
+use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
 use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
+use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
 
 it('defines Filament pages for party resource', function (): void {
@@ -74,6 +79,53 @@ it('quotation resource form includes line items repeater', function (): void {
     expect($names)->toContain('line_items')
         ->and($names)->toContain('party_id')
         ->and($names)->toContain('opportunity_id');
+});
+
+it('defines Filament pages for bank reconciliation resources', function (): void {
+    expect(BankAccountResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(BankStatementResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(class_exists(BankReconciliationPage::class))->toBeTrue();
+});
+
+it('bank account and statement forms include core fields', function (): void {
+    $bank_account_schema = BankAccountResource::form(new Schema());
+    $bank_account_names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $bank_account_schema->getComponents(),
+    );
+
+    $bank_statement_schema = BankStatementResource::form(new Schema());
+    $bank_statement_names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $bank_statement_schema->getComponents(),
+    );
+
+    expect($bank_account_names)->toContain('company_id')
+        ->and($bank_account_names)->toContain('name')
+        ->and($bank_statement_names)->toContain('bank_account_id')
+        ->and($bank_statement_names)->toContain('period_start');
+});
+
+it('defines Filament pages for return resources', function (): void {
+    expect(ReturnOrderResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(SupplierReturnResource::getPages())->toHaveKeys(['index', 'create', 'edit']);
+});
+
+it('return forms include line repeaters', function (): void {
+    $return_schema = ReturnOrderResource::form(new Schema());
+    $return_names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $return_schema->getComponents(),
+    );
+
+    $supplier_schema = SupplierReturnResource::form(new Schema());
+    $supplier_names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $supplier_schema->getComponents(),
+    );
+
+    expect($return_names)->toContain('lines')
+        ->and($supplier_names)->toContain('lines');
 });
 
 it('defines Filament pages for lead resource', function (): void {

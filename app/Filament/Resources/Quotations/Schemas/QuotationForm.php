@@ -10,11 +10,13 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Casts\QuoteStatus;
+use Modules\ERP\Models\PriceListItem;
 
 final class QuotationForm
 {
@@ -84,6 +86,13 @@ final class QuotationForm
                     ->nullable(),
                 Repeater::make('line_items')
                     ->schema([
+                        Select::make('price_list_item_id')
+                            ->label('Price list item')
+                            ->relationship('price_list_item', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(static fn (Set $set, ?int $state): null => self::applyPriceListItem($set, $state)),
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
@@ -106,5 +115,24 @@ final class QuotationForm
                     ->addActionLabel('Add line')
                     ->columnSpanFull(),
             ]);
+    }
+
+    private static function applyPriceListItem(Set $set, ?int $price_list_item_id): null
+    {
+        if ($price_list_item_id === null) {
+            return null;
+        }
+
+        /** @var PriceListItem|null $price_list_item */
+        $price_list_item = PriceListItem::query()->find($price_list_item_id);
+
+        if ($price_list_item === null) {
+            return null;
+        }
+
+        $set('name', $price_list_item->name);
+        $set('unit_price', $price_list_item->unit_price);
+
+        return null;
     }
 }

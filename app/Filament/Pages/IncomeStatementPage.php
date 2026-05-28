@@ -41,7 +41,7 @@ final class IncomeStatementPage extends Page
     protected static ?string $title = 'Income Statement';
 
     #[Override]
-    protected static string $view = 'erp::filament.pages.income-statement';
+    protected string $view = 'erp::filament.pages.income-statement';
 
     public function mount(): void
     {

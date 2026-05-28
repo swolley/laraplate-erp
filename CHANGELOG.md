@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Add bank reconciliation page and enhance financial reporting
+
+## [1.9.0] - 2026-05-28
+
+### 🚀 Features
+
 - *(erp)* Enhance invoice posting workflow with delivery note integration
 - *(tests)* Add integration tests for ERP services and models
 - *(erp)* Introduce bank account and bank statement resources

@@ -6,6 +6,7 @@ namespace Modules\ERP\Services\Reporting;
 
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\JournalEntryLine;
 
 /**
@@ -26,20 +27,24 @@ final class TrialBalanceService
      */
     public function generate(int $company_id, DateTimeInterface $as_of_date): array
     {
+        $accounts_table = ERPTables::Accounts->value;
+        $journal_entries_table = ERPTables::JournalEntries->value;
+        $journal_entry_lines_table = ERPTables::JournalEntryLines->value;
+
         $rows = JournalEntryLine::query()
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-            ->join('accounts', 'accounts.id', '=', 'journal_entry_lines.account_id')
-            ->where('journal_entries.company_id', $company_id)
-            ->whereNotNull('journal_entries.posted_at')
-            ->where('journal_entries.posted_at', '<=', $as_of_date->format('Y-m-d H:i:s'))
-            ->groupBy('journal_entry_lines.account_id', 'accounts.code', 'accounts.name', 'accounts.kind')
-            ->orderBy('accounts.code')
+            ->join($journal_entries_table, "{$journal_entries_table}.id", '=', "{$journal_entry_lines_table}.journal_entry_id")
+            ->join($accounts_table, "{$accounts_table}.id", '=', "{$journal_entry_lines_table}.account_id")
+            ->where("{$journal_entries_table}.company_id", $company_id)
+            ->whereNotNull("{$journal_entries_table}.posted_at")
+            ->where("{$journal_entries_table}.posted_at", '<=', $as_of_date->format('Y-m-d H:i:s'))
+            ->groupBy("{$journal_entry_lines_table}.account_id", "{$accounts_table}.code", "{$accounts_table}.name", "{$accounts_table}.kind")
+            ->orderBy("{$accounts_table}.code")
             ->select([
-                'journal_entry_lines.account_id',
-                'accounts.code as account_code',
-                'accounts.name as account_name',
-                'accounts.kind as account_kind',
-                DB::raw('SUM(journal_entry_lines.amount_local) as balance'),
+                "{$journal_entry_lines_table}.account_id",
+                "{$accounts_table}.code as account_code",
+                "{$accounts_table}.name as account_name",
+                "{$accounts_table}.kind as account_kind",
+                DB::raw("SUM({$journal_entry_lines_table}.amount_local) as balance"),
             ])
             ->get();
 
