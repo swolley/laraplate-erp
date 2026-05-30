@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Payments;
 use DateTimeInterface;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\PaymentScheduleStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\PaymentScheduleLine;
 
 final class AgingReportService
@@ -22,21 +23,25 @@ final class AgingReportService
             ? InvoiceDirection::Sale
             : InvoiceDirection::Purchase;
 
+        $schedule_table = ERPTables::PaymentScheduleLines->value;
+        $invoices_table = ERPTables::Invoices->value;
+        $parties_table = ERPTables::Parties->value;
+
         $schedule_lines = PaymentScheduleLine::query()
-            ->where('payment_schedule_lines.company_id', $company_id)
-            ->whereIn('payment_schedule_lines.status', [
+            ->where("{$schedule_table}.company_id", $company_id)
+            ->whereIn("{$schedule_table}.status", [
                 PaymentScheduleStatus::Open->value,
                 PaymentScheduleStatus::Partial->value,
             ])
-            ->join('invoices', 'invoices.id', '=', 'payment_schedule_lines.invoice_id')
-            ->where('invoices.direction', $invoice_direction->value)
-            ->join('parties', 'parties.id', '=', 'invoices.party_id')
+            ->join($invoices_table, "{$invoices_table}.id", '=', "{$schedule_table}.invoice_id")
+            ->where("{$invoices_table}.direction", $invoice_direction->value)
+            ->join($parties_table, "{$parties_table}.id", '=', "{$invoices_table}.party_id")
             ->select([
-                'payment_schedule_lines.due_date',
-                'payment_schedule_lines.amount_doc',
-                'payment_schedule_lines.paid_amount_doc',
-                'invoices.party_id',
-                'parties.name as party_name',
+                "{$schedule_table}.due_date",
+                "{$schedule_table}.amount_doc",
+                "{$schedule_table}.paid_amount_doc",
+                "{$invoices_table}.party_id",
+                "{$parties_table}.name as party_name",
             ])
             ->get();
 

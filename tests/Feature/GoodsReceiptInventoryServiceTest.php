@@ -42,6 +42,7 @@ it('posts inbound stock and updates purchase order lines when posted_at is set',
     $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -117,6 +118,7 @@ it('rejects receipt quantity above remaining on the purchase order line', functi
     $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'S',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -181,6 +183,7 @@ it('does not duplicate inbound stock on subsequent updates after posting', funct
     $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -276,6 +279,7 @@ it('rejects posting when line item belongs to another company', function (): voi
     $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -328,6 +332,7 @@ it('marks purchase order as received when all lines are fully received', functio
     $supplier = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([

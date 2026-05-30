@@ -63,9 +63,10 @@ function current_company_id(): ?int
  *
  * @template TReturn
  *
- * @param  callable():TReturn  $callback
+ * @param  callable(): TReturn  $callback
+ * @return TReturn
  */
-function with_company(int $companyId, callable $callback): TReturn
+function with_company(int $companyId, callable $callback): mixed
 {
     $container = container_or_null();
 

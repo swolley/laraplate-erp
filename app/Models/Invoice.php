@@ -44,6 +44,7 @@ final class Invoice extends Model
     #[Override]
     protected $fillable = [
         'company_id',
+        'party_id',
         'direction',
         'invoice_type',
         'credited_invoice_id',
@@ -51,8 +52,17 @@ final class Invoice extends Model
         'currency',
         'posted_at',
         'journal_entry_id',
+        'payment_term_id',
         'notes',
     ];
+
+    /**
+     * @return BelongsTo<Party, $this>
+     */
+    public function party(): BelongsTo
+    {
+        return $this->belongsTo(Party::class);
+    }
 
     /**
      * @return BelongsTo<Invoice, $this>
@@ -100,6 +110,7 @@ final class Invoice extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
+            'party_id' => ['nullable', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'direction' => ['required', 'string', InvoiceDirection::validationRule()],
             'invoice_type' => ['required', 'string', InvoiceType::validationRule()],
             'credited_invoice_id' => ['nullable', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
@@ -110,6 +121,7 @@ final class Invoice extends Model
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'direction' => ['sometimes', 'string', InvoiceDirection::validationRule()],
+            'party_id' => ['nullable', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
             'invoice_type' => ['sometimes', 'string', InvoiceType::validationRule()],
             'credited_invoice_id' => ['nullable', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'reference' => ['nullable', 'string', 'max:64'],

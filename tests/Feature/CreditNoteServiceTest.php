@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
@@ -21,6 +24,13 @@ function createPostedSaleInvoice(array $lines = []): array
         'name' => 'CN Test Company',
         'fiscal_country' => 'IT',
         'default_currency' => 'EUR',
+    ]);
+
+    FiscalYear::query()->create([
+        'company_id' => $company->id,
+        'year' => (int) now()->format('Y'),
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->endOfYear()->toDateString(),
     ]);
 
     $vat = TaxCode::query()->create([
@@ -153,7 +163,7 @@ it('prevents credit note total from exceeding original invoice total', function 
     $service = app(CreditNoteService::class);
 
     $cn1 = $service->createFromInvoice($invoice, null);
-    $cn1->lines()->delete();
+    $cn1->lines()->forceDelete();
     $cn1->lines()->create([
         'line_no' => 1,
         'description' => 'Partial credit',
@@ -163,7 +173,7 @@ it('prevents credit note total from exceeding original invoice total', function 
     $cn1->update(['posted_at' => now()]);
 
     $cn2 = $service->createFromInvoice($invoice);
-    $cn2->lines()->delete();
+    $cn2->lines()->forceDelete();
     $cn2->lines()->create([
         'line_no' => 1,
         'description' => 'Exceeding credit',
@@ -183,5 +193,12 @@ it('uses separate document type numbering for credit notes', function (): void {
     $credit_note->refresh();
 
     expect($credit_note->reference)->not->toBeNull()
-        ->and($credit_note->reference)->not->toBe($invoice->reference);
+        ->and(DocumentSequence::query()
+            ->where('company_id', $company->id)
+            ->where('document_type', DocumentType::SalesCreditNote)
+            ->exists())->toBeTrue()
+        ->and(DocumentSequence::query()
+            ->where('company_id', $company->id)
+            ->where('document_type', DocumentType::SalesInvoice)
+            ->exists())->toBeTrue();
 });

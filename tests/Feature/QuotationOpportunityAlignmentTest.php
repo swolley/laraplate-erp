@@ -58,7 +58,7 @@ it('rejects a quotation when opportunity belongs to another party', function ():
     } catch (ValidationException $exception) {
         expect($exception->errors())->toHaveKey('opportunity_id')
             ->and($exception->errors()['opportunity_id'][0] ?? '')
-            ->toContain('same customer');
+            ->toContain('same party');
     }
 });
 

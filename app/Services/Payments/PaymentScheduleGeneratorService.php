@@ -16,6 +16,12 @@ final class PaymentScheduleGeneratorService
 {
     public function generate(Invoice $invoice, string $gross_total): void
     {
+        $gross_total_float = (float) $gross_total;
+
+        if ($gross_total_float < 0) {
+            $gross_total = $this->round4(abs($gross_total_float));
+        }
+
         DB::transaction(function () use ($invoice, $gross_total): void {
             $posted_at = $invoice->posted_at instanceof CarbonImmutable
                 ? $invoice->posted_at

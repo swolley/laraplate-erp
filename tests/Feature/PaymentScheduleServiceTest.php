@@ -6,9 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\PaymentDirection;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Payment;
@@ -21,13 +23,27 @@ use Modules\ERP\Services\Payments\PaymentAllocationService;
 
 uses(RefreshDatabase::class);
 
-it('generates single schedule line when no payment term', function (): void {
+function createPaymentScheduleCompany(string $slug): Company
+{
     $company = Company::query()->create([
-        'slug' => 'pay-sched-single',
-        'name' => 'Pay Sched Single',
+        'slug' => $slug,
+        'name' => ucwords(str_replace('-', ' ', $slug)),
         'fiscal_country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+
+    FiscalYear::query()->create([
+        'company_id' => $company->id,
+        'year' => (int) now()->format('Y'),
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->endOfYear()->toDateString(),
+    ]);
+
+    return $company;
+}
+
+it('generates single schedule line when no payment term', function (): void {
+    $company = createPaymentScheduleCompany('pay-sched-single');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -36,8 +52,8 @@ it('generates single schedule line when no payment term', function (): void {
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -62,12 +78,7 @@ it('generates single schedule line when no payment term', function (): void {
 });
 
 it('generates multiple schedule lines from payment term rate_lines', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-sched-multi',
-        'name' => 'Pay Sched Multi',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-sched-multi');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -86,8 +97,8 @@ it('generates multiple schedule lines from payment term rate_lines', function ()
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
         'payment_term_id' => $payment_term->id,
     ]);
@@ -117,12 +128,7 @@ it('generates multiple schedule lines from payment term rate_lines', function ()
 });
 
 it('removes schedule lines on unpost when no allocations', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-sched-unpost',
-        'name' => 'Pay Sched Unpost',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-sched-unpost');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -131,8 +137,8 @@ it('removes schedule lines on unpost when no allocations', function (): void {
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -154,12 +160,7 @@ it('removes schedule lines on unpost when no allocations', function (): void {
 });
 
 it('prevents unpost when schedule line has payment allocated', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-sched-block',
-        'name' => 'Pay Sched Block',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-sched-block');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -168,8 +169,8 @@ it('prevents unpost when schedule line has payment allocated', function (): void
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -207,12 +208,7 @@ it('prevents unpost when schedule line has payment allocated', function (): void
 });
 
 it('allocates payment to schedule line and updates status to paid', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-alloc-full',
-        'name' => 'Pay Alloc Full',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-alloc-full');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -221,8 +217,8 @@ it('allocates payment to schedule line and updates status to paid', function ():
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -262,12 +258,7 @@ it('allocates payment to schedule line and updates status to paid', function ():
 });
 
 it('partial allocation sets status to partial', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-alloc-partial',
-        'name' => 'Pay Alloc Partial',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-alloc-partial');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -276,8 +267,8 @@ it('partial allocation sets status to partial', function (): void {
 
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
-        'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 
@@ -317,12 +308,7 @@ it('partial allocation sets status to partial', function (): void {
 });
 
 it('aging report buckets correctly', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'pay-aging',
-        'name' => 'Pay Aging',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = createPaymentScheduleCompany('pay-aging');
 
     $party = Party::query()->create([
         'company_id' => $company->id,
@@ -333,6 +319,7 @@ it('aging report buckets correctly', function (): void {
         'company_id' => $company->id,
         'party_id' => $party->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
         'posted_at' => now(),
         'journal_entry_id' => null,

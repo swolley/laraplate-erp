@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Enhance invoice and payment term models with party associations and validation updates
+
+## [1.10.0] - 2026-05-28
+
+### 🚀 Features
+
 - *(erp)* Add bank reconciliation page and enhance financial reporting
 
 ## [1.9.0] - 2026-05-28

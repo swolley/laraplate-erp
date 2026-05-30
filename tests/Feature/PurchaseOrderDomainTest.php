@@ -47,6 +47,7 @@ it('aggregates line counts and quantity sums for purchase order list queries', f
     $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -97,6 +98,7 @@ it('rejects a purchase order whose party belongs to another company', function (
     $party_b = Party::query()->create([
         'company_id' => $company_b->id,
         'name' => 'Supplier B',
+        'is_supplier' => true,
     ]);
 
     expect(fn () => PurchaseOrder::query()->create([
@@ -118,6 +120,7 @@ it('blocks qty_ordered changes after receipt progress on a purchase order line',
     $party = Party::query()->create([
         'company_id' => $company->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $po = PurchaseOrder::query()->create([
@@ -157,6 +160,7 @@ it('rejects a purchase order line item from another company', function (): void 
     $party = Party::query()->create([
         'company_id' => $company_a->id,
         'name' => 'Supplier',
+        'is_supplier' => true,
     ]);
 
     $item = Item::query()->create([

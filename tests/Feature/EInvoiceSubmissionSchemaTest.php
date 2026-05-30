@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
@@ -38,6 +39,7 @@ it('persists an e-invoice submission linked to an invoice', function (): void {
     $invoice = Invoice::query()->create([
         'company_id' => $company->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
     ]);
 

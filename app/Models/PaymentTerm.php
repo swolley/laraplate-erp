@@ -52,13 +52,13 @@ final class PaymentTerm extends Model
             'company_id' => ['required', 'integer', 'exists:' . ERPTables::Companies->value . ',id'],
             'name' => ['required', 'string', 'max:128'],
             'description' => ['nullable', 'string'],
-            'rate_lines' => ['required', 'array'],
+            'rate_lines' => ['required', 'json'],
             'is_active' => ['boolean'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'name' => ['sometimes', 'string', 'max:128'],
             'description' => ['nullable', 'string'],
-            'rate_lines' => ['sometimes', 'array'],
+            'rate_lines' => ['sometimes', 'json'],
             'is_active' => ['boolean'],
         ]);
 

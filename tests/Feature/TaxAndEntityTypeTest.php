@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\TaxKind;
 use Modules\ERP\Exceptions\TaxCodeImmutableAttributeException;
 use Modules\ERP\Models\Company;
@@ -138,6 +139,7 @@ it('keeps invoice line fiscal snapshot after tax code supersession', function ()
     $invoice = Invoice::withoutGlobalScopes()->create([
         'company_id' => $company->id,
         'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
         'currency' => 'EUR',
         'posted_at' => now(),
     ]);

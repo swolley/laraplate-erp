@@ -90,7 +90,7 @@ final class VatRegisterService
     {
         VatRegisterEntry::query()
             ->where('invoice_id', (int) $invoice->id)
-            ->delete();
+            ->forceDelete();
     }
 
     private function nextProtocolNumber(int $company_id, string $register_type, int $fiscal_year_id): int

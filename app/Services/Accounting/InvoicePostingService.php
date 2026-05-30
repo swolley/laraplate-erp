@@ -135,6 +135,8 @@ final readonly class InvoicePostingService
 
             $this->vat_register_service->unregister($locked);
 
+            $this->payment_schedule_generator_service->removeAll($locked);
+
             $this->applySalesOrderInvoicingProgress($locked, $lines, false);
 
             $invoice->reference = null;
