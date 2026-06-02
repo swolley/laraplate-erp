@@ -15,9 +15,17 @@
 
     <x-filament::section heading="Unmatched statement lines">
         <div class="space-y-2 text-sm">
-            @forelse ($this->unmatchedLines() as $label)
+            @forelse ($this->unmatchedLines() as $lineId => $label)
                 <div class="border-b py-2">
-                    {{ $label }}
+                    <div>{{ $label }}</div>
+
+                    @php($suggestions = $this->suggestedPaymentsForLine((int) $lineId))
+
+                    @if ($suggestions !== [])
+                        <div class="mt-1 text-xs text-gray-500">
+                            Suggested: {{ implode(' | ', array_values($suggestions)) }}
+                        </div>
+                    @endif
                 </div>
             @empty
                 <div class="text-gray-500">

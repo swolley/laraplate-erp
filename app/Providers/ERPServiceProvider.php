@@ -37,6 +37,8 @@ use Modules\ERP\Services\Inventory\StockMovementService;
 use Modules\ERP\Services\Pricing\PriceResolverService;
 use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\Returns\CustomerReturnReceiptService;
+use Modules\ERP\Services\Returns\ReturnOrderService;
+use Modules\ERP\Services\Returns\SupplierReturnService;
 use Modules\ERP\Services\Returns\SupplierReturnShipmentService;
 use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
@@ -103,6 +105,8 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(BankReconciliationService::class);
         $this->app->singleton(BankStatementCsvImporter::class);
         $this->app->singleton(CustomerReturnReceiptService::class);
+        $this->app->singleton(ReturnOrderService::class);
+        $this->app->singleton(SupplierReturnService::class);
         $this->app->singleton(SupplierReturnShipmentService::class);
         $this->app->singleton(PriceResolverService::class);
     }

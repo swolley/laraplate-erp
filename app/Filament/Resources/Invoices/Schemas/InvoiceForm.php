@@ -10,11 +10,15 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Services\Pricing\InvoiceLinePricingService;
 
 final class InvoiceForm
 {
@@ -36,6 +40,22 @@ final class InvoiceForm
                     ->required()
                     ->live()
                     ->disabled(static fn (?Invoice $record): bool => $record?->journal_entry_id !== null),
+                Select::make('party_id')
+                    ->relationship(
+                        'party',
+                        'name',
+                        modifyQueryUsing: static function (Builder $query, Get $get): Builder {
+                            return match ($get('direction')) {
+                                InvoiceDirection::Sale->value => $query->customers(),
+                                InvoiceDirection::Purchase->value => $query->suppliers(),
+                                default => $query,
+                            };
+                        },
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->nullable()
+                    ->live(),
                 Select::make('invoice_type')
                     ->options(collect(InvoiceType::cases())
                         ->mapWithKeys(static fn (InvoiceType $type): array => [$type->value => $type->value])
@@ -46,6 +66,7 @@ final class InvoiceForm
                 Select::make('credited_invoice_id')
                     ->label('Credited Invoice')
                     ->relationship('credited_invoice', 'reference')
+                    ->getOptionLabelFromRecordUsing(static fn (Invoice $record): string => $record->reference ?? 'Invoice #' . $record->getKey())
                     ->searchable()
                     ->preload()
                     ->nullable(),
@@ -68,7 +89,9 @@ final class InvoiceForm
                             ->relationship('sales_order_line', 'id')
                             ->searchable()
                             ->preload()
-                            ->visible(static fn (Get $get): bool => InvoiceDirection::Sale->value === $get('../../direction')),
+                            ->live()
+                            ->visible(static fn (Get $get): bool => InvoiceDirection::Sale->value === $get('../../direction'))
+                            ->afterStateUpdated(static fn (Get $get, Set $set, ?int $state): null => self::applySalesOrderLineDefaults($get, $set, $state)),
                         Select::make('purchase_order_line_id')
                             ->label('Purchase order line')
                             ->relationship('purchase_order_line', 'id')
@@ -148,5 +171,43 @@ final class InvoiceForm
                     ->nullable()
                     ->columnSpanFull(),
             ]);
+    }
+
+    private static function applySalesOrderLineDefaults(Get $get, Set $set, ?int $sales_order_line_id): null
+    {
+        if ($sales_order_line_id === null) {
+            return null;
+        }
+
+        $company_id = $get('../../company_id');
+
+        if ($company_id === null) {
+            return null;
+        }
+
+        try {
+            $defaults = app(InvoiceLinePricingService::class)->defaultsFromSalesOrderLine(
+                company_id: (int) $company_id,
+                sales_order_line_id: $sales_order_line_id,
+                party_id: $get('../../party_id') !== null ? (int) $get('../../party_id') : null,
+                currency: (string) ($get('../../currency') ?? 'EUR'),
+            );
+        } catch (ValidationException) {
+            return null;
+        }
+
+        if (! filled($get('description'))) {
+            $set('description', $defaults['description']);
+        }
+
+        if (! filled($get('quantity')) || (float) $get('quantity') === 1.0) {
+            $set('quantity', $defaults['quantity']);
+        }
+
+        if (! filled($get('unit_price')) && $defaults['unit_price'] !== null) {
+            $set('unit_price', $defaults['unit_price']);
+        }
+
+        return null;
     }
 }

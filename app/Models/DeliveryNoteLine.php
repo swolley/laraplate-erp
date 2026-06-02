@@ -12,7 +12,7 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
- * Line on a {@see DeliveryNote} driving stock-out and optional SO evasion.
+ * Line on a {@see DeliveryNote} driving stock movement and optional SO evasion.
  *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNoteLine

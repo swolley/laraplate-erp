@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\ReturnStatus;
 
 final class ReturnOrderForm
@@ -25,7 +26,11 @@ final class ReturnOrderForm
                     ->required()
                     ->disabledOn('edit'),
                 Select::make('party_id')
-                    ->relationship('party', 'name')
+                    ->relationship(
+                        'party',
+                        'name',
+                        modifyQueryUsing: static fn (Builder $query): Builder => $query->customers(),
+                    )
                     ->searchable()
                     ->preload()
                     ->required(),
@@ -40,7 +45,8 @@ final class ReturnOrderForm
                         static fn (ReturnStatus $status): array => [$status->value => $status->value],
                     )->all())
                     ->default(ReturnStatus::Draft->value)
-                    ->required(),
+                    ->required()
+                    ->disabledOn('edit'),
                 DateTimePicker::make('processed_at')
                     ->disabled(),
                 Repeater::make('lines')

@@ -84,7 +84,8 @@ it('quotation resource form includes line items repeater', function (): void {
 it('defines Filament pages for bank reconciliation resources', function (): void {
     expect(BankAccountResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
         ->and(BankStatementResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
-        ->and(class_exists(BankReconciliationPage::class))->toBeTrue();
+        ->and(class_exists(BankReconciliationPage::class))->toBeTrue()
+        ->and(method_exists(BankReconciliationPage::class, 'suggestedPaymentsForLine'))->toBeTrue();
 });
 
 it('bank account and statement forms include core fields', function (): void {
@@ -229,6 +230,7 @@ it('delivery note resource form includes core fields', function (): void {
     );
 
     expect($names)->toContain('sales_order_id')
+        ->and($names)->toContain('direction')
         ->and($names)->toContain('delivered_at')
         ->and($names)->toContain('posted_at')
         ->and($names)->toContain('line_items');
@@ -242,6 +244,7 @@ it('invoice resource form includes core fields', function (): void {
     );
 
     expect($names)->toContain('direction')
+        ->and($names)->toContain('party_id')
         ->and($names)->toContain('currency');
 });
 

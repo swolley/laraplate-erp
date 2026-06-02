@@ -8,6 +8,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
 use Modules\Core\Filament\Utils\HasTable;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 
 final class DeliveryNotesTable
 {
@@ -24,6 +25,9 @@ final class DeliveryNotesTable
                         ->toggleable(),
                     TextColumn::make('reference')
                         ->searchable()
+                        ->sortable(),
+                    TextColumn::make('direction')
+                        ->formatStateUsing(static fn (DeliveryNoteDirection|string|null $state): ?string => $state instanceof DeliveryNoteDirection ? $state->value : $state)
                         ->sortable(),
                     TextColumn::make('sales_order.reference')
                         ->label('Sales order')

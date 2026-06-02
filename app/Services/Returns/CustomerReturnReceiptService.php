@@ -19,14 +19,20 @@ final readonly class CustomerReturnReceiptService
 
     public function receive(ReturnOrder $return_order): ReturnOrder
     {
-        if ($return_order->status === ReturnStatus::Processed) {
+        if ($return_order->status !== ReturnStatus::Approved) {
             throw ValidationException::withMessages([
-                'status' => ['The return order has already been processed.'],
+                'status' => ['The return order must be approved before it can be processed.'],
             ]);
         }
 
         return DB::transaction(function () use ($return_order): ReturnOrder {
             $return_order = ReturnOrder::query()->with('lines')->lockForUpdate()->findOrFail($return_order->getKey());
+
+            if ($return_order->status !== ReturnStatus::Approved) {
+                throw ValidationException::withMessages([
+                    'status' => ['The return order must be approved before it can be processed.'],
+                ]);
+            }
 
             foreach ($return_order->lines as $line) {
                 /** @var ReturnOrderLine $line */

@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\Warehouse;
@@ -18,6 +19,10 @@ final class DeliveryNoteForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $direction_options = collect(DeliveryNoteDirection::cases())
+            ->mapWithKeys(static fn (DeliveryNoteDirection $direction): array => [$direction->value => $direction->value])
+            ->all();
+
         return $schema
             ->components([
                 Select::make('company_id')
@@ -30,6 +35,11 @@ final class DeliveryNoteForm
                     ->searchable()
                     ->preload()
                     ->nullable(),
+                Select::make('direction')
+                    ->options($direction_options)
+                    ->default(DeliveryNoteDirection::Outbound->value)
+                    ->required()
+                    ->live(),
                 TextInput::make('reference')
                     ->maxLength(64)
                     ->nullable(),

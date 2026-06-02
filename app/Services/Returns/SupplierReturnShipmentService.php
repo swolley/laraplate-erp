@@ -19,14 +19,20 @@ final readonly class SupplierReturnShipmentService
 
     public function ship(SupplierReturn $supplier_return): SupplierReturn
     {
-        if ($supplier_return->status === ReturnStatus::Processed) {
+        if ($supplier_return->status !== ReturnStatus::Approved) {
             throw ValidationException::withMessages([
-                'status' => ['The supplier return has already been processed.'],
+                'status' => ['The supplier return must be approved before it can be processed.'],
             ]);
         }
 
         return DB::transaction(function () use ($supplier_return): SupplierReturn {
             $supplier_return = SupplierReturn::query()->with('lines')->lockForUpdate()->findOrFail($supplier_return->getKey());
+
+            if ($supplier_return->status !== ReturnStatus::Approved) {
+                throw ValidationException::withMessages([
+                    'status' => ['The supplier return must be approved before it can be processed.'],
+                ]);
+            }
 
             foreach ($supplier_return->lines as $line) {
                 /** @var SupplierReturnLine $line */

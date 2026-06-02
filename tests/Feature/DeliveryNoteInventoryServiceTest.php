@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
@@ -20,6 +21,259 @@ use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\Inventory\StockMovementService;
 
 uses(RefreshDatabase::class);
+
+it('posts inbound stock for inbound delivery notes without cogs or sales order delivery', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'ddn-inbound',
+        'name' => 'Ddn Inbound',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returns WH',
+        'code' => 'RET',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returned Part',
+        'sku' => 'RET-1',
+        'uom' => 'pcs',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 10, '3.2500');
+
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::Confirmed,
+    ]);
+
+    $so_line = SalesOrderLine::query()->create([
+        'sales_order_id' => $order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned Part',
+        'qty_ordered' => 4,
+        'qty_delivered' => 0,
+        'qty_invoiced' => 0,
+        'status' => SalesOrderLineStatus::Open,
+    ]);
+
+    $outbound_note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'sales_order_id' => $order->id,
+        'reference' => 'DDT-OUT-1',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $outbound_note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 4,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $outbound_note->update(['posted_at' => now()]);
+
+    $note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'direction' => DeliveryNoteDirection::Inbound,
+        'reference' => 'DDT-IN-1',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $note->update(['posted_at' => now()]);
+    $note->refresh();
+
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect($level->quantity)->toBe(8)
+        ->and(number_format((float) $level->weighted_avg_cost, 4, '.', ''))->toBe('3.2500')
+        ->and($note->inventory_posted_at)->not->toBeNull()
+        ->and($note->cogs_journal_entry_id)->toBeNull()
+        ->and($so_line->fresh()->qty_delivered)->toBe(4)
+        ->and(StockMovement::query()
+            ->where('company_id', $company->id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->where('direction', 'in')
+            ->count())->toBe(1)
+        ->and(StockMovement::query()
+            ->where('company_id', $company->id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->where('direction', 'out')
+            ->count())->toBe(1);
+});
+
+it('reverts inbound delivery note stock when unposted', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'ddn-in-unpost',
+        'name' => 'Ddn In Unpost',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returns WH',
+        'code' => 'RET-U',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returned Part',
+        'sku' => 'RET-U',
+        'uom' => 'pcs',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    app(StockMovementService::class)->recordInbound($company->id, $item->id, $warehouse->id, 10, '3.2500');
+
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Buyer',
+    ]);
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::Confirmed,
+    ]);
+
+    $so_line = SalesOrderLine::query()->create([
+        'sales_order_id' => $order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned Part',
+        'qty_ordered' => 4,
+        'qty_delivered' => 0,
+        'qty_invoiced' => 0,
+        'status' => SalesOrderLineStatus::Open,
+    ]);
+
+    $outbound_note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'sales_order_id' => $order->id,
+        'reference' => 'DDT-OUT-U',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $outbound_note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 4,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $outbound_note->update(['posted_at' => now()]);
+
+    $note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'direction' => DeliveryNoteDirection::Inbound,
+        'reference' => 'DDT-IN-U',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 4,
+        'sales_order_line_id' => $so_line->id,
+    ]);
+
+    $note->update(['posted_at' => now()]);
+    $note->refresh();
+
+    $note->update(['posted_at' => null]);
+    $note->refresh();
+
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect($level->quantity)->toBe(6)
+        ->and(number_format((float) $level->weighted_avg_cost, 4, '.', ''))->toBe('3.2500')
+        ->and($note->inventory_posted_at)->toBeNull()
+        ->and($note->cogs_journal_entry_id)->toBeNull()
+        ->and(StockMovement::query()
+            ->where('company_id', $company->id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->where('direction', 'in')
+            ->count())->toBe(1)
+        ->and(StockMovement::query()
+            ->where('company_id', $company->id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->where('direction', 'out')
+            ->count())->toBe(2);
+});
+
+it('rejects inbound delivery note posting without a source outbound cost', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'ddn-in-cost',
+        'name' => 'Ddn In Cost',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returns WH',
+        'code' => 'RET-C',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Returned Part',
+        'sku' => 'RET-C',
+        'uom' => 'pcs',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    $note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'direction' => DeliveryNoteDirection::Inbound,
+        'reference' => 'DDT-IN-C',
+    ]);
+
+    DeliveryNoteLine::query()->create([
+        'company_id' => $company->id,
+        'delivery_note_id' => $note->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 4,
+    ]);
+
+    expect(fn () => $note->update(['posted_at' => now()]))
+        ->toThrow(ValidationException::class);
+
+    expect($note->fresh()->posted_at)->toBeNull()
+        ->and($note->fresh()->inventory_posted_at)->toBeNull();
+});
 
 it('posts outbound stock and updates sales order lines when posted_at is set', function (): void {
     $company = Company::query()->create([

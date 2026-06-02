@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
 use Override;
@@ -35,6 +36,7 @@ final class DeliveryNote extends Model
     protected $fillable = [
         'company_id',
         'sales_order_id',
+        'direction',
         'reference',
         'delivered_at',
         'posted_at',
@@ -70,6 +72,7 @@ final class DeliveryNote extends Model
     protected function casts(): array
     {
         return [
+            'direction' => DeliveryNoteDirection::class,
             'delivered_at' => 'datetime',
             'posted_at' => 'datetime',
             'inventory_posted_at' => 'datetime',

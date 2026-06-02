@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Inventory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
@@ -19,8 +20,7 @@ use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
 /**
  * Posts inventory for a {@see DeliveryNote} after `posted_at` is set: outbound
- * {@see StockMovement} rows (sourced from {@see DeliveryNoteLine}) and optional
- * {@see SalesOrderEvasionService::registerDelivery} when the note is linked to a SO.
+ * notes reduce stock and can update SO evasion, while inbound notes restore stock.
  */
 final readonly class DeliveryNoteInventoryService
 {
@@ -62,7 +62,14 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $this->validateSalesOrderLines($locked, $lines);
+            $this->validateLines($locked, $lines);
+
+            if ($locked->direction === DeliveryNoteDirection::Inbound) {
+                $this->postInboundMovements($locked, $lines);
+                $note->inventory_posted_at = now();
+
+                return;
+            }
 
             foreach ($lines as $line) {
                 $this->stock_movement_service->recordOutbound(
@@ -128,7 +135,14 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $this->revertStockMovements($locked, $lines);
+            if ($locked->direction === DeliveryNoteDirection::Inbound) {
+                $this->revertInboundMovements($locked, $lines);
+                $note->inventory_posted_at = null;
+
+                return;
+            }
+
+            $this->revertOutboundMovements($locked, $lines);
             $this->delivery_note_cogs_journal_service->reverseForDeliveryNoteIfNeeded($note);
 
             if ($locked->sales_order_id !== null) {
@@ -160,7 +174,7 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function validateSalesOrderLines(DeliveryNote $header, Collection $lines): void
+    private function validateLines(DeliveryNote $header, Collection $lines): void
     {
         $company_id = (int) $header->company_id;
 
@@ -195,6 +209,10 @@ final readonly class DeliveryNoteInventoryService
         }
 
         if ($header->sales_order_id === null) {
+            return;
+        }
+
+        if ($header->direction === DeliveryNoteDirection::Inbound) {
             return;
         }
 
@@ -233,7 +251,24 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function revertStockMovements(DeliveryNote $header, Collection $lines): void
+    private function postInboundMovements(DeliveryNote $header, Collection $lines): void
+    {
+        foreach ($lines as $line) {
+            $this->stock_movement_service->recordInbound(
+                (int) $header->company_id,
+                (int) $line->item_id,
+                (int) $line->warehouse_id,
+                (int) $line->quantity,
+                $this->resolveReturnedUnitCost($header, $line),
+                $line,
+            );
+        }
+    }
+
+    /**
+     * @param  Collection<int, DeliveryNoteLine>  $lines
+     */
+    private function revertOutboundMovements(DeliveryNote $header, Collection $lines): void
     {
         $line_ids = $lines->pluck('id')->all();
         $outbound_movements = StockMovement::query()
@@ -263,5 +298,74 @@ final readonly class DeliveryNoteInventoryService
                 $line,
             );
         }
+    }
+
+    /**
+     * @param  Collection<int, DeliveryNoteLine>  $lines
+     */
+    private function revertInboundMovements(DeliveryNote $header, Collection $lines): void
+    {
+        $line_ids = $lines->pluck('id')->all();
+        $inbound_movements = StockMovement::query()
+            ->where('company_id', (int) $header->company_id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->whereIn('source_id', $line_ids)
+            ->where('direction', StockMovementDirection::In)
+            ->get()
+            ->keyBy(static fn (StockMovement $movement): int => (int) $movement->source_id);
+
+        foreach ($lines as $line) {
+            /** @var StockMovement|null $inbound */
+            $inbound = $inbound_movements->get((int) $line->id);
+
+            if ($inbound === null) {
+                throw ValidationException::withMessages([
+                    'stock' => ['Cannot unpost delivery note: missing inbound movement for a line.'],
+                ]);
+            }
+
+            $this->stock_movement_service->recordOutbound(
+                (int) $header->company_id,
+                (int) $line->item_id,
+                (int) $line->warehouse_id,
+                (int) $line->quantity,
+                $line,
+            );
+        }
+    }
+
+    private function resolveReturnedUnitCost(DeliveryNote $header, DeliveryNoteLine $line): string
+    {
+        if ($line->sales_order_line_id === null) {
+            throw ValidationException::withMessages([
+                'sales_order_line_id' => ['Inbound delivery note lines require a source sales order line to resolve inventory cost.'],
+            ]);
+        }
+
+        $source_line_ids = DeliveryNoteLine::query()
+            ->where('company_id', (int) $header->company_id)
+            ->where('sales_order_line_id', (int) $line->sales_order_line_id)
+            ->where('item_id', (int) $line->item_id)
+            ->pluck('id')
+            ->all();
+
+        /** @var StockMovement|null $movement */
+        $movement = StockMovement::query()
+            ->where('company_id', (int) $header->company_id)
+            ->where('item_id', (int) $line->item_id)
+            ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
+            ->whereIn('source_id', $source_line_ids)
+            ->where('direction', StockMovementDirection::Out)
+            ->whereNotNull('unit_cost')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($movement === null || $movement->unit_cost === null) {
+            throw ValidationException::withMessages([
+                'stock' => ['Cannot post inbound delivery note: missing original outbound stock cost for the returned line.'],
+            ]);
+        }
+
+        return (string) $movement->unit_cost;
     }
 }

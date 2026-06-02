@@ -107,3 +107,81 @@ it('rejects payment matches with incompatible amount direction', function (): vo
     expect(fn () => app(BankReconciliationService::class)->matchPayment($line, $payment))
         ->toThrow(ValidationException::class);
 });
+
+it('suggests compatible payments ordered by strongest statement line match', function (): void {
+    [$company, $party, $account, $statement] = createBankReconciliationCompany();
+    $other_company = Company::query()->create([
+        'slug' => 'bank-reco-other',
+        'name' => 'Bank Reco Other',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $other_party = Party::query()->create([
+        'company_id' => $other_company->id,
+        'name' => 'Other Customer',
+        'is_customer' => true,
+    ]);
+
+    $line = BankStatementLine::query()->create([
+        'company_id' => $company->id,
+        'bank_statement_id' => $statement->id,
+        'booked_at' => '2026-05-10',
+        'amount_doc' => '100.0000',
+        'currency_doc' => 'EUR',
+        'amount_local' => '100.0000',
+        'currency_local' => 'EUR',
+        'fx_rate' => '1.00000000',
+        'reference' => 'INV-100',
+    ]);
+    $exact = Payment::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => PaymentDirection::Inbound,
+        'payment_date' => '2026-05-10',
+        'amount_doc' => '100.0000',
+        'currency_doc' => 'EUR',
+        'amount_local' => '100.0000',
+        'currency_local' => 'EUR',
+        'fx_rate' => '1.00000000',
+        'reference' => 'INV-100',
+        'bank_account_id' => $account->id,
+    ]);
+    $near = Payment::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => PaymentDirection::Inbound,
+        'payment_date' => '2026-05-13',
+        'amount_doc' => '100.5000',
+        'currency_doc' => 'EUR',
+        'amount_local' => '100.5000',
+        'currency_local' => 'EUR',
+        'fx_rate' => '1.00000000',
+    ]);
+    Payment::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => PaymentDirection::Inbound,
+        'payment_date' => '2026-05-25',
+        'amount_doc' => '100.0000',
+        'currency_doc' => 'EUR',
+        'amount_local' => '100.0000',
+        'currency_local' => 'EUR',
+        'fx_rate' => '1.00000000',
+    ]);
+    Payment::query()->create([
+        'company_id' => $other_company->id,
+        'party_id' => $other_party->id,
+        'direction' => PaymentDirection::Inbound,
+        'payment_date' => '2026-05-10',
+        'amount_doc' => '100.0000',
+        'currency_doc' => 'EUR',
+        'amount_local' => '100.0000',
+        'currency_local' => 'EUR',
+        'fx_rate' => '1.00000000',
+        'reference' => 'INV-100',
+    ]);
+
+    $suggestions = app(BankReconciliationService::class)->suggestPayments($line);
+
+    expect($suggestions->pluck('id')->all())->toBe([$exact->id, $near->id]);
+});

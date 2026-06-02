@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
 
@@ -21,6 +22,9 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::SalesOrders->value, 'id', "{$delivery_notes_table}_sales_order_id_FK")
                 ->nullOnDelete();
+            $table->enum('direction', DeliveryNoteDirection::values())
+                ->default(DeliveryNoteDirection::Outbound->value)
+                ->index("{$delivery_notes_table}_direction_IDX");
             $table->string('reference', 64)->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->timestamp('posted_at')->nullable();

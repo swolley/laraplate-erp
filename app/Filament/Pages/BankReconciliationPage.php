@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Select;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Casts\BankStatementLineStatus;
@@ -29,6 +29,9 @@ final class BankReconciliationPage extends Page
 
     #[Override]
     protected static ?int $navigationSort = 64;
+
+    #[Override]
+    protected static ?string $slug = 'bank-reconciliation';
 
     #[Override]
     protected static ?string $navigationLabel = 'Bank Reconciliation';
@@ -109,6 +112,30 @@ final class BankReconciliationPage extends Page
                     $line->amount_doc,
                     $line->currency_doc,
                     $line->reference ?? $line->description ?? 'Line #' . $line->getKey(),
+                ),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function suggestedPaymentsForLine(int $bank_statement_line_id): array
+    {
+        /** @var BankStatementLine $line */
+        $line = BankStatementLine::query()->findOrFail($bank_statement_line_id);
+
+        return app(BankReconciliationService::class)
+            ->suggestPayments($line)
+            ->take(5)
+            ->mapWithKeys(static fn (Payment $payment): array => [
+                (int) $payment->getKey() => sprintf(
+                    '%s | %s | %s %s | %s',
+                    $payment->payment_date?->format('Y-m-d') ?? '-',
+                    $payment->party?->name ?? 'Party',
+                    $payment->amount_doc,
+                    $payment->currency_doc,
+                    $payment->reference ?? 'Payment #' . $payment->getKey(),
                 ),
             ])
             ->all();

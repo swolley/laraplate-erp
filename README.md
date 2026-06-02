@@ -219,9 +219,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Roadmap
 
--   M6.1: Bank reconciliation (import statements, auto-match, journal for differences)
--   M6.2: Returns management (customer / supplier returns, DDT reso, auto credit note)
--   M6.3: SDI e-invoice binding (FatturaPA XML generation, submit / status tracking)
+-   M6.1: Bank reconciliation (import statements, manual match with suggestions; journal for differences as follow-up)
+-   M6.2: Returns management (customer / supplier returns, linked DDT for physical movements, manual credit/debit note follow-up in v1)
+-   M6.3: E-invoice stub workflow (provider binding, submissions, submit / status tracking; full FatturaPA optional backlog)
 -   M7.1: Advanced pricelists (time-based validity, party-specific discounts, cascade discounts)
 -   M4: Policies & permissions (posting, period close, tax code management)
 -   Comprehensive test plan (accounting golden master, concurrency, fiscal invariants)
@@ -293,7 +293,7 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 
 - [ ] M6.1 — Bank reconciliation and statement import
 - [ ] M6.2 — Returns management (customer and supplier)
-- [ ] M6.3 — SDI e-invoice binding (FatturaPA XML)
+- [ ] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
 - [ ] M7.1 — Advanced pricelists with party-specific pricing
 - [ ] M4 — Policies and permissions (RBAC on ERP operations)
 - [ ] API resources and form requests

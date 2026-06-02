@@ -11,7 +11,7 @@ use Modules\ERP\Models\Party;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\Warehouse;
-use Modules\ERP\Services\Returns\CustomerReturnReceiptService;
+use Modules\ERP\Services\Returns\ReturnOrderService;
 
 uses(RefreshDatabase::class);
 
@@ -44,7 +44,54 @@ function createReturnOrderFixtures(): array
     return [$company, $party, $warehouse, $item];
 }
 
-it('records inbound stock for customer returns', function (): void {
+it('approves customer returns from draft', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Draft,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    $approved = app(ReturnOrderService::class)->approve($return_order);
+
+    expect($approved->status)->toBe(ReturnStatus::Approved);
+});
+
+it('rejects approval when return party is not a customer', function (): void {
+    [$company, , $warehouse, $item] = createReturnOrderFixtures();
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Supplier only',
+        'is_customer' => false,
+        'is_supplier' => true,
+    ]);
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Draft,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    expect(fn () => app(ReturnOrderService::class)->approve($return_order))
+        ->toThrow(ValidationException::class);
+});
+
+it('records inbound stock when completing approved customer returns', function (): void {
     [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
 
     $return_order = ReturnOrder::query()->create([
@@ -60,7 +107,7 @@ it('records inbound stock for customer returns', function (): void {
         'unit_cost' => '12.5000',
     ]);
 
-    $processed = app(CustomerReturnReceiptService::class)->receive($return_order);
+    $processed = app(ReturnOrderService::class)->complete($return_order);
 
     $level = StockLevel::query()
         ->where('company_id', $company->id)
@@ -74,7 +121,27 @@ it('records inbound stock for customer returns', function (): void {
         ->and((float) $level->weighted_avg_cost)->toBe(12.5);
 });
 
-it('prevents processing the same customer return twice', function (): void {
+it('rejects completing customer returns before approval', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Draft,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    expect(fn () => app(ReturnOrderService::class)->complete($return_order))
+        ->toThrow(ValidationException::class);
+});
+
+it('prevents completing the same customer return twice', function (): void {
     [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
 
     $return_order = ReturnOrder::query()->create([
@@ -90,9 +157,51 @@ it('prevents processing the same customer return twice', function (): void {
         'unit_cost' => '1.0000',
     ]);
 
-    $service = app(CustomerReturnReceiptService::class);
-    $service->receive($return_order);
+    $service = app(ReturnOrderService::class);
+    $service->complete($return_order);
 
-    expect(fn () => $service->receive($return_order->fresh()))
+    expect(fn () => $service->complete($return_order->fresh()))
+        ->toThrow(ValidationException::class);
+});
+
+it('cancels draft customer returns', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Draft,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    $cancelled = app(ReturnOrderService::class)->cancel($return_order);
+
+    expect($cancelled->status)->toBe(ReturnStatus::Cancelled);
+});
+
+it('rejects cancelling processed customer returns', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    expect(fn () => app(ReturnOrderService::class)->cancel($return_order))
         ->toThrow(ValidationException::class);
 });

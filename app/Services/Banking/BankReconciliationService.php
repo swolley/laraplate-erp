@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Banking;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
@@ -60,6 +61,46 @@ final class BankReconciliationService
         });
     }
 
+    /**
+     * @return Collection<int, Payment>
+     */
+    public function suggestPayments(BankStatementLine $line): Collection
+    {
+        $line->loadMissing('bank_statement');
+
+        $line_amount = (float) $line->amount_doc;
+        $direction = $line_amount >= 0 ? PaymentDirection::Inbound : PaymentDirection::Outbound;
+        $expected_amount = abs($line_amount);
+        $bank_account_id = $line->bank_statement?->bank_account_id;
+        $booked_at = $line->booked_at;
+
+        return Payment::query()
+            ->with('party')
+            ->where('company_id', $line->company_id)
+            ->where('currency_doc', $line->currency_doc)
+            ->where('direction', $direction->value)
+            ->whereBetween('amount_doc', [
+                number_format(max(0, $expected_amount - 1), 4, '.', ''),
+                number_format($expected_amount + 1, 4, '.', ''),
+            ])
+            ->when($bank_account_id !== null, static function ($query) use ($bank_account_id): void {
+                $query->where(static function ($query) use ($bank_account_id): void {
+                    $query->whereNull('bank_account_id')
+                        ->orWhere('bank_account_id', $bank_account_id);
+                });
+            })
+            ->when($booked_at !== null, static function ($query) use ($booked_at): void {
+                $query->whereBetween('payment_date', [
+                    $booked_at->copy()->subDays(5)->format('Y-m-d'),
+                    $booked_at->copy()->addDays(5)->format('Y-m-d'),
+                ]);
+            })
+            ->limit(50)
+            ->get()
+            ->sortByDesc(fn (Payment $payment): int => $this->suggestionScore($line, $payment))
+            ->values();
+    }
+
     private function assertCanMatch(BankStatementLine $line, Payment $payment): void
     {
         $line->loadMissing('bank_statement');
@@ -92,5 +133,29 @@ final class BankReconciliationService
                 'amount_doc' => ['The payment amount does not match the bank statement line.'],
             ]);
         }
+    }
+
+    private function suggestionScore(BankStatementLine $line, Payment $payment): int
+    {
+        $score = 0;
+
+        if ((float) $line->amount_doc !== 0.0 && abs(abs((float) $line->amount_doc) - (float) $payment->amount_doc) < 0.0001) {
+            $score += 50;
+        }
+
+        if ($line->booked_at !== null && $payment->payment_date !== null) {
+            $score += max(0, 20 - (int) abs($line->booked_at->diffInDays($payment->payment_date)));
+        }
+
+        if ($line->reference !== null && $payment->reference !== null
+            && mb_strtolower($line->reference) === mb_strtolower($payment->reference)) {
+            $score += 30;
+        }
+
+        if ($payment->bank_account_id !== null) {
+            $score += 10;
+        }
+
+        return $score;
     }
 }
