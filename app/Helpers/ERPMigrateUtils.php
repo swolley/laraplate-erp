@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Helpers;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Modules\ERP\Enums\ERPTables;
 
 /**
@@ -87,5 +88,57 @@ final class ERPMigrateUtils
         if ($indexed) {
             $table->index('company_id', "{$table_name}_company_id_idx");
         }
+    }
+
+    public static function positiveCheck(string $table, string $constraint, string $column): void
+    {
+        self::columnCheck($table, $constraint, $column, '>', '0');
+    }
+
+    public static function nonNegativeCheck(string $table, string $constraint, string $column): void
+    {
+        self::columnCheck($table, $constraint, $column, '>=', '0');
+    }
+
+    public static function nullableNonNegativeCheck(string $table, string $constraint, string $column): void
+    {
+        $wrapped_column = DB::connection()->getQueryGrammar()->wrap($column);
+
+        self::addCheckConstraint(
+            $table,
+            $constraint,
+            "{$wrapped_column} IS NULL OR {$wrapped_column} >= 0",
+        );
+    }
+
+    private static function columnCheck(
+        string $table,
+        string $constraint,
+        string $column,
+        string $operator,
+        string $value,
+    ): void {
+        $wrapped_column = DB::connection()->getQueryGrammar()->wrap($column);
+
+        self::addCheckConstraint($table, $constraint, "{$wrapped_column} {$operator} {$value}");
+    }
+
+    private static function addCheckConstraint(string $table, string $constraint, string $expression): void
+    {
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return;
+        }
+
+        if (! in_array($driver, ['mysql', 'mariadb', 'pgsql', 'oracle'], true)) {
+            return;
+        }
+
+        $wrapped_table = $connection->getSchemaGrammar()->wrapTable($table);
+        $wrapped_constraint = $connection->getQueryGrammar()->wrap($constraint);
+
+        DB::statement("ALTER TABLE {$wrapped_table} ADD CONSTRAINT {$wrapped_constraint} CHECK ({$expression})");
     }
 }

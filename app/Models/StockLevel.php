@@ -51,4 +51,32 @@ final class StockLevel extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0'],
+            'weighted_avg_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0'],
+            'weighted_avg_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'decimal:4',
+            'weighted_avg_cost' => 'decimal:4',
+        ];
+    }
 }

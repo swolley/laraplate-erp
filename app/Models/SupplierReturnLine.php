@@ -28,6 +28,9 @@ final class SupplierReturnLine extends Model
     protected $fillable = [
         'company_id',
         'supplier_return_id',
+        'purchase_order_line_id',
+        'goods_receipt_line_id',
+        'delivery_note_line_id',
         'item_id',
         'warehouse_id',
         'quantity',
@@ -39,6 +42,30 @@ final class SupplierReturnLine extends Model
     public function supplier_return(): BelongsTo
     {
         return $this->belongsTo(SupplierReturn::class);
+    }
+
+    /**
+     * @return BelongsTo<PurchaseOrderLine, $this>
+     */
+    public function purchase_order_line(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderLine::class);
+    }
+
+    /**
+     * @return BelongsTo<GoodsReceiptLine, $this>
+     */
+    public function goods_receipt_line(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceiptLine::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryNoteLine, $this>
+     */
+    public function delivery_note_line(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryNoteLine::class);
     }
 
     /**
@@ -57,6 +84,20 @@ final class SupplierReturnLine extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
         self::creating(static function (SupplierReturnLine $line): void {
@@ -71,7 +112,7 @@ final class SupplierReturnLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
         ];
     }
 }

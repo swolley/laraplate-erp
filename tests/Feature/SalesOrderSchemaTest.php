@@ -5,18 +5,18 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
-use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
-use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
 uses(RefreshDatabase::class);
@@ -206,8 +206,8 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
     $line->refresh();
     $order->refresh();
 
-    expect($line->qty_delivered)->toBe(1)
-        ->and($line->qty_invoiced)->toBe(1)
+    expect((string) $line->qty_delivered)->toBe('1.0000')
+        ->and((string) $line->qty_invoiced)->toBe('1.0000')
         ->and($line->status)->toBe(SalesOrderLineStatus::PartiallyEvased)
         ->and($order->status)->toBe(SalesOrderStatus::PartiallyEvased);
 
@@ -258,11 +258,11 @@ it('creates a draft amendment from a confirmed order with remaining quantities o
         ->and($amendment->reference)->not->toBeNull()
         ->and($amendment->lines)->toHaveCount(1)
         ->and($amendment->lines->first()?->name)->toBe($line_partial->name)
-        ->and($amendment->lines->first()?->qty_ordered)->toBe(3)
-        ->and($amendment->lines->first()?->qty_delivered)->toBe(0)
-        ->and($amendment->lines->first()?->qty_invoiced)->toBe(0);
+        ->and((string) $amendment->lines->first()?->qty_ordered)->toBe('3.0000')
+        ->and((string) $amendment->lines->first()?->qty_delivered)->toBe('0.0000')
+        ->and((string) $amendment->lines->first()?->qty_invoiced)->toBe('0.0000');
 
-    expect($line_full->fresh()?->qty_ordered)->toBe(2);
+    expect((string) $line_full->fresh()?->qty_ordered)->toBe('2.0000');
 });
 
 it('rejects amendment when order is not confirmed or partially evased', function (): void {

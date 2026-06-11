@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->foreignId('price_list_item_id')->constrained(ERPTables::PriceListItems->value, 'id', "{$quotation_items_table}_price_list_item_id_FK")->nullable(true)->setNullOnDelete()->comment('The price list item that the quotation item belongs to');
             $table->string('name')->comment('The name of the quotation item');
             $table->enum('billing_mode', BillingMode::cases())->nullable(false)->default(BillingMode::Unit->value)->index("{$quotation_items_table}_billing_mode_idx")->comment('The billing mode of the quotation item');
-            $table->unsignedSmallInteger('quantity')->comment('The quantity of the quotation item')->default(1);
+            $table->decimal('quantity', 15, 4)->comment('The quantity of the quotation item')->default(1);
             $table->decimal('unit_price', 15, 4)->nullable()->comment('Unit price in quotation currency context; null if only descriptive line');
 
             MigrateUtils::timestamps(
@@ -32,6 +33,8 @@ return new class extends Migration
                 hasSoftDelete: true,
             );
         });
+
+        ERPMigrateUtils::positiveCheck($quotation_items_table, 'qi_qty_pos_ck', 'quantity');
     }
 
     /**

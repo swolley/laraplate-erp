@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
@@ -35,12 +35,12 @@ final readonly class InvoiceDeliveryNoteValidationService
                 continue;
             }
 
-            $pivot_total = 0;
+            $pivot_total = 0.0;
 
             foreach ($links as $dn_line) {
-                $pivot_qty = (int) $dn_line->pivot->quantity;
+                $pivot_qty = (float) $dn_line->pivot->quantity;
 
-                if ($pivot_qty <= 0) {
+                if ($pivot_qty <= 0.0) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Delivery note link quantity must be greater than zero on invoice line '
@@ -89,7 +89,7 @@ final readonly class InvoiceDeliveryNoteValidationService
                     (int) $invoice->id,
                 );
 
-                if ($already_invoiced + $pivot_qty > (int) $dn_line->quantity) {
+                if ($already_invoiced + $pivot_qty > (float) $dn_line->quantity) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Invoiced quantity exceeds delivered quantity on delivery note line #'
@@ -101,7 +101,7 @@ final readonly class InvoiceDeliveryNoteValidationService
                 $pivot_total += $pivot_qty;
             }
 
-            $line_qty = (int) (float) $invoice_line->quantity;
+            $line_qty = (float) $invoice_line->quantity;
 
             if ($pivot_total > $line_qty) {
                 throw ValidationException::withMessages([
@@ -117,12 +117,12 @@ final readonly class InvoiceDeliveryNoteValidationService
     private function invoicedQuantityOnDeliveryNoteLine(
         int $delivery_note_line_id,
         int $excluding_invoice_id,
-    ): int {
+    ): float {
         $pivot_table = ERPTables::InvoiceLineDeliveryNoteLine->value;
         $invoice_lines_table = ERPTables::InvoiceLines->value;
         $invoices_table = ERPTables::Invoices->value;
 
-        return (int) DB::table($pivot_table)
+        return (float) DB::table($pivot_table)
             ->join($invoice_lines_table, "{$invoice_lines_table}.id", '=', "{$pivot_table}.invoice_line_id")
             ->join($invoices_table, "{$invoices_table}.id", '=', "{$invoice_lines_table}.invoice_id")
             ->where("{$pivot_table}.delivery_note_line_id", $delivery_note_line_id)

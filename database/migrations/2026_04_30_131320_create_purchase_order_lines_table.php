@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
@@ -23,12 +24,17 @@ return new class extends Migration
                 ->constrained(ERPTables::Items->value, 'id', "{$purchase_order_lines_table}_item_id_FK")
                 ->nullOnDelete();
             $table->string('name');
-            $table->unsignedInteger('qty_ordered')->default(1);
-            $table->unsignedInteger('qty_received')->default(0);
+            $table->decimal('qty_ordered', 15, 4)->default(1);
+            $table->decimal('qty_received', 15, 4)->default(0);
+            $table->decimal('qty_returned', 15, 4)->default(0);
             $table->decimal('unit_price', 15, 4)->nullable();
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true, hasLocks: false);
         });
+
+        ERPMigrateUtils::positiveCheck($purchase_order_lines_table, 'pol_qo_pos_ck', 'qty_ordered');
+        ERPMigrateUtils::nonNegativeCheck($purchase_order_lines_table, 'pol_qrec_nn_ck', 'qty_received');
+        ERPMigrateUtils::nonNegativeCheck($purchase_order_lines_table, 'pol_qret_nn_ck', 'qty_returned');
     }
 
     public function down(): void

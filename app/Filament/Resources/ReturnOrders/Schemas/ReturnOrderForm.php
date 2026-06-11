@@ -64,7 +64,7 @@ final class ReturnOrderForm
                             ->required(),
                         TextInput::make('quantity')
                             ->numeric()
-                            ->minValue(1)
+                            ->minValue(0.0001)
                             ->required(),
                         TextInput::make('unit_cost')
                             ->numeric()

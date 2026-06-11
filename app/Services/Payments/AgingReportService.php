@@ -45,6 +45,7 @@ final class AgingReportService
             ])
             ->get();
 
+        /** @var array<int, array{party_id: int, party_name: string, current: string, days_30: string, days_60: string, days_90: string, days_120_plus: string, total: string}> $grouped */
         $grouped = [];
 
         foreach ($schedule_lines as $line) {
@@ -72,8 +73,10 @@ final class AgingReportService
                 ];
             }
 
-            $grouped[$party_id][$bucket] = $this->add($grouped[$party_id][$bucket], $remaining);
-            $grouped[$party_id]['total'] = $this->add($grouped[$party_id]['total'], $remaining);
+            $party_row = $grouped[$party_id];
+            $party_row[$bucket] = $this->add($party_row[$bucket], $remaining);
+            $party_row['total'] = $this->add($party_row['total'], $remaining);
+            $grouped[$party_id] = $party_row;
         }
 
         return array_values($grouped);

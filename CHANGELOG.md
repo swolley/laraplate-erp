@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- *(erp)* Enhance delivery note and return order functionalities
+- *(erp)* Update validation rules and model properties for quantity fields
+
+## [1.11.0] - 2026-05-30
+
+### 🚀 Features
+
 - *(erp)* Enhance invoice and payment term models with party associations and validation updates
 
 ## [1.10.0] - 2026-05-28

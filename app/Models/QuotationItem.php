@@ -60,7 +60,7 @@ final class QuotationItem extends Model
             'price_list_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::PriceListItems->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
             'billing_mode' => ['required', 'string', BillingMode::validationRule()],
-            'quantity' => ['required', 'integer', 'min:1', 'max:65535'],
+            'quantity' => ['required', 'numeric', 'min:0.0001', 'max:65535'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
@@ -68,7 +68,7 @@ final class QuotationItem extends Model
             'price_list_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::PriceListItems->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'billing_mode' => ['sometimes', 'string', BillingMode::validationRule()],
-            'quantity' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001', 'max:65535'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -79,7 +79,7 @@ final class QuotationItem extends Model
     {
         return [
             'billing_mode' => BillingMode::class,
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
             'unit_price' => 'decimal:4',
         ];
     }

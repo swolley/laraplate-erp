@@ -14,7 +14,7 @@ final readonly class InvoiceLinePricingService
     ) {}
 
     /**
-     * @return array{description: string, quantity: int, unit_price: string|null}
+     * @return array{description: string, quantity: string, unit_price: string|null}
      */
     public function defaultsFromSalesOrderLine(
         int $company_id,
@@ -27,7 +27,7 @@ final readonly class InvoiceLinePricingService
             ->with(['sales_order', 'item'])
             ->find($sales_order_line_id);
 
-        if ($line === null || (int) $line->sales_order?->company_id !== $company_id) {
+        if ($line === null || $company_id !== (int) $line->sales_order?->company_id) {
             throw ValidationException::withMessages([
                 'sales_order_line_id' => ['The sales order line does not belong to the selected company.'],
             ]);
@@ -42,7 +42,7 @@ final readonly class InvoiceLinePricingService
 
         return [
             'description' => $line->name,
-            'quantity' => max(0, (int) $line->qty_ordered - (int) $line->qty_invoiced),
+            'quantity' => number_format(max(0.0, (float) $line->qty_ordered - (float) $line->qty_invoiced), 4, '.', ''),
             'unit_price' => $unit_price,
         ];
     }

@@ -12,7 +12,7 @@ use Modules\ERP\Models\SalesOrderLine;
 final class SalesOrderEvasionService
 {
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     public function registerDelivery(SalesOrder $sales_order, array $line_quantities): void
     {
@@ -20,7 +20,7 @@ final class SalesOrderEvasionService
     }
 
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     public function unregisterDelivery(SalesOrder $sales_order, array $line_quantities): void
     {
@@ -28,7 +28,7 @@ final class SalesOrderEvasionService
     }
 
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     public function registerInvoice(SalesOrder $sales_order, array $line_quantities): void
     {
@@ -36,7 +36,7 @@ final class SalesOrderEvasionService
     }
 
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     public function unregisterInvoice(SalesOrder $sales_order, array $line_quantities): void
     {
@@ -44,7 +44,7 @@ final class SalesOrderEvasionService
     }
 
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     private function applyQuantities(SalesOrder $sales_order, array $line_quantities, string $mode): void
     {
@@ -56,18 +56,20 @@ final class SalesOrderEvasionService
                 continue;
             }
 
-            if ($qty <= 0) {
+            $quantity = (float) $qty;
+
+            if ($quantity <= 0) {
                 continue;
             }
 
             if ($mode === 'delivery') {
-                $line->qty_delivered = min($line->qty_ordered, $line->qty_delivered + $qty);
+                $line->qty_delivered = $this->formatQuantity(min((float) $line->qty_ordered, (float) $line->qty_delivered + $quantity));
             } elseif ($mode === 'delivery_reversal') {
-                $line->qty_delivered = max(0, $line->qty_delivered - $qty);
+                $line->qty_delivered = $this->formatQuantity(max(0.0, (float) $line->qty_delivered - $quantity));
             } elseif ($mode === 'invoice_reversal') {
-                $line->qty_invoiced = max(0, $line->qty_invoiced - $qty);
+                $line->qty_invoiced = $this->formatQuantity(max(0.0, (float) $line->qty_invoiced - $quantity));
             } else {
-                $line->qty_invoiced = min($line->qty_ordered, $line->qty_invoiced + $qty);
+                $line->qty_invoiced = $this->formatQuantity(min((float) $line->qty_ordered, (float) $line->qty_invoiced + $quantity));
             }
 
             $line->status = $this->lineStatusFromQuantities($line);
@@ -122,5 +124,10 @@ final class SalesOrderEvasionService
 
         $sales_order->status = SalesOrderStatus::Confirmed;
         $sales_order->saveQuietly();
+    }
+
+    private function formatQuantity(float $quantity): string
+    {
+        return number_format($quantity, 4, '.', '');
     }
 }

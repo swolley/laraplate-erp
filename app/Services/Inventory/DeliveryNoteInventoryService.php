@@ -12,9 +12,11 @@ use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\StockMovement;
+use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 
@@ -76,12 +78,14 @@ final readonly class DeliveryNoteInventoryService
                     (int) $locked->company_id,
                     (int) $line->item_id,
                     (int) $line->warehouse_id,
-                    (int) $line->quantity,
+                    (string) $line->quantity,
                     $line,
                 );
             }
 
-            $this->delivery_note_cogs_journal_service->postForDeliveryNoteIfNeeded($note, $lines);
+            if (! $this->isSupplierReturnDeliveryNote($lines)) {
+                $this->delivery_note_cogs_journal_service->postForDeliveryNoteIfNeeded($note, $lines);
+            }
 
             if ($locked->sales_order_id !== null) {
                 $quantities = [];
@@ -92,7 +96,7 @@ final readonly class DeliveryNoteInventoryService
                     }
 
                     $line_id = (int) $line->sales_order_line_id;
-                    $quantities[$line_id] = ($quantities[$line_id] ?? 0) + (int) $line->quantity;
+                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', (string) $line->quantity);
                 }
 
                 if ($quantities !== []) {
@@ -154,7 +158,7 @@ final readonly class DeliveryNoteInventoryService
                     }
 
                     $line_id = (int) $line->sales_order_line_id;
-                    $quantities[$line_id] = ($quantities[$line_id] ?? 0) + (int) $line->quantity;
+                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', (string) $line->quantity);
                 }
 
                 if ($quantities !== []) {
@@ -238,9 +242,9 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $remaining = (int) $so_line->qty_ordered - (int) $so_line->qty_delivered;
+            $remaining = (float) $so_line->qty_ordered - (float) $so_line->qty_delivered;
 
-            if ($remaining < (int) $line->quantity) {
+            if ($remaining < (float) $line->quantity) {
                 throw ValidationException::withMessages([
                     'quantity' => ['Delivery quantity exceeds remaining quantity to deliver on the sales order line.'],
                 ]);
@@ -258,7 +262,7 @@ final readonly class DeliveryNoteInventoryService
                 (int) $header->company_id,
                 (int) $line->item_id,
                 (int) $line->warehouse_id,
-                (int) $line->quantity,
+                (string) $line->quantity,
                 $this->resolveReturnedUnitCost($header, $line),
                 $line,
             );
@@ -293,7 +297,7 @@ final readonly class DeliveryNoteInventoryService
                 (int) $header->company_id,
                 (int) $line->item_id,
                 (int) $line->warehouse_id,
-                (int) $line->quantity,
+                (string) $line->quantity,
                 (string) $outbound->unit_cost,
                 $line,
             );
@@ -328,7 +332,7 @@ final readonly class DeliveryNoteInventoryService
                 (int) $header->company_id,
                 (int) $line->item_id,
                 (int) $line->warehouse_id,
-                (int) $line->quantity,
+                (string) $line->quantity,
                 $line,
             );
         }
@@ -336,12 +340,24 @@ final readonly class DeliveryNoteInventoryService
 
     private function resolveReturnedUnitCost(DeliveryNote $header, DeliveryNoteLine $line): string
     {
-        if ($line->sales_order_line_id === null) {
-            throw ValidationException::withMessages([
-                'sales_order_line_id' => ['Inbound delivery note lines require a source sales order line to resolve inventory cost.'],
-            ]);
+        if ($line->sales_order_line_id !== null) {
+            return $this->resolveReturnedUnitCostFromOutboundMovement($header, $line);
         }
 
+        if (ReturnOrderLine::query()
+            ->where('delivery_note_line_id', (int) $line->getKey())
+            ->where('company_id', (int) $header->company_id)
+            ->exists()) {
+            return $this->resolveReturnedUnitCostFromReturnLine($header, $line);
+        }
+
+        throw ValidationException::withMessages([
+            'sales_order_line_id' => ['Inbound delivery note lines require a source sales order line or return order line to resolve inventory cost.'],
+        ]);
+    }
+
+    private function resolveReturnedUnitCostFromOutboundMovement(DeliveryNote $header, DeliveryNoteLine $line): string
+    {
         $source_line_ids = DeliveryNoteLine::query()
             ->where('company_id', (int) $header->company_id)
             ->where('sales_order_line_id', (int) $line->sales_order_line_id)
@@ -367,5 +383,37 @@ final readonly class DeliveryNoteInventoryService
         }
 
         return (string) $movement->unit_cost;
+    }
+
+    private function resolveReturnedUnitCostFromReturnLine(DeliveryNote $header, DeliveryNoteLine $line): string
+    {
+        /** @var ReturnOrderLine|null $return_line */
+        $return_line = ReturnOrderLine::query()
+            ->where('delivery_note_line_id', (int) $line->getKey())
+            ->where('company_id', (int) $header->company_id)
+            ->first();
+
+        if ($return_line === null || $return_line->unit_cost === null) {
+            throw ValidationException::withMessages([
+                'unit_cost' => ['Inbound return delivery note line requires a linked customer return line with unit cost.'],
+            ]);
+        }
+
+        return (string) $return_line->unit_cost;
+    }
+
+    /**
+     * @param  Collection<int, DeliveryNoteLine>  $lines
+     */
+    private function isSupplierReturnDeliveryNote(Collection $lines): bool
+    {
+        return SupplierReturnLine::query()
+            ->whereIn('delivery_note_line_id', $lines->pluck('id')->all())
+            ->exists();
+    }
+
+    private function addQuantity(string $left, string $right): string
+    {
+        return number_format((float) $left + (float) $right, 4, '.', '');
     }
 }

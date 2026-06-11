@@ -32,6 +32,7 @@ final class ReturnOrder extends Model
         'party_id',
         'invoice_id',
         'credit_note_invoice_id',
+        'delivery_note_id',
         'reference',
         'status',
         'processed_at',
@@ -52,6 +53,14 @@ final class ReturnOrder extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryNote, $this>
+     */
+    public function delivery_note(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryNote::class);
     }
 
     /**

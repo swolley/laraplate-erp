@@ -1,7 +1,7 @@
 includes:
-    - vendor/larastan/larastan/extension.neon
-    - vendor/nesbot/carbon/extension.neon
-    - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+    - ../../vendor/larastan/larastan/extension.neon
+    - ../../vendor/nesbot/carbon/extension.neon
+    - ../../vendor/phpstan/phpstan/conf/bleedingEdge.neon
 
 parameters:
     # Livello di analisi (0-9, max = 9)
@@ -51,10 +51,8 @@ parameters:
     # Avoid noise when ignore patterns drift after refactors
     reportUnmatchedIgnoredErrors: false
 
-    # Core stubs are loaded only via bootstrapFiles (not stubFiles) so PHPStan does not
-    # type-check stub bodies against missing optional deps (e.g. Scout) in isolation.
-    bootstrapFiles:
-        - tests/bootstrap-stubs.php
+    stubFiles:
+        - ../../_ide_helper_traits.php
 
     # Standalone package: Eloquent dynamic attrs; enable when @property blocks are complete
     checkModelProperties: false

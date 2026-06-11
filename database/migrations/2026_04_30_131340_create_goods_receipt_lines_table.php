@@ -26,7 +26,8 @@ return new class extends Migration
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$goods_receipt_lines_table}_warehouse_id_FK")
                 ->restrictOnDelete();
-            $table->unsignedInteger('quantity');
+            $table->decimal('quantity', 15, 4);
+            $table->decimal('qty_returned', 15, 4)->default(0);
             $table->decimal('unit_cost', 15, 4);
             $table->foreignId('purchase_order_line_id')
                 ->nullable()
@@ -41,6 +42,10 @@ return new class extends Migration
                 "{$goods_receipt_lines_table}_company_item_wh_idx",
             );
         });
+
+        ERPMigrateUtils::positiveCheck($goods_receipt_lines_table, 'grl_qty_pos_ck', 'quantity');
+        ERPMigrateUtils::nonNegativeCheck($goods_receipt_lines_table, 'grl_qret_nn_ck', 'qty_returned');
+        ERPMigrateUtils::nonNegativeCheck($goods_receipt_lines_table, 'grl_uc_nn_ck', 'unit_cost');
     }
 
     public function down(): void

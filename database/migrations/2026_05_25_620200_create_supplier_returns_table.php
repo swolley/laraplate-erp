@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId('party_id')->constrained(ERPTables::Parties->value, 'id', "{$supplier_returns_table}_party_id_FK")->restrictOnDelete();
             $table->foreignId('purchase_order_id')->nullable()->constrained(ERPTables::PurchaseOrders->value, 'id', "{$supplier_returns_table}_purchase_order_id_FK")->nullOnDelete();
             $table->foreignId('debit_note_invoice_id')->nullable()->constrained(ERPTables::Invoices->value, 'id', "{$supplier_returns_table}_debit_note_invoice_id_FK")->nullOnDelete();
+            $table->foreignId('delivery_note_id')->nullable()->constrained(ERPTables::DeliveryNotes->value, 'id', "{$supplier_returns_table}_delivery_note_id_FK")->nullOnDelete();
             $table->string('reference', 64)->nullable();
             $table->enum('status', array_map(static fn (ReturnStatus $status): string => $status->value, ReturnStatus::cases()))->default(ReturnStatus::Draft->value);
             $table->timestamp('processed_at')->nullable();

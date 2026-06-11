@@ -11,6 +11,7 @@ use Modules\Core\Filament\Utils\HasTable;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Filament\Resources\Invoices\Actions\InvoicePostingActions;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\InvoiceLine;
 
 final class InvoicesTable
 {
@@ -53,7 +54,7 @@ final class InvoicesTable
                             $statuses = $record->lines()
                                 ->whereNotNull('match_status')
                                 ->get()
-                                ->map(static fn ($line): string => $line->match_status?->value ?? '')
+                                ->map(static fn (InvoiceLine $line): string => $line->match_status?->value ?? '')
                                 ->filter()
                                 ->unique()
                                 ->values()

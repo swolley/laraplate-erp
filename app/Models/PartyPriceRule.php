@@ -15,6 +15,8 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property DiscountType $discount_type
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPartyPriceRule
  */

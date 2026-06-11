@@ -8,11 +8,11 @@ use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\StockLevel;
@@ -109,11 +109,11 @@ it('posts inbound stock for inbound delivery notes without cogs or sales order d
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($level->quantity)->toBe(8)
+    expect((string) $level->quantity)->toBe('8.0000')
         ->and(number_format((float) $level->weighted_avg_cost, 4, '.', ''))->toBe('3.2500')
         ->and($note->inventory_posted_at)->not->toBeNull()
         ->and($note->cogs_journal_entry_id)->toBeNull()
-        ->and($so_line->fresh()->qty_delivered)->toBe(4)
+        ->and((string) $so_line->fresh()->qty_delivered)->toBe('4.0000')
         ->and(StockMovement::query()
             ->where('company_id', $company->id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
@@ -216,7 +216,7 @@ it('reverts inbound delivery note stock when unposted', function (): void {
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($level->quantity)->toBe(6)
+    expect((string) $level->quantity)->toBe('6.0000')
         ->and(number_format((float) $level->weighted_avg_cost, 4, '.', ''))->toBe('3.2500')
         ->and($note->inventory_posted_at)->toBeNull()
         ->and($note->cogs_journal_entry_id)->toBeNull()
@@ -346,8 +346,8 @@ it('posts outbound stock and updates sales order lines when posted_at is set', f
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($so_line->qty_delivered)->toBe(7)
-        ->and($level->quantity)->toBe(93)
+    expect((string) $so_line->qty_delivered)->toBe('7.0000')
+        ->and((string) $level->quantity)->toBe('93.0000')
         ->and($note->fresh()->inventory_posted_at)->not->toBeNull()
         ->and($note->fresh()->posted_at)->not->toBeNull();
 });
@@ -504,8 +504,8 @@ it('does not duplicate outbound stock on subsequent updates after posting', func
         ->where('direction', 'out')
         ->count();
 
-    expect($stock_after_post->quantity)->toBe(15)
-        ->and($stock_after_metadata_update->quantity)->toBe(15)
+    expect((string) $stock_after_post->quantity)->toBe('15.0000')
+        ->and((string) $stock_after_metadata_update->quantity)->toBe('15.0000')
         ->and($outbound_count_after_post)->toBe(1)
         ->and($outbound_count_after_metadata_update)->toBe(1);
 });
@@ -736,10 +736,10 @@ it('reverts stock, sales order delivery, and cogs journal when a posted delivery
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($level->quantity)->toBe(20)
+    expect((string) $level->quantity)->toBe('20.0000')
         ->and($note->inventory_posted_at)->toBeNull()
         ->and($note->cogs_journal_entry_id)->toBeNull()
-        ->and($so_line->qty_delivered)->toBe(0)
+        ->and((string) $so_line->qty_delivered)->toBe('0.0000')
         ->and($so_line->status)->toBe(SalesOrderLineStatus::Open)
         ->and($order->fresh()?->status)->toBe(SalesOrderStatus::Confirmed);
 

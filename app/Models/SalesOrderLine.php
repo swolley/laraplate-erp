@@ -40,6 +40,7 @@ final class SalesOrderLine extends Model
         'qty_ordered',
         'qty_delivered',
         'qty_invoiced',
+        'qty_returned',
         'unit_price',
         'status',
     ];
@@ -77,9 +78,10 @@ final class SalesOrderLine extends Model
             'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
             'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['required', 'string', 'max:255'],
-            'qty_ordered' => ['required', 'integer', 'min:1'],
-            'qty_delivered' => ['sometimes', 'integer', 'min:0'],
-            'qty_invoiced' => ['sometimes', 'integer', 'min:0'],
+            'qty_ordered' => ['required', 'numeric', 'min:0.0001'],
+            'qty_delivered' => ['sometimes', 'numeric', 'min:0'],
+            'qty_invoiced' => ['sometimes', 'numeric', 'min:0'],
+            'qty_returned' => ['sometimes', 'numeric', 'min:0'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', 'string', SalesOrderLineStatus::validationRule()],
         ]);
@@ -88,9 +90,10 @@ final class SalesOrderLine extends Model
             'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
             'item_id' => ['nullable', 'integer', 'exists:' . ERPTables::Items->value . ',id'],
             'name' => ['sometimes', 'string', 'max:255'],
-            'qty_ordered' => ['sometimes', 'integer', 'min:1'],
-            'qty_delivered' => ['sometimes', 'integer', 'min:0'],
-            'qty_invoiced' => ['sometimes', 'integer', 'min:0'],
+            'qty_ordered' => ['sometimes', 'numeric', 'min:0.0001'],
+            'qty_delivered' => ['sometimes', 'numeric', 'min:0'],
+            'qty_invoiced' => ['sometimes', 'numeric', 'min:0'],
+            'qty_returned' => ['sometimes', 'numeric', 'min:0'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
             'status' => ['sometimes', 'string', SalesOrderLineStatus::validationRule()],
         ]);
@@ -121,9 +124,10 @@ final class SalesOrderLine extends Model
     {
         return [
             'status' => SalesOrderLineStatus::class,
-            'qty_ordered' => 'integer',
-            'qty_delivered' => 'integer',
-            'qty_invoiced' => 'integer',
+            'qty_ordered' => 'decimal:4',
+            'qty_delivered' => 'decimal:4',
+            'qty_invoiced' => 'decimal:4',
+            'qty_returned' => 'decimal:4',
             'unit_price' => 'decimal:4',
         ];
     }

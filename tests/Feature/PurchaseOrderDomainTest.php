@@ -6,9 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
@@ -76,8 +76,8 @@ it('aggregates line counts and quantity sums for purchase order list queries', f
         ->firstOrFail();
 
     expect($aggregated->lines_count)->toBe(2)
-        ->and((string) $aggregated->lines_sum_qty_ordered)->toBe('8')
-        ->and((string) $aggregated->lines_sum_qty_received)->toBe('3');
+        ->and((float) $aggregated->lines_sum_qty_ordered)->toBe(8.0)
+        ->and((float) $aggregated->lines_sum_qty_received)->toBe(3.0);
 });
 
 it('rejects a purchase order whose party belongs to another company', function (): void {

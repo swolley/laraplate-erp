@@ -19,12 +19,17 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('supplier_return_id')->constrained(ERPTables::SupplierReturns->value, 'id', "{$supplier_return_lines_table}_supplier_return_id_FK")->cascadeOnDelete();
+            $table->foreignId('purchase_order_line_id')->nullable()->constrained(ERPTables::PurchaseOrderLines->value, 'id', "{$supplier_return_lines_table}_purchase_order_line_id_FK")->nullOnDelete();
+            $table->foreignId('goods_receipt_line_id')->nullable()->constrained(ERPTables::GoodsReceiptLines->value, 'id', "{$supplier_return_lines_table}_goods_receipt_line_id_FK")->nullOnDelete();
+            $table->foreignId('delivery_note_line_id')->nullable()->constrained(ERPTables::DeliveryNoteLines->value, 'id', "{$supplier_return_lines_table}_delivery_note_line_id_FK")->nullOnDelete();
             $table->foreignId('item_id')->constrained(ERPTables::Items->value, 'id', "{$supplier_return_lines_table}_item_id_FK")->restrictOnDelete();
             $table->foreignId('warehouse_id')->constrained(ERPTables::Warehouses->value, 'id', "{$supplier_return_lines_table}_warehouse_id_FK")->restrictOnDelete();
-            $table->unsignedInteger('quantity');
+            $table->decimal('quantity', 15, 4);
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
         });
+
+        ERPMigrateUtils::positiveCheck($supplier_return_lines_table, 'srl_qty_pos_ck', 'quantity');
     }
 
     public function down(): void

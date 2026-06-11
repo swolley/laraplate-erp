@@ -67,7 +67,7 @@ final class DeliveryNoteForm
                             ->numeric()
                             ->required()
                             ->default(1)
-                            ->minValue(1),
+                            ->minValue(0.0001),
                         Select::make('sales_order_line_id')
                             ->options(static fn (): array => SalesOrderLine::query()
                                 ->orderBy('id')

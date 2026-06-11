@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Banking;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
@@ -83,13 +84,13 @@ final class BankReconciliationService
                 number_format(max(0, $expected_amount - 1), 4, '.', ''),
                 number_format($expected_amount + 1, 4, '.', ''),
             ])
-            ->when($bank_account_id !== null, static function ($query) use ($bank_account_id): void {
-                $query->where(static function ($query) use ($bank_account_id): void {
+            ->when($bank_account_id !== null, static function (Builder $query) use ($bank_account_id): void {
+                $query->where(static function (Builder $query) use ($bank_account_id): void {
                     $query->whereNull('bank_account_id')
                         ->orWhere('bank_account_id', $bank_account_id);
                 });
             })
-            ->when($booked_at !== null, static function ($query) use ($booked_at): void {
+            ->when($booked_at !== null, static function (Builder $query) use ($booked_at): void {
                 $query->whereBetween('payment_date', [
                     $booked_at->copy()->subDays(5)->format('Y-m-d'),
                     $booked_at->copy()->addDays(5)->format('Y-m-d'),

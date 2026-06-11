@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\Warehouse;
@@ -52,7 +52,7 @@ it('applies weighted average costing on inbound and outbound', function (): void
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($level->quantity)->toBe(20);
+    expect((string) $level->quantity)->toBe('20.0000');
     assert_decimal_close('10.0000', (string) $level->weighted_avg_cost);
 
     expect(StockCostLayer::query()->count())->toBe(0);
@@ -63,7 +63,7 @@ it('applies weighted average costing on inbound and outbound', function (): void
 
     $level->refresh();
 
-    expect($level->quantity)->toBe(15);
+    expect((string) $level->quantity)->toBe('15.0000');
     assert_decimal_close('10.0000', (string) $level->weighted_avg_cost);
 });
 
@@ -106,8 +106,46 @@ it('consumes fifo layers oldest first and sets movement unit cost', function ():
         ->get();
 
     expect($layers)->toHaveCount(2)
-        ->and((int) $layers[0]->qty_remaining)->toBe(0)
-        ->and((int) $layers[1]->qty_remaining)->toBe(8);
+        ->and((string) $layers[0]->qty_remaining)->toBe('0.0000')
+        ->and((string) $layers[1]->qty_remaining)->toBe('8.0000');
+});
+
+it('preserves fractional stock quantities', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'inv-decimal',
+        'name' => 'Inv Decimal',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Decimal Hub',
+        'code' => 'D-HUB',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Cable',
+        'sku' => 'C-1',
+        'uom' => 'm',
+        'costing_method' => 'weighted_avg',
+    ]);
+
+    $service = app(StockMovementService::class);
+
+    $inbound = $service->recordInbound($company->id, $item->id, $warehouse->id, '1.5000', '4.0000');
+    $outbound = $service->recordOutbound($company->id, $item->id, $warehouse->id, '0.2500');
+
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect((string) $inbound->quantity)->toBe('1.5000')
+        ->and((string) $outbound->quantity)->toBe('0.2500')
+        ->and((string) $level->quantity)->toBe('1.2500');
 });
 
 it('rejects outbound when quantity exceeds on hand stock', function (): void {

@@ -5,10 +5,10 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\StockLevel;
@@ -86,9 +86,9 @@ it('posts inbound stock and updates purchase order lines when posted_at is set',
         ->where('warehouse_id', $warehouse->id)
         ->firstOrFail();
 
-    expect($po_line->qty_received)->toBe(12)
+    expect((string) $po_line->qty_received)->toBe('12.0000')
         ->and($po->status)->toBe('partial')
-        ->and($level->quantity)->toBe(12)
+        ->and((string) $level->quantity)->toBe('12.0000')
         ->and($receipt->fresh()->inventory_posted_at)->not->toBeNull()
         ->and($receipt->fresh()->posted_at)->not->toBeNull();
 });
@@ -241,8 +241,8 @@ it('does not duplicate inbound stock on subsequent updates after posting', funct
         ->where('direction', 'in')
         ->count();
 
-    expect($stock_after_post->quantity)->toBe(8)
-        ->and($stock_after_metadata_update->quantity)->toBe(8)
+    expect((string) $stock_after_post->quantity)->toBe('8.0000')
+        ->and((string) $stock_after_metadata_update->quantity)->toBe('8.0000')
         ->and($inbound_count_after_post)->toBe(1)
         ->and($inbound_count_after_metadata_update)->toBe(1);
 });
@@ -368,5 +368,5 @@ it('marks purchase order as received when all lines are fully received', functio
     $receipt->update(['posted_at' => now()]);
 
     expect($po->fresh()->status)->toBe('received')
-        ->and($po_line->fresh()->qty_received)->toBe(5);
+        ->and((string) $po_line->fresh()->qty_received)->toBe('5.0000');
 });

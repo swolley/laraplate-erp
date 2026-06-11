@@ -104,7 +104,7 @@ final class PurchaseOrderForm
                             ->numeric()
                             ->required()
                             ->default(1)
-                            ->minValue(1),
+                            ->minValue(0.0001),
                         TextInput::make('qty_received')
                             ->numeric()
                             ->default(0)

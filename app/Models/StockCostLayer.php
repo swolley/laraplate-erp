@@ -61,6 +61,22 @@ final class StockCostLayer extends Model
         return $this->belongsTo(StockMovement::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'qty_remaining' => ['required', 'numeric', 'min:0'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'qty_remaining' => ['sometimes', 'numeric', 'min:0'],
+            'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        return $rules;
+    }
+
     /**
      * @return array<string, string>
      */
@@ -68,7 +84,7 @@ final class StockCostLayer extends Model
     protected function casts(): array
     {
         return [
-            'qty_remaining' => 'integer',
+            'qty_remaining' => 'decimal:4',
             'unit_cost' => 'decimal:4',
         ];
     }

@@ -41,9 +41,9 @@ final class BankStatementCsvImporter
                     'reference' => $row[$columns['reference']] ?? null,
                     'description' => $row[$columns['description']] ?? null,
                     'amount_doc' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_doc' => $row[$columns['currency_doc']] ?? $statement->bank_account?->currency ?? 'EUR',
+                    'currency_doc' => $row[$columns['currency_doc']] ?? $statement->bank_account->currency ?? 'EUR',
                     'amount_local' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_local' => $statement->bank_account?->currency ?? 'EUR',
+                    'currency_local' => $statement->bank_account->currency ?? 'EUR',
                     'fx_rate' => '1.00000000',
                     'status' => BankStatementLineStatus::Imported,
                     'raw_payload' => $row,
@@ -76,18 +76,18 @@ final class BankStatementCsvImporter
             }
 
             if ($headers === null) {
-                $headers = array_map(static fn ($header): string => mb_trim((string) $header), $row);
+                $headers = array_map(static fn (string|array|false $header): string => mb_trim((string) $header), $row);
+
+                if (count($headers) !== count(array_unique($headers))) {
+                    throw ValidationException::withMessages([
+                        'file' => ['The CSV header contains duplicate column names.'],
+                    ]);
+                }
 
                 continue;
             }
 
             $combined = array_combine($headers, array_pad($row, count($headers), null));
-
-            if ($combined === false) {
-                throw ValidationException::withMessages([
-                    'file' => ['The CSV row does not match the header shape.'],
-                ]);
-            }
 
             $rows[] = $combined;
         }

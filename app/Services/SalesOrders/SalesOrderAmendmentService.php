@@ -64,10 +64,10 @@ final readonly class SalesOrderAmendmentService
             ]);
 
             foreach ($locked_source->lines as $source_line) {
-                $delivered_or_invoiced = max((int) $source_line->qty_delivered, (int) $source_line->qty_invoiced);
-                $remaining_qty = max((int) $source_line->qty_ordered - $delivered_or_invoiced, 0);
+                $delivered_or_invoiced = max((float) $source_line->qty_delivered, (float) $source_line->qty_invoiced);
+                $remaining_qty = max((float) $source_line->qty_ordered - $delivered_or_invoiced, 0.0);
 
-                if ($remaining_qty === 0) {
+                if ($remaining_qty <= 0.0) {
                     continue;
                 }
 
@@ -75,9 +75,9 @@ final readonly class SalesOrderAmendmentService
                     'quotation_item_id' => $source_line->quotation_item_id,
                     'item_id' => $source_line->item_id,
                     'name' => $source_line->name,
-                    'qty_ordered' => $remaining_qty,
-                    'qty_delivered' => 0,
-                    'qty_invoiced' => 0,
+                    'qty_ordered' => number_format($remaining_qty, 4, '.', ''),
+                    'qty_delivered' => '0.0000',
+                    'qty_invoiced' => '0.0000',
                     'unit_price' => $source_line->unit_price,
                     'status' => SalesOrderLineStatus::Open,
                 ]);

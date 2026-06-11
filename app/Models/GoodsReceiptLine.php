@@ -36,6 +36,7 @@ final class GoodsReceiptLine extends Model
         'item_id',
         'warehouse_id',
         'quantity',
+        'qty_returned',
         'unit_cost',
         'purchase_order_line_id',
     ];
@@ -72,6 +73,24 @@ final class GoodsReceiptLine extends Model
         return $this->belongsTo(PurchaseOrderLine::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
+            'qty_returned' => ['sometimes', 'numeric', 'min:0'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+            'qty_returned' => ['sometimes', 'numeric', 'min:0'],
+            'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        return $rules;
+    }
+
     protected function shouldVersioning(): bool
     {
         return false;
@@ -80,7 +99,8 @@ final class GoodsReceiptLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
+            'qty_returned' => 'decimal:4',
             'unit_cost' => 'decimal:4',
         ];
     }

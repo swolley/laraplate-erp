@@ -57,7 +57,7 @@ final class GoodsReceiptForm
                             ->numeric()
                             ->required()
                             ->default(1)
-                            ->minValue(1),
+                            ->minValue(0.0001),
                         TextInput::make('unit_cost')
                             ->numeric()
                             ->required()

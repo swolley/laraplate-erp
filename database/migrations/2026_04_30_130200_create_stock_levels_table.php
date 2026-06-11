@@ -23,12 +23,15 @@ return new class extends Migration
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$stock_levels_table}_warehouse_id_FK")
                 ->cascadeOnDelete();
-            $table->integer('quantity')->default(0);
+            $table->decimal('quantity', 15, 4)->default(0);
             $table->decimal('weighted_avg_cost', 15, 4)->default(0);
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
             $table->unique(['company_id', 'item_id', 'warehouse_id'], "{$stock_levels_table}_company_item_wh_un");
         });
+
+        ERPMigrateUtils::nonNegativeCheck($stock_levels_table, 'sl_qty_nn_ck', 'quantity');
+        ERPMigrateUtils::nonNegativeCheck($stock_levels_table, 'sl_wac_nn_ck', 'weighted_avg_cost');
     }
 
     public function down(): void

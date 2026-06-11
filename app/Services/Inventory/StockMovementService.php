@@ -20,17 +20,20 @@ final class StockMovementService
      * Records an inbound stock movement, updates on-hand quantity, and applies
      * costing (FIFO layers or weighted average on {@see StockLevel}).
      *
+     * @param  numeric-string|float|int  $quantity
      * @param  numeric-string|float|int  $unit_cost
      */
     public function recordInbound(
         int $company_id,
         int $item_id,
         int $warehouse_id,
-        int $quantity,
+        string|float|int $quantity,
         string|float|int $unit_cost,
         ?Model $source = null,
     ): StockMovement {
-        if ($quantity <= 0) {
+        $quantity_string = $this->normalizeQuantityString($quantity);
+
+        if ((float) $quantity_string <= 0) {
             throw ValidationException::withMessages([
                 'quantity' => ['Inbound quantity must be greater than zero.'],
             ]);
@@ -38,7 +41,7 @@ final class StockMovementService
 
         $unit_cost_string = $this->normalizeMoneyString($unit_cost);
 
-        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity, $unit_cost_string, $source): StockMovement {
+        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity_string, $unit_cost_string, $source): StockMovement {
             $item = $this->resolveItem($company_id, $item_id);
             $this->assertWarehouseBelongsToCompany($company_id, $warehouse_id);
 
@@ -47,7 +50,7 @@ final class StockMovementService
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
                 'direction' => StockMovementDirection::In,
-                'quantity' => $quantity,
+                'quantity' => $quantity_string,
                 'unit_cost' => $unit_cost_string,
             ]);
 
@@ -65,27 +68,27 @@ final class StockMovementService
                     'item_id' => $item_id,
                     'warehouse_id' => $warehouse_id,
                     'stock_movement_id' => $movement->id,
-                    'qty_remaining' => $quantity,
+                    'qty_remaining' => $quantity_string,
                     'unit_cost' => $unit_cost_string,
                 ]);
 
-                $stock_level->quantity += $quantity;
+                $stock_level->quantity = $this->addDecimal((string) $stock_level->quantity, $quantity_string);
                 $this->syncFifoDisplayAverage($stock_level);
                 $stock_level->save();
 
                 return $movement;
             }
 
-            $old_qty = (int) $stock_level->quantity;
+            $old_qty = (string) $stock_level->quantity;
             $old_avg = (string) $stock_level->weighted_avg_cost;
-            $new_qty = $old_qty + $quantity;
-            $new_avg = $new_qty > 0
+            $new_qty = $this->addDecimal($old_qty, $quantity_string);
+            $new_avg = (float) $new_qty > 0
                 ? $this->divideDecimal(
                     $this->addDecimal(
-                        $this->multiplyDecimal((string) $old_qty, $old_avg),
-                        $this->multiplyDecimal((string) $quantity, $unit_cost_string),
+                        $this->multiplyDecimal($old_qty, $old_avg),
+                        $this->multiplyDecimal($quantity_string, $unit_cost_string),
                     ),
-                    (string) $new_qty,
+                    $new_qty,
                 )
                 : '0.0000';
 
@@ -100,27 +103,31 @@ final class StockMovementService
     /**
      * Records an outbound movement, reducing on-hand quantity and computing
      * {@see StockMovement::$unit_cost} from FIFO layers or the weighted average.
+     *
+     * @param  numeric-string|float|int  $quantity
      */
     public function recordOutbound(
         int $company_id,
         int $item_id,
         int $warehouse_id,
-        int $quantity,
+        string|float|int $quantity,
         ?Model $source = null,
     ): StockMovement {
-        if ($quantity <= 0) {
+        $quantity_string = $this->normalizeQuantityString($quantity);
+
+        if ((float) $quantity_string <= 0) {
             throw ValidationException::withMessages([
                 'quantity' => ['Outbound quantity must be greater than zero.'],
             ]);
         }
 
-        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity, $source): StockMovement {
+        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity_string, $source): StockMovement {
             $item = $this->resolveItem($company_id, $item_id);
             $this->assertWarehouseBelongsToCompany($company_id, $warehouse_id);
 
             $stock_level = $this->lockStockLevel($company_id, $item_id, $warehouse_id);
 
-            if ($stock_level->quantity < $quantity) {
+            if ((float) $stock_level->quantity < (float) $quantity_string) {
                 throw ValidationException::withMessages([
                     'quantity' => ['Insufficient stock for the requested quantity.'],
                 ]);
@@ -131,7 +138,7 @@ final class StockMovementService
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
                 'direction' => StockMovementDirection::Out,
-                'quantity' => $quantity,
+                'quantity' => $quantity_string,
                 'unit_cost' => null,
             ]);
 
@@ -144,12 +151,12 @@ final class StockMovementService
                     $company_id,
                     $item_id,
                     $warehouse_id,
-                    $quantity,
+                    $quantity_string,
                 );
                 $movement->unit_cost = $movement_unit_cost;
                 $movement->save();
 
-                $stock_level->quantity -= $quantity;
+                $stock_level->quantity = $this->subtractDecimal((string) $stock_level->quantity, $quantity_string);
                 $this->syncFifoDisplayAverage($stock_level);
                 $stock_level->save();
 
@@ -160,10 +167,10 @@ final class StockMovementService
             $movement->unit_cost = $avg;
             $movement->save();
 
-            $new_qty = (int) $stock_level->quantity - $quantity;
+            $new_qty = $this->subtractDecimal((string) $stock_level->quantity, $quantity_string);
             $stock_level->quantity = $new_qty;
 
-            if ($new_qty === 0) {
+            if ((float) $new_qty === 0.0) {
                 $stock_level->weighted_avg_cost = '0.0000';
             }
 
@@ -222,7 +229,7 @@ final class StockMovementService
             'company_id' => $company_id,
             'item_id' => $item_id,
             'warehouse_id' => $warehouse_id,
-            'quantity' => 0,
+            'quantity' => '0.0000',
             'weighted_avg_cost' => '0.0000',
         ]);
     }
@@ -235,7 +242,7 @@ final class StockMovementService
         int $company_id,
         int $item_id,
         int $warehouse_id,
-        int $quantity_out,
+        string $quantity_out,
     ): string {
         $layers = StockCostLayer::query()
             ->where('company_id', $company_id)
@@ -246,13 +253,13 @@ final class StockMovementService
             ->lockForUpdate()
             ->get();
 
-        $available = 0;
+        $available = '0.0000';
 
         foreach ($layers as $layer) {
-            $available += (int) $layer->qty_remaining;
+            $available = $this->addDecimal($available, (string) $layer->qty_remaining);
         }
 
-        if ($available < $quantity_out) {
+        if ((float) $available < (float) $quantity_out) {
             throw ValidationException::withMessages([
                 'quantity' => ['Insufficient stock for the requested quantity.'],
             ]);
@@ -262,28 +269,28 @@ final class StockMovementService
         $total_cost = '0.0000';
 
         foreach ($layers as $layer) {
-            if ($remaining_to_take === 0) {
+            if ((float) $remaining_to_take === 0.0) {
                 break;
             }
 
-            $layer_qty = (int) $layer->qty_remaining;
+            $layer_qty = (string) $layer->qty_remaining;
 
-            if ($layer_qty === 0) {
+            if ((float) $layer_qty === 0.0) {
                 continue;
             }
 
-            $take = min($layer_qty, $remaining_to_take);
-            $layer_cost = $this->multiplyDecimal((string) $take, (string) $layer->unit_cost);
+            $take = $this->minDecimal($layer_qty, $remaining_to_take);
+            $layer_cost = $this->multiplyDecimal($take, (string) $layer->unit_cost);
             $total_cost = $this->addDecimal($total_cost, $layer_cost);
 
-            $new_remaining = $layer_qty - $take;
+            $new_remaining = $this->subtractDecimal($layer_qty, $take);
             $layer->qty_remaining = $new_remaining;
             $layer->save();
 
-            $remaining_to_take -= $take;
+            $remaining_to_take = $this->subtractDecimal($remaining_to_take, $take);
         }
 
-        return $this->divideDecimal($total_cost, (string) $quantity_out);
+        return $this->divideDecimal($total_cost, $quantity_out);
     }
 
     private function syncFifoDisplayAverage(StockLevel $stock_level): void
@@ -301,24 +308,29 @@ final class StockMovementService
             return;
         }
 
-        $layer_qty_sum = 0;
+        $layer_qty_sum = '0.0000';
         $value = '0.0000';
 
         foreach ($layers as $layer) {
-            $layer_qty_sum += (int) $layer->qty_remaining;
+            $layer_qty_sum = $this->addDecimal($layer_qty_sum, (string) $layer->qty_remaining);
             $value = $this->addDecimal(
                 $value,
                 $this->multiplyDecimal((string) $layer->qty_remaining, (string) $layer->unit_cost),
             );
         }
 
-        if ($layer_qty_sum === 0) {
+        if ((float) $layer_qty_sum === 0.0) {
             $stock_level->weighted_avg_cost = '0.0000';
 
             return;
         }
 
-        $stock_level->weighted_avg_cost = $this->divideDecimal($value, (string) $layer_qty_sum);
+        $stock_level->weighted_avg_cost = $this->divideDecimal($value, $layer_qty_sum);
+    }
+
+    private function normalizeQuantityString(string|float|int $value): string
+    {
+        return $this->formatMoney4((float) $value);
     }
 
     private function normalizeMoneyString(string|float|int $value): string
@@ -331,6 +343,16 @@ final class StockMovementService
     private function addDecimal(string $a, string $b): string
     {
         return $this->formatMoney4((float) $a + (float) $b);
+    }
+
+    private function subtractDecimal(string $a, string $b): string
+    {
+        return $this->formatMoney4((float) $a - (float) $b);
+    }
+
+    private function minDecimal(string $a, string $b): string
+    {
+        return (float) $a <= (float) $b ? $this->formatMoney4((float) $a) : $this->formatMoney4((float) $b);
     }
 
     private function multiplyDecimal(string $a, string $b): string

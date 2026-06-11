@@ -26,13 +26,16 @@ return new class extends Migration
             $table->foreignId('stock_movement_id')
                 ->constrained(ERPTables::StockMovements->value, 'id', "{$stock_cost_layers_table}_stock_movement_id_FK")
                 ->restrictOnDelete();
-            $table->unsignedInteger('qty_remaining');
+            $table->decimal('qty_remaining', 15, 4);
             $table->decimal('unit_cost', 15, 4);
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
 
             $table->index(['company_id', 'item_id', 'warehouse_id'], "{$stock_cost_layers_table}_company_item_wh_idx");
         });
+
+        ERPMigrateUtils::nonNegativeCheck($stock_cost_layers_table, 'scl_qr_nn_ck', 'qty_remaining');
+        ERPMigrateUtils::nonNegativeCheck($stock_cost_layers_table, 'scl_uc_nn_ck', 'unit_cost');
     }
 
     public function down(): void

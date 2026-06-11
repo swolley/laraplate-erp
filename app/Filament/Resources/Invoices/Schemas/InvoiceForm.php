@@ -139,10 +139,10 @@ final class InvoiceForm
 
                                         return DeliveryNoteLine::query()
                                             ->where('company_id', (int) $company_id)
-                                            ->whereHas('delivery_note', static fn ($query) => $query->whereNotNull('posted_at'))
+                                            ->whereHas('delivery_note', static fn (Builder $query): Builder => $query->whereNotNull('posted_at'))
                                             ->when(
                                                 $search !== '',
-                                                static fn ($query) => $query->where('id', 'like', '%' . $search . '%'),
+                                                static fn (Builder $query): Builder => $query->where('id', 'like', '%' . $search . '%'),
                                             )
                                             ->orderByDesc('id')
                                             ->limit(25)
@@ -152,12 +152,12 @@ final class InvoiceForm
                                             ])
                                             ->all();
                                     })
-                                    ->getOptionLabelUsing(static fn ($value): ?string => $value === null
+                                    ->getOptionLabelUsing(static fn (int $value): ?string => $value === null
                                         ? null
                                         : 'DDT line #' . $value),
                                 TextInput::make('quantity')
                                     ->numeric()
-                                    ->minValue(1)
+                                    ->minValue(0.0001)
                                     ->required(),
                             ])
                             ->defaultItems(0)

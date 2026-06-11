@@ -20,7 +20,7 @@ use Override;
 final class Presettable extends CorePresettable
 {
     /**
-     * @return BelongsTo<Preset>
+     * @return BelongsTo<\Modules\Core\Models\Preset>
      */
     #[Override]
     public function preset(): BelongsTo
@@ -29,7 +29,7 @@ final class Presettable extends CorePresettable
     }
 
     /**
-     * @return BelongsTo<Entity>
+     * @return BelongsTo<\Modules\Core\Models\Entity>
      */
     #[Override]
     public function entity(): BelongsTo

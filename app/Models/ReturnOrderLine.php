@@ -29,6 +29,7 @@ final class ReturnOrderLine extends Model
         'company_id',
         'return_order_id',
         'invoice_line_id',
+        'delivery_note_line_id',
         'item_id',
         'warehouse_id',
         'quantity',
@@ -59,6 +60,30 @@ final class ReturnOrderLine extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    /**
+     * @return BelongsTo<DeliveryNoteLine, $this>
+     */
+    public function delivery_note_line(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryNoteLine::class);
+    }
+
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
+            'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+            'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+        ]);
+
+        return $rules;
+    }
+
     protected static function booted(): void
     {
         self::creating(static function (ReturnOrderLine $line): void {
@@ -73,7 +98,7 @@ final class ReturnOrderLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
         ];
     }

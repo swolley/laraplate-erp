@@ -54,7 +54,7 @@ final class ErpCompanySettings
     /**
      * Global {@see Setting} rows (group {@see GLOBAL_SETTINGS_GROUP}) aligned with {@see defaultSettings()}.
      *
-     * @return array<int, array{name: string, value: mixed, type: SettingTypeEnum, group_name: string, description: string}>
+     * @return array<int, array{name: string, value: mixed, type: SettingTypeEnum, group_name: string, description: string, choices?: list<string>}>
      */
     public static function globalSettingDefinitions(): array
     {

@@ -177,7 +177,15 @@ final readonly class InvoicePostingService
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<array{
+     *     account_id: int,
+     *     amount_doc: string,
+     *     currency_doc: string,
+     *     amount_local: string,
+     *     currency_local: string,
+     *     fx_rate: string,
+     *     description: string,
+     * }>
      */
     private function buildJournalLines(
         Company $company,
@@ -274,9 +282,9 @@ final readonly class InvoicePostingService
 
             $order_id = (int) $sales_order_line->sales_order_id;
             $line_id = (int) $sales_order_line->id;
-            $quantity = (int) (float) $line->quantity;
+            $quantity = (float) $line->quantity;
 
-            if ($quantity <= 0) {
+            if ($quantity <= 0.0) {
                 continue;
             }
 
@@ -284,7 +292,12 @@ final readonly class InvoicePostingService
                 $quantities_by_order[$order_id] = [];
             }
 
-            $quantities_by_order[$order_id][$line_id] = ($quantities_by_order[$order_id][$line_id] ?? 0) + $quantity;
+            $quantities_by_order[$order_id][$line_id] = number_format(
+                (float) ($quantities_by_order[$order_id][$line_id] ?? 0) + $quantity,
+                4,
+                '.',
+                '',
+            );
         }
 
         foreach ($quantities_by_order as $order_id => $line_quantities) {
@@ -321,6 +334,17 @@ final readonly class InvoicePostingService
 
     /**
      * @return array<string, mixed>
+     */
+    /**
+     * @return array{
+     *     account_id: int,
+     *     amount_doc: string,
+     *     currency_doc: string,
+     *     amount_local: string,
+     *     currency_local: string,
+     *     fx_rate: string,
+     *     description: string,
+     * }
      */
     private function line(int $account_id, string $amount, string $currency, string $fx_rate, string $description): array
     {

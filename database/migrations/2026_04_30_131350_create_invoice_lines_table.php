@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Helpers\MigrateUtils;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Helpers\ERPMigrateUtils;
 
 return new class extends Migration
 {
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('line_no');
             $table->text('description')->nullable();
             $table->decimal('quantity', 15, 4)->default(1);
+            $table->decimal('qty_returned', 15, 4)->default(0);
             $table->decimal('unit_price', 15, 4);
             $table->foreignId('tax_code_id')
                 ->nullable()
@@ -49,6 +51,9 @@ return new class extends Migration
                 hasSoftDelete: true,
             );
         });
+
+        ERPMigrateUtils::positiveCheck($invoice_lines_table, 'il_qty_pos_ck', 'quantity');
+        ERPMigrateUtils::nonNegativeCheck($invoice_lines_table, 'il_qret_nn_ck', 'qty_returned');
     }
 
     public function down(): void

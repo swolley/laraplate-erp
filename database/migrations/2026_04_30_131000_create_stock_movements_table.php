@@ -25,7 +25,7 @@ return new class extends Migration
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$stock_movements_table}_warehouse_id_FK")
                 ->restrictOnDelete();
             $table->enum('direction', StockMovementDirection::values())->index("{$stock_movements_table}_direction_IDX");
-            $table->unsignedInteger('quantity')->comment('Always positive; sign implied by direction');
+            $table->decimal('quantity', 15, 4)->comment('Always positive; sign implied by direction');
             $table->decimal('unit_cost', 15, 4)->nullable()->comment('Document or computed unit cost for this movement');
             $table->string('source_type')->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
@@ -35,6 +35,9 @@ return new class extends Migration
             $table->index(['company_id', 'item_id', 'warehouse_id'], "{$stock_movements_table}_company_item_wh_idx");
             $table->index(['source_type', 'source_id'], "{$stock_movements_table}_source_idx");
         });
+
+        ERPMigrateUtils::positiveCheck($stock_movements_table, 'sm_qty_pos_ck', 'quantity');
+        ERPMigrateUtils::nullableNonNegativeCheck($stock_movements_table, 'sm_uc_nn_ck', 'unit_cost');
     }
 
     public function down(): void

@@ -19,6 +19,7 @@ use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Filament\Resources\Invoices\Actions\InvoicePostingActions;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
+use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
@@ -49,7 +50,7 @@ final class EditInvoice extends EditRecord
                 'unit_price' => $line->unit_price,
                 'tax_code_id' => $line->tax_code_id,
                 'delivery_note_line_links' => $line->delivery_note_lines
-                    ->map(static fn ($dn_line): array => [
+                    ->map(static fn (DeliveryNoteLine $dn_line): array => [
                         'delivery_note_line_id' => $dn_line->id,
                         'quantity' => $dn_line->pivot->quantity,
                     ])
@@ -219,7 +220,7 @@ final class EditInvoice extends EditRecord
                 continue;
             }
 
-            $pivot[(int) $delivery_note_line_id] = ['quantity' => (int) $link['quantity']];
+            $pivot[(int) $delivery_note_line_id] = ['quantity' => number_format((float) $link['quantity'], 4, '.', '')];
         }
 
         $invoice_line->delivery_note_lines()->sync($pivot);

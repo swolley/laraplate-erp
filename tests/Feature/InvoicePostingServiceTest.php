@@ -6,21 +6,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
-use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Casts\InvoiceType;
+use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
-use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\DocumentSequence;
-use Modules\ERP\Models\Item;
-use Modules\ERP\Models\Party;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\Item;
+use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
-use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\TaxCode;
@@ -106,7 +106,7 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
     expect($invoice->journal_entry_id)->not->toBeNull()
         ->and($invoice->reference)->not->toBeNull()
         ->and($invoice->reference)->toBeString()
-        ->and($so_line->qty_invoiced)->toBe(2)
+        ->and((string) $so_line->qty_invoiced)->toBe('2.0000')
         ->and($so_line->status)->toBe(SalesOrderLineStatus::PartiallyEvased);
 
     $line = $invoice->lines()->firstOrFail();
@@ -166,7 +166,7 @@ it('reverses invoice posting and rolls back invoiced quantities when unposted', 
 
     expect($invoice->journal_entry_id)->toBeNull()
         ->and($invoice->reference)->toBeNull()
-        ->and($so_line->qty_invoiced)->toBe(0)
+        ->and((string) $so_line->qty_invoiced)->toBe('0.0000')
         ->and($so_line->status)->toBe(SalesOrderLineStatus::Open);
 
     $reversal = JournalEntry::query()->withoutGlobalScopes()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Pricing;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DiscountType;
@@ -39,19 +40,19 @@ final class PriceResolverService
         /** @var PriceListItem|null $price_list_item */
         $price_list_item = PriceListItem::query()
             ->where('taxonomy_id', $item->taxonomy_id)
-            ->where(function ($query) use ($date): void {
+            ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
             })
-            ->where(function ($query) use ($date): void {
+            ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
             })
-            ->whereHas('price_list', function ($query) use ($company_id, $currency, $date): void {
+            ->whereHas('price_list', function (Builder $query) use ($company_id, $currency, $date): void {
                 $query->where('company_id', $company_id)
                     ->where('currency', $currency)
-                    ->where(function ($query) use ($date): void {
+                    ->where(function (Builder $query) use ($date): void {
                         $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
                     })
-                    ->where(function ($query) use ($date): void {
+                    ->where(function (Builder $query) use ($date): void {
                         $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
                     });
             })
@@ -81,24 +82,24 @@ final class PriceResolverService
         /** @var PartyPriceRule|null $rule */
         $rule = PartyPriceRule::query()
             ->where('company_id', $company_id)
-            ->where(function ($query) use ($party_id): void {
+            ->where(function (Builder $query) use ($party_id): void {
                 $query->whereNull('party_id');
 
                 if ($party_id !== null) {
                     $query->orWhere('party_id', $party_id);
                 }
             })
-            ->where(function ($query) use ($item): void {
+            ->where(function (Builder $query) use ($item): void {
                 $query->where('item_id', $item->getKey());
 
                 if ($item->taxonomy_id !== null) {
                     $query->orWhere('taxonomy_id', $item->taxonomy_id);
                 }
             })
-            ->where(function ($query) use ($date): void {
+            ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
             })
-            ->where(function ($query) use ($date): void {
+            ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
             })
             ->orderByDesc('party_id')

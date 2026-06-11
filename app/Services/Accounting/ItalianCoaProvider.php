@@ -20,13 +20,21 @@ final class ItalianCoaProvider implements ChartOfAccountsProvider
     #[Override]
     public function definitions(): array
     {
-        $d = static fn (string $code, string $name, AccountKind $kind, ?string $parent, array $meta = []): array => [
-            'code' => $code,
-            'name' => $name,
-            'kind' => $kind,
-            'parent_code' => $parent,
-            ...($meta === [] ? [] : ['meta' => $meta]),
-        ];
+        /** @return array{code: string, name: string, kind: AccountKind, parent_code: string|null, meta?: array<string, mixed>} */
+        $d = static function (string $code, string $name, AccountKind $kind, ?string $parent, array $meta = []): array {
+            $definition = [
+                'code' => $code,
+                'name' => $name,
+                'kind' => $kind,
+                'parent_code' => $parent,
+            ];
+
+            if ($meta !== []) {
+                $definition['meta'] = $meta;
+            }
+
+            return $definition;
+        };
 
         return [
             // Attivo (assets)

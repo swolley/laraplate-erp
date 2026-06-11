@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$delivery_note_lines_table}_warehouse_id_FK")
                 ->restrictOnDelete();
-            $table->unsignedInteger('quantity');
+            $table->decimal('quantity', 15, 4);
             $table->foreignId('sales_order_line_id')
                 ->nullable()
                 ->constrained(ERPTables::SalesOrderLines->value, 'id', "{$delivery_note_lines_table}_sales_order_line_id_FK")
@@ -40,6 +40,8 @@ return new class extends Migration
                 "{$delivery_note_lines_table}_company_item_wh_idx",
             );
         });
+
+        ERPMigrateUtils::positiveCheck($delivery_note_lines_table, 'dnl_qty_pos_ck', 'quantity');
     }
 
     public function down(): void

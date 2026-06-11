@@ -130,7 +130,7 @@ it('builds invoice line defaults from a sales order line and current party prici
 
     expect($defaults)->toMatchArray([
         'description' => 'Implementation work',
-        'quantity' => 3,
+        'quantity' => '3.0000',
         'unit_price' => '85.0000',
     ]);
 });

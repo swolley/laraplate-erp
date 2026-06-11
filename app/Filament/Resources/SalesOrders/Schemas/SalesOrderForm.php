@@ -87,7 +87,7 @@ final class SalesOrderForm
                             ->numeric()
                             ->required()
                             ->default(1)
-                            ->minValue(1),
+                            ->minValue(0.0001),
                         TextInput::make('qty_delivered')
                             ->numeric()
                             ->default(0)

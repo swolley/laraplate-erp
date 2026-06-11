@@ -64,7 +64,7 @@ final class SupplierReturnForm
                             ->required(),
                         TextInput::make('quantity')
                             ->numeric()
-                            ->minValue(1)
+                            ->minValue(0.0001)
                             ->required(),
                     ])
                     ->defaultItems(1)

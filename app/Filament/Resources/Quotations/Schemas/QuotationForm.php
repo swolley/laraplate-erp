@@ -104,7 +104,7 @@ final class QuotationForm
                             ->numeric()
                             ->required()
                             ->default(1)
-                            ->minValue(1)
+                            ->minValue(0.0001)
                             ->maxValue(65535),
                         TextInput::make('unit_price')
                             ->numeric()

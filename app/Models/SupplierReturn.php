@@ -32,6 +32,7 @@ final class SupplierReturn extends Model
         'party_id',
         'purchase_order_id',
         'debit_note_invoice_id',
+        'delivery_note_id',
         'reference',
         'status',
         'processed_at',
@@ -52,6 +53,14 @@ final class SupplierReturn extends Model
     public function purchase_order(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryNote, $this>
+     */
+    public function delivery_note(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryNote::class);
     }
 
     /**

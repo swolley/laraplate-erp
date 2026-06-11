@@ -61,7 +61,7 @@ final class CreateInvoice extends CreateRecord
                 continue;
             }
 
-            $pivot[(int) $delivery_note_line_id] = ['quantity' => (int) $link['quantity']];
+            $pivot[(int) $delivery_note_line_id] = ['quantity' => number_format((float) $link['quantity'], 4, '.', '')];
         }
 
         $invoice_line->delivery_note_lines()->sync($pivot);

@@ -64,7 +64,7 @@ final readonly class GoodsReceiptInventoryService
                     (int) $locked->company_id,
                     (int) $line->item_id,
                     (int) $line->warehouse_id,
-                    (int) $line->quantity,
+                    (string) $line->quantity,
                     (string) $line->unit_cost,
                     $line,
                 );
@@ -79,7 +79,7 @@ final readonly class GoodsReceiptInventoryService
                     }
 
                     $po_line_id = (int) $line->purchase_order_line_id;
-                    $quantities[$po_line_id] = ($quantities[$po_line_id] ?? 0) + (int) $line->quantity;
+                    $quantities[$po_line_id] = $this->addQuantity($quantities[$po_line_id] ?? '0.0000', (string) $line->quantity);
                 }
 
                 if ($quantities !== []) {
@@ -175,9 +175,9 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            $remaining = (int) $po_line->qty_ordered - (int) $po_line->qty_received;
+            $remaining = (float) $po_line->qty_ordered - (float) $po_line->qty_received;
 
-            if ($remaining < (int) $line->quantity) {
+            if ($remaining < (float) $line->quantity) {
                 throw ValidationException::withMessages([
                     'quantity' => ['Receipt quantity exceeds remaining quantity to receive on the purchase order line.'],
                 ]);
@@ -186,12 +186,12 @@ final readonly class GoodsReceiptInventoryService
     }
 
     /**
-     * @param  array<int, int>  $line_quantities
+     * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     private function registerPurchaseReceipts(PurchaseOrder $purchase_order, array $line_quantities): void
     {
         foreach ($line_quantities as $line_id => $qty) {
-            if ($qty <= 0) {
+            if ((float) $qty <= 0) {
                 continue;
             }
 
@@ -205,9 +205,11 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            $po_line->qty_received = min(
-                (int) $po_line->qty_ordered,
-                (int) $po_line->qty_received + $qty,
+            $po_line->qty_received = number_format(
+                min((float) $po_line->qty_ordered, (float) $po_line->qty_received + (float) $qty),
+                4,
+                '.',
+                '',
             );
             $po_line->save();
         }
@@ -240,5 +242,10 @@ final readonly class GoodsReceiptInventoryService
             $purchase_order->status = 'partial';
             $purchase_order->saveQuietly();
         }
+    }
+
+    private function addQuantity(string $left, string $right): string
+    {
+        return number_format((float) $left + (float) $right, 4, '.', '');
     }
 }

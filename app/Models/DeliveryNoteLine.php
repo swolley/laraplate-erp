@@ -83,6 +83,20 @@ final class DeliveryNoteLine extends Model
         )->withPivot('quantity');
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+        ]);
+
+        return $rules;
+    }
+
     protected function shouldVersioning(): bool
     {
         return false;
@@ -91,7 +105,7 @@ final class DeliveryNoteLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
         ];
     }
 }

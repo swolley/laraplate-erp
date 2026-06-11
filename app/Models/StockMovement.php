@@ -75,6 +75,24 @@ final class StockMovement extends Model
         return $this->hasMany(StockCostLayer::class);
     }
 
+    #[Override]
+    public function getRules(): array
+    {
+        $rules = parent::getRules();
+        $rules['create'] = array_merge($rules['create'], [
+            'direction' => ['required', 'string', StockMovementDirection::validationRule()],
+            'quantity' => ['required', 'numeric', 'min:0.0001'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        $rules['update'] = array_merge($rules['update'], [
+            'direction' => ['sometimes', 'string', StockMovementDirection::validationRule()],
+            'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        return $rules;
+    }
+
     /**
      * @return array<string, string>
      */
@@ -83,7 +101,7 @@ final class StockMovement extends Model
     {
         return [
             'direction' => StockMovementDirection::class,
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
         ];
     }
