@@ -16,7 +16,6 @@ use Override;
 
 /**
  * @property DiscountType $discount_type
- *
  * @mixin \Eloquent
  * @mixin IdeHelperPartyPriceRule
  */

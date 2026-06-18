@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Casts\TracingType;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
@@ -37,7 +38,21 @@ final class Item extends Model
         'uom',
         'costing_method',
         'taxonomy_id',
+        'tracing_type',
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'tracing_type' => TracingType::class,
+        ];
+    }
 
     /**
      * @return BelongsTo<Company, $this>
