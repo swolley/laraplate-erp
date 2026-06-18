@@ -5,12 +5,15 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DeliveryNoteDirection;
+use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
+use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
@@ -231,4 +234,95 @@ it('cancels draft supplier returns', function (): void {
     $cancelled = app(SupplierReturnService::class)->cancel($supplier_return);
 
     expect($cancelled->status)->toBe(ReturnStatus::Cancelled);
+});
+
+it('creates a manual debit note draft for processed supplier returns from purchase order lines', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $returned_purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+        'unit_price' => '11.5000',
+    ]);
+    PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Kept supplier item',
+        'qty_ordered' => 3,
+        'qty_received' => 3,
+        'unit_price' => '9.0000',
+    ]);
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $returned_purchase_order_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+    ]);
+
+    $debit_note = app(SupplierReturnService::class)->createDebitNote($supplier_return);
+
+    expect($debit_note)->toBeInstanceOf(Invoice::class)
+        ->and($debit_note->invoice_type)->toBe(InvoiceType::DebitNote)
+        ->and($debit_note->direction)->toBe(InvoiceDirection::Purchase)
+        ->and((int) $debit_note->party_id)->toBe((int) $party->id)
+        ->and((int) $supplier_return->fresh()->debit_note_invoice_id)->toBe((int) $debit_note->id)
+        ->and($debit_note->lines()->count())->toBe(1)
+        ->and((string) $debit_note->lines()->firstOrFail()->quantity)->toBe('2.0000')
+        ->and((string) $debit_note->lines()->firstOrFail()->unit_price)->toBe('11.5000');
+});
+
+it('prevents creating duplicate supplier return debit notes', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+        'unit_price' => '11.5000',
+    ]);
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $purchase_order_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+    ]);
+
+    $service = app(SupplierReturnService::class);
+    $service->createDebitNote($supplier_return);
+
+    expect(fn () => $service->createDebitNote($supplier_return->fresh()))
+        ->toThrow(ValidationException::class);
 });

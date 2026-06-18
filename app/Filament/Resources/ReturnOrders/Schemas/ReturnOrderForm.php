@@ -38,6 +38,11 @@ final class ReturnOrderForm
                     ->relationship('invoice', 'reference')
                     ->searchable()
                     ->preload(),
+                Select::make('credit_note_invoice_id')
+                    ->relationship('credit_note_invoice', 'reference')
+                    ->searchable()
+                    ->preload()
+                    ->disabled(),
                 TextInput::make('reference')
                     ->maxLength(64),
                 Select::make('status')

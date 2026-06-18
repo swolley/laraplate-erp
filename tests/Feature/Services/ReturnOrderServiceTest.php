@@ -14,6 +14,7 @@ use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\Party;
@@ -54,6 +55,16 @@ function createReturnOrderFixtures(): array
     ]);
 
     return [$company, $party, $warehouse, $item];
+}
+
+function createFiscalYearForReturnOrderCompany(Company $company): void
+{
+    FiscalYear::query()->create([
+        'company_id' => $company->id,
+        'year' => (int) now()->format('Y'),
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->endOfYear()->toDateString(),
+    ]);
 }
 
 it('approves customer returns from draft', function (): void {
@@ -263,6 +274,100 @@ it('prevents completing the same customer return twice', function (): void {
     $service->complete($return_order);
 
     expect(fn () => $service->complete($return_order->fresh()))
+        ->toThrow(ValidationException::class);
+});
+
+it('creates a manual credit note for processed customer returns from the source invoice', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+    createFiscalYearForReturnOrderCompany($company);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $returned_invoice_line = $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned item',
+        'quantity' => 5,
+        'unit_price' => 10,
+    ]);
+    $invoice->lines()->create([
+        'line_no' => 2,
+        'description' => 'Kept item',
+        'quantity' => 3,
+        'unit_price' => 15,
+    ]);
+    $invoice->update(['posted_at' => now()]);
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'invoice_id' => $invoice->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'invoice_line_id' => $returned_invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_cost' => '12.5000',
+    ]);
+
+    $credit_note = app(ReturnOrderService::class)->createCreditNote($return_order);
+
+    expect($credit_note->invoice_type)->toBe(InvoiceType::CreditNote)
+        ->and($credit_note->direction)->toBe(InvoiceDirection::Sale)
+        ->and((int) $credit_note->credited_invoice_id)->toBe((int) $invoice->id)
+        ->and((int) $credit_note->party_id)->toBe((int) $party->id)
+        ->and((int) $return_order->fresh()->credit_note_invoice_id)->toBe((int) $credit_note->id)
+        ->and($credit_note->lines()->count())->toBe(1)
+        ->and((string) $credit_note->lines()->firstOrFail()->quantity)->toBe('2.0000');
+});
+
+it('prevents creating duplicate customer return credit notes', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+    createFiscalYearForReturnOrderCompany($company);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $invoice_line = $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned item',
+        'quantity' => 5,
+        'unit_price' => 10,
+    ]);
+    $invoice->update(['posted_at' => now()]);
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'invoice_id' => $invoice->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'invoice_line_id' => $invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_cost' => '12.5000',
+    ]);
+
+    $service = app(ReturnOrderService::class);
+    $service->createCreditNote($return_order);
+
+    expect(fn () => $service->createCreditNote($return_order->fresh()))
         ->toThrow(ValidationException::class);
 });
 

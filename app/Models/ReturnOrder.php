@@ -56,6 +56,14 @@ final class ReturnOrder extends Model
     }
 
     /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function credit_note_invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'credit_note_invoice_id');
+    }
+
+    /**
      * @return BelongsTo<DeliveryNote, $this>
      */
     public function delivery_note(): BelongsTo

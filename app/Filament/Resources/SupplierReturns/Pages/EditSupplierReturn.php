@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Casts\ReturnStatus;
+use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Services\Returns\SupplierReturnService;
@@ -71,6 +72,18 @@ final class EditSupplierReturn extends EditRecord
                         ->title('Supplier return cancelled')
                         ->success()
                         ->send();
+                }),
+            Action::make('create_debit_note')
+                ->label('Create Debit Note')
+                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record instanceof SupplierReturn
+                    && $this->record->status === ReturnStatus::Processed
+                    && $this->record->purchase_order_id !== null
+                    && $this->record->debit_note_invoice_id === null)
+                ->action(function (): void {
+                    $debit_note = app(SupplierReturnService::class)->createDebitNote($this->record);
+                    $this->redirect(InvoiceResource::getUrl('edit', ['record' => $debit_note]));
                 }),
             DeleteAction::make(),
         ];

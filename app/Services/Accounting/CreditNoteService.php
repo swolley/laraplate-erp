@@ -43,6 +43,7 @@ final class CreditNoteService
 
             $credit_note = Invoice::query()->create([
                 'company_id' => $original->company_id,
+                'party_id' => $original->party_id,
                 'direction' => $original->direction,
                 'invoice_type' => InvoiceType::CreditNote->value,
                 'credited_invoice_id' => $original->id,

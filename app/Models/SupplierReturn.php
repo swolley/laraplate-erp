@@ -56,6 +56,14 @@ final class SupplierReturn extends Model
     }
 
     /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function debit_note_invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'debit_note_invoice_id');
+    }
+
+    /**
      * @return BelongsTo<DeliveryNote, $this>
      */
     public function delivery_note(): BelongsTo

@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Casts\ReturnStatus;
+use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Services\Returns\ReturnOrderService;
@@ -71,6 +72,18 @@ final class EditReturnOrder extends EditRecord
                         ->title('Return cancelled')
                         ->success()
                         ->send();
+                }),
+            Action::make('create_credit_note')
+                ->label('Create Credit Note')
+                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record instanceof ReturnOrder
+                    && $this->record->status === ReturnStatus::Processed
+                    && $this->record->invoice_id !== null
+                    && $this->record->credit_note_invoice_id === null)
+                ->action(function (): void {
+                    $credit_note = app(ReturnOrderService::class)->createCreditNote($this->record);
+                    $this->redirect(InvoiceResource::getUrl('edit', ['record' => $credit_note]));
                 }),
             DeleteAction::make(),
         ];

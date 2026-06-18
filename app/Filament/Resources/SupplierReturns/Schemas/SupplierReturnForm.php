@@ -38,6 +38,11 @@ final class SupplierReturnForm
                     ->relationship('purchase_order', 'reference')
                     ->searchable()
                     ->preload(),
+                Select::make('debit_note_invoice_id')
+                    ->relationship('debit_note_invoice', 'reference')
+                    ->searchable()
+                    ->preload()
+                    ->disabled(),
                 TextInput::make('reference')
                     ->maxLength(64),
                 Select::make('status')
