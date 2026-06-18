@@ -141,6 +141,17 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **credited_invoice_id** | FK on `invoices` linking a credit/debit note to the original invoice. |
 | **Inverted journal** | Credit notes produce journal entries with flipped debits/credits (negative amounts in `buildJournalLines`). |
 
+## Returns management (M6.2)
+
+| Term | Meaning |
+|------|---------|
+| **ReturnOrder** | Customer-return workflow header: approval, cancellation, completion, source invoice link, generated DDT link, and manual credit-note follow-up link. |
+| **ReturnOrderLine** | Customer-return line with item, warehouse, quantity, optional source invoice line, DDT line link, and optional manual inventory cost. |
+| **SupplierReturn** | Supplier-return workflow header: approval, cancellation, completion, source purchase order link, generated DDT link, and manual debit-note follow-up link. |
+| **SupplierReturnLine** | Supplier-return line with item, warehouse, quantity, optional purchase order / goods receipt source links, and generated DDT line link. |
+| **ReturnStatus** | Enum: `draft`, `approved`, `processed`, `cancelled`. |
+| **Return DDT** | Customer returns generate inbound DDTs; supplier returns generate outbound DDTs. DDT lines remain quantity/source-link only. |
+
 ## VAT registers & settlement (M5.3 — Italian compliance)
 
 | Term | Meaning |

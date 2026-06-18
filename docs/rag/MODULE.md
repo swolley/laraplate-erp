@@ -492,6 +492,49 @@ flowchart LR
   Posting -->|"sectional numbering"| DocSeq
 ```
 
+### Returns Management
+
+
+| Service                         | Purpose                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `ReturnOrderService`            | Orchestrates customer return approval, completion, cancellation, and manual credit-note follow-up             |
+| `CustomerReturnReceiptService`  | Generates/links inbound DDTs for customer-return physical receipts and records returned quantities            |
+| `SupplierReturnService`         | Orchestrates supplier return approval, completion, cancellation, and manual debit-note follow-up              |
+| `SupplierReturnShipmentService` | Generates/links outbound DDTs for supplier-return physical shipments and records returned quantities          |
+
+
+- Customer returns use `ReturnOrder` / `ReturnOrderLine`.
+- Supplier returns use `SupplierReturn` / `SupplierReturnLine`.
+- Physical customer returns generate or link inbound `DeliveryNote` records.
+- Physical supplier returns generate or link outbound `DeliveryNote` records.
+- Delivery-note lines remain quantity/source-link only; commercial prices and inventory costs stay out of bolle.
+- Customer return completion increments `qty_returned` on linked `InvoiceLine` and `SalesOrderLine` records.
+- Supplier return completion increments `qty_returned` on linked `PurchaseOrderLine` and `GoodsReceiptLine` records.
+- Credit/debit-note creation is a manual follow-up action in v1. Automatic NC/ND creation remains backlog until source-document and line override contracts are explicit.
+
+#### Return flow
+
+```mermaid
+flowchart LR
+  CRO["ReturnOrder: customer return"]
+  SRO["SupplierReturn"]
+  InDDT["DeliveryNote direction=inbound"]
+  OutDDT["DeliveryNote direction=outbound"]
+  Stock["StockMovementService / DeliveryNoteInventoryService"]
+  SourceQty["Source lines qty_returned"]
+  CN["Manual credit note draft"]
+  DN["Manual debit note draft"]
+
+  CRO -->|"complete"| InDDT
+  SRO -->|"complete"| OutDDT
+  InDDT --> Stock
+  OutDDT --> Stock
+  CRO --> SourceQty
+  SRO --> SourceQty
+  CRO -.->|"manual action"| CN
+  SRO -.->|"manual action"| DN
+```
+
 ### VAT Registers & Settlement (Italian Compliance)
 
 
@@ -593,6 +636,8 @@ flowchart LR
 | `PaymentDirection`      | inbound, outbound                                                                                                                                                         | Payment                   |
 | `PaymentScheduleStatus` | open, partial, paid, cancelled                                                                                                                                            | PaymentScheduleLine       |
 | `MatchStatus`           | matched, tolerance, forced, unmatched                                                                                                                                     | InvoiceLine (3-way match) |
+| `ReturnStatus`          | draft, approved, processed, cancelled                                                                                                                                     | ReturnOrder, SupplierReturn |
+| `DeliveryNoteDirection` | outbound, inbound                                                                                                                                                         | DeliveryNote              |
 | `VatRegisterType`       | sales, purchases                                                                                                                                                          | VatRegisterEntry          |
 | `VatSettlementStatus`   | draft, confirmed                                                                                                                                                          | VatSettlement             |
 | `QuoteStatus`           | draft, sent, accepted, rejected, expired                                                                                                                                  | Quotation                 |
@@ -609,11 +654,11 @@ Company, Account, JournalEntry (view page), FiscalYear, FiscalPeriod, DocumentSe
 
 ### Commercial group
 
-Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice (Post/Unpost header + table actions), PurchaseOrder, GoodsReceipt
+Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice (Post/Unpost header + table actions), PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn
 
 ### Financial group
 
-PaymentTerm, Payment, VatRegister (read-only), VatSettlement (read-only)
+PaymentTerm, Payment, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 
 ### Report pages
 
@@ -635,6 +680,8 @@ Trial Balance, Balance Sheet, Income Statement
 → On purchase invoice posting, `InvoicePostingService` calls `ThreeWayMatchService::validate()` per line. Tolerances: `ErpCompanySettings` on `companies.settings`. Exceeding tolerance blocks posting unless **Force three-way match** is checked (sets `forceThreeWayMatchOnPosting`). Status stored in `match_status` / `match_discrepancy`.
 - **How are credit notes handled?**
 → `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
+- **How do customer and supplier returns work?**
+→ Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual follow-up actions in v1.
 - **How do payment schedules work?**
 → At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
 - **Where is VAT register logic?**
@@ -661,4 +708,3 @@ Trial Balance, Balance Sheet, Income Statement
 - Fiscal period closure without reconciliation can lock incorrect balances (mitigated by `FiscalPeriodCloser` audit).
 - Tax behavior must remain parameterized and version-aware for regulatory changes (mitigated by `TaxCode` supersession).
 - VAT register protocol numbers must be sequential — unpost creates gaps (acceptable per Italian law for cancelled invoices).
-

@@ -211,18 +211,43 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `EInvoiceSubmission` model + `EInvoiceSubmissionStatus` enum
 -   No SDI / PEPPOL binding yet (planned M6.3)
 
+### M6.1 — Bank Reconciliation
+
+-   `BankAccount`, `BankStatement`, and `BankStatementLine` models
+-   CSV bank statement import
+-   Manual reconciliation service with ranked payment suggestions
+-   Minimal Filament reconciliation workflow
+-   Difference journal entries for fees, rounding, and write-offs remain a follow-up
+
+### M6.2 — Returns Management
+
+-   `ReturnOrder` for customer returns and `SupplierReturn` for supplier returns
+-   Customer returns generate/link inbound DDTs for physical stock receipts
+-   Supplier returns generate/link outbound DDTs for physical stock shipments
+-   DDT lines remain quantity/source-link only; no prices or costs on bolle
+-   Return completion tracks returned quantities on source invoice / sales order / purchase order / goods receipt lines
+-   Manual follow-up actions create and link credit/debit note drafts; automatic NC/ND creation remains optional backlog
+
 ### Filament Admin UI
 
--   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, PaymentTerm, Payment, VatRegister (read-only), VatSettlement (read-only)
+-   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 -   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
 -   **Report pages:** Trial Balance, Balance Sheet, Income Statement
 
+### Current ERP Status
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
+| M4 Permissions & reporting | Partial | Domain permissions and accounting reports are present; sales pipeline and stock valuation reporting remain backlog. |
+| M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
+| M6.2 Returns management | Implemented v1 | Customer/supplier returns, DDT integration, returned-quantity tracking, and manual NC/ND follow-up actions are present. |
+| M6.3 E-invoice stub | Next | Provider binding, deterministic stub submission workflow, and minimal invoice actions; full FatturaPA remains optional backlog. |
+| M7.1 Advanced pricelists | Implemented v1 | Validity windows, party rules, cascade discounts, resolver, and document-line integrations are present. |
+
 ### Roadmap
 
--   M6.1: Bank reconciliation (import statements, manual match with suggestions; journal for differences as follow-up)
--   M6.2: Returns management (customer / supplier returns, linked DDT for physical movements, manual credit/debit note follow-up in v1)
--   M6.3: E-invoice stub workflow (provider binding, submissions, submit / status tracking; full FatturaPA optional backlog)
--   M7.1: Advanced pricelists (time-based validity, party-specific discounts, cascade discounts)
+-   Next: M6.3 e-invoice stub workflow (provider binding, submissions, submit / status tracking; full FatturaPA optional backlog)
 -   M4: Policies & permissions (posting, period close, tax code management)
 -   Comprehensive test plan (accounting golden master, concurrency, fiscal invariants)
 
@@ -291,10 +316,10 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 
 ## TODO
 
-- [ ] M6.1 — Bank reconciliation and statement import
-- [ ] M6.2 — Returns management (customer and supplier)
+- [x] M6.1 — Bank reconciliation and statement import
+- [x] M6.2 — Returns management (customer and supplier)
 - [ ] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
-- [ ] M7.1 — Advanced pricelists with party-specific pricing
+- [x] M7.1 — Advanced pricelists with party-specific pricing
 - [ ] M4 — Policies and permissions (RBAC on ERP operations)
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
