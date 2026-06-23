@@ -241,11 +241,11 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Area | Status | Notes |
 | --- | --- | --- |
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
-| M4 Permissions & reporting | Implemented v1 | Domain permissions, accounting reports, operational reporting services, and read-only report pages are present. |
+| M4 Permissions & reporting | Implemented v1 | Domain permissions, invoice action auth, accounting/operational reports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
 | M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
 | M6.2 Returns management | Implemented v1 | Customer/supplier returns, DDT integration, returned-quantity tracking, and manual NC/ND follow-up actions are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
-| M7.1 Advanced pricelists | Implemented v1 | Validity windows, party rules, cascade discounts, resolver, and document-line integrations are present. |
+| M7.1 Advanced pricelists | Implemented v1 | Validity windows, party rules, percent/fixed/override discounts, resolver, and document-line integrations are present; Party price-rule UI remains follow-up. |
 
 ### Roadmap
 
