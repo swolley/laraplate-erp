@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
-use DateTimeImmutable;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Services\Reporting\TrialBalanceService;
+use Modules\ERP\Services\Reporting\StockValuationService;
 use Override;
 use UnitEnum;
 
-final class TrialBalancePage extends Page
+final class StockValuationPage extends Page
 {
     public ?array $data = [];
 
     /**
-     * @var array<int, array<string, mixed>>
+     * @var array<string, mixed>
      */
     public array $report_data = [];
 
@@ -32,23 +30,19 @@ final class TrialBalancePage extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
-    protected static ?int $navigationSort = 80;
+    protected static ?int $navigationSort = 84;
 
     #[Override]
-    protected static ?string $navigationLabel = 'Trial Balance';
+    protected static ?string $navigationLabel = 'Stock Valuation';
 
     #[Override]
-    protected static ?string $title = 'Trial Balance';
+    protected static ?string $title = 'Stock Valuation';
 
     #[Override]
-    protected string $view = 'erp::filament.pages.trial-balance';
+    protected static ?string $slug = 'stock-valuation';
 
-    public function mount(): void
-    {
-        $this->form->fill([
-            'as_of_date' => now()->format('Y-m-d'),
-        ]);
-    }
+    #[Override]
+    protected string $view = 'erp::filament.pages.stock-valuation';
 
     public function form(Schema $schema): Schema
     {
@@ -59,9 +53,6 @@ final class TrialBalancePage extends Page
                     ->label('Company')
                     ->options(Company::query()->pluck('name', 'id')->all())
                     ->required(),
-                DatePicker::make('as_of_date')
-                    ->label('As of Date')
-                    ->required(),
             ]);
     }
 
@@ -69,11 +60,8 @@ final class TrialBalancePage extends Page
     {
         $state = $this->form->getState();
 
-        $service = resolve(TrialBalanceService::class);
+        $service = resolve(StockValuationService::class);
 
-        $this->report_data = $service->generate(
-            (int) $state['company_id'],
-            new DateTimeImmutable($state['as_of_date']),
-        );
+        $this->report_data = $service->generate((int) $state['company_id']);
     }
 }

@@ -234,14 +234,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 -   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
--   **Report pages:** Trial Balance, Balance Sheet, Income Statement
+-   **Report pages:** Trial Balance, Balance Sheet, Income Statement, Sales Pipeline, Stock Valuation
 
 ### Current ERP Status
 
 | Area | Status | Notes |
 | --- | --- | --- |
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
-| M4 Permissions & reporting | Partial | Domain permissions and accounting reports are present; sales pipeline and stock valuation reporting remain backlog. |
+| M4 Permissions & reporting | Implemented v1 | Domain permissions, accounting reports, operational reporting services, and read-only report pages are present. |
 | M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
 | M6.2 Returns management | Implemented v1 | Customer/supplier returns, DDT integration, returned-quantity tracking, and manual NC/ND follow-up actions are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
@@ -249,7 +249,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Roadmap
 
--   M4: Policies & permissions (posting, period close, tax code management)
+-   M4 follow-up: broader policy/action regression coverage where needed
 -   Comprehensive test plan (accounting golden master, concurrency, fiscal invariants)
 -   Optional: full FatturaPA provider and legal XML workflow
 
@@ -322,7 +322,7 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] M6.2 — Returns management (customer and supplier)
 - [x] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
 - [x] M7.1 — Advanced pricelists with party-specific pricing
-- [ ] M4 — Policies and permissions (RBAC on ERP operations)
+- [x] M4 — Policies, permissions, and reporting pages
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
 - [ ] Export CSV/PDF for financial reports

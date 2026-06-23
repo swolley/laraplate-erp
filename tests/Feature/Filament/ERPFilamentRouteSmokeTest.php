@@ -2,19 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Core\Models\Role;
+use Modules\ERP\Casts\DeliveryNoteDirection;
+use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\InvoiceType;
+use Modules\ERP\Filament\Pages\BalanceSheetPage;
 use Modules\ERP\Filament\Pages\BankReconciliationPage;
+use Modules\ERP\Filament\Pages\IncomeStatementPage;
+use Modules\ERP\Filament\Pages\SalesPipelinePage;
+use Modules\ERP\Filament\Pages\StockValuationPage;
+use Modules\ERP\Filament\Pages\TrialBalancePage;
 use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
-use Modules\Core\Models\Role;
-use Modules\ERP\Casts\DeliveryNoteDirection;
-use Modules\ERP\Casts\InvoiceDirection;
-use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\Invoice;
@@ -29,7 +34,9 @@ it('registers ERP Filament resource and page routes on the admin panel', functio
         ->and(DeliveryNoteResource::getUrl('index'))->toContain('/admin/business/delivery-notes')
         ->and(ReturnOrderResource::getUrl('index'))->toContain('/admin/business/return-orders')
         ->and(SupplierReturnResource::getUrl('index'))->toContain('/admin/business/supplier-returns')
-        ->and(BankReconciliationPage::getUrl())->toEndWith('/admin/bank-reconciliation');
+        ->and(BankReconciliationPage::getUrl())->toEndWith('/admin/bank-reconciliation')
+        ->and(SalesPipelinePage::getUrl())->toEndWith('/admin/sales-pipeline')
+        ->and(StockValuationPage::getUrl())->toEndWith('/admin/stock-valuation');
 });
 
 it('renders ERP Filament smoke pages for an authenticated admin', function (): void {
@@ -67,6 +74,11 @@ it('renders ERP Filament smoke pages for an authenticated admin', function (): v
     ]);
 
     $this->get(BankReconciliationPage::getUrl())->assertOk();
+    $this->get(TrialBalancePage::getUrl())->assertOk();
+    $this->get(BalanceSheetPage::getUrl())->assertOk();
+    $this->get(IncomeStatementPage::getUrl())->assertOk();
+    $this->get(SalesPipelinePage::getUrl())->assertOk();
+    $this->get(StockValuationPage::getUrl())->assertOk();
     $this->get(BankAccountResource::getUrl('index'))->assertOk();
     $this->get(BankStatementResource::getUrl('index'))->assertOk();
     $this->get(DeliveryNoteResource::getUrl('index'))->assertOk();

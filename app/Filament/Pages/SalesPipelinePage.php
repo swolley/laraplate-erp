@@ -5,18 +5,16 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
-use DateTimeImmutable;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Services\Reporting\BalanceSheetService;
+use Modules\ERP\Services\Reporting\SalesPipelineService;
 use Override;
 use UnitEnum;
 
-final class BalanceSheetPage extends Page
+final class SalesPipelinePage extends Page
 {
     public ?array $data = [];
 
@@ -26,29 +24,25 @@ final class BalanceSheetPage extends Page
     public array $report_data = [];
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
 
     #[Override]
-    protected static ?int $navigationSort = 81;
+    protected static ?int $navigationSort = 83;
 
     #[Override]
-    protected static ?string $navigationLabel = 'Balance Sheet';
+    protected static ?string $navigationLabel = 'Sales Pipeline';
 
     #[Override]
-    protected static ?string $title = 'Balance Sheet';
+    protected static ?string $title = 'Sales Pipeline';
 
     #[Override]
-    protected string $view = 'erp::filament.pages.balance-sheet';
+    protected static ?string $slug = 'sales-pipeline';
 
-    public function mount(): void
-    {
-        $this->form->fill([
-            'as_of_date' => now()->format('Y-m-d'),
-        ]);
-    }
+    #[Override]
+    protected string $view = 'erp::filament.pages.sales-pipeline';
 
     public function form(Schema $schema): Schema
     {
@@ -59,9 +53,6 @@ final class BalanceSheetPage extends Page
                     ->label('Company')
                     ->options(Company::query()->pluck('name', 'id')->all())
                     ->required(),
-                DatePicker::make('as_of_date')
-                    ->label('As of Date')
-                    ->required(),
             ]);
     }
 
@@ -69,11 +60,8 @@ final class BalanceSheetPage extends Page
     {
         $state = $this->form->getState();
 
-        $service = resolve(BalanceSheetService::class);
+        $service = resolve(SalesPipelineService::class);
 
-        $this->report_data = $service->generate(
-            (int) $state['company_id'],
-            new DateTimeImmutable($state['as_of_date']),
-        );
+        $this->report_data = $service->generate((int) $state['company_id']);
     }
 }
