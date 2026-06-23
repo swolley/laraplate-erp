@@ -6,7 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Enums\CoreTables;
-use Modules\Core\Helpers\HasValidity;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;

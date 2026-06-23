@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Core\Helpers\HasValidity;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;

@@ -7,7 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Enums\CoreTables;
-use Modules\Core\Helpers\HasValidity;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\DiscountType;
 use Modules\ERP\Concerns\BelongsToCompany;
