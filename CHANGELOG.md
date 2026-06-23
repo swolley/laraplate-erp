@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚜 Refactor
+
+- *(erp)* Update Core model concern imports
+
 ## [1.12.0] - 2026-06-11
 
 ### 🚀 Features
