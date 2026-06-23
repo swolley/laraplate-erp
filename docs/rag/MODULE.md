@@ -617,7 +617,10 @@ flowchart LR
 
 - `EInvoiceProvider` contract: `prepare()`, `submit()`, `remoteStatus()`.
 - `EInvoiceSubmission` model tracks submission lifecycle.
-- No concrete SDI/PEPPOL binding yet (planned M6.3).
+- `StubEInvoiceProvider` is bound by default and produces deterministic local responses.
+- `EInvoiceSubmissionService` persists submit attempts and refreshes remote status.
+- Invoice edit actions can submit posted sale invoices and refresh submitted rows.
+- No production SDI / PEPPOL / FatturaPA provider lives in the core ERP module.
 
 ### Lock & Safety Mechanisms
 
@@ -682,6 +685,8 @@ Trial Balance, Balance Sheet, Income Statement
 → `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
 - **How do customer and supplier returns work?**
 → Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual follow-up actions in v1.
+- **How does e-invoice submission work?**
+→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`. Full FatturaPA XML is outside the core ERP module.
 - **How do payment schedules work?**
 → At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
 - **Where is VAT register logic?**

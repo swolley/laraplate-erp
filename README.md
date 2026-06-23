@@ -209,7 +209,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   `EInvoiceProvider` contract (prepare, submit, remoteStatus)
 -   `EInvoiceSubmission` model + `EInvoiceSubmissionStatus` enum
--   No SDI / PEPPOL binding yet (planned M6.3)
+-   Stub provider binding and deterministic local submission workflow
+-   Filament actions for posted sale invoice submit / status refresh
+-   No production SDI / PEPPOL / FatturaPA provider in the core module
 
 ### M6.1 — Bank Reconciliation
 
@@ -242,14 +244,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M4 Permissions & reporting | Partial | Domain permissions and accounting reports are present; sales pipeline and stock valuation reporting remain backlog. |
 | M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
 | M6.2 Returns management | Implemented v1 | Customer/supplier returns, DDT integration, returned-quantity tracking, and manual NC/ND follow-up actions are present. |
-| M6.3 E-invoice stub | Next | Provider binding, deterministic stub submission workflow, and minimal invoice actions; full FatturaPA remains optional backlog. |
+| M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
 | M7.1 Advanced pricelists | Implemented v1 | Validity windows, party rules, cascade discounts, resolver, and document-line integrations are present. |
 
 ### Roadmap
 
--   Next: M6.3 e-invoice stub workflow (provider binding, submissions, submit / status tracking; full FatturaPA optional backlog)
 -   M4: Policies & permissions (posting, period close, tax code management)
 -   Comprehensive test plan (accounting golden master, concurrency, fiscal invariants)
+-   Optional: full FatturaPA provider and legal XML workflow
 
 ## Scripts
 
@@ -318,7 +320,7 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 
 - [x] M6.1 — Bank reconciliation and statement import
 - [x] M6.2 — Returns management (customer and supplier)
-- [ ] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
+- [x] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
 - [x] M7.1 — Advanced pricelists with party-specific pricing
 - [ ] M4 — Policies and permissions (RBAC on ERP operations)
 - [ ] API resources and form requests
