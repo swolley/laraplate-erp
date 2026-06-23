@@ -78,7 +78,9 @@ final readonly class InvoicePostingService
                     : DocumentType::PurchaseDebitNote;
             }
 
-            $fiscal_year = CarbonImmutable::now()->year;
+            $posted_at = $this->postedAtForPosting($invoice, $locked);
+
+            $fiscal_year = $posted_at->year;
             $reference = $this->document_number_allocator->next($company, $document_type, $fiscal_year);
             $invoice->reference = $reference;
 
@@ -99,6 +101,7 @@ final readonly class InvoicePostingService
                 'Invoice posted ' . $reference,
                 null,
                 $locked,
+                $posted_at,
             );
 
             $this->vat_register_service->register($invoice);
@@ -330,6 +333,17 @@ final readonly class InvoicePostingService
         throw ValidationException::withMessages([
             'accounts' => ['Chart of accounts missing role: ' . $role],
         ]);
+    }
+
+    private function postedAtForPosting(Invoice $invoice, Invoice $locked): CarbonImmutable
+    {
+        $posted_at = $invoice->posted_at ?? $locked->posted_at;
+
+        if ($posted_at instanceof CarbonImmutable) {
+            return $posted_at;
+        }
+
+        return CarbonImmutable::parse($posted_at);
     }
 
     /**

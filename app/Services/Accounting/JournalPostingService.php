@@ -46,10 +46,11 @@ final class JournalPostingService
         ?string $description = null,
         ?int $posted_by_user_id = null,
         ?Model $reference = null,
+        ?CarbonImmutable $posted_at = null,
     ): JournalEntry {
         $this->validateLinesForPosting($company, $lines, $fiscal_period);
 
-        $posted_at = CarbonImmutable::now();
+        $posted_at ??= CarbonImmutable::now();
 
         return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
             $company,
