@@ -84,7 +84,7 @@ final class VatSettlement extends Model
                 return;
             }
 
-            if (VatSettlementStatus::Confirmed->value !== $settlement->getOriginal('status')) {
+            if (! self::isConfirmedStatus($settlement->getOriginal('status'))) {
                 return;
             }
 
@@ -96,6 +96,25 @@ final class VatSettlement extends Model
                 'status' => ['A confirmed VAT settlement cannot be modified.'],
             ]);
         });
+
+        self::deleting(static function (VatSettlement $settlement): void {
+            if (! self::isConfirmedStatus($settlement->status)) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'status' => ['A confirmed VAT settlement cannot be deleted.'],
+            ]);
+        });
+    }
+
+    private static function isConfirmedStatus(mixed $status): bool
+    {
+        if ($status instanceof VatSettlementStatus) {
+            return $status === VatSettlementStatus::Confirmed;
+        }
+
+        return $status === VatSettlementStatus::Confirmed->value;
     }
 
     protected function casts(): array

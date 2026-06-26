@@ -54,6 +54,7 @@ final class VatSettlementService
                     ->withoutGlobalScopes()
                     ->where('company_id', $company_id)
                     ->where('fiscal_period_id', (int) $previous_period->id)
+                    ->where('status', VatSettlementStatus::Confirmed->value)
                     ->first();
 
                 if ($previous_settlement !== null && (float) $previous_settlement->settlement_amount < 0) {

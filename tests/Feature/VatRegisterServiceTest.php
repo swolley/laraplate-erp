@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\VatRegisterType;
@@ -241,4 +242,92 @@ it('carries forward previous credit', function (): void {
 
     expect((float) $settlement->previous_credit)->toBe(200.0)
         ->and((float) $settlement->settlement_amount)->toBe(20.0);
+});
+
+it('locks confirmed VAT settlements against recompute update and delete', function (): void {
+    [$company, $fiscal_year, $vat] = createVatTestCompanyWithFiscalYear();
+
+    $period = FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => 1,
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->startOfYear()->addMonth()->subDay()->toDateString(),
+    ]);
+
+    VatRegisterEntry::query()->create([
+        'company_id' => $company->id,
+        'invoice_id' => createPostedInvoice($company, $vat)->id,
+        'register_type' => VatRegisterType::Sales->value,
+        'protocol_number' => 1,
+        'registration_date' => now()->startOfYear()->addDays(5)->toDateString(),
+        'fiscal_year_id' => $fiscal_year->id,
+        'tax_code_id' => $vat->id,
+        'taxable_amount' => '1000.0000',
+        'tax_amount' => '220.0000',
+    ]);
+
+    $service = app(VatSettlementService::class);
+    $settlement = $service->compute((int) $company->id, (int) $period->id);
+    $service->confirm($settlement, 123);
+    $settlement->refresh();
+
+    expect($settlement->status)->toBe(VatSettlementStatus::Confirmed)
+        ->and($settlement->confirmed_at)->not->toBeNull()
+        ->and((int) $settlement->confirmed_by)->toBe(123);
+
+    expect(fn () => $service->compute((int) $company->id, (int) $period->id))
+        ->toThrow(ValidationException::class);
+
+    expect(fn () => $settlement->update(['settlement_amount' => '999.0000']))
+        ->toThrow(ValidationException::class);
+
+    expect(fn () => $settlement->delete())
+        ->toThrow(ValidationException::class);
+
+    expect((string) $settlement->fresh()->settlement_amount)->toBe('220.0000');
+});
+
+it('carries forward only confirmed previous VAT credits', function (): void {
+    [$company, $fiscal_year, $vat] = createVatTestCompanyWithFiscalYear();
+
+    $period_m1 = FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => 1,
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->startOfYear()->addMonth()->subDay()->toDateString(),
+    ]);
+
+    $period_m2 = FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => 2,
+        'start_date' => now()->startOfYear()->addMonth()->toDateString(),
+        'end_date' => now()->startOfYear()->addMonths(2)->subDay()->toDateString(),
+    ]);
+
+    VatSettlement::query()->create([
+        'company_id' => $company->id,
+        'fiscal_period_id' => $period_m1->id,
+        'vat_sales' => '100.0000',
+        'vat_purchases' => '300.0000',
+        'previous_credit' => '0.0000',
+        'settlement_amount' => '-200.0000',
+        'status' => VatSettlementStatus::Draft->value,
+    ]);
+
+    VatRegisterEntry::query()->create([
+        'company_id' => $company->id,
+        'invoice_id' => createPostedInvoice($company, $vat)->id,
+        'register_type' => VatRegisterType::Sales->value,
+        'protocol_number' => 1,
+        'registration_date' => now()->startOfYear()->addMonth()->addDays(5)->toDateString(),
+        'fiscal_year_id' => $fiscal_year->id,
+        'tax_code_id' => $vat->id,
+        'taxable_amount' => '1000.0000',
+        'tax_amount' => '220.0000',
+    ]);
+
+    $settlement = app(VatSettlementService::class)->compute((int) $company->id, (int) $period_m2->id);
+
+    expect((string) $settlement->previous_credit)->toBe('0.0000')
+        ->and((string) $settlement->settlement_amount)->toBe('220.0000');
 });
