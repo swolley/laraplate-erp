@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Inventory;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\StockMovementDirection;
@@ -122,6 +123,7 @@ final readonly class DeliveryNoteCogsJournalService
             $description,
             null,
             $delivery_note,
+            $this->postedAtForDeliveryNote($delivery_note),
         );
 
         $delivery_note->cogs_journal_entry_id = (int) $entry->getKey();
@@ -170,6 +172,15 @@ final readonly class DeliveryNoteCogsJournalService
         }
 
         return $account;
+    }
+
+    private function postedAtForDeliveryNote(DeliveryNote $delivery_note): CarbonImmutable
+    {
+        if ($delivery_note->posted_at instanceof CarbonImmutable) {
+            return $delivery_note->posted_at;
+        }
+
+        return CarbonImmutable::parse($delivery_note->posted_at);
     }
 
     private function formatMoney4(float $value): string
