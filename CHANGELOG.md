@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🧪 Testing
+
+- *(erp)* Inline FakeFiscalPeriod and expand FiscalPeriodCloser coverage
+
+## [1.13.1] - 2026-06-23
+
 ### 🚜 Refactor
 
 - *(erp)* Update Core model concern imports
