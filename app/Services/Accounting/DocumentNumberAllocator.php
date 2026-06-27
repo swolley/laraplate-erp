@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Accounting;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\DocumentType;
+use Modules\ERP\Exceptions\DocumentNumberAllocationRetryException;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
 
@@ -15,6 +16,10 @@ use Modules\ERP\Models\DocumentSequence;
  */
 final class DocumentNumberAllocator
 {
+    private const int MAX_RETRY_ATTEMPTS = 8;
+
+    private const int RETRY_BASE_MICROSECONDS = 25000;
+
     /**
      * Allocates and returns the next display number (prefix, optional year, padded counter).
      *
@@ -22,71 +27,122 @@ final class DocumentNumberAllocator
      */
     public function next(Company $company, DocumentType $document_type, int $fiscal_year = 0): string
     {
-        return DB::transaction(function () use ($company, $document_type, $fiscal_year): string {
-            $existing = DocumentSequence::query()
+        for ($attempt = 1; $attempt <= self::MAX_RETRY_ATTEMPTS; $attempt++) {
+            try {
+                return DB::transaction(fn (): string => $this->allocate($company, $document_type, $fiscal_year));
+            } catch (QueryException $exception) {
+                throw_unless(
+                    $attempt < self::MAX_RETRY_ATTEMPTS && $this->isRetryableConcurrencyException($exception),
+                    $exception,
+                );
+
+                $this->sleepBeforeRetry($attempt);
+            } catch (DocumentNumberAllocationRetryException $exception) {
+                throw_unless($attempt < self::MAX_RETRY_ATTEMPTS, $exception);
+
+                $this->sleepBeforeRetry($attempt);
+            }
+        }
+
+        throw new DocumentNumberAllocationRetryException('Unable to allocate the next document number after retrying.');
+    }
+
+    private function allocate(Company $company, DocumentType $document_type, int $fiscal_year): string
+    {
+        $existing = DocumentSequence::query()
+            ->withoutGlobalScopes()
+            ->where('company_id', $company->id)
+            ->where('document_type', $document_type->value)
+            ->where('fiscal_year', $fiscal_year)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existing !== null) {
+            return $this->incrementAndFormat($existing, $fiscal_year);
+        }
+
+        try {
+            DocumentSequence::query()->withoutGlobalScopes()->create([
+                'company_id' => $company->id,
+                'document_type' => $document_type,
+                'fiscal_year' => $fiscal_year,
+                'last_number' => 1,
+                'gap_allowed' => $document_type->defaultGapAllowed(),
+                'prefix' => '',
+                'padding' => 5,
+                'format_pattern' => null,
+                'suffix' => '',
+            ]);
+        } catch (QueryException $exception) {
+            throw_unless($this->isUniqueConstraintViolation($exception), $exception);
+
+            $row = DocumentSequence::query()
                 ->withoutGlobalScopes()
                 ->where('company_id', $company->id)
                 ->where('document_type', $document_type->value)
                 ->where('fiscal_year', $fiscal_year)
                 ->lockForUpdate()
-                ->first();
-
-            if ($existing !== null) {
-                return $this->incrementAndFormat($existing, $fiscal_year);
-            }
-
-            try {
-                DocumentSequence::query()->withoutGlobalScopes()->create([
-                    'company_id' => $company->id,
-                    'document_type' => $document_type,
-                    'fiscal_year' => $fiscal_year,
-                    'last_number' => 1,
-                    'gap_allowed' => $document_type->defaultGapAllowed(),
-                    'prefix' => '',
-                    'padding' => 5,
-                    'format_pattern' => null,
-                    'suffix' => '',
-                ]);
-            } catch (QueryException $exception) {
-                throw_unless($this->isUniqueConstraintViolation($exception), $exception);
-
-                $row = DocumentSequence::query()
-                    ->withoutGlobalScopes()
-                    ->where('company_id', $company->id)
-                    ->where('document_type', $document_type->value)
-                    ->where('fiscal_year', $fiscal_year)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                return $this->incrementAndFormat($row, $fiscal_year);
-            }
-
-            $inserted = DocumentSequence::query()
-                ->withoutGlobalScopes()
-                ->where('company_id', $company->id)
-                ->where('document_type', $document_type->value)
-                ->where('fiscal_year', $fiscal_year)
                 ->firstOrFail();
 
-            return DocumentNumberFormatter::format($inserted, $fiscal_year, $inserted->last_number);
-        });
+            return $this->incrementAndFormat($row, $fiscal_year);
+        }
+
+        $inserted = DocumentSequence::query()
+            ->withoutGlobalScopes()
+            ->where('company_id', $company->id)
+            ->where('document_type', $document_type->value)
+            ->where('fiscal_year', $fiscal_year)
+            ->firstOrFail();
+
+        return DocumentNumberFormatter::format($inserted, $fiscal_year, $inserted->last_number);
     }
 
     private function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
     {
-        DocumentSequence::query()->withoutGlobalScopes()->whereKey($row->id)->update([
-            'last_number' => DB::raw('last_number + 1'),
-            'updated_at' => now(),
-        ]);
-        $row->refresh();
+        $current_number = (int) $row->last_number;
+        $next_number = $current_number + 1;
+        $updated = DocumentSequence::query()
+            ->withoutGlobalScopes()
+            ->whereKey($row->id)
+            ->where('last_number', $current_number)
+            ->update([
+                'last_number' => $next_number,
+                'updated_at' => now(),
+            ]);
 
-        return DocumentNumberFormatter::format($row, $fiscal_year, $row->last_number);
+        throw_unless($updated === 1, new DocumentNumberAllocationRetryException(
+            'Concurrent document sequence update lost the compare-and-swap race.',
+        ));
+
+        return DocumentNumberFormatter::format($row, $fiscal_year, $next_number);
+    }
+
+    private function sleepBeforeRetry(int $attempt): void
+    {
+        usleep(self::RETRY_BASE_MICROSECONDS * $attempt);
+    }
+
+    private function isRetryableConcurrencyException(QueryException $exception): bool
+    {
+        $sql_state = (string) ($exception->errorInfo[0] ?? '');
+        $driver_code = (string) ($exception->errorInfo[1] ?? '');
+        $message = mb_strtolower($exception->getMessage());
+
+        return in_array($sql_state, ['40001', '40P01', '55P03'], true)
+            || in_array($driver_code, ['5', '1205', '1213'], true)
+            || str_contains($message, 'database is locked')
+            || str_contains($message, 'database table is locked')
+            || str_contains($message, 'deadlock found')
+            || str_contains($message, 'lock wait timeout');
     }
 
     private function isUniqueConstraintViolation(QueryException $exception): bool
     {
         $sql_state = (string) ($exception->errorInfo[0] ?? '');
+        $message = $exception->getMessage();
 
-        return $sql_state === '23000' || str_contains($exception->getMessage(), 'UNIQUE constraint failed');
+        return in_array($sql_state, ['23000', '23505'], true)
+            || str_contains($message, 'UNIQUE constraint failed')
+            || str_contains($message, 'duplicate key value violates unique constraint');
     }
 }
