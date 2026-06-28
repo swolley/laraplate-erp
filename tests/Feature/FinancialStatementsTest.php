@@ -313,3 +313,43 @@ it('exports trial balance rows as csv', function (): void {
         '',
     ]));
 });
+
+it('exports income statement rows as csv', function (): void {
+    $company = createTestCompany();
+    $cash = createAccount($company, '1000', 'Cash', AccountKind::Asset);
+    $revenue = createAccount($company, '4000', 'Sales, domestic', AccountKind::Revenue);
+    $consulting = createAccount($company, '4100', 'Consulting Revenue', AccountKind::Revenue);
+    $expense = createAccount($company, '5000', 'Salary Expense', AccountKind::Expense);
+
+    postBalancedEntry($company, [
+        ['account_id' => $cash->id, 'amount_local' => '2000.0000'],
+        ['account_id' => $revenue->id, 'amount_local' => '-2000.0000'],
+    ], CarbonImmutable::parse('2026-02-05 12:00:00'));
+    postBalancedEntry($company, [
+        ['account_id' => $cash->id, 'amount_local' => '750.2500'],
+        ['account_id' => $consulting->id, 'amount_local' => '-750.2500'],
+    ], CarbonImmutable::parse('2026-02-10 12:00:00'));
+    postBalancedEntry($company, [
+        ['account_id' => $expense->id, 'amount_local' => '500.0000'],
+        ['account_id' => $cash->id, 'amount_local' => '-500.0000'],
+    ], CarbonImmutable::parse('2026-02-20 12:00:00'));
+
+    $report = app(IncomeStatementService::class)->generate(
+        (int) $company->id,
+        CarbonImmutable::parse('2026-02-01'),
+        CarbonImmutable::parse('2026-02-28 23:59:59'),
+    );
+
+    $csv = app(FinancialReportCsvExporter::class)->incomeStatement($report);
+
+    expect($csv)->toBe(implode("\n", [
+        'Section,"Account code","Account name",Balance',
+        'Revenue,4000,"Sales, domestic",2000.0000',
+        'Revenue,4100,"Consulting Revenue",750.2500',
+        'Expense,5000,"Salary Expense",500.0000',
+        'Total,"Total revenue",,2750.2500',
+        'Total,"Total expenses",,500.0000',
+        'Total,"Net income",,2250.2500',
+        '',
+    ]));
+});
