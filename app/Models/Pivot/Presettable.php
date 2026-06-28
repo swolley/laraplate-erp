@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models\Pivot;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Models\Pivot\Presettable as CorePresettable;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Preset;
@@ -19,21 +18,15 @@ use Override;
  */
 final class Presettable extends CorePresettable
 {
-    /**
-     * @return BelongsTo<\Modules\Core\Models\Preset>
-     */
     #[Override]
-    public function preset(): BelongsTo
+    protected function presetModelClass(): string
     {
-        return $this->belongsTo(Preset::class);
+        return Preset::class;
     }
 
-    /**
-     * @return BelongsTo<\Modules\Core\Models\Entity>
-     */
     #[Override]
-    public function entity(): BelongsTo
+    protected function entityModelClass(): string
     {
-        return $this->belongsTo(Entity::class);
+        return Entity::class;
     }
 }

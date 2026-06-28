@@ -20,7 +20,7 @@ final class FiscalCalendarInstaller
      */
     public function ensureCalendarYear(Company $company, int $year): FiscalYear
     {
-        $company_id = (int) $company->getKey();
+        $company_id = is_int($company->id) ? $company->id : (int) $company->id;
 
         $existing = FiscalYear::query()->withoutGlobalScopes()
             ->where('company_id', $company_id)
@@ -31,8 +31,8 @@ final class FiscalCalendarInstaller
             return $existing;
         }
 
-        $start = CarbonImmutable::create($year, 1, 1)->startOfDay();
-        $end = CarbonImmutable::create($year, 12, 31)->endOfDay();
+        $start = CarbonImmutable::createFromDate($year, 1, 1)->startOfDay();
+        $end = CarbonImmutable::createFromDate($year, 12, 31)->endOfDay();
 
         return DB::transaction(function () use ($company_id, $year, $start, $end): FiscalYear {
             $fiscal_year = new FiscalYear([
@@ -46,11 +46,11 @@ final class FiscalCalendarInstaller
             $fiscal_year->save();
 
             for ($m = 1; $m <= 12; $m++) {
-                $p_start = CarbonImmutable::create($year, $m, 1)->startOfDay();
+                $p_start = CarbonImmutable::createFromDate($year, $m, 1)->startOfDay();
                 $p_end = $p_start->endOfMonth();
 
                 $period = new FiscalPeriod([
-                    'fiscal_year_id' => (int) $fiscal_year->getKey(),
+                    'fiscal_year_id' => is_int($fiscal_year->id) ? $fiscal_year->id : (int) $fiscal_year->id,
                     'period_no' => $m,
                     'start_date' => $p_start->toDateString(),
                     'end_date' => $p_end->toDateString(),

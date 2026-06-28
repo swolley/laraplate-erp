@@ -14,6 +14,21 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $party_id
+ * @property PaymentDirection $direction
+ * @property \Carbon\CarbonInterface|null $payment_date
+ * @property numeric-string $amount_doc
+ * @property string $currency_doc
+ * @property numeric-string $amount_local
+ * @property string $currency_local
+ * @property numeric-string $fx_rate
+ * @property string|null $reference
+ * @property int|null $bank_account_id
+ * @property int|null $journal_entry_id
+ * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPayment
  */
@@ -88,6 +103,10 @@ final class Payment extends Model
             ->withPivot(['allocated_amount_doc', 'allocated_amount_local'])
             ->withTimestamps();
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

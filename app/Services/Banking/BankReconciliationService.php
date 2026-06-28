@@ -20,12 +20,12 @@ final class BankReconciliationService
         $this->assertCanMatch($line, $payment);
 
         return DB::transaction(function () use ($line, $payment): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->findOrFail($line->getKey());
-            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->getKey());
+            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
+            $payment = Payment::query()->lockForUpdate()->whereKey($payment->id)->firstOrFail();
 
             $this->assertCanMatch($line, $payment);
 
-            $line->matched_payment_id = $payment->getKey();
+            $line->matched_payment_id = $this->paymentId($payment);
             $line->status = BankStatementLineStatus::Matched;
             $line->save();
 
@@ -41,7 +41,7 @@ final class BankReconciliationService
     public function unmatch(BankStatementLine $line): BankStatementLine
     {
         return DB::transaction(function () use ($line): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->findOrFail($line->getKey());
+            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
             $line->matched_payment_id = null;
             $line->status = BankStatementLineStatus::Imported;
             $line->save();
@@ -53,7 +53,7 @@ final class BankReconciliationService
     public function ignore(BankStatementLine $line): BankStatementLine
     {
         return DB::transaction(function () use ($line): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->findOrFail($line->getKey());
+            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
             $line->matched_payment_id = null;
             $line->status = BankStatementLineStatus::Ignored;
             $line->save();
@@ -72,10 +72,11 @@ final class BankReconciliationService
         $line_amount = (float) $line->amount_doc;
         $direction = $line_amount >= 0 ? PaymentDirection::Inbound : PaymentDirection::Outbound;
         $expected_amount = abs($line_amount);
-        $bank_account_id = $line->bank_statement?->bank_account_id;
+        $bank_statement = $line->bank_statement;
+        $bank_account_id = $bank_statement?->bank_account_id;
         $booked_at = $line->booked_at;
 
-        return Payment::query()
+        $query = Payment::query()
             ->with('party')
             ->where('company_id', $line->company_id)
             ->where('currency_doc', $line->currency_doc)
@@ -83,19 +84,23 @@ final class BankReconciliationService
             ->whereBetween('amount_doc', [
                 number_format(max(0, $expected_amount - 1), 4, '.', ''),
                 number_format($expected_amount + 1, 4, '.', ''),
-            ])
-            ->when($bank_account_id !== null, static function (Builder $query) use ($bank_account_id): void {
-                $query->where(static function (Builder $query) use ($bank_account_id): void {
-                    $query->whereNull('bank_account_id')
-                        ->orWhere('bank_account_id', $bank_account_id);
-                });
-            })
-            ->when($booked_at !== null, static function (Builder $query) use ($booked_at): void {
-                $query->whereBetween('payment_date', [
-                    $booked_at->copy()->subDays(5)->format('Y-m-d'),
-                    $booked_at->copy()->addDays(5)->format('Y-m-d'),
-                ]);
-            })
+            ]);
+
+        if ($bank_account_id !== null) {
+            $query->where(static function (Builder $inner_query) use ($bank_account_id): void {
+                $inner_query->whereNull('bank_account_id')
+                    ->orWhere('bank_account_id', $bank_account_id);
+            });
+        }
+
+        if ($booked_at !== null) {
+            $query->whereBetween('payment_date', [
+                $booked_at->copy()->subDays(5)->format('Y-m-d'),
+                $booked_at->copy()->addDays(5)->format('Y-m-d'),
+            ]);
+        }
+
+        return $query
             ->limit(50)
             ->get()
             ->sortByDesc(fn (Payment $payment): int => $this->suggestionScore($line, $payment))
@@ -106,20 +111,22 @@ final class BankReconciliationService
     {
         $line->loadMissing('bank_statement');
 
-        if ((int) $line->company_id !== (int) $payment->company_id) {
+        $statement_bank_account_id = $line->bank_statement?->bank_account_id;
+
+        if ($line->company_id !== $payment->company_id) {
             throw ValidationException::withMessages([
                 'payment_id' => ['The payment belongs to a different company.'],
             ]);
         }
 
         if ($payment->bank_account_id !== null
-            && (int) $payment->bank_account_id !== (int) $line->bank_statement?->bank_account_id) {
+            && $payment->bank_account_id !== $statement_bank_account_id) {
             throw ValidationException::withMessages([
                 'payment_id' => ['The payment belongs to a different bank account.'],
             ]);
         }
 
-        if ((string) $line->currency_doc !== (string) $payment->currency_doc) {
+        if ($line->currency_doc !== $payment->currency_doc) {
             throw ValidationException::withMessages([
                 'currency_doc' => ['The payment currency does not match the bank statement line.'],
             ]);
@@ -158,5 +165,10 @@ final class BankReconciliationService
         }
 
         return $score;
+    }
+
+    private function paymentId(Payment $payment): int
+    {
+        return is_int($payment->id) ? $payment->id : (int) $payment->id;
     }
 }

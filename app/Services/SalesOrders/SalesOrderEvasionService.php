@@ -76,7 +76,7 @@ final class SalesOrderEvasionService
             $line->save();
         }
 
-        $this->syncHeaderStatus($sales_order->fresh(['lines']));
+        $this->syncHeaderStatus($sales_order->fresh(['lines']) ?? $sales_order);
     }
 
     private function lineStatusFromQuantities(SalesOrderLine $line): SalesOrderLineStatus
@@ -126,6 +126,9 @@ final class SalesOrderEvasionService
         $sales_order->saveQuietly();
     }
 
+    /**
+     * @return numeric-string
+     */
     private function formatQuantity(float $quantity): string
     {
         return number_format($quantity, 4, '.', '');

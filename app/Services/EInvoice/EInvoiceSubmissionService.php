@@ -22,8 +22,7 @@ final readonly class EInvoiceSubmissionService
     public function submit(Invoice $invoice): EInvoiceSubmission
     {
         return DB::transaction(function () use ($invoice): EInvoiceSubmission {
-            /** @var Invoice $locked */
-            $locked = Invoice::query()->whereKey((int) $invoice->getKey())->lockForUpdate()->firstOrFail();
+            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->posted_at === null) {
                 throw ValidationException::withMessages([
@@ -54,8 +53,8 @@ final readonly class EInvoiceSubmissionService
             $result = $this->provider->submit($payload);
 
             return EInvoiceSubmission::query()->create([
-                'company_id' => (int) $locked->company_id,
-                'invoice_id' => (int) $locked->id,
+                'company_id' => $locked->company_id,
+                'invoice_id' => $locked->id,
                 'provider_code' => $this->provider->code(),
                 'external_id' => $result->externalId,
                 'status' => $result->success
@@ -78,7 +77,7 @@ final readonly class EInvoiceSubmissionService
             ]);
         }
 
-        $remote_status = $this->provider->remoteStatus((string) $submission->external_id);
+        $remote_status = $this->provider->remoteStatus($submission->external_id);
         $status = $this->mapRemoteStatus($remote_status, $submission->status);
 
         $payload = $submission->response_payload ?? [];

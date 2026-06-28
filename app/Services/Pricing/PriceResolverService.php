@@ -67,7 +67,7 @@ final class PriceResolverService
         }
 
         $rule = $this->resolveRule($company_id, $item, $party_id, $date);
-        $base_price = (string) $price_list_item->unit_price;
+        $base_price = $price_list_item->unit_price;
 
         return new PriceResolutionResult(
             priceListItem: $price_list_item,
@@ -90,7 +90,7 @@ final class PriceResolverService
                 }
             })
             ->where(function (Builder $query) use ($item): void {
-                $query->where('item_id', $item->getKey());
+                $query->where('item_id', $item->id);
 
                 if ($item->taxonomy_id !== null) {
                     $query->orWhere('taxonomy_id', $item->taxonomy_id);

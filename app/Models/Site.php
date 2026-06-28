@@ -54,6 +54,10 @@ final class Site extends Model
         return $this->belongsTo(Place::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     public function getRules(): array
     {
         $rules = parent::getRules();

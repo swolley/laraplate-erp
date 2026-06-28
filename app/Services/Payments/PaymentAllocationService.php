@@ -29,7 +29,6 @@ final class PaymentAllocationService
                     ]);
                 }
 
-                /** @var PaymentScheduleLine $schedule_line */
                 $schedule_line = PaymentScheduleLine::query()
                     ->whereKey($schedule_line_id)
                     ->lockForUpdate()
@@ -46,7 +45,7 @@ final class PaymentAllocationService
                 $amount_local = $this->round4($amount_doc_float * (float) $schedule_line->fx_rate);
 
                 PaymentAllocation::query()->create([
-                    'payment_id' => (int) $payment->getKey(),
+                    'payment_id' => $this->paymentId($payment),
                     'payment_schedule_line_id' => $schedule_line_id,
                     'allocated_amount_doc' => $this->round4($amount_doc_float),
                     'allocated_amount_local' => $amount_local,
@@ -71,9 +70,8 @@ final class PaymentAllocationService
     public function deallocate(PaymentAllocation $allocation): void
     {
         DB::transaction(function () use ($allocation): void {
-            /** @var PaymentScheduleLine $schedule_line */
             $schedule_line = PaymentScheduleLine::query()
-                ->whereKey((int) $allocation->payment_schedule_line_id)
+                ->whereKey($allocation->payment_schedule_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -111,6 +109,14 @@ final class PaymentAllocationService
         return PaymentScheduleStatus::Open;
     }
 
+    private function paymentId(Payment $payment): int
+    {
+        return is_int($payment->id) ? $payment->id : (int) $payment->id;
+    }
+
+    /**
+     * @return numeric-string
+     */
     private function round4(float $value): string
     {
         return number_format(round($value, 4), 4, '.', '');

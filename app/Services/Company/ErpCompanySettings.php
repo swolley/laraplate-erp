@@ -121,7 +121,9 @@ final class ErpCompanySettings
 
     public function float(Company $company, string $key, float $default = 0.0): float
     {
-        return (float) $this->get($company, $key, $default);
+        $value = $this->get($company, $key, $default);
+
+        return is_numeric($value) ? (float) $value : $default;
     }
 
     public function priceTolerancePercent(Company $company): float

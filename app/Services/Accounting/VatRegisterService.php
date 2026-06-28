@@ -102,7 +102,7 @@ final class VatRegisterService
             ->lockForUpdate()
             ->max('protocol_number');
 
-        return ($max ?? 0) + 1;
+        return (is_numeric($max) ? (int) $max : 0) + 1;
     }
 
     private function round4(float $value): string

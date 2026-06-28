@@ -15,6 +15,10 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $party_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperProject
  */
@@ -81,6 +85,10 @@ final class Project extends Model
     {
         return $this->hasMany(TimeEntry::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

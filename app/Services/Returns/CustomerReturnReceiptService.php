@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\ReturnOrderLine;
@@ -25,7 +26,7 @@ final readonly class CustomerReturnReceiptService
         }
 
         return DB::transaction(function () use ($return_order): ReturnOrder {
-            $return_order = ReturnOrder::query()->with('lines')->lockForUpdate()->findOrFail($return_order->getKey());
+            $return_order = ReturnOrder::query()->with('lines')->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if ($return_order->status !== ReturnStatus::Approved) {
                 throw ValidationException::withMessages([
@@ -50,7 +51,7 @@ final readonly class CustomerReturnReceiptService
 
             $return_order->status = ReturnStatus::Processed;
             $return_order->processed_at = now();
-            $return_order->delivery_note_id = (int) $delivery_note->getKey();
+            $return_order->delivery_note_id = $this->modelId($delivery_note);
             $return_order->save();
 
             return $return_order;
@@ -61,30 +62,29 @@ final readonly class CustomerReturnReceiptService
     {
         if ($return_order->delivery_note_id !== null) {
             return DeliveryNote::query()
-                ->whereKey((int) $return_order->delivery_note_id)
+                ->whereKey($return_order->delivery_note_id)
                 ->lockForUpdate()
                 ->firstOrFail();
         }
 
         $delivery_note = DeliveryNote::query()->create([
-            'company_id' => (int) $return_order->company_id,
+            'company_id' => $return_order->company_id,
             'direction' => DeliveryNoteDirection::Inbound,
             'reference' => $this->deliveryNoteReference($return_order),
             'delivered_at' => now(),
-            'notes' => 'Generated from customer return #' . $return_order->getKey(),
+            'notes' => 'Generated from customer return #' . (string) $return_order->id,
         ]);
 
         foreach ($return_order->lines as $line) {
-            /** @var ReturnOrderLine $line */
             $delivery_note_line = $delivery_note->lines()->create([
-                'company_id' => (int) $return_order->company_id,
-                'item_id' => (int) $line->item_id,
-                'warehouse_id' => (int) $line->warehouse_id,
-                'quantity' => (string) $line->quantity,
+                'company_id' => $return_order->company_id,
+                'item_id' => $line->item_id,
+                'warehouse_id' => $line->warehouse_id,
+                'quantity' => $line->quantity,
                 'sales_order_line_id' => $this->sourceSalesOrderLineId($line),
             ]);
 
-            $line->delivery_note_line_id = (int) $delivery_note_line->getKey();
+            $line->delivery_note_line_id = $this->modelId($delivery_note_line);
             $line->save();
         }
 
@@ -94,10 +94,10 @@ final readonly class CustomerReturnReceiptService
     private function deliveryNoteReference(ReturnOrder $return_order): string
     {
         if ($return_order->reference !== null && $return_order->reference !== '') {
-            return 'RET-' . mb_substr((string) $return_order->reference, 0, 60);
+            return 'RET-' . mb_substr($return_order->reference, 0, 60);
         }
 
-        return 'RET-' . $return_order->getKey();
+        return 'RET-' . (string) $return_order->id;
     }
 
     private function sourceSalesOrderLineId(ReturnOrderLine $line): ?int
@@ -107,23 +107,25 @@ final readonly class CustomerReturnReceiptService
         }
 
         $sales_order_line_id = InvoiceLine::query()
-            ->whereKey((int) $line->invoice_line_id)
+            ->whereKey($line->invoice_line_id)
             ->value('sales_order_line_id');
 
-        return $sales_order_line_id === null ? null : (int) $sales_order_line_id;
+        if (! is_numeric($sales_order_line_id)) {
+            return null;
+        }
+
+        return (int) $sales_order_line_id;
     }
 
     private function registerSourceReturnedQuantities(ReturnOrder $return_order): void
     {
         foreach ($return_order->lines as $line) {
-            /** @var ReturnOrderLine $line */
             if ($line->invoice_line_id === null) {
                 continue;
             }
 
-            /** @var InvoiceLine $invoice_line */
             $invoice_line = InvoiceLine::query()
-                ->whereKey((int) $line->invoice_line_id)
+                ->whereKey($line->invoice_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -143,9 +145,8 @@ final readonly class CustomerReturnReceiptService
                 continue;
             }
 
-            /** @var SalesOrderLine $sales_order_line */
             $sales_order_line = SalesOrderLine::query()
-                ->whereKey((int) $invoice_line->sales_order_line_id)
+                ->whereKey($invoice_line->sales_order_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -162,8 +163,16 @@ final readonly class CustomerReturnReceiptService
         }
     }
 
+    /**
+     * @return numeric-string
+     */
     private function formatQuantity(float $quantity): string
     {
         return number_format($quantity, 4, '.', '');
+    }
+
+    private function modelId(DeliveryNote|DeliveryNoteLine $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
     }
 }

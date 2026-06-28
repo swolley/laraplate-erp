@@ -20,7 +20,7 @@ final class FiscalPeriodCloser
     public function closePeriod(FiscalPeriod $period): void
     {
         if ($period->is_closed) {
-            throw FiscalPeriodAlreadyClosedException::forPeriod((int) $period->getKey());
+            throw FiscalPeriodAlreadyClosedException::forPeriod($this->modelId($period));
         }
 
         DB::transaction(function () use ($period): void {
@@ -46,7 +46,7 @@ final class FiscalPeriodCloser
     public function closeYear(FiscalYear $year): void
     {
         if ($year->is_closed) {
-            throw FiscalYearAlreadyClosedException::forYear((int) $year->getKey());
+            throw FiscalYearAlreadyClosedException::forYear($this->modelId($year));
         }
 
         DB::transaction(function () use ($year): void {
@@ -64,5 +64,10 @@ final class FiscalPeriodCloser
             $year->setSkipValidation(true);
             $year->save();
         });
+    }
+
+    private function modelId(FiscalPeriod|FiscalYear $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
     }
 }

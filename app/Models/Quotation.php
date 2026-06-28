@@ -19,6 +19,11 @@ use Override;
 
 #[ObservedBy([QuotationObserver::class])]
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $party_id
+ * @property int|null $opportunity_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperQuotation
  */
@@ -79,6 +84,9 @@ final class Quotation extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function getRules(): array
     {
@@ -107,9 +115,9 @@ final class Quotation extends Model
     {
         self::saving(static function (Quotation $quotation): void {
             if ($quotation->party_id !== null) {
-                $party = Party::query()->find($quotation->party_id);
+                $party = Party::query()->whereKey($quotation->party_id)->first();
 
-                if ($party !== null && ! $party->is_customer) {
+                if ($party instanceof Party && ! $party->is_customer) {
                     throw ValidationException::withMessages([
                         'party_id' => ['The selected party must be a customer.'],
                     ]);
@@ -120,21 +128,21 @@ final class Quotation extends Model
                 return;
             }
 
-            $opportunity = Opportunity::query()->find($quotation->opportunity_id);
+            $opportunity = Opportunity::query()->whereKey($quotation->opportunity_id)->first();
 
-            if ($opportunity === null) {
+            if (! $opportunity instanceof Opportunity) {
                 throw ValidationException::withMessages([
                     'opportunity_id' => ['The selected opportunity is invalid.'],
                 ]);
             }
 
-            if ((int) $opportunity->party_id !== (int) $quotation->party_id) {
+            if ($opportunity->party_id !== $quotation->party_id) {
                 throw ValidationException::withMessages([
                     'opportunity_id' => ['The opportunity must belong to the same party as this quotation.'],
                 ]);
             }
 
-            if ((int) $opportunity->company_id !== (int) $quotation->company_id) {
+            if ($opportunity->company_id !== $quotation->company_id) {
                 throw ValidationException::withMessages([
                     'opportunity_id' => ['The opportunity must belong to the same company as this quotation.'],
                 ]);

@@ -119,7 +119,7 @@ final readonly class SupplierReturnService
                 ]);
             }
 
-            $locked->debit_note_invoice_id = (int) $debit_note->getKey();
+            $locked->debit_note_invoice_id = is_int($debit_note->id) ? $debit_note->id : (int) $debit_note->id;
             $locked->save();
 
             return $debit_note;

@@ -13,7 +13,7 @@ use Modules\ERP\Models\PaymentScheduleLine;
 final class AgingReportService
 {
     /**
-     * @return array<int, array{party_id: int, party_name: string, current: string, days_30: string, days_60: string, days_90: string, days_120_plus: string, total: string}>
+     * @return list<array{party_id: int, party_name: string, current: numeric-string, days_30: numeric-string, days_60: numeric-string, days_90: numeric-string, days_120_plus: numeric-string, total: numeric-string}>
      */
     public function generate(int $company_id, string $direction, ?DateTimeInterface $as_of_date = null): array
     {
@@ -45,11 +45,11 @@ final class AgingReportService
             ])
             ->get();
 
-        /** @var array<int, array{party_id: int, party_name: string, current: string, days_30: string, days_60: string, days_90: string, days_120_plus: string, total: string}> $grouped */
+        /** @var array<int, array{party_id: int, party_name: string, current: numeric-string, days_30: numeric-string, days_60: numeric-string, days_90: numeric-string, days_120_plus: numeric-string, total: numeric-string}> $grouped */
         $grouped = [];
 
         foreach ($schedule_lines as $line) {
-            $party_id = (int) $line->party_id;
+            $party_id = $this->partyIdFromLine($line);
             $remaining = $this->round4((float) $line->amount_doc - (float) $line->paid_amount_doc);
 
             if ((float) $remaining <= 0.00005) {
@@ -63,23 +63,57 @@ final class AgingReportService
             if (! isset($grouped[$party_id])) {
                 $grouped[$party_id] = [
                     'party_id' => $party_id,
-                    'party_name' => (string) $line->party_name,
-                    'current' => '0.0000',
-                    'days_30' => '0.0000',
-                    'days_60' => '0.0000',
-                    'days_90' => '0.0000',
-                    'days_120_plus' => '0.0000',
-                    'total' => '0.0000',
+                    'party_name' => $this->partyNameFromLine($line),
+                    'current' => $this->zeroAmount(),
+                    'days_30' => $this->zeroAmount(),
+                    'days_60' => $this->zeroAmount(),
+                    'days_90' => $this->zeroAmount(),
+                    'days_120_plus' => $this->zeroAmount(),
+                    'total' => $this->zeroAmount(),
                 ];
             }
 
             $party_row = $grouped[$party_id];
-            $party_row[$bucket] = $this->add($party_row[$bucket], $remaining);
+
+            match ($bucket) {
+                'current' => $party_row['current'] = $this->add($party_row['current'], $remaining),
+                'days_30' => $party_row['days_30'] = $this->add($party_row['days_30'], $remaining),
+                'days_60' => $party_row['days_60'] = $this->add($party_row['days_60'], $remaining),
+                'days_90' => $party_row['days_90'] = $this->add($party_row['days_90'], $remaining),
+                default => $party_row['days_120_plus'] = $this->add($party_row['days_120_plus'], $remaining),
+            };
+
             $party_row['total'] = $this->add($party_row['total'], $remaining);
             $grouped[$party_id] = $party_row;
         }
 
         return array_values($grouped);
+    }
+
+    private function partyIdFromLine(PaymentScheduleLine $line): int
+    {
+        $party_id = $line->getAttribute('party_id');
+
+        if (is_int($party_id)) {
+            return $party_id;
+        }
+
+        if (is_string($party_id) && is_numeric($party_id)) {
+            return (int) $party_id;
+        }
+
+        if (is_float($party_id)) {
+            return (int) $party_id;
+        }
+
+        return 0;
+    }
+
+    private function partyNameFromLine(PaymentScheduleLine $line): string
+    {
+        $party_name = $line->getAttribute('party_name');
+
+        return is_string($party_name) ? $party_name : '';
     }
 
     private function resolveBucket(int $days_overdue): string
@@ -103,11 +137,27 @@ final class AgingReportService
         return 'days_120_plus';
     }
 
+    /**
+     * @return numeric-string
+     */
     private function round4(float $value): string
     {
         return number_format(round($value, 4), 4, '.', '');
     }
 
+    /**
+     * @return numeric-string
+     */
+    private function zeroAmount(): string
+    {
+        return '0.0000';
+    }
+
+    /**
+     * @param  numeric-string  $a
+     * @param  numeric-string  $b
+     * @return numeric-string
+     */
     private function add(string $a, string $b): string
     {
         return $this->round4((float) $a + (float) $b);

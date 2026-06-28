@@ -16,6 +16,9 @@ final class CreditNoteService
      * Create a credit note from an existing posted invoice.
      * Copies lines from the original with quantities/amounts, does NOT post automatically.
      */
+    /**
+     * @param  array<int, array{quantity?: numeric-string|float, unit_price?: numeric-string|float}>|null  $line_overrides
+     */
     public function createFromInvoice(Invoice $original, ?array $line_overrides = null): Invoice
     {
         return DB::transaction(function () use ($original, $line_overrides): Invoice {
@@ -151,7 +154,7 @@ final class CreditNoteService
         $total = 0.0;
 
         foreach ($cn_ids as $cn_id) {
-            $cn = Invoice::query()->withoutGlobalScopes()->find($cn_id);
+            $cn = Invoice::query()->withoutGlobalScopes()->whereKey($cn_id)->first();
 
             if ($cn !== null) {
                 $total += (float) $this->getInvoiceGrossTotal($cn);

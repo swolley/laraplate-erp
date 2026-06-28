@@ -29,16 +29,25 @@ final class Activity extends Taxonomy
         return Presettable::class;
     }
 
+    /**
+     * @return HasMany<TimeEntry, $this>
+     */
     public function time_entries(): HasMany
     {
         return $this->hasMany(TimeEntry::class, 'taxonomy_id');
     }
 
+    /**
+     * @return HasMany<PriceListItem, $this>
+     */
     public function price_list_items(): HasMany
     {
         return $this->hasMany(PriceListItem::class, 'taxonomy_id');
     }
 
+    /**
+     * @return HasMany<Task, $this>
+     */
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'taxonomy_id');

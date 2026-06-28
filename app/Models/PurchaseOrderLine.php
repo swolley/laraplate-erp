@@ -13,6 +13,15 @@ use Override;
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
  *
+ * @property int|string $id
+ * @property int $purchase_order_id
+ * @property int|null $item_id
+ * @property string $name
+ * @property numeric-string $qty_ordered
+ * @property numeric-string $qty_received
+ * @property numeric-string $qty_returned
+ * @property numeric-string|null $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrderLine
  */
@@ -53,6 +62,10 @@ final class PurchaseOrderLine extends Model
     {
         return $this->belongsTo(Item::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array
@@ -95,9 +108,9 @@ final class PurchaseOrderLine extends Model
                 return;
             }
 
-            $purchase_order = $line->purchase_order ?? PurchaseOrder::query()->find($line->purchase_order_id);
+            $purchase_order = $line->purchase_order ?? PurchaseOrder::query()->whereKey($line->purchase_order_id)->first();
 
-            if ($purchase_order === null) {
+            if (! $purchase_order instanceof PurchaseOrder) {
                 return;
             }
 
@@ -109,7 +122,7 @@ final class PurchaseOrderLine extends Model
                 ]);
             }
 
-            if ((int) $item->company_id !== (int) $purchase_order->company_id) {
+            if ($item->company_id !== $purchase_order->company_id) {
                 throw ValidationException::withMessages([
                     'item_id' => ['The item must belong to the same company as the purchase order.'],
                 ]);

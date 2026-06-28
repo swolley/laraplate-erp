@@ -11,6 +11,12 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property string $name
+ * @property list<array{days?: int, percent?: float|int}> $rate_lines
+ * @property bool $is_active
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentTerm
  */
@@ -43,6 +49,10 @@ final class PaymentTerm extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

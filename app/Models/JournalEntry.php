@@ -19,6 +19,19 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * Header for a posted double-entry journal voucher.
  *
+ * @property int|string $id
+ * @property int $company_id
+ * @property int|null $fiscal_period_id
+ * @property \Carbon\CarbonInterface|null $posted_at
+ * @property int|null $posted_by
+ * @property string|null $reference_type
+ * @property int|null $reference_id
+ * @property string|null $description
+ * @property int|null $reverses_journal_entry_id
+ * @property string|null $reversal_reason
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, JournalEntryLine> $lines
+ * @property-read FiscalPeriod|null $fiscal_period
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntry
  */
@@ -93,6 +106,10 @@ final class JournalEntry extends Model
     {
         return $this->morphTo(__FUNCTION__, 'reference_type', 'reference_id');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

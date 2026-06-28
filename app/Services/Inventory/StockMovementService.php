@@ -72,15 +72,15 @@ final class StockMovementService
                     'unit_cost' => $unit_cost_string,
                 ]);
 
-                $stock_level->quantity = $this->addDecimal((string) $stock_level->quantity, $quantity_string);
+                $stock_level->quantity = $this->addDecimal($stock_level->quantity, $quantity_string);
                 $this->syncFifoDisplayAverage($stock_level);
                 $stock_level->save();
 
                 return $movement;
             }
 
-            $old_qty = (string) $stock_level->quantity;
-            $old_avg = (string) $stock_level->weighted_avg_cost;
+            $old_qty = $stock_level->quantity;
+            $old_avg = $stock_level->weighted_avg_cost;
             $new_qty = $this->addDecimal($old_qty, $quantity_string);
             $new_avg = (float) $new_qty > 0
                 ? $this->divideDecimal(
@@ -156,18 +156,18 @@ final class StockMovementService
                 $movement->unit_cost = $movement_unit_cost;
                 $movement->save();
 
-                $stock_level->quantity = $this->subtractDecimal((string) $stock_level->quantity, $quantity_string);
+                $stock_level->quantity = $this->subtractDecimal($stock_level->quantity, $quantity_string);
                 $this->syncFifoDisplayAverage($stock_level);
                 $stock_level->save();
 
                 return $movement;
             }
 
-            $avg = (string) $stock_level->weighted_avg_cost;
+            $avg = $stock_level->weighted_avg_cost;
             $movement->unit_cost = $avg;
             $movement->save();
 
-            $new_qty = $this->subtractDecimal((string) $stock_level->quantity, $quantity_string);
+            $new_qty = $this->subtractDecimal($stock_level->quantity, $quantity_string);
             $stock_level->quantity = $new_qty;
 
             if ((float) $new_qty === 0.0) {
@@ -237,6 +237,8 @@ final class StockMovementService
     /**
      * Consumes open FIFO layers (oldest first) and returns the weighted unit
      * cost for the outbound quantity.
+     *
+     * @return numeric-string
      */
     private function consumeFifoLayersAndComputeUnitCost(
         int $company_id,
@@ -256,7 +258,7 @@ final class StockMovementService
         $available = '0.0000';
 
         foreach ($layers as $layer) {
-            $available = $this->addDecimal($available, (string) $layer->qty_remaining);
+            $available = $this->addDecimal($available, $layer->qty_remaining);
         }
 
         if ((float) $available < (float) $quantity_out) {
@@ -273,14 +275,14 @@ final class StockMovementService
                 break;
             }
 
-            $layer_qty = (string) $layer->qty_remaining;
+            $layer_qty = $layer->qty_remaining;
 
             if ((float) $layer_qty === 0.0) {
                 continue;
             }
 
             $take = $this->minDecimal($layer_qty, $remaining_to_take);
-            $layer_cost = $this->multiplyDecimal($take, (string) $layer->unit_cost);
+            $layer_cost = $this->multiplyDecimal($take, $layer->unit_cost);
             $total_cost = $this->addDecimal($total_cost, $layer_cost);
 
             $new_remaining = $this->subtractDecimal($layer_qty, $take);
@@ -312,10 +314,10 @@ final class StockMovementService
         $value = '0.0000';
 
         foreach ($layers as $layer) {
-            $layer_qty_sum = $this->addDecimal($layer_qty_sum, (string) $layer->qty_remaining);
+            $layer_qty_sum = $this->addDecimal($layer_qty_sum, $layer->qty_remaining);
             $value = $this->addDecimal(
                 $value,
-                $this->multiplyDecimal((string) $layer->qty_remaining, (string) $layer->unit_cost),
+                $this->multiplyDecimal($layer->qty_remaining, $layer->unit_cost),
             );
         }
 
@@ -328,11 +330,17 @@ final class StockMovementService
         $stock_level->weighted_avg_cost = $this->divideDecimal($value, $layer_qty_sum);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function normalizeQuantityString(string|float|int $value): string
     {
         return $this->formatMoney4((float) $value);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function normalizeMoneyString(string|float|int $value): string
     {
         $as_float = is_string($value) ? (float) $value : (float) $value;
@@ -340,26 +348,41 @@ final class StockMovementService
         return $this->formatMoney4($as_float);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function addDecimal(string $a, string $b): string
     {
         return $this->formatMoney4((float) $a + (float) $b);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function subtractDecimal(string $a, string $b): string
     {
         return $this->formatMoney4((float) $a - (float) $b);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function minDecimal(string $a, string $b): string
     {
         return (float) $a <= (float) $b ? $this->formatMoney4((float) $a) : $this->formatMoney4((float) $b);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function multiplyDecimal(string $a, string $b): string
     {
         return $this->formatMoney4((float) $a * (float) $b);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function divideDecimal(string $a, string $b): string
     {
         $den = (float) $b;
@@ -371,6 +394,9 @@ final class StockMovementService
         return $this->formatMoney4((float) $a / $den);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function formatMoney4(float $value): string
     {
         return number_format(round($value, 4), 4, '.', '');

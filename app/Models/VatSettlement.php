@@ -15,6 +15,8 @@ use Override;
 /**
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
  *
+ * @property numeric-string $settlement_amount
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperVatSettlement
  */
@@ -51,6 +53,10 @@ final class VatSettlement extends Model
     {
         return $this->belongsTo(FiscalPeriod::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

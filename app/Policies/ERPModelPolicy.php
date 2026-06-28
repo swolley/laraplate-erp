@@ -82,6 +82,8 @@ final class ERPModelPolicy
             return true;
         }
 
-        return $user->hasPermissionTo($permission, (string) config('auth.defaults.guard', 'web'));
+        $guard = config('auth.defaults.guard');
+
+        return $user->hasPermissionTo($permission, is_string($guard) ? $guard : 'web');
     }
 }

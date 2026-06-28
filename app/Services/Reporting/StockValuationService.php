@@ -35,8 +35,8 @@ final class StockValuationService
             ->where('company_id', $company_id)
             ->get()
             ->sortBy([
-                static fn (StockLevel $left, StockLevel $right): int => strcmp((string) $left->item?->sku, (string) $right->item?->sku),
-                static fn (StockLevel $left, StockLevel $right): int => strcmp((string) $left->warehouse?->code, (string) $right->warehouse?->code),
+                static fn (StockLevel $left, StockLevel $right): int => strcmp(self::itemSku($left), self::itemSku($right)),
+                static fn (StockLevel $left, StockLevel $right): int => strcmp(self::warehouseCode($left), self::warehouseCode($right)),
             ])
             ->values();
 
@@ -48,14 +48,16 @@ final class StockValuationService
             $quantity = (float) $stock_level->quantity;
             $weighted_avg_cost = (float) $stock_level->weighted_avg_cost;
             $value = $quantity * $weighted_avg_cost;
+            $item = $stock_level->item;
+            $warehouse = $stock_level->warehouse;
 
             $rows[] = [
-                'item_id' => (int) $stock_level->item_id,
-                'item_name' => (string) $stock_level->item?->name,
-                'sku' => (string) $stock_level->item?->sku,
-                'warehouse_id' => (int) $stock_level->warehouse_id,
-                'warehouse_name' => (string) $stock_level->warehouse?->name,
-                'warehouse_code' => (string) $stock_level->warehouse?->code,
+                'item_id' => $stock_level->item_id,
+                'item_name' => $item === null ? '' : $item->name,
+                'sku' => $item === null || $item->sku === null ? '' : $item->sku,
+                'warehouse_id' => $stock_level->warehouse_id,
+                'warehouse_name' => $warehouse === null ? '' : $warehouse->name,
+                'warehouse_code' => $warehouse === null ? '' : $warehouse->code,
                 'quantity' => $this->formatAmount($quantity),
                 'weighted_avg_cost' => $this->formatAmount($weighted_avg_cost),
                 'value' => $this->formatAmount($value),
@@ -75,5 +77,23 @@ final class StockValuationService
     private function formatAmount(float $amount): string
     {
         return number_format(round($amount, 4), 4, '.', '');
+    }
+
+    private static function itemSku(StockLevel $stock_level): string
+    {
+        $item = $stock_level->item;
+
+        if ($item === null || $item->sku === null) {
+            return '';
+        }
+
+        return $item->sku;
+    }
+
+    private static function warehouseCode(StockLevel $stock_level): string
+    {
+        $warehouse = $stock_level->warehouse;
+
+        return $warehouse === null ? '' : $warehouse->code;
     }
 }

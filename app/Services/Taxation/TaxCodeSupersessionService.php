@@ -18,16 +18,16 @@ final class TaxCodeSupersessionService
 {
     public function linkReplacement(TaxCode $obsolete, TaxCode $replacement): void
     {
-        throw_if((int) $obsolete->company_id !== (int) $replacement->company_id, InvalidArgumentException::class, 'Tax codes must belong to the same company.');
+        throw_if($obsolete->company_id !== $replacement->company_id, InvalidArgumentException::class, 'Tax codes must belong to the same company.');
 
-        throw_if((int) $obsolete->getKey() === (int) $replacement->getKey(), InvalidArgumentException::class, 'Cannot link a tax code as replacement of itself.');
+        throw_if($obsolete->id === $replacement->id, InvalidArgumentException::class, 'Cannot link a tax code as replacement of itself.');
 
         $tax_codes_table = ERPTables::TaxCodes->value;
         DB::table($tax_codes_table)
-            ->where('id', $obsolete->getKey())
+            ->where('id', $obsolete->id)
             ->update([
                 'is_active' => false,
-                'replaced_by_tax_code_id' => $replacement->getKey(),
+                'replaced_by_tax_code_id' => $replacement->id,
                 'updated_at' => now(),
             ]);
     }

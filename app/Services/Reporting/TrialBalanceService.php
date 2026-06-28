@@ -51,21 +51,63 @@ final class TrialBalanceService
         $result = [];
 
         foreach ($rows as $row) {
-            $balance = (float) $row->balance;
+            $aggregate = $this->aggregateRow($row);
+            $balance = $aggregate['balance'];
             $debit = $balance > 0 ? $balance : 0.0;
             $credit = $balance < 0 ? abs($balance) : 0.0;
 
             $result[] = [
-                'account_id' => (int) $row->account_id,
-                'account_code' => (string) $row->account_code,
-                'account_name' => (string) $row->account_name,
-                'account_kind' => (string) $row->account_kind,
-                'debit' => number_format(round($debit, 4), 4, '.', ''),
-                'credit' => number_format(round($credit, 4), 4, '.', ''),
-                'balance' => number_format(round($balance, 4), 4, '.', ''),
+                'account_id' => $aggregate['account_id'],
+                'account_code' => $aggregate['account_code'],
+                'account_name' => $aggregate['account_name'],
+                'account_kind' => $aggregate['account_kind'],
+                'debit' => $this->formatAmount($debit),
+                'credit' => $this->formatAmount($credit),
+                'balance' => $this->formatAmount($balance),
             ];
         }
 
         return $result;
+    }
+
+    /**
+     * @return array{account_id: int, account_code: string, account_name: string, account_kind: string, balance: float}
+     */
+    private function aggregateRow(JournalEntryLine $row): array
+    {
+        $account_id = $row->getAttribute('account_id');
+        $balance = $row->getAttribute('balance');
+        $account_code = $row->getAttribute('account_code');
+        $account_name = $row->getAttribute('account_name');
+        $account_kind = $row->getAttribute('account_kind');
+
+        return [
+            'account_id' => $this->accountIdFromAggregate($account_id),
+            'account_code' => is_string($account_code) ? $account_code : '',
+            'account_name' => is_string($account_name) ? $account_name : '',
+            'account_kind' => is_string($account_kind) ? $account_kind : '',
+            'balance' => is_numeric($balance) ? (float) $balance : 0.0,
+        ];
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function formatAmount(float $amount): string
+    {
+        return number_format(round($amount, 4), 4, '.', '');
+    }
+
+    private function accountIdFromAggregate(mixed $account_id): int
+    {
+        if (is_int($account_id)) {
+            return $account_id;
+        }
+
+        if (is_string($account_id) && is_numeric($account_id)) {
+            return (int) $account_id;
+        }
+
+        return 0;
     }
 }

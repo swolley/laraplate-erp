@@ -15,6 +15,19 @@ use Override;
 /**
  * Line item on a {@see SalesOrder}.
  *
+ * @property int|string $id
+ * @property int $sales_order_id
+ * @property int|null $quotation_item_id
+ * @property int|null $item_id
+ * @property string $name
+ * @property numeric-string $qty_ordered
+ * @property numeric-string $qty_delivered
+ * @property numeric-string $qty_invoiced
+ * @property numeric-string $qty_returned
+ * @property numeric-string|null $unit_price
+ * @property SalesOrderLineStatus $status
+ * @property-read SalesOrder|null $sales_order
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrderLine
  */
@@ -68,6 +81,10 @@ final class SalesOrderLine extends Model
     {
         return $this->belongsTo(QuotationItem::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

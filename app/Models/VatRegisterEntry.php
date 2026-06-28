@@ -67,6 +67,10 @@ final class VatRegisterEntry extends Model
         return $this->belongsTo(TaxCode::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {

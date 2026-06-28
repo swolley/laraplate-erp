@@ -83,7 +83,11 @@ function with_company(int $companyId, callable $callback): mixed
         return $callback();
     } finally {
         if ($had_previous) {
-            $container->instance('erp.current_company_id', $previous);
+            if (is_int($previous)) {
+                $container->instance('erp.current_company_id', $previous);
+            } elseif (is_numeric($previous)) {
+                $container->instance('erp.current_company_id', (int) $previous);
+            }
         } else {
             $container->forgetInstance('erp.current_company_id');
         }

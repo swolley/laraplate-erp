@@ -14,6 +14,16 @@ use Override;
 /**
  * Line on a {@see DeliveryNote} driving stock movement and optional SO evasion.
  *
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $delivery_note_id
+ * @property int $item_id
+ * @property int $warehouse_id
+ * @property numeric-string $quantity
+ * @property int|null $sales_order_line_id
+ * @property-read DeliveryNote|null $delivery_note
+ * @property-read \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNoteLine
  */
@@ -82,6 +92,10 @@ final class DeliveryNoteLine extends Model
             ERPTables::InvoiceLineDeliveryNoteLine->value,
         )->withPivot('quantity');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

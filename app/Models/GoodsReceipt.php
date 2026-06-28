@@ -14,6 +14,15 @@ use Modules\ERP\Observers\GoodsReceiptObserver;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int|null $purchase_order_id
+ * @property string|null $reference
+ * @property \Carbon\CarbonInterface|null $received_at
+ * @property \Carbon\CarbonInterface|null $posted_at
+ * @property \Carbon\CarbonInterface|null $inventory_posted_at
+ * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperGoodsReceipt
  */

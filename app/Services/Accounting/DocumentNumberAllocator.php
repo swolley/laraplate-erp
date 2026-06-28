@@ -99,7 +99,7 @@ final class DocumentNumberAllocator
 
     private function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
     {
-        $current_number = (int) $row->last_number;
+        $current_number = $row->last_number;
         $next_number = $current_number + 1;
         $updated = DocumentSequence::query()
             ->withoutGlobalScopes()

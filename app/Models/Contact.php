@@ -15,6 +15,10 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int|null $user_id
+ * @property-read User|null $user
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperContact
  */
@@ -97,6 +101,9 @@ final class Contact extends Model
         return parent::save($options);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getRules(): array
     {
         $rules = parent::getRules();
@@ -116,7 +123,9 @@ final class Contact extends Model
 
     protected static function booted(): void
     {
-        self::addGlobalScope(static fn (Builder $query) => $query->with('user'));
+        self::addGlobalScope(static function (Builder $query): void {
+            $query->with('user');
+        });
     }
 
     protected function casts(): array

@@ -14,6 +14,14 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property string $name
+ * @property string|null $sku
+ * @property string $uom
+ * @property string $costing_method
+ * @property int|null $taxonomy_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperItem
  */
@@ -77,6 +85,10 @@ final class Item extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

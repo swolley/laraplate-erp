@@ -12,6 +12,7 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property numeric-string $unit_price
  * @mixin \Eloquent
  * @mixin IdeHelperPriceListItem
  */
@@ -52,6 +53,10 @@ final class PriceListItem extends Model
     {
         return $this->belongsTo(PriceList::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

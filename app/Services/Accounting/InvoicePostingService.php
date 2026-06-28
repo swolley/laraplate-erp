@@ -40,18 +40,17 @@ final readonly class InvoicePostingService
     public function post(Invoice $invoice): void
     {
         DB::transaction(function () use ($invoice): void {
-            /** @var Invoice $locked */
-            $locked = Invoice::query()->whereKey((int) $invoice->getKey())->lockForUpdate()->firstOrFail();
+            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->journal_entry_id !== null) {
                 return;
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail((int) $locked->company_id);
+            $company = Company::query()->withoutGlobalScopes()->findOrFail($locked->company_id);
             $this->chart_of_accounts_installer->installWhenEmpty($company);
 
             $lines = InvoiceLine::query()
-                ->where('invoice_id', (int) $locked->id)
+                ->where('invoice_id', $locked->id)
                 ->orderBy('line_no')
                 ->get();
 
@@ -109,29 +108,28 @@ final readonly class InvoicePostingService
             $this->payment_schedule_generator_service->generate($locked, $gross_total);
 
             $this->applySalesOrderInvoicingProgress($locked, $lines, true);
-            $invoice->journal_entry_id = (int) $entry->getKey();
+            $invoice->journal_entry_id = $this->modelId($entry);
         });
     }
 
     public function unpost(Invoice $invoice): void
     {
         DB::transaction(function () use ($invoice): void {
-            /** @var Invoice $locked */
-            $locked = Invoice::query()->whereKey((int) $invoice->getKey())->lockForUpdate()->firstOrFail();
+            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             $lines = InvoiceLine::query()
-                ->where('invoice_id', (int) $locked->id)
+                ->where('invoice_id', $locked->id)
                 ->orderBy('line_no')
                 ->get();
 
             if ($locked->journal_entry_id !== null) {
-                $entry = JournalEntry::query()->withoutGlobalScopes()->find((int) $locked->journal_entry_id);
+                $entry = JournalEntry::query()->withoutGlobalScopes()->find($locked->journal_entry_id);
 
                 if ($entry !== null) {
-                    $company = Company::query()->withoutGlobalScopes()->findOrFail((int) $locked->company_id);
+                    $company = Company::query()->withoutGlobalScopes()->findOrFail($locked->company_id);
                     $reason = $locked->reference !== null && $locked->reference !== ''
                         ? 'Invoice unposted ' . $locked->reference
-                        : 'Invoice unposted #' . (int) $locked->id;
+                        : 'Invoice unposted #' . (string) $locked->id;
                     $this->journal_posting_service->reverse($entry, $company, $reason);
                 }
             }
@@ -161,11 +159,11 @@ final readonly class InvoicePostingService
             $line_tax = '0.0000';
 
             if ($line->tax_code_id !== null) {
-                $tax_code = TaxCode::query()->withoutGlobalScopes()->findOrFail((int) $line->tax_code_id);
+                $tax_code = TaxCode::query()->withoutGlobalScopes()->findOrFail($line->tax_code_id);
                 $line_tax = $this->round4(((float) $line_net * (float) $tax_code->rate) / 100);
 
                 $line->tax_code = $tax_code->code;
-                $line->tax_rate = (string) $tax_code->rate;
+                $line->tax_rate = $tax_code->rate;
                 $line->tax_label = $tax_code->label;
                 $line->save();
             }
@@ -206,12 +204,12 @@ final readonly class InvoicePostingService
             $vat_output = $this->findAccountByRole($company, 'vat_output');
 
             $lines = [
-                $this->line((int) $receivable->id, $gross_total, $currency, $fx_rate, 'Trade receivable'),
-                $this->line((int) $revenue->id, $this->neg($net_total), $currency, $fx_rate, 'Sales revenue'),
+                $this->line($this->modelId($receivable), $gross_total, $currency, $fx_rate, 'Trade receivable'),
+                $this->line($this->modelId($revenue), $this->neg($net_total), $currency, $fx_rate, 'Sales revenue'),
             ];
 
             if (abs($this->asFloat($tax_total)) > 0) {
-                $lines[] = $this->line((int) $vat_output->id, $this->neg($tax_total), $currency, $fx_rate, 'VAT output');
+                $lines[] = $this->line($this->modelId($vat_output), $this->neg($tax_total), $currency, $fx_rate, 'VAT output');
             }
 
             return $lines;
@@ -222,14 +220,14 @@ final readonly class InvoicePostingService
         $payable = $this->findAccountByRole($company, 'trade_payable');
 
         $lines = [
-            $this->line((int) $expense->id, $net_total, $currency, $fx_rate, 'Purchase expense'),
+            $this->line($this->modelId($expense), $net_total, $currency, $fx_rate, 'Purchase expense'),
         ];
 
         if (abs($this->asFloat($tax_total)) > 0) {
-            $lines[] = $this->line((int) $vat_input->id, $tax_total, $currency, $fx_rate, 'VAT input');
+            $lines[] = $this->line($this->modelId($vat_input), $tax_total, $currency, $fx_rate, 'VAT input');
         }
 
-        $lines[] = $this->line((int) $payable->id, $this->neg($gross_total), $currency, $fx_rate, 'Trade payable');
+        $lines[] = $this->line($this->modelId($payable), $this->neg($gross_total), $currency, $fx_rate, 'Trade payable');
 
         return $lines;
     }
@@ -322,7 +320,7 @@ final readonly class InvoicePostingService
     {
         $account = Account::query()
             ->withoutGlobalScopes()
-            ->where('company_id', (int) $company->id)
+            ->where('company_id', $company->id)
             ->where('meta->erp_role', $role)
             ->first();
 
@@ -343,12 +341,13 @@ final readonly class InvoicePostingService
             return $posted_at;
         }
 
-        return CarbonImmutable::parse($posted_at);
+        if ($posted_at !== null) {
+            return CarbonImmutable::parse($posted_at);
+        }
+
+        return CarbonImmutable::now();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     /**
      * @return array{
      *     account_id: int,
@@ -376,6 +375,11 @@ final readonly class InvoicePostingService
     private function round4(float $value): string
     {
         return number_format(round($value, 4), 4, '.', '');
+    }
+
+    private function modelId(Account|JournalEntry $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
     }
 
     private function add(string $a, string $b): string

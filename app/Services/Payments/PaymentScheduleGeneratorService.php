@@ -32,8 +32,8 @@ final class PaymentScheduleGeneratorService
 
             if ($invoice->payment_term_id === null) {
                 PaymentScheduleLine::query()->create([
-                    'company_id' => (int) $invoice->company_id,
-                    'invoice_id' => (int) $invoice->getKey(),
+                    'company_id' => $invoice->company_id,
+                    'invoice_id' => $this->invoiceId($invoice),
                     'due_date' => $posted_at->toDateString(),
                     'amount_doc' => $gross_total,
                     'currency_doc' => $currency,
@@ -48,16 +48,11 @@ final class PaymentScheduleGeneratorService
                 return;
             }
 
-            /** @var PaymentTerm $payment_term */
             $payment_term = PaymentTerm::query()
                 ->withoutGlobalScopes()
-                ->findOrFail((int) $invoice->payment_term_id);
+                ->findOrFail($invoice->payment_term_id);
 
-            $rate_lines = is_array($payment_term->rate_lines)
-                ? $payment_term->rate_lines
-                : json_decode((string) $payment_term->rate_lines, true);
-
-            foreach ($rate_lines as $rate_line) {
+            foreach ($payment_term->rate_lines as $rate_line) {
                 $days = (int) ($rate_line['days'] ?? 0);
                 $percent = (float) ($rate_line['percent'] ?? 0);
 
@@ -65,8 +60,8 @@ final class PaymentScheduleGeneratorService
                 $due_date = $posted_at->addDays($days)->toDateString();
 
                 PaymentScheduleLine::query()->create([
-                    'company_id' => (int) $invoice->company_id,
-                    'invoice_id' => (int) $invoice->getKey(),
+                    'company_id' => $invoice->company_id,
+                    'invoice_id' => $this->invoiceId($invoice),
                     'due_date' => $due_date,
                     'amount_doc' => $amount_doc,
                     'currency_doc' => $currency,
@@ -85,7 +80,7 @@ final class PaymentScheduleGeneratorService
     {
         DB::transaction(function () use ($invoice): void {
             $has_allocations = PaymentScheduleLine::query()
-                ->where('invoice_id', (int) $invoice->getKey())
+                ->where('invoice_id', $this->invoiceId($invoice))
                 ->where('paid_amount_doc', '>', 0)
                 ->exists();
 
@@ -96,11 +91,19 @@ final class PaymentScheduleGeneratorService
             }
 
             PaymentScheduleLine::query()
-                ->where('invoice_id', (int) $invoice->getKey())
+                ->where('invoice_id', $this->invoiceId($invoice))
                 ->delete();
         });
     }
 
+    private function invoiceId(Invoice $invoice): int
+    {
+        return is_int($invoice->id) ? $invoice->id : (int) $invoice->id;
+    }
+
+    /**
+     * @return numeric-string
+     */
     private function round4(float $value): string
     {
         return number_format(round($value, 4), 4, '.', '');

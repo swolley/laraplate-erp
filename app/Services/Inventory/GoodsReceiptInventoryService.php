@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Inventory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\Item;
@@ -33,7 +34,6 @@ final readonly class GoodsReceiptInventoryService
     public function postInventory(GoodsReceipt $receipt): void
     {
         DB::transaction(function () use ($receipt): void {
-            /** @var GoodsReceipt $locked */
             $locked = GoodsReceipt::query()->whereKey($receipt->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->inventory_posted_at !== null) {
@@ -61,11 +61,11 @@ final readonly class GoodsReceiptInventoryService
 
             foreach ($lines as $line) {
                 $this->stock_movement_service->recordInbound(
-                    (int) $locked->company_id,
-                    (int) $line->item_id,
-                    (int) $line->warehouse_id,
-                    (string) $line->quantity,
-                    (string) $line->unit_cost,
+                    $locked->company_id,
+                    $line->item_id,
+                    $line->warehouse_id,
+                    $line->quantity,
+                    $line->unit_cost ?? '0.0000',
                     $line,
                 );
             }
@@ -78,18 +78,23 @@ final readonly class GoodsReceiptInventoryService
                         continue;
                     }
 
-                    $po_line_id = (int) $line->purchase_order_line_id;
-                    $quantities[$po_line_id] = $this->addQuantity($quantities[$po_line_id] ?? '0.0000', (string) $line->quantity);
+                    $po_line_id = $line->purchase_order_line_id;
+                    $quantities[$po_line_id] = $this->addQuantity($quantities[$po_line_id] ?? '0.0000', $line->quantity);
                 }
 
                 if ($quantities !== []) {
                     $purchase_order = PurchaseOrder::query()
-                        ->whereKey((int) $locked->purchase_order_id)
+                        ->whereKey($locked->purchase_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
 
                     $this->registerPurchaseReceipts($purchase_order, $quantities);
-                    $this->syncPurchaseOrderStatus($purchase_order->fresh(['lines']));
+
+                    $purchase_order = $purchase_order->fresh(['lines']);
+
+                    if ($purchase_order !== null) {
+                        $this->syncPurchaseOrderStatus($purchase_order);
+                    }
                 }
             }
 
@@ -102,17 +107,17 @@ final readonly class GoodsReceiptInventoryService
      */
     private function validatePurchaseOrderLines(GoodsReceipt $header, Collection $lines): void
     {
-        $company_id = (int) $header->company_id;
+        $company_id = $header->company_id;
 
         foreach ($lines as $line) {
-            if ($company_id !== (int) $line->company_id) {
+            if ($company_id !== $line->company_id) {
                 throw ValidationException::withMessages([
                     'company_id' => ['Goods receipt line company does not match goods receipt company.'],
                 ]);
             }
 
             $item_matches_company = Item::query()
-                ->whereKey((int) $line->item_id)
+                ->whereKey($line->item_id)
                 ->where('company_id', $company_id)
                 ->exists();
 
@@ -123,7 +128,7 @@ final readonly class GoodsReceiptInventoryService
             }
 
             $warehouse_matches_company = Warehouse::query()
-                ->whereKey((int) $line->warehouse_id)
+                ->whereKey($line->warehouse_id)
                 ->where('company_id', $company_id)
                 ->exists();
 
@@ -138,9 +143,8 @@ final readonly class GoodsReceiptInventoryService
             return;
         }
 
-        $purchase_order_id = (int) $header->purchase_order_id;
+        $purchase_order_id = $header->purchase_order_id;
 
-        /** @var PurchaseOrder|null $po */
         $po = PurchaseOrder::query()->find($purchase_order_id);
 
         if ($po === null) {
@@ -149,7 +153,7 @@ final readonly class GoodsReceiptInventoryService
             ]);
         }
 
-        if ((int) $po->company_id !== (int) $header->company_id) {
+        if ($po->company_id !== $header->company_id) {
             throw ValidationException::withMessages([
                 'purchase_order_id' => ['Purchase order does not belong to the same company as the goods receipt.'],
             ]);
@@ -160,7 +164,6 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            /** @var PurchaseOrderLine|null $po_line */
             $po_line = PurchaseOrderLine::query()->find($line->purchase_order_line_id);
 
             if ($po_line === null) {
@@ -169,7 +172,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            if ($purchase_order_id !== (int) $po_line->purchase_order_id) {
+            if ($purchase_order_id !== $po_line->purchase_order_id) {
                 throw ValidationException::withMessages([
                     'purchase_order_line_id' => ['Purchase order line does not belong to the goods receipt purchase order.'],
                 ]);
@@ -195,7 +198,6 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            /** @var PurchaseOrderLine|null $po_line */
             $po_line = $purchase_order->lines()
                 ->whereKey($line_id)
                 ->lockForUpdate()
@@ -205,11 +207,8 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            $po_line->qty_received = number_format(
+            $po_line->qty_received = $this->formatQuantity(
                 min((float) $po_line->qty_ordered, (float) $po_line->qty_received + (float) $qty),
-                4,
-                '.',
-                '',
             );
             $po_line->save();
         }
@@ -228,7 +227,7 @@ final readonly class GoodsReceiptInventoryService
         );
 
         if ($all_received) {
-            $purchase_order->status = 'received';
+            $purchase_order->status = PurchaseOrderStatus::Received->value;
             $purchase_order->saveQuietly();
 
             return;
@@ -239,13 +238,24 @@ final readonly class GoodsReceiptInventoryService
         );
 
         if ($has_progress) {
-            $purchase_order->status = 'partial';
+            $purchase_order->status = PurchaseOrderStatus::Partial->value;
             $purchase_order->saveQuietly();
         }
     }
 
+    /**
+     * @return numeric-string
+     */
     private function addQuantity(string $left, string $right): string
     {
-        return number_format((float) $left + (float) $right, 4, '.', '');
+        return $this->formatQuantity((float) $left + (float) $right);
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function formatQuantity(float $quantity): string
+    {
+        return number_format($quantity, 4, '.', '');
     }
 }

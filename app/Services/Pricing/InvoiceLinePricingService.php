@@ -27,7 +27,15 @@ final readonly class InvoiceLinePricingService
             ->with(['sales_order', 'item'])
             ->find($sales_order_line_id);
 
-        if ($line === null || $company_id !== (int) $line->sales_order?->company_id) {
+        if ($line === null) {
+            throw ValidationException::withMessages([
+                'sales_order_line_id' => ['The sales order line does not belong to the selected company.'],
+            ]);
+        }
+
+        $sales_order = $line->sales_order;
+
+        if ($sales_order === null || $company_id !== $sales_order->company_id) {
             throw ValidationException::withMessages([
                 'sales_order_line_id' => ['The sales order line does not belong to the selected company.'],
             ]);
@@ -36,7 +44,7 @@ final readonly class InvoiceLinePricingService
         $unit_price = $this->resolveUnitPrice(
             company_id: $company_id,
             line: $line,
-            party_id: $party_id ?? $line->sales_order?->party_id,
+            party_id: $party_id ?? $sales_order->party_id,
             currency: $currency,
         );
 
@@ -60,7 +68,7 @@ final readonly class InvoiceLinePricingService
         try {
             return $this->priceResolver->resolve(
                 company_id: $company_id,
-                item_id: (int) $line->item_id,
+                item_id: $line->item_id,
                 party_id: $party_id,
                 currency: $currency,
             )->resolvedUnitPrice;

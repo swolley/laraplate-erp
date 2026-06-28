@@ -18,11 +18,20 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * Scoped through {@see FiscalYear} for multi-company isolation.
  *
+ * @property int|string $id
+ * @property int $fiscal_year_id
+ * @property int $period_no
+ * @property \Carbon\CarbonInterface $start_date
+ * @property \Carbon\CarbonInterface $end_date
+ * @property bool $is_closed
+ * @property-read FiscalYear|null $fiscal_year
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperFiscalPeriod
  */
 final class FiscalPeriod extends Model
 {
+    /** @use HasFactory<\Illuminate\Database\Eloquent\Factories\Factory<static>> */
     use HasFactory;
     use HasValidations {
         HasValidations::getRules as private validationsHasRules;
@@ -60,6 +69,9 @@ final class FiscalPeriod extends Model
         return $this->belongsTo(FiscalYear::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getRules(): array
     {
         $rules = $this->validationsHasRules();

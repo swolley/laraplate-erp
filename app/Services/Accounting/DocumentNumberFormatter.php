@@ -16,15 +16,15 @@ final class DocumentNumberFormatter
      */
     public static function format(DocumentSequence $row, int $fiscal_year, int $counter): string
     {
-        $padding = max(1, (int) $row->padding);
+        $padding = max(1, $row->padding);
         $number = mb_str_pad((string) $counter, $padding, '0', STR_PAD_LEFT);
         $year_segment = $fiscal_year > 0 ? (string) $fiscal_year : '';
         $pattern = $row->format_pattern;
 
         if ($pattern === null || $pattern === '') {
             return self::defaultLayout(
-                (string) $row->prefix,
-                (string) $row->suffix,
+                $row->prefix,
+                $row->suffix,
                 $fiscal_year,
                 $number,
             );
@@ -32,7 +32,7 @@ final class DocumentNumberFormatter
 
         return str_replace(
             ['{prefix}', '{suffix}', '{number}', '{YYYY}'],
-            [(string) $row->prefix, (string) $row->suffix, $number, $year_segment],
+            [$row->prefix, $row->suffix, $number, $year_segment],
             $pattern,
         );
     }

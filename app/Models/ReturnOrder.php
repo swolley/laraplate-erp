@@ -13,6 +13,18 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $party_id
+ * @property int|null $invoice_id
+ * @property int|null $credit_note_invoice_id
+ * @property int|null $delivery_note_id
+ * @property string|null $reference
+ * @property ReturnStatus $status
+ * @property \Carbon\CarbonInterface|null $processed_at
+ * @property string|null $notes
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ReturnOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrder
  */

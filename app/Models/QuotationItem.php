@@ -51,6 +51,10 @@ final class QuotationItem extends Model
         return $this->belongsTo(PriceListItem::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {

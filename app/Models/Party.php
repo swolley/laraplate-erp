@@ -15,6 +15,12 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property string $name
+ * @property bool $is_customer
+ * @property bool $is_supplier
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperParty
  */
@@ -47,16 +53,25 @@ final class Party extends Model
         return $this->belongsToMany(Contact::class, 'contactables', 'party_id')->withTimestamps();
     }
 
+    /**
+     * @return HasManyThrough<Task, Project, $this>
+     */
     public function tasks(): HasManyThrough
     {
         return $this->hasManyThrough(Task::class, Project::class);
     }
 
+    /**
+     * @return HasMany<Project, $this>
+     */
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }
 
+    /**
+     * @return HasMany<Quotation, $this>
+     */
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class);
@@ -86,6 +101,9 @@ final class Party extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getRules(): array
     {
         $rules = parent::getRules();
@@ -99,12 +117,20 @@ final class Party extends Model
         return $rules;
     }
 
+    /**
+     * @param  Builder<Party>  $builder
+     * @return Builder<Party>
+     */
     #[\Illuminate\Database\Eloquent\Attributes\Scope]
     protected function customers(Builder $builder): Builder
     {
         return $builder->where('is_customer', true);
     }
 
+    /**
+     * @param  Builder<Party>  $builder
+     * @return Builder<Party>
+     */
     #[\Illuminate\Database\Eloquent\Attributes\Scope]
     protected function suppliers(Builder $builder): Builder
     {

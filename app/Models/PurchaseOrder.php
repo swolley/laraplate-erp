@@ -14,6 +14,15 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int|null $party_id
+ * @property string|null $reference
+ * @property string $currency
+ * @property string $status
+ * @property \Carbon\CarbonInterface|null $ordered_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrder
  */
@@ -55,6 +64,10 @@ final class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderLine::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

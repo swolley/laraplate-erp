@@ -11,6 +11,15 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $item_id
+ * @property int $warehouse_id
+ * @property numeric-string $quantity
+ * @property numeric-string $weighted_avg_cost
+ * @property-read Item|null $item
+ * @property-read Warehouse|null $warehouse
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperStockLevel
  */
@@ -51,6 +60,10 @@ final class StockLevel extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

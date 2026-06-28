@@ -18,6 +18,11 @@ use Override;
 
 #[ObservedBy([TimeEntryObserver::class])]
 /**
+ * @property int|string $id
+ * @property int $user_id
+ * @property \Carbon\CarbonInterface $started_at
+ * @property \Carbon\CarbonInterface|null $ended_at
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperTimeEntry
  */
@@ -106,9 +111,14 @@ final class TimeEntry extends Model
         return $this->belongsTo(QuotationItem::class, 'quotation_item_id');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function getRules(): array
     {
+        $exclude_id = $this->entryId();
+
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'user_id' => ['required', 'integer', 'exists:' . CoreTables::Users->value . ',id'],
@@ -126,7 +136,7 @@ final class TimeEntry extends Model
             'project_id' => ['nullable', 'integer', 'exists:' . ERPTables::Projects->value . ',id'],
             'quotation_item_id' => ['nullable', 'integer', 'exists:' . ERPTables::QuotationItems->value . ',id'],
             'started_at' => ['sometimes', 'date'],
-            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($this->getKey())],
+            'ended_at' => ['nullable', 'date', 'after:started_at', new TimeEntryOverlap($exclude_id)],
         ]);
 
         return $rules;
@@ -134,6 +144,9 @@ final class TimeEntry extends Model
 
     /**
      * Restrict the query to entries belonging to the given user.
+     *
+     * @param  Builder<TimeEntry>  $query
+     * @return Builder<TimeEntry>
      */
     #[Scope]
     protected function forUser(Builder $query, int $userId): Builder
@@ -145,6 +158,9 @@ final class TimeEntry extends Model
      * Restrict the query to entries that overlap the given half-open
      * interval [startedAt, endedAt). `endedAt = null` is treated as
      * future infinity (open session).
+     *
+     * @param  Builder<TimeEntry>  $query
+     * @return Builder<TimeEntry>
      */
     #[Scope]
     protected function overlapping(
@@ -170,11 +186,25 @@ final class TimeEntry extends Model
     /**
      * Restrict the query to entries with the given taxonomy (activity) node.
      * Useful for time aggregations grouped by activity.
+     *
+     * @param  Builder<TimeEntry>  $query
+     * @return Builder<TimeEntry>
      */
     #[Scope]
     protected function forTaxonomy(Builder $query, int $taxonomyId): Builder
     {
         return $query->where('taxonomy_id', $taxonomyId);
+    }
+
+    private function entryId(): int
+    {
+        $id = $this->getAttribute('id');
+
+        if (! is_int($id)) {
+            return 0;
+        }
+
+        return $id;
     }
 
     protected function casts(): array

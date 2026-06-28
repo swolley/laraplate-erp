@@ -44,6 +44,10 @@ final class PriceList extends Model
         return $this->hasMany(PriceListItem::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {

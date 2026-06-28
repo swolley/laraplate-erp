@@ -82,6 +82,9 @@ final class Lead extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function getRules(): array
     {
@@ -118,9 +121,9 @@ final class Lead extends Model
                 return;
             }
 
-            $party = Party::query()->find($lead->party_id);
+            $party = Party::query()->whereKey($lead->party_id)->first();
 
-            if ($party !== null && ! $party->is_customer) {
+            if ($party instanceof Party && ! $party->is_customer) {
                 throw ValidationException::withMessages([
                     'party_id' => ['The selected party must be a customer.'],
                 ]);

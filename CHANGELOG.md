@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚜 Refactor
+
+- *(erp)* Enhance model property annotations and type handling
+
 ## [1.13.2] - 2026-06-27
 
 ### 🧪 Testing

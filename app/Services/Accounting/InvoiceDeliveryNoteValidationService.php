@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 
@@ -38,22 +39,22 @@ final readonly class InvoiceDeliveryNoteValidationService
             $pivot_total = 0.0;
 
             foreach ($links as $dn_line) {
-                $pivot_qty = (float) $dn_line->pivot->quantity;
+                $pivot_qty = $this->pivotQuantity($dn_line, $invoice_line->line_no);
 
                 if ($pivot_qty <= 0.0) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Delivery note link quantity must be greater than zero on invoice line '
-                            . (int) $invoice_line->line_no . '.',
+                            . $invoice_line->line_no . '.',
                         ],
                     ]);
                 }
 
-                if ((int) $dn_line->company_id !== (int) $invoice->company_id) {
+                if ($dn_line->company_id !== $invoice->company_id) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Delivery note line on invoice line '
-                            . (int) $invoice_line->line_no
+                            . $invoice_line->line_no
                             . ' belongs to another company.',
                         ],
                     ]);
@@ -65,7 +66,7 @@ final readonly class InvoiceDeliveryNoteValidationService
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Delivery note must be posted before invoicing its lines (invoice line '
-                            . (int) $invoice_line->line_no . ').',
+                            . $invoice_line->line_no . ').',
                         ],
                     ]);
                 }
@@ -73,27 +74,27 @@ final readonly class InvoiceDeliveryNoteValidationService
                 if (
                     $invoice_line->sales_order_line_id !== null
                     && $dn_line->sales_order_line_id !== null
-                    && (int) $invoice_line->sales_order_line_id !== (int) $dn_line->sales_order_line_id
+                    && $invoice_line->sales_order_line_id !== $dn_line->sales_order_line_id
                 ) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Sales order line on invoice line '
-                            . (int) $invoice_line->line_no
+                            . $invoice_line->line_no
                             . ' does not match the linked delivery note line.',
                         ],
                     ]);
                 }
 
                 $already_invoiced = $this->invoicedQuantityOnDeliveryNoteLine(
-                    (int) $dn_line->id,
-                    (int) $invoice->id,
+                    $this->modelId($dn_line),
+                    $this->modelId($invoice),
                 );
 
                 if ($already_invoiced + $pivot_qty > (float) $dn_line->quantity) {
                     throw ValidationException::withMessages([
                         'lines' => [
                             'Invoiced quantity exceeds delivered quantity on delivery note line #'
-                            . (int) $dn_line->id . '.',
+                            . (string) $dn_line->id . '.',
                         ],
                     ]);
                 }
@@ -107,11 +108,42 @@ final readonly class InvoiceDeliveryNoteValidationService
                 throw ValidationException::withMessages([
                     'lines' => [
                         'Sum of delivery note link quantities exceeds invoice line quantity on line '
-                        . (int) $invoice_line->line_no . '.',
+                        . $invoice_line->line_no . '.',
                     ],
                 ]);
             }
         }
+    }
+
+    private function modelId(DeliveryNoteLine|Invoice $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
+    }
+
+    private function pivotQuantity(DeliveryNoteLine $dn_line, int $invoice_line_no): float
+    {
+        $pivot = $dn_line->pivot;
+
+        if ($pivot === null) {
+            throw ValidationException::withMessages([
+                'lines' => [
+                    'Delivery note link is missing pivot data on invoice line ' . $invoice_line_no . '.',
+                ],
+            ]);
+        }
+
+        $quantity = $pivot->getAttributes()['quantity'] ?? null;
+
+        if (! is_numeric($quantity)) {
+            throw ValidationException::withMessages([
+                'lines' => [
+                    'Delivery note link quantity must be greater than zero on invoice line '
+                    . $invoice_line_no . '.',
+                ],
+            ]);
+        }
+
+        return (float) $quantity;
     }
 
     private function invoicedQuantityOnDeliveryNoteLine(

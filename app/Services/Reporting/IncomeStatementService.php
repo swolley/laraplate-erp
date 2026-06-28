@@ -54,14 +54,15 @@ final class IncomeStatementService
         $total_expenses = 0.0;
 
         foreach ($rows as $row) {
-            $balance = (float) $row->balance;
+            $aggregate = $this->aggregateRow($row);
+            $balance = $aggregate['balance'];
 
-            if ($row->account_kind === 'revenue') {
+            if ($aggregate['account_kind'] === 'revenue') {
                 $display_balance = abs($balance);
                 $revenue[] = [
-                    'account_code' => (string) $row->account_code,
-                    'account_name' => (string) $row->account_name,
-                    'balance' => number_format(round($display_balance, 4), 4, '.', ''),
+                    'account_code' => $aggregate['account_code'],
+                    'account_name' => $aggregate['account_name'],
+                    'balance' => $this->formatAmount($display_balance),
                 ];
                 $total_revenue += $display_balance;
 
@@ -69,9 +70,9 @@ final class IncomeStatementService
             }
 
             $expenses[] = [
-                'account_code' => (string) $row->account_code,
-                'account_name' => (string) $row->account_name,
-                'balance' => number_format(round($balance, 4), 4, '.', ''),
+                'account_code' => $aggregate['account_code'],
+                'account_name' => $aggregate['account_name'],
+                'balance' => $this->formatAmount($balance),
             ];
             $total_expenses += $balance;
         }
@@ -81,9 +82,35 @@ final class IncomeStatementService
         return [
             'revenue' => $revenue,
             'expenses' => $expenses,
-            'total_revenue' => number_format(round($total_revenue, 4), 4, '.', ''),
-            'total_expenses' => number_format(round($total_expenses, 4), 4, '.', ''),
-            'net_income' => number_format(round($net_income, 4), 4, '.', ''),
+            'total_revenue' => $this->formatAmount($total_revenue),
+            'total_expenses' => $this->formatAmount($total_expenses),
+            'net_income' => $this->formatAmount($net_income),
         ];
+    }
+
+    /**
+     * @return array{account_code: string, account_name: string, account_kind: string, balance: float}
+     */
+    private function aggregateRow(JournalEntryLine $row): array
+    {
+        $balance = $row->getAttribute('balance');
+        $account_code = $row->getAttribute('account_code');
+        $account_name = $row->getAttribute('account_name');
+        $account_kind = $row->getAttribute('account_kind');
+
+        return [
+            'account_code' => is_string($account_code) ? $account_code : '',
+            'account_name' => is_string($account_name) ? $account_name : '',
+            'account_kind' => is_string($account_kind) ? $account_kind : '',
+            'balance' => is_numeric($balance) ? (float) $balance : 0.0,
+        ];
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function formatAmount(float $amount): string
+    {
+        return number_format(round($amount, 4), 4, '.', '');
     }
 }

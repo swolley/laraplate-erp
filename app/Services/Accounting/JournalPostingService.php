@@ -75,38 +75,38 @@ final class JournalPostingService
         ?int $posted_by_user_id = null,
     ): JournalEntry {
         $posted_entry = JournalEntry::query()->withoutGlobalScopes()
-            ->whereKey($posted_entry->getKey())
+            ->whereKey($posted_entry->id)
             ->with('lines')
             ->firstOrFail();
 
         if ($posted_entry->posted_at === null) {
-            throw CannotReverseUnpostedJournalException::make((int) $posted_entry->getKey());
+            throw CannotReverseUnpostedJournalException::make($this->modelId($posted_entry));
         }
 
-        if ((int) $posted_entry->company_id !== (int) $company->id) {
+        if ($posted_entry->company_id !== $this->modelId($company)) {
             throw JournalEntryCompanyMismatchException::make(
-                (int) $posted_entry->getKey(),
-                (int) $company->id,
+                $this->modelId($posted_entry),
+                $this->modelId($company),
             );
         }
 
         $reversal_exists = JournalEntry::query()->withoutGlobalScopes()
-            ->where('reverses_journal_entry_id', $posted_entry->getKey())
+            ->where('reverses_journal_entry_id', $posted_entry->id)
             ->exists();
 
         if ($reversal_exists) {
-            throw JournalAlreadyReversedException::make((int) $posted_entry->getKey());
+            throw JournalAlreadyReversedException::make($this->modelId($posted_entry));
         }
 
         $storno_lines = [];
 
         foreach ($posted_entry->lines as $line) {
             $storno_lines[] = [
-                'account_id' => (int) $line->account_id,
+                'account_id' => $line->account_id,
                 'amount_doc' => JournalLineBalance::negated($line->amount_doc),
-                'currency_doc' => (string) $line->currency_doc,
+                'currency_doc' => $line->currency_doc,
                 'amount_local' => JournalLineBalance::negated($line->amount_local),
-                'currency_local' => (string) $line->currency_local,
+                'currency_local' => $line->currency_local,
                 'fx_rate' => $line->fx_rate,
                 'tax_code' => $line->tax_code,
                 'tax_rate' => $line->tax_rate,
@@ -117,7 +117,7 @@ final class JournalPostingService
 
         $this->validateLinesForPosting($company, $storno_lines, $posted_entry->fiscal_period);
         $posted_at = CarbonImmutable::now();
-        $description = 'Reversal of journal #' . $posted_entry->getKey() . ': ' . $reversal_reason;
+        $description = 'Reversal of journal #' . (string) $posted_entry->id . ': ' . $reversal_reason;
 
         return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
             $company,
@@ -126,7 +126,7 @@ final class JournalPostingService
             $description,
             $posted_by_user_id,
             $posted_at,
-            (int) $posted_entry->getKey(),
+            $this->modelId($posted_entry),
             $reversal_reason,
         ));
     }
@@ -194,7 +194,18 @@ final class JournalPostingService
     }
 
     /**
-     * @param  list<array<string, mixed>>  $lines
+     * @param  list<array{
+     *     account_id: int,
+     *     amount_doc: string|float,
+     *     currency_doc: string,
+     *     amount_local: string|float,
+     *     currency_local: string,
+     *     fx_rate: string|float,
+     *     description?: string|null,
+     *     tax_code?: string|null,
+     *     tax_rate?: string|float|null,
+     *     tax_label?: string|null,
+     * }>  $lines
      */
     private function validateLinesForPosting(Company $company, array $lines, ?FiscalPeriod $fiscal_period): void
     {
@@ -206,31 +217,34 @@ final class JournalPostingService
 
         if ($fiscal_period instanceof FiscalPeriod) {
             if ($fiscal_period->is_closed) {
-                throw PostingToClosedFiscalPeriodException::forPeriod((int) $fiscal_period->getKey());
+                throw PostingToClosedFiscalPeriodException::forPeriod($this->modelId($fiscal_period));
             }
 
             $fiscal_period->loadMissing('fiscal_year');
             $year = $fiscal_period->fiscal_year;
 
-            if ($year !== null && (int) $year->company_id !== (int) $company->id) {
+            if ($year !== null && $year->company_id !== $this->modelId($company)) {
                 throw FiscalPeriodCompanyMismatchException::make(
-                    (int) $fiscal_period->getKey(),
-                    (int) $company->id,
+                    $this->modelId($fiscal_period),
+                    $this->modelId($company),
                 );
             }
         }
 
         foreach ($lines as $line) {
-            $this->assertAccountBelongsToCompany((int) $line['account_id'], $company);
+            $this->assertAccountBelongsToCompany($line['account_id'], $company);
         }
     }
 
     private function assertPersistedLinesBalance(JournalEntry $entry): void
     {
-        $amount_locals = JournalEntryLine::query()
-            ->where('journal_entry_id', $entry->getKey())
-            ->pluck('amount_local')
-            ->all();
+        /** @var list<string|float> $amount_locals */
+        $amount_locals = [];
+
+        foreach (JournalEntryLine::query()->where('journal_entry_id', $entry->id)->cursor() as $line) {
+            $amount_locals[] = $line->amount_local;
+        }
+
         JournalLineBalance::assertBalanced($amount_locals);
     }
 
@@ -243,7 +257,12 @@ final class JournalPostingService
             ->exists();
 
         if (! $exists) {
-            throw JournalAccountNotInCompanyException::forAccount($account_id, (int) $company->id);
+            throw JournalAccountNotInCompanyException::forAccount($account_id, $this->modelId($company));
         }
+    }
+
+    private function modelId(Company|FiscalPeriod|JournalEntry $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
     }
 }

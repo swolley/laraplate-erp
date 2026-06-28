@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
@@ -15,6 +16,11 @@ use Override;
  *
  * Holds fiscal identity (tax_id, fiscal_country) and the functional currency
  * used as `amount_local` for double-entry journal balancing.
+ *
+ * @property int|string $id
+ * @property string $default_currency
+ * @property bool $is_default
+ * @property array<string, mixed>|null $settings
  *
  * @mixin \Eloquent
  * @mixin IdeHelperCompany
@@ -46,7 +52,7 @@ final class Company extends Model
      * Resolve the default company (used as bootstrap fallback when no tenant
      * context is active, e.g. CLI seeders or backfill jobs).
      */
-    public static function default(): ?self
+    public static function getDefault(): ?self
     {
         return self::query()->withoutGlobalScopes()
             ->where('is_default', true)
@@ -118,6 +124,9 @@ final class Company extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function getRules(): array
     {
@@ -133,7 +142,7 @@ final class Company extends Model
             'is_default' => ['sometimes', 'boolean'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'slug' => ['sometimes', 'string', 'max:64', 'unique:' . ERPTables::Companies->value . ',slug,' . $this->getKey()],
+            'slug' => ['sometimes', 'string', 'max:64', 'unique:' . ERPTables::Companies->value . ',slug,' . $this->companySlugUniqueId()],
             'name' => ['sometimes', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
             'tax_id' => ['nullable', 'string', 'max:32'],
@@ -158,7 +167,7 @@ final class Company extends Model
             }
 
             self::query()->withoutGlobalScopes()
-                ->where('id', '!=', $company->getKey() ?? 0)
+                ->where('id', '!=', $company->id)
                 ->where('is_default', true)
                 ->update(['is_default' => false]);
         });
@@ -174,9 +183,22 @@ final class Company extends Model
 
     /**
      * @param  Builder<self>  $query
+     * @return Builder<self>
      */
-    protected function scopeDefault(Builder $query): Builder
+    #[Scope]
+    protected function default(Builder $query): Builder
     {
         return $query->where('is_default', true);
+    }
+
+    private function companySlugUniqueId(): int|string
+    {
+        $id = $this->getAttribute('id');
+
+        if (is_int($id) || is_string($id)) {
+            return $id;
+        }
+
+        return 0;
     }
 }

@@ -16,6 +16,9 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * General ledger account node (chart of accounts).
  *
+ * @property int|string $id
+ * @property int $company_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperAccount
  */
@@ -60,6 +63,10 @@ final class Account extends Model
     {
         return $this->hasMany(self::class, 'parent_id');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array

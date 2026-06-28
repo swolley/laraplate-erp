@@ -24,15 +24,11 @@ final class SalesPipelineService
      */
     public function generate(int $company_id): array
     {
+        /** @var array<string, array{status: string, count: int, expected_value_doc: numeric-string, expected_value_local: numeric-string}> $by_status */
         $by_status = [];
 
         foreach (OpportunityStatus::cases() as $status) {
-            $by_status[$status->value] = [
-                'status' => $status->value,
-                'count' => 0,
-                'expected_value_doc' => '0.0000',
-                'expected_value_local' => '0.0000',
-            ];
+            $by_status[$status->value] = $this->emptyStatusBucket($status->value);
         }
 
         $opportunities = Opportunity::query()
@@ -52,17 +48,23 @@ final class SalesPipelineService
         $total_expected_value_local = 0.0;
 
         foreach ($opportunities as $opportunity) {
-            $status = (string) $opportunity->status->value;
-            $expected_value_doc = (float) ($opportunity->expected_value_doc ?? 0);
-            $expected_value_local = (float) ($opportunity->expected_value_local ?? 0);
+            $status = $opportunity->status->value;
+            $expected_value_doc = (float) ($opportunity->expected_value_doc ?? '0');
+            $expected_value_local = (float) ($opportunity->expected_value_local ?? '0');
 
-            $by_status[$status]['count']++;
-            $by_status[$status]['expected_value_doc'] = $this->formatAmount(
-                (float) $by_status[$status]['expected_value_doc'] + $expected_value_doc,
+            if (! isset($by_status[$status])) {
+                $by_status[$status] = $this->emptyStatusBucket($status);
+            }
+
+            $bucket = $by_status[$status];
+            $bucket['count']++;
+            $bucket['expected_value_doc'] = $this->formatAmount(
+                (float) $bucket['expected_value_doc'] + $expected_value_doc,
             );
-            $by_status[$status]['expected_value_local'] = $this->formatAmount(
-                (float) $by_status[$status]['expected_value_local'] + $expected_value_local,
+            $bucket['expected_value_local'] = $this->formatAmount(
+                (float) $bucket['expected_value_local'] + $expected_value_local,
             );
+            $by_status[$status] = $bucket;
 
             $total_count++;
             $won_count += $opportunity->won_at === null ? 0 : 1;
@@ -81,6 +83,22 @@ final class SalesPipelineService
         ];
     }
 
+    /**
+     * @return array{status: string, count: int, expected_value_doc: numeric-string, expected_value_local: numeric-string}
+     */
+    private function emptyStatusBucket(string $status): array
+    {
+        return [
+            'status' => $status,
+            'count' => 0,
+            'expected_value_doc' => '0.0000',
+            'expected_value_local' => '0.0000',
+        ];
+    }
+
+    /**
+     * @return numeric-string
+     */
     private function formatAmount(float $amount): string
     {
         return number_format(round($amount, 4), 4, '.', '');

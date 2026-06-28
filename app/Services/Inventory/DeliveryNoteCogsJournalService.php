@@ -48,7 +48,7 @@ final readonly class DeliveryNoteCogsJournalService
             return;
         }
 
-        $company = Company::query()->withoutGlobalScopes()->whereKey((int) $delivery_note->company_id)->firstOrFail();
+        $company = Company::query()->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
 
         $this->chart_of_accounts_installer->installWhenEmpty($company);
 
@@ -79,7 +79,7 @@ final readonly class DeliveryNoteCogsJournalService
                 ]);
             }
 
-            $line_total = $this->multiplyMoney((string) $movement->unit_cost, (string) $movement->quantity);
+            $line_total = $this->multiplyMoney($movement->unit_cost, $movement->quantity);
             $total_cost_local = $this->addMoney($total_cost_local, $line_total);
         }
 
@@ -87,12 +87,12 @@ final readonly class DeliveryNoteCogsJournalService
             return;
         }
 
-        $currency = (string) $company->default_currency;
+        $currency = $company->default_currency;
         $fx_rate = '1';
 
         $journal_lines = [
             [
-                'account_id' => (int) $cogs_account->getKey(),
+                'account_id' => $this->modelId($cogs_account),
                 'amount_doc' => $total_cost_local,
                 'currency_doc' => $currency,
                 'amount_local' => $total_cost_local,
@@ -101,7 +101,7 @@ final readonly class DeliveryNoteCogsJournalService
                 'description' => 'COGS',
             ],
             [
-                'account_id' => (int) $inventory_account->getKey(),
+                'account_id' => $this->modelId($inventory_account),
                 'amount_doc' => $this->negateMoney($total_cost_local),
                 'currency_doc' => $currency,
                 'amount_local' => $this->negateMoney($total_cost_local),
@@ -112,8 +112,8 @@ final readonly class DeliveryNoteCogsJournalService
         ];
 
         $reference_label = $delivery_note->reference !== null && $delivery_note->reference !== ''
-            ? (string) $delivery_note->reference
-            : '#' . $delivery_note->getKey();
+            ? $delivery_note->reference
+            : '#' . (string) $delivery_note->id;
         $description = 'COGS — Delivery note ' . $reference_label;
 
         $entry = $this->journal_posting_service->post(
@@ -126,7 +126,7 @@ final readonly class DeliveryNoteCogsJournalService
             $this->postedAtForDeliveryNote($delivery_note),
         );
 
-        $delivery_note->cogs_journal_entry_id = (int) $entry->getKey();
+        $delivery_note->cogs_journal_entry_id = $this->modelId($entry);
     }
 
     public function reverseForDeliveryNoteIfNeeded(DeliveryNote $delivery_note): void
@@ -135,10 +135,10 @@ final readonly class DeliveryNoteCogsJournalService
             return;
         }
 
-        $company = Company::query()->withoutGlobalScopes()->whereKey((int) $delivery_note->company_id)->firstOrFail();
+        $company = Company::query()->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
         $entry = JournalEntry::query()
             ->withoutGlobalScopes()
-            ->whereKey((int) $delivery_note->cogs_journal_entry_id)
+            ->whereKey($delivery_note->cogs_journal_entry_id)
             ->first();
 
         if ($entry === null) {
@@ -148,8 +148,8 @@ final readonly class DeliveryNoteCogsJournalService
         }
 
         $reference_label = $delivery_note->reference !== null && $delivery_note->reference !== ''
-            ? (string) $delivery_note->reference
-            : '#' . $delivery_note->getKey();
+            ? $delivery_note->reference
+            : '#' . (string) $delivery_note->id;
         $reason = 'Delivery note unposted: ' . $reference_label;
 
         $this->journal_posting_service->reverse($entry, $company, $reason);
@@ -206,5 +206,10 @@ final readonly class DeliveryNoteCogsJournalService
     private function absMoney(string $value): float
     {
         return abs((float) $value);
+    }
+
+    private function modelId(Account|JournalEntry $model): int
+    {
+        return is_int($model->id) ? $model->id : (int) $model->id;
     }
 }

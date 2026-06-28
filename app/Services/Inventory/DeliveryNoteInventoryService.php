@@ -75,10 +75,10 @@ final readonly class DeliveryNoteInventoryService
 
             foreach ($lines as $line) {
                 $this->stock_movement_service->recordOutbound(
-                    (int) $locked->company_id,
-                    (int) $line->item_id,
-                    (int) $line->warehouse_id,
-                    (string) $line->quantity,
+                    $locked->company_id,
+                    $line->item_id,
+                    $line->warehouse_id,
+                    $line->quantity,
                     $line,
                 );
             }
@@ -88,6 +88,7 @@ final readonly class DeliveryNoteInventoryService
             }
 
             if ($locked->sales_order_id !== null) {
+                /** @var array<int, numeric-string> $quantities */
                 $quantities = [];
 
                 foreach ($lines as $line) {
@@ -95,13 +96,13 @@ final readonly class DeliveryNoteInventoryService
                         continue;
                     }
 
-                    $line_id = (int) $line->sales_order_line_id;
-                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', (string) $line->quantity);
+                    $line_id = $line->sales_order_line_id;
+                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', $line->quantity);
                 }
 
                 if ($quantities !== []) {
                     $sales_order = SalesOrder::query()
-                        ->whereKey((int) $locked->sales_order_id)
+                        ->whereKey($locked->sales_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
 
@@ -150,6 +151,7 @@ final readonly class DeliveryNoteInventoryService
             $this->delivery_note_cogs_journal_service->reverseForDeliveryNoteIfNeeded($note);
 
             if ($locked->sales_order_id !== null) {
+                /** @var array<int, numeric-string> $quantities */
                 $quantities = [];
 
                 foreach ($lines as $line) {
@@ -157,13 +159,13 @@ final readonly class DeliveryNoteInventoryService
                         continue;
                     }
 
-                    $line_id = (int) $line->sales_order_line_id;
-                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', (string) $line->quantity);
+                    $line_id = $line->sales_order_line_id;
+                    $quantities[$line_id] = $this->addQuantity($quantities[$line_id] ?? '0.0000', $line->quantity);
                 }
 
                 if ($quantities !== []) {
                     $sales_order = SalesOrder::query()
-                        ->whereKey((int) $locked->sales_order_id)
+                        ->whereKey($locked->sales_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
 
@@ -180,17 +182,17 @@ final readonly class DeliveryNoteInventoryService
      */
     private function validateLines(DeliveryNote $header, Collection $lines): void
     {
-        $company_id = (int) $header->company_id;
+        $company_id = $header->company_id;
 
         foreach ($lines as $line) {
-            if ($company_id !== (int) $line->company_id) {
+            if ($company_id !== $line->company_id) {
                 throw ValidationException::withMessages([
                     'company_id' => ['Delivery note line company does not match delivery note company.'],
                 ]);
             }
 
             $item_matches_company = Item::query()
-                ->whereKey((int) $line->item_id)
+                ->whereKey($line->item_id)
                 ->where('company_id', $company_id)
                 ->exists();
 
@@ -201,7 +203,7 @@ final readonly class DeliveryNoteInventoryService
             }
 
             $warehouse_matches_company = Warehouse::query()
-                ->whereKey((int) $line->warehouse_id)
+                ->whereKey($line->warehouse_id)
                 ->where('company_id', $company_id)
                 ->exists();
 
@@ -220,7 +222,7 @@ final readonly class DeliveryNoteInventoryService
             return;
         }
 
-        $sales_order_id = (int) $header->sales_order_id;
+        $sales_order_id = $header->sales_order_id;
 
         foreach ($lines as $line) {
             if ($line->sales_order_line_id === null) {
@@ -236,7 +238,7 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            if ($sales_order_id !== (int) $so_line->sales_order_id) {
+            if ($sales_order_id !== $so_line->sales_order_id) {
                 throw ValidationException::withMessages([
                     'sales_order_line_id' => ['Sales order line does not belong to the delivery note sales order.'],
                 ]);
@@ -259,10 +261,10 @@ final readonly class DeliveryNoteInventoryService
     {
         foreach ($lines as $line) {
             $this->stock_movement_service->recordInbound(
-                (int) $header->company_id,
-                (int) $line->item_id,
-                (int) $line->warehouse_id,
-                (string) $line->quantity,
+                $header->company_id,
+                $line->item_id,
+                $line->warehouse_id,
+                $line->quantity,
                 $this->resolveReturnedUnitCost($header, $line),
                 $line,
             );
@@ -276,16 +278,16 @@ final readonly class DeliveryNoteInventoryService
     {
         $line_ids = $lines->pluck('id')->all();
         $outbound_movements = StockMovement::query()
-            ->where('company_id', (int) $header->company_id)
+            ->where('company_id', $header->company_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
             ->where('direction', StockMovementDirection::Out)
             ->get()
-            ->keyBy(static fn (StockMovement $movement): int => (int) $movement->source_id);
+            ->keyBy(static fn (StockMovement $movement): int => $movement->source_id);
 
         foreach ($lines as $line) {
             /** @var StockMovement|null $outbound */
-            $outbound = $outbound_movements->get((int) $line->id);
+            $outbound = $outbound_movements->get($line->id);
 
             if ($outbound === null || $outbound->unit_cost === null) {
                 throw ValidationException::withMessages([
@@ -294,11 +296,11 @@ final readonly class DeliveryNoteInventoryService
             }
 
             $this->stock_movement_service->recordInbound(
-                (int) $header->company_id,
-                (int) $line->item_id,
-                (int) $line->warehouse_id,
-                (string) $line->quantity,
-                (string) $outbound->unit_cost,
+                $header->company_id,
+                $line->item_id,
+                $line->warehouse_id,
+                $line->quantity,
+                $outbound->unit_cost,
                 $line,
             );
         }
@@ -311,16 +313,16 @@ final readonly class DeliveryNoteInventoryService
     {
         $line_ids = $lines->pluck('id')->all();
         $inbound_movements = StockMovement::query()
-            ->where('company_id', (int) $header->company_id)
+            ->where('company_id', $header->company_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
             ->where('direction', StockMovementDirection::In)
             ->get()
-            ->keyBy(static fn (StockMovement $movement): int => (int) $movement->source_id);
+            ->keyBy(static fn (StockMovement $movement): int => $movement->source_id);
 
         foreach ($lines as $line) {
             /** @var StockMovement|null $inbound */
-            $inbound = $inbound_movements->get((int) $line->id);
+            $inbound = $inbound_movements->get($line->id);
 
             if ($inbound === null) {
                 throw ValidationException::withMessages([
@@ -329,15 +331,18 @@ final readonly class DeliveryNoteInventoryService
             }
 
             $this->stock_movement_service->recordOutbound(
-                (int) $header->company_id,
-                (int) $line->item_id,
-                (int) $line->warehouse_id,
-                (string) $line->quantity,
+                $header->company_id,
+                $line->item_id,
+                $line->warehouse_id,
+                $line->quantity,
                 $line,
             );
         }
     }
 
+    /**
+     * @return numeric-string
+     */
     private function resolveReturnedUnitCost(DeliveryNote $header, DeliveryNoteLine $line): string
     {
         if ($line->sales_order_line_id !== null) {
@@ -345,8 +350,8 @@ final readonly class DeliveryNoteInventoryService
         }
 
         if (ReturnOrderLine::query()
-            ->where('delivery_note_line_id', (int) $line->getKey())
-            ->where('company_id', (int) $header->company_id)
+            ->where('delivery_note_line_id', $line->getKey())
+            ->where('company_id', $header->company_id)
             ->exists()) {
             return $this->resolveReturnedUnitCostFromReturnLine($header, $line);
         }
@@ -356,19 +361,22 @@ final readonly class DeliveryNoteInventoryService
         ]);
     }
 
+    /**
+     * @return numeric-string
+     */
     private function resolveReturnedUnitCostFromOutboundMovement(DeliveryNote $header, DeliveryNoteLine $line): string
     {
         $source_line_ids = DeliveryNoteLine::query()
-            ->where('company_id', (int) $header->company_id)
-            ->where('sales_order_line_id', (int) $line->sales_order_line_id)
-            ->where('item_id', (int) $line->item_id)
+            ->where('company_id', $header->company_id)
+            ->where('sales_order_line_id', $line->sales_order_line_id)
+            ->where('item_id', $line->item_id)
             ->pluck('id')
             ->all();
 
         /** @var StockMovement|null $movement */
         $movement = StockMovement::query()
-            ->where('company_id', (int) $header->company_id)
-            ->where('item_id', (int) $line->item_id)
+            ->where('company_id', $header->company_id)
+            ->where('item_id', $line->item_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $source_line_ids)
             ->where('direction', StockMovementDirection::Out)
@@ -382,15 +390,18 @@ final readonly class DeliveryNoteInventoryService
             ]);
         }
 
-        return (string) $movement->unit_cost;
+        return $movement->unit_cost;
     }
 
+    /**
+     * @return numeric-string
+     */
     private function resolveReturnedUnitCostFromReturnLine(DeliveryNote $header, DeliveryNoteLine $line): string
     {
         /** @var ReturnOrderLine|null $return_line */
         $return_line = ReturnOrderLine::query()
-            ->where('delivery_note_line_id', (int) $line->getKey())
-            ->where('company_id', (int) $header->company_id)
+            ->where('delivery_note_line_id', $line->getKey())
+            ->where('company_id', $header->company_id)
             ->first();
 
         if ($return_line === null || $return_line->unit_cost === null) {
@@ -399,7 +410,7 @@ final readonly class DeliveryNoteInventoryService
             ]);
         }
 
-        return (string) $return_line->unit_cost;
+        return $return_line->unit_cost;
     }
 
     /**
@@ -412,6 +423,11 @@ final readonly class DeliveryNoteInventoryService
             ->exists();
     }
 
+    /**
+     * @param  numeric-string  $left
+     * @param  numeric-string  $right
+     * @return numeric-string
+     */
     private function addQuantity(string $left, string $right): string
     {
         return number_format((float) $left + (float) $right, 4, '.', '');

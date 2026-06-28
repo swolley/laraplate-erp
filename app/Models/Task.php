@@ -70,6 +70,10 @@ final class Task extends Model
         return $this->hasMany(TimeEntry::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {

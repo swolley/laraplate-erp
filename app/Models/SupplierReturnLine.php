@@ -11,6 +11,16 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $supplier_return_id
+ * @property int|null $purchase_order_line_id
+ * @property int|null $goods_receipt_line_id
+ * @property int|null $delivery_note_line_id
+ * @property int $item_id
+ * @property int $warehouse_id
+ * @property numeric-string $quantity
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSupplierReturnLine
  */
@@ -84,6 +94,10 @@ final class SupplierReturnLine extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {
@@ -105,7 +119,13 @@ final class SupplierReturnLine extends Model
                 return;
             }
 
-            $line->company_id = SupplierReturn::query()->whereKey($line->supplier_return_id)->value('company_id');
+            $company_id = SupplierReturn::query()->whereKey($line->supplier_return_id)->value('company_id');
+
+            if (! is_int($company_id)) {
+                return;
+            }
+
+            $line->company_id = $company_id;
         });
     }
 

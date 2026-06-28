@@ -31,7 +31,7 @@ final class TaxLineCalculator
             ->first();
 
         if ($row === null) {
-            throw TaxCodeNotActiveException::forCode($code, (int) $company->id);
+            throw TaxCodeNotActiveException::forCode($code, $this->companyId($company));
         }
 
         return $row;
@@ -86,8 +86,13 @@ final class TaxLineCalculator
     {
         return [
             'tax_code' => $code->code,
-            'tax_rate' => (string) $code->rate,
+            'tax_rate' => $code->rate,
             'tax_label' => $code->label,
         ];
+    }
+
+    private function companyId(Company $company): int
+    {
+        return is_int($company->id) ? $company->id : (int) $company->id;
     }
 }

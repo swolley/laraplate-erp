@@ -11,6 +11,16 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
+ * @property int|string $id
+ * @property int $company_id
+ * @property int $return_order_id
+ * @property int|null $invoice_line_id
+ * @property int|null $delivery_note_line_id
+ * @property int $item_id
+ * @property int $warehouse_id
+ * @property numeric-string $quantity
+ * @property numeric-string|null $unit_cost
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrderLine
  */
@@ -68,6 +78,10 @@ final class ReturnOrderLine extends Model
         return $this->belongsTo(DeliveryNoteLine::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+
     #[Override]
     public function getRules(): array
     {
@@ -91,7 +105,13 @@ final class ReturnOrderLine extends Model
                 return;
             }
 
-            $line->company_id = ReturnOrder::query()->whereKey($line->return_order_id)->value('company_id');
+            $company_id = ReturnOrder::query()->whereKey($line->return_order_id)->value('company_id');
+
+            if (! is_int($company_id)) {
+                return;
+            }
+
+            $line->company_id = $company_id;
         });
     }
 

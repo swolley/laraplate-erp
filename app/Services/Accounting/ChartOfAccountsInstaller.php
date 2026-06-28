@@ -23,7 +23,7 @@ final readonly class ChartOfAccountsInstaller
      */
     public function installWhenEmpty(Company $company): void
     {
-        $company_id = (int) $company->getKey();
+        $company_id = is_int($company->id) ? $company->id : (int) $company->id;
 
         if (Account::query()->withoutGlobalScopes()->where('company_id', $company_id)->exists()) {
             return;
@@ -60,7 +60,7 @@ final readonly class ChartOfAccountsInstaller
                 $account->setSkipValidation(true);
                 $account->save();
 
-                $id_by_code[$row['code']] = (int) $account->getKey();
+                $id_by_code[$row['code']] = is_int($account->id) ? $account->id : (int) $account->id;
             }
         });
     }

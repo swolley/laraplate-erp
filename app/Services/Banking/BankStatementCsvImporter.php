@@ -31,6 +31,10 @@ final class BankStatementCsvImporter
         $created = 0;
 
         DB::transaction(function () use ($statement, $rows, $columns, &$created): void {
+            $statement->loadMissing('bank_account');
+            $bank_account = $statement->bank_account;
+            $default_currency = $bank_account !== null ? $bank_account->currency : 'EUR';
+
             foreach ($rows as $row) {
                 $statement->lines()->create([
                     'company_id' => $statement->company_id,
@@ -41,9 +45,9 @@ final class BankStatementCsvImporter
                     'reference' => $row[$columns['reference']] ?? null,
                     'description' => $row[$columns['description']] ?? null,
                     'amount_doc' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_doc' => $row[$columns['currency_doc']] ?? $statement->bank_account->currency ?? 'EUR',
+                    'currency_doc' => $row[$columns['currency_doc']] ?? $default_currency,
                     'amount_local' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_local' => $statement->bank_account->currency ?? 'EUR',
+                    'currency_local' => $default_currency,
                     'fx_rate' => '1.00000000',
                     'status' => BankStatementLineStatus::Imported,
                     'raw_payload' => $row,
@@ -76,7 +80,19 @@ final class BankStatementCsvImporter
             }
 
             if ($headers === null) {
-                $headers = array_map(static fn (string|array|false $header): string => mb_trim((string) $header), $row);
+                $headers = [];
+
+                foreach ($row as $header) {
+                    if (! is_scalar($header)) {
+                        continue;
+                    }
+
+                    $headers[] = mb_trim((string) $header);
+                }
+
+                if ($headers === []) {
+                    continue;
+                }
 
                 if (count($headers) !== count(array_unique($headers))) {
                     throw ValidationException::withMessages([
@@ -87,9 +103,7 @@ final class BankStatementCsvImporter
                 continue;
             }
 
-            $combined = array_combine($headers, array_pad($row, count($headers), null));
-
-            $rows[] = $combined;
+            $rows[] = array_combine($headers, array_pad($row, count($headers), null));
         }
 
         return $rows;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Observers;
 
+use DateTimeInterface;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\TimeEntry;
 
@@ -27,18 +28,37 @@ final class TimeEntryObserver
             return;
         }
 
-        $user_id = $time_entry->user_id;
-        $started_at = $time_entry->started_at;
-        $ended_at = $time_entry->ended_at;
+        $user_id = $time_entry->getAttribute('user_id');
+        $started_at = $time_entry->getAttribute('started_at');
+        $ended_at = $time_entry->getAttribute('ended_at');
 
-        if ($user_id === null || $started_at === null) {
+        if (! is_int($user_id)) {
             return;
         }
 
-        if (TimeEntry::existsOverlapFor((int) $user_id, $started_at, $ended_at, $time_entry->getKey())) {
+        if (! $started_at instanceof DateTimeInterface && ! is_string($started_at)) {
+            return;
+        }
+
+        $normalized_ended_at = $ended_at instanceof DateTimeInterface || is_string($ended_at) || $ended_at === null
+            ? $ended_at
+            : null;
+
+        if (TimeEntry::existsOverlapFor($user_id, $started_at, $normalized_ended_at, $this->entryId($time_entry))) {
             throw ValidationException::withMessages([
                 'ended_at' => ['The ended_at overlaps with another time entry for the same user.'],
             ]);
         }
+    }
+
+    private function entryId(TimeEntry $time_entry): int
+    {
+        $id = $time_entry->getAttribute('id');
+
+        if (! is_int($id)) {
+            return 0;
+        }
+
+        return $id;
     }
 }

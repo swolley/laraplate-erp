@@ -26,8 +26,8 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
         $invoice->loadMissing('lines');
 
         return new EInvoicePayload([
-            'invoice_id' => (int) $invoice->id,
-            'company_id' => (int) $invoice->company_id,
+            'invoice_id' => $invoice->id,
+            'company_id' => $invoice->company_id,
             'direction' => $invoice->direction->value,
             'invoice_type' => $invoice->invoice_type->value,
             'reference' => $invoice->reference,
@@ -35,10 +35,10 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
             'posted_at' => $invoice->posted_at?->toISOString(),
             'lines' => $invoice->lines
                 ->map(static fn (InvoiceLine $line): array => [
-                    'line_no' => (int) $line->line_no,
+                    'line_no' => $line->line_no,
                     'description' => $line->description,
-                    'quantity' => (string) $line->quantity,
-                    'unit_price' => (string) $line->unit_price,
+                    'quantity' => $line->quantity,
+                    'unit_price' => $line->unit_price,
                     'line_total' => number_format(
                         round((float) $line->quantity * (float) $line->unit_price, 4),
                         4,
@@ -46,7 +46,7 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
                         '',
                     ),
                     'tax_code' => $line->tax_code,
-                    'tax_rate' => $line->tax_rate !== null ? (string) $line->tax_rate : null,
+                    'tax_rate' => $line->tax_rate,
                 ])
                 ->values()
                 ->all(),
@@ -56,7 +56,7 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
     #[Override]
     public function submit(EInvoicePayload $payload): EInvoiceSubmissionResult
     {
-        $invoice_id = (int) ($payload->document['invoice_id'] ?? 0);
+        $invoice_id = $this->invoiceIdFromPayload($payload);
         $external_id = $invoice_id > 0 ? 'STUB-' . $invoice_id : 'STUB-UNKNOWN';
 
         return new EInvoiceSubmissionResult(
@@ -79,5 +79,20 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
         }
 
         return EInvoiceRemoteStatus::Unknown;
+    }
+
+    private function invoiceIdFromPayload(EInvoicePayload $payload): int
+    {
+        $raw_id = $payload->document['invoice_id'] ?? 0;
+
+        if (is_int($raw_id)) {
+            return $raw_id;
+        }
+
+        if (is_string($raw_id) && ctype_digit($raw_id)) {
+            return (int) $raw_id;
+        }
+
+        return 0;
     }
 }

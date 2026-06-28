@@ -13,6 +13,21 @@ use Override;
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
  *
+ * @property int|string $id
+ * @property int $journal_entry_id
+ * @property int $line_no
+ * @property int $account_id
+ * @property int|null $tax_code_id
+ * @property numeric-string $amount_doc
+ * @property string $currency_doc
+ * @property numeric-string $amount_local
+ * @property string $currency_local
+ * @property numeric-string $fx_rate
+ * @property string|null $tax_code
+ * @property numeric-string|null $tax_rate
+ * @property string|null $tax_label
+ * @property string|null $description
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntryLine
  */
@@ -67,6 +82,10 @@ final class JournalEntryLine extends Model
     {
         return $this->belongsTo(Account::class);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
 
     #[Override]
     public function getRules(): array
@@ -129,7 +148,7 @@ final class JournalEntryLine extends Model
 
     private static function journalHeaderIsPosted(self $line): bool
     {
-        $journal_entry_id = (int) ($line->getOriginal('journal_entry_id') ?: $line->journal_entry_id);
+        $journal_entry_id = $line->journal_entry_id;
 
         if ($journal_entry_id === 0) {
             return false;

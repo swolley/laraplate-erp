@@ -25,9 +25,8 @@ final readonly class SalesOrderAmendmentService
     public function amend(SalesOrder $source_order): SalesOrder
     {
         return DB::transaction(function () use ($source_order): SalesOrder {
-            /** @var SalesOrder $locked_source */
             $locked_source = SalesOrder::query()
-                ->whereKey((int) $source_order->getKey())
+                ->whereKey($source_order->id)
                 ->with('lines')
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -47,18 +46,17 @@ final readonly class SalesOrderAmendmentService
                 ]);
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail((int) $locked_source->company_id);
+            $company = Company::query()->withoutGlobalScopes()->findOrFail($locked_source->company_id);
             $new_reference = $this->document_number_allocator->next($company, DocumentType::SalesOrder, 0);
 
-            /** @var SalesOrder $amendment */
             $amendment = SalesOrder::query()->create([
-                'company_id' => (int) $locked_source->company_id,
-                'party_id' => (int) $locked_source->party_id,
+                'company_id' => $locked_source->company_id,
+                'party_id' => $locked_source->party_id,
                 'quotation_id' => $locked_source->quotation_id,
                 'project_id' => $locked_source->project_id,
-                'amends_sales_order_id' => (int) $locked_source->id,
+                'amends_sales_order_id' => $locked_source->id,
                 'reference' => $new_reference,
-                'currency' => (string) $locked_source->currency,
+                'currency' => $locked_source->currency,
                 'status' => SalesOrderStatus::Draft,
                 'notes' => $locked_source->notes,
             ]);
@@ -89,7 +87,15 @@ final readonly class SalesOrderAmendmentService
                 ]);
             }
 
-            return $amendment->fresh('lines');
+            $amendment = $amendment->fresh('lines');
+
+            if ($amendment === null) {
+                throw ValidationException::withMessages([
+                    'sales_order' => ['Amendment sales order could not be reloaded after creation.'],
+                ]);
+            }
+
+            return $amendment;
         });
     }
 }
