@@ -10,6 +10,7 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\JournalEntryLine;
 use Modules\ERP\Services\Reporting\BalanceSheetService;
+use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Modules\ERP\Services\Reporting\IncomeStatementService;
 use Modules\ERP\Services\Reporting\TrialBalanceService;
 
@@ -286,4 +287,29 @@ it('trial balance returns empty array for company with no entries', function ():
     $result = $service->generate((int) $company->id, CarbonImmutable::now());
 
     expect($result)->toBeArray()->toBeEmpty();
+});
+
+it('exports trial balance rows as csv', function (): void {
+    $company = createTestCompany();
+    $cash = createAccount($company, '1000', 'Cash, main bank', AccountKind::Asset);
+    $revenue = createAccount($company, '4000', 'Sales Revenue', AccountKind::Revenue);
+
+    postBalancedEntry($company, [
+        ['account_id' => $cash->id, 'amount_local' => '1250.5000'],
+        ['account_id' => $revenue->id, 'amount_local' => '-1250.5000'],
+    ], CarbonImmutable::parse('2026-01-31 12:00:00'));
+
+    $rows = app(TrialBalanceService::class)->generate(
+        (int) $company->id,
+        CarbonImmutable::parse('2026-01-31 23:59:59'),
+    );
+
+    $csv = app(FinancialReportCsvExporter::class)->trialBalance($rows);
+
+    expect($csv)->toBe(implode("\n", [
+        '"Account code","Account name","Account kind",Debit,Credit,Balance',
+        '1000,"Cash, main bank",asset,1250.5000,0.0000,1250.5000',
+        '4000,"Sales Revenue",revenue,0.0000,1250.5000,-1250.5000',
+        '',
+    ]));
 });
