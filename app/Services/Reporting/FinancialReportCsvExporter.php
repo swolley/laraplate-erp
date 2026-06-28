@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Reporting;
 
-use RuntimeException;
+use Modules\Core\Services\Export\TabularCsvExporter;
 
 /**
- * Serializes financial report rows to RFC 4180-style CSV strings.
+ * Defines ERP financial report CSV layouts.
  */
-final class FinancialReportCsvExporter
+final readonly class FinancialReportCsvExporter
 {
+    public function __construct(
+        private TabularCsvExporter $csv_exporter,
+    ) {}
+
     /**
      * @param  array<int, array{
      *     account_code: string,
@@ -23,45 +27,16 @@ final class FinancialReportCsvExporter
      */
     public function trialBalance(array $rows): string
     {
-        return $this->writeRows([
-            ['Account code', 'Account name', 'Account kind', 'Debit', 'Credit', 'Balance'],
-            ...array_map(
-                static fn (array $row): array => [
-                    $row['account_code'],
-                    $row['account_name'],
-                    $row['account_kind'],
-                    $row['debit'],
-                    $row['credit'],
-                    $row['balance'],
-                ],
-                $rows,
-            ),
-        ]);
-    }
-
-    /**
-     * @param  list<list<string>>  $rows
-     */
-    private function writeRows(array $rows): string
-    {
-        $handle = fopen('php://temp', 'r+');
-
-        if ($handle === false) {
-            throw new RuntimeException('Unable to open temporary CSV stream.');
-        }
-
-        foreach ($rows as $row) {
-            fputcsv($handle, $row, ',', '"', '', "\n");
-        }
-
-        rewind($handle);
-        $contents = stream_get_contents($handle);
-        fclose($handle);
-
-        if ($contents === false) {
-            throw new RuntimeException('Unable to read temporary CSV stream.');
-        }
-
-        return $contents;
+        return $this->csv_exporter->export(
+            columns: [
+                ['key' => 'account_code', 'label' => 'Account code'],
+                ['key' => 'account_name', 'label' => 'Account name'],
+                ['key' => 'account_kind', 'label' => 'Account kind'],
+                ['key' => 'debit', 'label' => 'Debit'],
+                ['key' => 'credit', 'label' => 'Credit'],
+                ['key' => 'balance', 'label' => 'Balance'],
+            ],
+            rows: $rows,
+        );
     }
 }
