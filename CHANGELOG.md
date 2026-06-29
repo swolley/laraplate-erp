@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- *(erp)* Correct permission check logic in ERPModelPolicy and improve type checking in ERPDatabaseSeeder
+
+## [1.14.1] - 2026-06-28
+
 ### 🚜 Refactor
 
 - *(erp)* Enhance model property annotations and type handling

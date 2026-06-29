@@ -236,7 +236,7 @@ final class ERPDatabaseSeeder extends Seeder
             $permissions[] = "{$connection}." . $table . '.post';
             $permissions[] = "{$connection}." . $table . '.unpost';
 
-            if ($model instanceof Invoice) {
+            if (is_a($model, Invoice::class)) {
                 $permissions[] = "{$connection}." . $table . '.submitEInvoice';
                 $permissions[] = "{$connection}." . $table . '.refreshEInvoice';
             }

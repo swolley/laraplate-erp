@@ -79,7 +79,7 @@ final class ERPModelPolicy
         );
 
         if (! Permission::query()->where('name', $permission)->exists()) {
-            return true;
+            return false;
         }
 
         $guard = config('auth.defaults.guard');
