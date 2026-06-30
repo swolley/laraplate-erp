@@ -14,9 +14,13 @@ use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\VatRegisterEntry;
+use Modules\ERP\Services\Taxation\TaxLineCalculator;
+use Modules\ERP\Support\Decimal;
 
 final class VatRegisterService
 {
+    public function __construct(private TaxLineCalculator $tax_line_calculator) {}
+
     public function register(Invoice $invoice): void
     {
         DB::transaction(function () use ($invoice): void {
@@ -57,16 +61,16 @@ final class VatRegisterService
                 $tax_amount = '0.0000';
 
                 foreach ($group as $line) {
-                    $line_net = $this->round4((float) $line->quantity * (float) $line->unit_price);
-                    $line_tax = $this->round4(((float) $line_net * (float) $line->tax_rate) / 100);
+                    $line_net = Decimal::mul((string) $line->quantity, (string) $line->unit_price);
+                    $line_tax = $this->tax_line_calculator->lineTax($line_net, (string) $line->tax_rate);
 
-                    $taxable_amount = $this->add($taxable_amount, $line_net);
-                    $tax_amount = $this->add($tax_amount, $line_tax);
+                    $taxable_amount = Decimal::add($taxable_amount, $line_net);
+                    $tax_amount = Decimal::add($tax_amount, $line_tax);
                 }
 
                 if ($is_credit_note) {
-                    $taxable_amount = $this->neg($taxable_amount);
-                    $tax_amount = $this->neg($tax_amount);
+                    $taxable_amount = Decimal::negate($taxable_amount);
+                    $tax_amount = Decimal::negate($tax_amount);
                 }
 
                 $protocol_number = $this->nextProtocolNumber($company_id, $register_type->value, $fiscal_year_id);
@@ -103,20 +107,5 @@ final class VatRegisterService
             ->max('protocol_number');
 
         return (is_numeric($max) ? (int) $max : 0) + 1;
-    }
-
-    private function round4(float $value): string
-    {
-        return number_format(round($value, 4), 4, '.', '');
-    }
-
-    private function add(string $a, string $b): string
-    {
-        return $this->round4((float) $a + (float) $b);
-    }
-
-    private function neg(string $value): string
-    {
-        return $this->round4(-1 * (float) $value);
     }
 }

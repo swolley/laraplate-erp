@@ -12,6 +12,7 @@ use Modules\ERP\Casts\VatSettlementStatus;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Models\VatSettlement;
+use Modules\ERP\Support\Decimal;
 
 final class VatSettlementService
 {
@@ -57,14 +58,12 @@ final class VatSettlementService
                     ->where('status', VatSettlementStatus::Confirmed->value)
                     ->first();
 
-                if ($previous_settlement !== null && (float) $previous_settlement->settlement_amount < 0) {
-                    $previous_credit = $this->round4(abs((float) $previous_settlement->settlement_amount));
+                if ($previous_settlement !== null && Decimal::isNegative((string) $previous_settlement->settlement_amount)) {
+                    $previous_credit = Decimal::abs((string) $previous_settlement->settlement_amount);
                 }
             }
 
-            $settlement_amount = $this->round4(
-                (float) $vat_sales - (float) $vat_purchases - (float) $previous_credit,
-            );
+            $settlement_amount = Decimal::sub(Decimal::sub($vat_sales, $vat_purchases), $previous_credit);
 
             $existing = VatSettlement::query()
                 ->withoutGlobalScopes()
@@ -81,8 +80,8 @@ final class VatSettlementService
             return VatSettlement::query()->updateOrCreate(
                 ['company_id' => $company_id, 'fiscal_period_id' => $fiscal_period_id],
                 [
-                    'vat_sales' => $this->round4((float) $vat_sales),
-                    'vat_purchases' => $this->round4((float) $vat_purchases),
+                    'vat_sales' => Decimal::format($vat_sales),
+                    'vat_purchases' => Decimal::format($vat_purchases),
                     'previous_credit' => $previous_credit,
                     'settlement_amount' => $settlement_amount,
                     'status' => VatSettlementStatus::Draft->value,
@@ -104,10 +103,5 @@ final class VatSettlementService
             'confirmed_at' => CarbonImmutable::now(),
             'confirmed_by' => $user_id,
         ]);
-    }
-
-    private function round4(float $value): string
-    {
-        return number_format(round($value, 4), 4, '.', '');
     }
 }

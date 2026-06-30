@@ -22,6 +22,8 @@ use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Payments\PaymentScheduleGeneratorService;
 use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
+use Modules\ERP\Services\Taxation\TaxLineCalculator;
+use Modules\ERP\Support\Decimal;
 
 final readonly class InvoicePostingService
 {
@@ -36,6 +38,7 @@ final readonly class InvoicePostingService
         private ErpCompanySettings $erp_company_settings,
         private ThreeWayMatchService $three_way_match_service,
         private VatRegisterService $vat_register_service,
+        private TaxLineCalculator $tax_line_calculator,
     ) {}
 
     public function post(Invoice $invoice): void
@@ -88,9 +91,9 @@ final readonly class InvoicePostingService
 
             if ($locked->invoice_type === InvoiceType::CreditNote) {
                 $this->credit_note_service->validateCreditNoteTotal($locked);
-                $net_total = $this->neg($net_total);
-                $tax_total = $this->neg($tax_total);
-                $gross_total = $this->neg($gross_total);
+                $net_total = Decimal::negate($net_total);
+                $tax_total = Decimal::negate($tax_total);
+                $gross_total = Decimal::negate($gross_total);
             }
 
             $journal_lines = $this->buildJournalLines($company, $locked->direction, $locked->currency, $net_total, $tax_total, $gross_total);
@@ -157,12 +160,12 @@ final readonly class InvoicePostingService
         $tax_total = '0.0000';
 
         foreach ($lines as $line) {
-            $line_net = $this->mul((string) $line->quantity, (string) $line->unit_price);
+            $line_net = Decimal::mul((string) $line->quantity, (string) $line->unit_price);
             $line_tax = '0.0000';
 
             if ($line->tax_code_id !== null) {
                 $tax_code = TaxCode::query()->withoutGlobalScopes()->findOrFail($line->tax_code_id);
-                $line_tax = $this->round4(((float) $line_net * (float) $tax_code->rate) / 100);
+                $line_tax = $this->tax_line_calculator->lineTax($line_net, (string) $tax_code->rate);
 
                 $line->tax_code = $tax_code->code;
                 $line->tax_rate = $tax_code->rate;
@@ -170,11 +173,11 @@ final readonly class InvoicePostingService
                 $line->save();
             }
 
-            $net_total = $this->add($net_total, $line_net);
-            $tax_total = $this->add($tax_total, $line_tax);
+            $net_total = Decimal::add($net_total, $line_net);
+            $tax_total = Decimal::add($tax_total, $line_tax);
         }
 
-        $gross_total = $this->add($net_total, $tax_total);
+        $gross_total = Decimal::add($net_total, $tax_total);
 
         return [$net_total, $tax_total, $gross_total];
     }
@@ -207,11 +210,11 @@ final readonly class InvoicePostingService
 
             $lines = [
                 $this->line($this->modelId($receivable), $gross_total, $currency, $fx_rate, 'Trade receivable'),
-                $this->line($this->modelId($revenue), $this->neg($net_total), $currency, $fx_rate, 'Sales revenue'),
+                $this->line($this->modelId($revenue), Decimal::negate($net_total), $currency, $fx_rate, 'Sales revenue'),
             ];
 
-            if (abs($this->asFloat($tax_total)) > 0) {
-                $lines[] = $this->line($this->modelId($vat_output), $this->neg($tax_total), $currency, $fx_rate, 'VAT output');
+            if (! Decimal::isZero($tax_total)) {
+                $lines[] = $this->line($this->modelId($vat_output), Decimal::negate($tax_total), $currency, $fx_rate, 'VAT output');
             }
 
             return $lines;
@@ -225,11 +228,11 @@ final readonly class InvoicePostingService
             $this->line($this->modelId($expense), $net_total, $currency, $fx_rate, 'Purchase expense'),
         ];
 
-        if (abs($this->asFloat($tax_total)) > 0) {
+        if (! Decimal::isZero($tax_total)) {
             $lines[] = $this->line($this->modelId($vat_input), $tax_total, $currency, $fx_rate, 'VAT input');
         }
 
-        $lines[] = $this->line($this->modelId($payable), $this->neg($gross_total), $currency, $fx_rate, 'Trade payable');
+        $lines[] = $this->line($this->modelId($payable), Decimal::negate($gross_total), $currency, $fx_rate, 'Trade payable');
 
         return $lines;
     }
@@ -388,33 +391,8 @@ final readonly class InvoicePostingService
         ];
     }
 
-    private function round4(float $value): string
-    {
-        return number_format(round($value, 4), 4, '.', '');
-    }
-
     private function modelId(Account|JournalEntry $model): int
     {
         return is_int($model->id) ? $model->id : (int) $model->id;
-    }
-
-    private function add(string $a, string $b): string
-    {
-        return $this->round4((float) $a + (float) $b);
-    }
-
-    private function mul(string $a, string $b): string
-    {
-        return $this->round4((float) $a * (float) $b);
-    }
-
-    private function neg(string $value): string
-    {
-        return $this->round4(-1 * (float) $value);
-    }
-
-    private function asFloat(string $value): float
-    {
-        return (float) $value;
     }
 }

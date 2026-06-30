@@ -13,6 +13,7 @@ use Modules\ERP\Data\Pricing\PriceResolutionResult;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PartyPriceRule;
 use Modules\ERP\Models\PriceListItem;
+use Modules\ERP\Support\Decimal;
 
 final class PriceResolverService
 {
@@ -114,18 +115,17 @@ final class PriceResolverService
     private function applyRule(string $base_price, ?PartyPriceRule $rule): string
     {
         if ($rule === null) {
-            return number_format((float) $base_price, 4, '.', '');
+            return Decimal::format($base_price);
         }
 
-        $value = (float) $rule->discount_value;
-        $base = (float) $base_price;
+        $value = (string) $rule->discount_value;
 
         $resolved = match ($rule->discount_type) {
-            DiscountType::Percent => $base * (1 - ($value / 100)),
-            DiscountType::FixedAmount => $base - $value,
-            DiscountType::OverridePrice => $value,
+            DiscountType::Percent => Decimal::mul($base_price, Decimal::sub('1', Decimal::div($value, '100'))),
+            DiscountType::FixedAmount => Decimal::sub($base_price, $value),
+            DiscountType::OverridePrice => Decimal::format($value),
         };
 
-        return number_format(max(0, $resolved), 4, '.', '');
+        return Decimal::isNegative($resolved) ? '0.0000' : $resolved;
     }
 }
