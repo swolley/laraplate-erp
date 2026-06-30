@@ -2,7 +2,7 @@
   "name": "swolley/laraplate-erp",
   "vendor": "swolley",
   "description": "ERP module for Laraplate: accounting, fiscal calendar, commercial scaffolding, and related services.",
-  "version": "v1.14.2",
+  "version": "v1.14.3",
   "keywords": [
     "laravel",
     "laraplate",
@@ -110,7 +110,8 @@
     "psr-4": {
       "Modules\\ERP\\Tests\\Unit\\": "tests/Unit",
       "Modules\\ERP\\Tests\\Feature\\": "tests/Feature",
-      "Modules\\ERP\\Tests\\Support\\": "tests/Support/"
+      "Modules\\ERP\\Tests\\Support\\": "tests/Support/",
+      "Modules\\ERP\\Tests\\Stubs\\": "tests/Stubs/"
     },
     "classmap": [
       "tests/TestCase.php"

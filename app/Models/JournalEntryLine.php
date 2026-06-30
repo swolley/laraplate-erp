@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\RestrictsCrudWrites;
+use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Exceptions\PostedJournalImmutableException;
@@ -31,8 +33,10 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntryLine
  */
-final class JournalEntryLine extends Model
+final class JournalEntryLine extends Model implements RestrictsCrudWrites
 {
+    use DeniesGenericCrudWrites;
+
     /**
      * @var string
      */
@@ -86,7 +90,6 @@ final class JournalEntryLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

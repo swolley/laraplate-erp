@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\RestrictsCrudWrites;
+use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -23,9 +25,10 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperStockLevel
  */
-final class StockLevel extends Model
+final class StockLevel extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;
+    use DeniesGenericCrudWrites;
 
     /**
      * @var string
@@ -64,7 +67,6 @@ final class StockLevel extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

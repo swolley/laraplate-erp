@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\RestrictsCrudWrites;
+use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -22,9 +24,10 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperStockCostLayer
  */
-final class StockCostLayer extends Model
+final class StockCostLayer extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;
+    use DeniesGenericCrudWrites;
 
     /**
      * @var string
@@ -72,7 +75,6 @@ final class StockCostLayer extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

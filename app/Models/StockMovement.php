@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Modules\Core\Contracts\RestrictsCrudWrites;
+use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -28,9 +30,10 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperStockMovement
  */
-final class StockMovement extends Model
+final class StockMovement extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;
+    use DeniesGenericCrudWrites;
 
     /**
      * @var string
@@ -88,7 +91,6 @@ final class StockMovement extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

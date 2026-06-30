@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\RestrictsCrudWrites;
+use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\VatRegisterType;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -17,9 +19,10 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperVatRegisterEntry
  */
-final class VatRegisterEntry extends Model
+final class VatRegisterEntry extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;
+    use DeniesGenericCrudWrites;
 
     /**
      * @var string
@@ -70,7 +73,6 @@ final class VatRegisterEntry extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
