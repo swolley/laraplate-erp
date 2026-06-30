@@ -357,10 +357,9 @@ final readonly class InvoicePostingService
     {
         return FiscalPeriod::query()
             ->withoutGlobalScopes()
-            ->whereHas('fiscal_year', static function (\Illuminate\Database\Eloquent\Builder $query) use ($company, $posted_at): void {
+            ->whereHas('fiscal_year', static function (\Illuminate\Database\Eloquent\Builder $query) use ($company): void {
                 $query->withoutGlobalScopes()
-                    ->where('company_id', $company->id)
-                    ->where('year', $posted_at->year);
+                    ->where('company_id', $company->id);
             })
             ->whereDate('start_date', '<=', $posted_at)
             ->whereDate('end_date', '>=', $posted_at)

@@ -716,6 +716,53 @@ it('blocks posting a sale invoice into a closed fiscal period', function (): voi
     expect($invoice->fresh()->journal_entry_id)->toBeNull();
 });
 
+it('blocks posting when a non-solar fiscal period covers the posting date', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'inv-non-solar-period',
+        'name' => 'Invoice Non Solar Period',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    FiscalYear::query()->create([
+        'company_id' => $company->id,
+        'year' => 2026,
+        'start_date' => '2026-01-01',
+        'end_date' => '2026-12-31',
+    ]);
+    $fiscal_year = FiscalYear::query()->create([
+        'company_id' => $company->id,
+        'year' => 2027,
+        'start_date' => '2026-07-01',
+        'end_date' => '2027-06-30',
+    ]);
+
+    FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => 2,
+        'start_date' => '2026-08-01',
+        'end_date' => '2026-08-31',
+        'is_closed' => true,
+    ]);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
+        'currency' => 'EUR',
+    ]);
+    $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Part',
+        'quantity' => 1,
+        'unit_price' => 10,
+    ]);
+
+    expect(fn () => $invoice->update(['posted_at' => '2026-08-15']))
+        ->toThrow(PostingToClosedFiscalPeriodException::class);
+
+    expect($invoice->fresh()->journal_entry_id)->toBeNull();
+});
+
 it('posts a sale invoice into an open fiscal period', function (): void {
     $company = createInvoicePostingCompany('inv-open-period');
     $fiscal_year = FiscalYear::query()->where('company_id', $company->id)->firstOrFail();

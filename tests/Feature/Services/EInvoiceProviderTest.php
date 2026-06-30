@@ -83,6 +83,20 @@ it('maps stub remote status for known external ids', function (): void {
         ->and(app(EInvoiceProvider::class)->remoteStatus('OTHER-1'))->toBe(EInvoiceRemoteStatus::Unknown);
 });
 
+it('resolves stub external ids from numeric-string payload invoice ids', function (): void {
+    $provider = new StubEInvoiceProvider;
+    $payload = new EInvoicePayload(['invoice_id' => '42'], 'application/json');
+
+    expect($provider->submit($payload)->externalId)->toBe('STUB-42');
+});
+
+it('falls back to stub-unknown when payload invoice id is invalid', function (): void {
+    $provider = new StubEInvoiceProvider;
+    $payload = new EInvoicePayload(['invoice_id' => 'not-numeric'], 'application/json');
+
+    expect($provider->submit($payload)->externalId)->toBe('STUB-UNKNOWN');
+});
+
 it('persists an e-invoice submission for a posted sale invoice', function (): void {
     $company = createEInvoiceCompany();
     $invoice = createEInvoiceInvoice($company);

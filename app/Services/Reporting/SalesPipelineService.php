@@ -31,15 +31,7 @@ final class SalesPipelineService
             $by_status[$status->value] = $this->emptyStatusBucket($status->value);
         }
 
-        $opportunities = Opportunity::query()
-            ->where('company_id', $company_id)
-            ->get([
-                'status',
-                'expected_value_doc',
-                'expected_value_local',
-                'won_at',
-                'lost_at',
-            ]);
+        $opportunities = $this->loadOpportunities($company_id);
 
         $total_count = 0;
         $won_count = 0;
@@ -81,6 +73,22 @@ final class SalesPipelineService
             'total_expected_value_doc' => $this->formatAmount($total_expected_value_doc),
             'total_expected_value_local' => $this->formatAmount($total_expected_value_local),
         ];
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Opportunity>
+     */
+    protected function loadOpportunities(int $company_id): \Illuminate\Database\Eloquent\Collection
+    {
+        return Opportunity::query()
+            ->where('company_id', $company_id)
+            ->get([
+                'status',
+                'expected_value_doc',
+                'expected_value_local',
+                'won_at',
+                'lost_at',
+            ]);
     }
 
     /**

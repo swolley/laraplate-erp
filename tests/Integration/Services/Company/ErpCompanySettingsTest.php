@@ -110,3 +110,39 @@ it('defaults three-way match tolerances to zero when settings are missing', func
     expect($service->priceTolerancePercent($company))->toBe(0.0)
         ->and($service->qtyTolerancePercent($company))->toBe(0.0);
 });
+
+it('reads invoice generation mode from company settings', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'settings-mode',
+        'name' => 'Settings Mode',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $company->settings = [
+        'erp' => [
+            'invoice_generation_mode' => ErpCompanySettings::INVOICE_GENERATION_MODE_COMPACT,
+        ],
+    ];
+    $company->save();
+
+    expect(app(ErpCompanySettings::class)->invoiceGenerationMode($company))
+        ->toBe(ErpCompanySettings::INVOICE_GENERATION_MODE_COMPACT);
+});
+
+it('falls back to expanded invoice generation mode for invalid values', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'settings-mode-invalid',
+        'name' => 'Settings Mode Invalid',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $company->settings = [
+        'erp' => [
+            'invoice_generation_mode' => 'unsupported',
+        ],
+    ];
+    $company->save();
+
+    expect(app(ErpCompanySettings::class)->invoiceGenerationMode($company))
+        ->toBe(ErpCompanySettings::INVOICE_GENERATION_MODE_EXPANDED);
+});

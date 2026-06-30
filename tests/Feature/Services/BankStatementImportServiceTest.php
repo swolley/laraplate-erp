@@ -88,3 +88,67 @@ it('rejects a CSV row missing the required date or amount', function (): void {
         @unlink($path);
     }
 });
+
+it('rejects CSV rows with malformed non-empty dates', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-malformed-date',
+        'name' => 'CSV Malformed Date',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,value_at,description,amount_doc\nnot-a-date,2026-05-02,Bad booked date,100.00\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class, 'Row 1 contains an invalid booked date.');
+
+        expect($statement->lines()->count())->toBe(0);
+    } finally {
+        @unlink($path);
+    }
+});
+
+it('rejects csv files with duplicate header names', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-dup-header',
+        'name' => 'CSV Dup Header',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,booked_at,description,amount_doc\n2026-05-01,2026-05-01,Row,100.00\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class, 'duplicate column names');
+    } finally {
+        @unlink($path);
+    }
+});

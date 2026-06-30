@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Models\BankStatement;
 use SplFileObject;
+use Throwable;
 
 final class BankStatementCsvImporter
 {
@@ -71,13 +72,21 @@ final class BankStatementCsvImporter
     private function assertRowIsValid(array $row, array $columns, int $index): void
     {
         $booked_at = mb_trim((string) ($row[$columns['booked_at']] ?? ''));
+        $value_at = mb_trim((string) ($row[$columns['value_at']] ?? ''));
         $amount = mb_trim((string) ($row[$columns['amount_doc']] ?? ''));
         $description = mb_trim((string) ($row[$columns['description']] ?? ''));
 
         $errors = [];
+        $invalid_dates = [];
 
         if ($booked_at === '') {
             $errors[] = 'a booked date';
+        } elseif (! $this->isParseableDate($booked_at)) {
+            $invalid_dates[] = 'booked date';
+        }
+
+        if ($value_at !== '' && ! $this->isParseableDate($value_at)) {
+            $invalid_dates[] = 'value date';
         }
 
         if ($amount === '' || ! is_numeric($this->normalizeDecimal($amount))) {
@@ -91,6 +100,12 @@ final class BankStatementCsvImporter
         if ($errors !== []) {
             throw ValidationException::withMessages([
                 'file' => ['Row ' . ($index + 1) . ' is missing ' . implode(', ', $errors) . '.'],
+            ]);
+        }
+
+        if ($invalid_dates !== []) {
+            throw ValidationException::withMessages([
+                'file' => ['Row ' . ($index + 1) . ' contains an invalid ' . implode(', ', $invalid_dates) . '.'],
             ]);
         }
     }
@@ -145,5 +160,16 @@ final class BankStatementCsvImporter
     private function normalizeDecimal(string $value): string
     {
         return str_replace(',', '.', mb_trim($value));
+    }
+
+    private function isParseableDate(string $value): bool
+    {
+        try {
+            CarbonImmutable::parse($value);
+
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

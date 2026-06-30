@@ -144,6 +144,30 @@ it('trial balance only includes posted entries up to date', function (): void {
         ->and($cash_row['balance'])->toBe('500.0000');
 });
 
+it('balance sheet ignores unknown account kinds from trial balance', function (): void {
+    $trial_balance = Mockery::mock(TrialBalanceService::class);
+    $trial_balance->shouldReceive('generate')->once()->andReturn([
+        [
+            'account_id' => 1,
+            'account_code' => '9000',
+            'account_name' => 'Memo',
+            'account_kind' => 'memo',
+            'debit' => '100.0000',
+            'credit' => '0.0000',
+            'balance' => '100.0000',
+        ],
+    ]);
+
+    $service = new BalanceSheetService($trial_balance);
+    $result = $service->generate(1, CarbonImmutable::now());
+
+    expect($result['assets'])->toBeEmpty()
+        ->and($result['liabilities'])->toBeEmpty()
+        ->and($result['equity'])->toBeEmpty()
+        ->and($result['total_assets'])->toBe('0.0000')
+        ->and($result['is_balanced'])->toBeTrue();
+});
+
 it('balance sheet is balanced (assets = liabilities + equity + net income)', function (): void {
     $company = createTestCompany();
     $cash = createAccount($company, '1000', 'Cash', AccountKind::Asset);
@@ -277,6 +301,16 @@ it('income statement filters by date range', function (): void {
     expect($result['total_revenue'])->toBe('2000.0000')
         ->and($result['total_expenses'])->toBe('500.0000')
         ->and($result['net_income'])->toBe('1500.0000');
+});
+
+it('trial balance normalizes aggregate account ids', function (): void {
+    $service = new TrialBalanceService;
+    $method = new ReflectionMethod(TrialBalanceService::class, 'accountIdFromAggregate');
+    $method->setAccessible(true);
+
+    expect($method->invoke($service, 5))->toBe(5)
+        ->and($method->invoke($service, '12'))->toBe(12)
+        ->and($method->invoke($service, 'invalid'))->toBe(0);
 });
 
 it('trial balance returns empty array for company with no entries', function (): void {

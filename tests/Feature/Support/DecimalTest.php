@@ -22,6 +22,11 @@ it('divides with HALF_UP at the 4th decimal boundary', function (): void {
         ->and(Decimal::div('1', '3'))->toBe('0.3333');
 });
 
+it('rejects division by zero with a clear exception', function (): void {
+    expect(fn () => Decimal::div('1', '0'))
+        ->toThrow(InvalidArgumentException::class, 'Decimal division by zero is not allowed.');
+});
+
 it('negates, takes absolute value, and reports sign/zero', function (): void {
     expect(Decimal::negate('1.2300'))->toBe('-1.2300')
         ->and(Decimal::abs('-1.2300'))->toBe('1.2300')

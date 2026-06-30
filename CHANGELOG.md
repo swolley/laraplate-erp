@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🧪 Testing
+
+- *(erp)* Raise coverage on models and services above 90%
+
 ## [1.14.2] - 2026-06-30
 
 ### 🐛 Bug Fixes

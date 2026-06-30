@@ -6,6 +6,7 @@ namespace Modules\ERP\Support;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use InvalidArgumentException;
 
 /**
  * Decimal-exact money math (scale 4, HALF_UP) shared across ERP accounting services.
@@ -32,8 +33,15 @@ final class Decimal
         return self::format(BigDecimal::of($a)->multipliedBy(BigDecimal::of($b)));
     }
 
+    /**
+     * @throws InvalidArgumentException when the divisor is zero at ERP decimal scale.
+     */
     public static function div(string $a, string $b): string
     {
+        if (self::isZero($b)) {
+            throw new InvalidArgumentException('Decimal division by zero is not allowed.');
+        }
+
         return self::format(BigDecimal::of($a)->dividedBy(BigDecimal::of($b), self::SCALE, RoundingMode::HALF_UP));
     }
 
