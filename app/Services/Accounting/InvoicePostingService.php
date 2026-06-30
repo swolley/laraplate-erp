@@ -13,6 +13,7 @@ use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\JournalEntry;
@@ -93,10 +94,11 @@ final readonly class InvoicePostingService
             }
 
             $journal_lines = $this->buildJournalLines($company, $locked->direction, $locked->currency, $net_total, $tax_total, $gross_total);
+            $fiscal_period = $this->resolveFiscalPeriod($company, $posted_at);
             $entry = $this->journal_posting_service->post(
                 $company,
                 $journal_lines,
-                null,
+                $fiscal_period,
                 'Invoice posted ' . $reference,
                 null,
                 $locked,
@@ -346,6 +348,20 @@ final readonly class InvoicePostingService
         }
 
         return CarbonImmutable::now();
+    }
+
+    private function resolveFiscalPeriod(Company $company, CarbonImmutable $posted_at): ?FiscalPeriod
+    {
+        return FiscalPeriod::query()
+            ->withoutGlobalScopes()
+            ->whereHas('fiscal_year', static function (\Illuminate\Database\Eloquent\Builder $query) use ($company, $posted_at): void {
+                $query->withoutGlobalScopes()
+                    ->where('company_id', $company->id)
+                    ->where('year', $posted_at->year);
+            })
+            ->whereDate('start_date', '<=', $posted_at)
+            ->whereDate('end_date', '>=', $posted_at)
+            ->first();
     }
 
     /**

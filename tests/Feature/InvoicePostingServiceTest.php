@@ -10,10 +10,12 @@ use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
+use Modules\ERP\Exceptions\PostingToClosedFiscalPeriodException;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Item;
@@ -681,4 +683,65 @@ it('allows forced three-way match when posting a purchase invoice', function ():
 
     expect($invoice_line->match_status)->toBe(MatchStatus::Forced)
         ->and($invoice_line->match_discrepancy)->toHaveKey('po_price');
+});
+
+it('blocks posting a sale invoice into a closed fiscal period', function (): void {
+    $company = createInvoicePostingCompany('inv-closed-period');
+    $fiscal_year = FiscalYear::query()->where('company_id', $company->id)->firstOrFail();
+
+    FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => (int) now()->format('n'),
+        'start_date' => now()->startOfMonth()->toDateString(),
+        'end_date' => now()->endOfMonth()->toDateString(),
+        'is_closed' => true,
+    ]);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
+        'currency' => 'EUR',
+    ]);
+    $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Part',
+        'quantity' => 1,
+        'unit_price' => 10,
+    ]);
+
+    expect(fn () => $invoice->update(['posted_at' => now()]))
+        ->toThrow(PostingToClosedFiscalPeriodException::class);
+
+    expect($invoice->fresh()->journal_entry_id)->toBeNull();
+});
+
+it('posts a sale invoice into an open fiscal period', function (): void {
+    $company = createInvoicePostingCompany('inv-open-period');
+    $fiscal_year = FiscalYear::query()->where('company_id', $company->id)->firstOrFail();
+
+    FiscalPeriod::query()->create([
+        'fiscal_year_id' => $fiscal_year->id,
+        'period_no' => (int) now()->format('n'),
+        'start_date' => now()->startOfMonth()->toDateString(),
+        'end_date' => now()->endOfMonth()->toDateString(),
+        'is_closed' => false,
+    ]);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
+        'currency' => 'EUR',
+    ]);
+    $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Part',
+        'quantity' => 1,
+        'unit_price' => 10,
+    ]);
+
+    $invoice->update(['posted_at' => now()]);
+
+    expect($invoice->fresh()->journal_entry_id)->not->toBeNull();
 });
