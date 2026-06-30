@@ -80,6 +80,20 @@ final class TaxLineCalculator
     }
 
     /**
+     * Decimal-exact per-line tax = net * rate / 100, rounded once at scale 4 (HALF_UP).
+     *
+     * Single source of truth for invoice posting and VAT register line tax; takes a net
+     * amount and a percentage rate so it needs neither a TaxKind check nor a TaxCode lookup.
+     */
+    public function lineTax(string $net_amount, string $rate): string
+    {
+        return BigDecimal::of($net_amount)
+            ->multipliedBy(BigDecimal::of($rate))
+            ->dividedBy('100', 4, RoundingMode::HALF_UP)
+            ->__toString();
+    }
+
+    /**
      * @return array{tax_code: string, tax_rate: string, tax_label: string}
      */
     public function snapshotForLine(TaxCode $code): array
