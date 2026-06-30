@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\BankStatementLine;
@@ -52,4 +53,38 @@ it('imports csv bank statement lines', function (): void {
     expect($first->company_id)->toBe($company->id)
         ->and((float) $first->amount_doc)->toBe(125.5)
         ->and($first->raw_payload['description'])->toBe('Customer payment');
+});
+
+it('rejects a CSV row missing the required date or amount', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-bad-row',
+        'name' => 'CSV Bad Row',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,description,amount_doc\n2026-05-01,Valid row,100.00\n,Missing date,50.00\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class);
+
+        // The whole import is transactional: nothing is persisted on a bad row.
+        expect($statement->lines()->count())->toBe(0);
+    } finally {
+        @unlink($path);
+    }
 });

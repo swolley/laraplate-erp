@@ -35,7 +35,9 @@ final class BankStatementCsvImporter
             $bank_account = $statement->bank_account;
             $default_currency = $bank_account !== null ? $bank_account->currency : 'EUR';
 
-            foreach ($rows as $row) {
+            foreach ($rows as $index => $row) {
+                $this->assertRowIsValid($row, $columns, $index);
+
                 $statement->lines()->create([
                     'company_id' => $statement->company_id,
                     'booked_at' => CarbonImmutable::parse((string) $row[$columns['booked_at']])->toDateString(),
@@ -60,6 +62,37 @@ final class BankStatementCsvImporter
         });
 
         return $created;
+    }
+
+    /**
+     * @param  array<string, string|null>  $row
+     * @param  array<string, string>  $columns
+     */
+    private function assertRowIsValid(array $row, array $columns, int $index): void
+    {
+        $booked_at = mb_trim((string) ($row[$columns['booked_at']] ?? ''));
+        $amount = mb_trim((string) ($row[$columns['amount_doc']] ?? ''));
+        $description = mb_trim((string) ($row[$columns['description']] ?? ''));
+
+        $errors = [];
+
+        if ($booked_at === '') {
+            $errors[] = 'a booked date';
+        }
+
+        if ($amount === '' || ! is_numeric($this->normalizeDecimal($amount))) {
+            $errors[] = 'a numeric amount';
+        }
+
+        if ($description === '') {
+            $errors[] = 'a description';
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages([
+                'file' => ['Row ' . ($index + 1) . ' is missing ' . implode(', ', $errors) . '.'],
+            ]);
+        }
     }
 
     /**
