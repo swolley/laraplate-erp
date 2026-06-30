@@ -223,20 +223,19 @@ final class ERPDatabaseSeeder extends Seeder
      */
     private function domainPermissions(): array
     {
-        $sntities = [DeliveryNote::class, FiscalPeriod::class, Invoice::class, JournalEntry::class, SalesOrder::class];
+        $entities = [DeliveryNote::class, FiscalPeriod::class, Invoice::class, JournalEntry::class, SalesOrder::class];
         $permissions = [];
 
-        foreach ($sntities as $model) {
+        foreach ($entities as $model) {
             $instance = new ReflectionClass($model)->newInstanceWithoutConstructor();
 
             $connection = $instance->getConnectionName() ?? 'default';
             $table = $instance->getTable();
-            $model::flushEventListeners();
 
             $permissions[] = "{$connection}." . $table . '.post';
             $permissions[] = "{$connection}." . $table . '.unpost';
 
-            if (is_a($model, Invoice::class)) {
+            if ($model === Invoice::class) {
                 $permissions[] = "{$connection}." . $table . '.submitEInvoice';
                 $permissions[] = "{$connection}." . $table . '.refreshEInvoice';
             }
