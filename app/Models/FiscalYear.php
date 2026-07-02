@@ -21,7 +21,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property \Carbon\CarbonInterface $end_date
  * @property bool $is_closed
  * @property-read \Illuminate\Database\Eloquent\Collection<int, FiscalPeriod> $fiscal_periods
- *
  * @mixin \Eloquent
  * @mixin IdeHelperFiscalYear
  */

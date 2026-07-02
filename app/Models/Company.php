@@ -21,7 +21,6 @@ use Override;
  * @property string $default_currency
  * @property bool $is_default
  * @property array<string, mixed>|null $settings
- *
  * @mixin \Eloquent
  * @mixin IdeHelperCompany
  */

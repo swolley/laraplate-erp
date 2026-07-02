@@ -26,7 +26,6 @@ use Override;
  * @property numeric-string $paid_amount_local
  * @property PaymentScheduleStatus $status
  * @property \Carbon\CarbonInterface|null $paid_at
- *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentScheduleLine
  */

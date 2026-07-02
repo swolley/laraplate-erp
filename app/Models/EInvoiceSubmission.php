@@ -17,7 +17,6 @@ use Override;
  * @property string|null $external_id
  * @property EInvoiceSubmissionStatus $status
  * @property array<string, mixed>|null $response_payload
- *
  * @mixin \Eloquent
  * @mixin IdeHelperEInvoiceSubmission
  */

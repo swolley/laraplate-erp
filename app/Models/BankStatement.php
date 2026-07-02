@@ -20,7 +20,6 @@ use Override;
  * @property \Carbon\CarbonInterface|null $imported_at
  * @property string|null $source_filename
  * @property-read BankAccount|null $bank_account
- *
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatement
  */

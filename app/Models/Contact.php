@@ -18,7 +18,6 @@ use Override;
  * @property int|string $id
  * @property int|null $user_id
  * @property-read User|null $user
- *
  * @mixin \Eloquent
  * @mixin IdeHelperContact
  */

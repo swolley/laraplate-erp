@@ -29,7 +29,6 @@ use Override;
  * @property array<string, mixed>|null $raw_payload
  * @property-read BankStatement|null $bank_statement
  * @property-read Payment|null $matched_payment
- *
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatementLine
  */

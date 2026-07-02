@@ -26,7 +26,6 @@ use Override;
  * @property numeric-string|null $unit_cost
  * @property string $source_type
  * @property int $source_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperStockMovement
  */

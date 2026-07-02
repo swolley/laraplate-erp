@@ -18,7 +18,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * @property int|string $id
  * @property int $company_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperAccount
  */

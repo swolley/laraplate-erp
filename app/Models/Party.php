@@ -20,7 +20,6 @@ use Override;
  * @property string $name
  * @property bool $is_customer
  * @property bool $is_supplier
- *
  * @mixin \Eloquent
  * @mixin IdeHelperParty
  */

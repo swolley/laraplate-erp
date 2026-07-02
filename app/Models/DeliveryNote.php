@@ -25,7 +25,6 @@ use Override;
  * @property \Carbon\CarbonInterface|null $inventory_posted_at
  * @property int|null $cogs_journal_entry_id
  * @property string|null $notes
- *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNote
  */

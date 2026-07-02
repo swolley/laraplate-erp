@@ -17,7 +17,6 @@ use Override;
  * @property string $name
  * @property string $code
  * @property int|null $site_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperWarehouse
  */

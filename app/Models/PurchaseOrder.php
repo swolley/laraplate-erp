@@ -22,7 +22,6 @@ use Override;
  * @property string $status
  * @property \Carbon\CarbonInterface|null $ordered_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrderLine> $lines
- *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrder
  */

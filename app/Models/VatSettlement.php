@@ -16,7 +16,6 @@ use Override;
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
  *
  * @property numeric-string $settlement_amount
- *
  * @mixin \Eloquent
  * @mixin IdeHelperVatSettlement
  */

@@ -23,7 +23,6 @@ use Override;
  * @property int|null $sales_order_line_id
  * @property-read DeliveryNote|null $delivery_note
  * @property-read \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot
- *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNoteLine
  */

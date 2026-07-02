@@ -22,7 +22,6 @@ use Override;
  * @property int $user_id
  * @property \Carbon\CarbonInterface $started_at
  * @property \Carbon\CarbonInterface|null $ended_at
- *
  * @mixin \Eloquent
  * @mixin IdeHelperTimeEntry
  */

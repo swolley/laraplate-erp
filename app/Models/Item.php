@@ -21,7 +21,6 @@ use Override;
  * @property string $uom
  * @property string $costing_method
  * @property int|null $taxonomy_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperItem
  */

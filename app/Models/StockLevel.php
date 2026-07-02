@@ -21,7 +21,6 @@ use Override;
  * @property numeric-string $weighted_avg_cost
  * @property-read Item|null $item
  * @property-read Warehouse|null $warehouse
- *
  * @mixin \Eloquent
  * @mixin IdeHelperStockLevel
  */

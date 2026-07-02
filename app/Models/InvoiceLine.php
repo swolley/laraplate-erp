@@ -32,7 +32,6 @@ use Override;
  * @property MatchStatus|null $match_status
  * @property array<string, mixed>|null $match_discrepancy
  * @property-read \Illuminate\Database\Eloquent\Collection<int, DeliveryNoteLine> $delivery_note_lines
- *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoiceLine
  */

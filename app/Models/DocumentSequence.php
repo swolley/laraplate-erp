@@ -18,7 +18,6 @@ use Override;
  * @property string $prefix
  * @property string $suffix
  * @property string|null $format_pattern
- *
  * @mixin \Eloquent
  * @mixin IdeHelperDocumentSequence
  */

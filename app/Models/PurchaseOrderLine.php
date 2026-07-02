@@ -21,7 +21,6 @@ use Override;
  * @property numeric-string $qty_received
  * @property numeric-string $qty_returned
  * @property numeric-string|null $unit_price
- *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrderLine
  */

@@ -24,7 +24,6 @@ use Override;
  * @property \Carbon\CarbonInterface|null $processed_at
  * @property string|null $notes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ReturnOrderLine> $lines
- *
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrder
  */

@@ -33,7 +33,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceLine> $lines
  * @property int|null $payment_term_id
  * @property string|null $notes
- *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoice
  */

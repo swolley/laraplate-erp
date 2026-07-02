@@ -20,7 +20,6 @@ use Override;
  * @property int $item_id
  * @property int $warehouse_id
  * @property numeric-string $quantity
- *
  * @mixin \Eloquent
  * @mixin IdeHelperSupplierReturnLine
  */

@@ -33,7 +33,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property string|null $reversal_reason
  * @property-read \Illuminate\Database\Eloquent\Collection<int, JournalEntryLine> $lines
  * @property-read FiscalPeriod|null $fiscal_period
- *
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntry
  */
