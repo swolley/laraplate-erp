@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
-use Modules\ERP\Observers\TimeEntryObserver;
 use Modules\ERP\Rules\TimeEntryOverlap;
 use Override;
 
-#[ObservedBy([TimeEntryObserver::class])]
 /**
  * @property int|string $id
  * @property int $user_id
