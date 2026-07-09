@@ -25,6 +25,7 @@ final class InvoicePostingActions
             ->authorize(static fn (Invoice $record): bool => auth()->user()?->can('post', $record) ?? false)
             ->visible(static fn (Invoice $record): bool => $record->journal_entry_id === null)
             ->form(static fn (Invoice $record): array => $record->direction === InvoiceDirection::Purchase
+                && (auth()->user()?->can('forcePost', $record) ?? false)
                 ? [
                     Checkbox::make('force_three_way_match')
                         ->label('Force three-way match')

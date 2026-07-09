@@ -113,6 +113,7 @@ final class EditInvoice extends EditRecord
                 ->authorize(fn (): bool => auth()->user()?->can('post', $this->record) ?? false)
                 ->visible(fn (): bool => $this->record->journal_entry_id === null)
                 ->form(fn (): array => $this->record->direction === InvoiceDirection::Purchase
+                    && (auth()->user()?->can('forcePost', $this->record) ?? false)
                     ? [
                         Checkbox::make('force_three_way_match')
                             ->label('Force three-way match')

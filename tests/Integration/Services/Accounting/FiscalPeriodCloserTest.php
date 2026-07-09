@@ -73,6 +73,17 @@ it('throws when closing a period already marked closed', function (): void {
         ->toThrow(FiscalPeriodAlreadyClosedException::class);
 });
 
+it('reopens a closed fiscal period', function (): void {
+    [, , $period] = fiscalPeriodCloserFixtures();
+    $period->is_closed = true;
+    $period->setSkipValidation(true);
+    $period->save();
+
+    (new FiscalPeriodCloser())->reopenPeriod($period);
+
+    expect($period->fresh()->is_closed)->toBeFalse();
+});
+
 it('throws when closing a year already marked closed', function (): void {
     [, $fiscal_year] = fiscalPeriodCloserFixtures();
     $fiscal_year->is_closed = true;

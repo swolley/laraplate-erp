@@ -8,6 +8,7 @@ use Modules\Core\Models\Role;
 use Modules\Core\Models\User;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Policies\ERPModelPolicy;
 
 uses(RefreshDatabase::class);
@@ -44,7 +45,7 @@ function policyPermission(Invoice $invoice, string $operation): string
     );
 }
 
-it('allows superadmin to run every ERP ability', function (): void {
+it('allows superadmin to run ERP abilities only when state permits domain actions', function (): void {
     $invoice = policyInvoice();
     $user = User::factory()->create();
     $user->assignRole(Role::findOrCreate(config('permission.roles.superadmin'), 'web'));
@@ -52,9 +53,15 @@ it('allows superadmin to run every ERP ability', function (): void {
     $policy = app(ERPModelPolicy::class);
 
     expect($policy->post($user, $invoice))->toBeTrue()
-        ->and($policy->unpost($user, $invoice))->toBeTrue()
+        ->and($policy->unpost($user, $invoice))->toBeFalse()
         ->and($policy->submitEInvoice($user, $invoice))->toBeTrue()
         ->and($policy->refreshEInvoice($user, $invoice))->toBeTrue();
+
+    $entry = JournalEntry::query()->create(['company_id' => $invoice->company_id]);
+    $invoice->journal_entry_id = $entry->id;
+
+    expect($policy->post($user, $invoice))->toBeFalse()
+        ->and($policy->unpost($user, $invoice))->toBeTrue();
 });
 
 it('allows a user granted the specific permission', function (): void {

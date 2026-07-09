@@ -19,6 +19,7 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Preset;
@@ -238,8 +239,27 @@ final class ERPDatabaseSeeder extends Seeder
             if ($model === Invoice::class) {
                 $permissions[] = "{$connection}." . $table . '.submitEInvoice';
                 $permissions[] = "{$connection}." . $table . '.refreshEInvoice';
+                $permissions[] = "{$connection}." . $table . '.force_post';
+            }
+
+            if ($model === FiscalPeriod::class) {
+                $permissions[] = "{$connection}." . $table . '.close';
+                $permissions[] = "{$connection}." . $table . '.reopen';
+            }
+
+            if ($model === JournalEntry::class) {
+                $permissions[] = "{$connection}." . $table . '.reverse';
+            }
+
+            if ($model === SalesOrder::class) {
+                $permissions[] = "{$connection}." . $table . '.amend';
             }
         }
+
+        $fiscal_year = new ReflectionClass(FiscalYear::class)->newInstanceWithoutConstructor();
+        $fy_connection = $fiscal_year->getConnectionName() ?? 'default';
+        $fy_table = $fiscal_year->getTable();
+        $permissions[] = "{$fy_connection}.{$fy_table}.close";
 
         return $permissions;
     }

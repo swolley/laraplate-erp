@@ -23,3 +23,21 @@ it('does not seed e-invoice permissions for non-invoice models', function (): vo
     expect(Permission::query()->where('name', 'default.erp_journal_entries.post')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'default.erp_journal_entries.submitEInvoice')->exists())->toBeFalse();
 });
+
+it('seeds Phase 2A domain permissions for fiscal and commercial models', function (): void {
+    $this->seed(ERPDatabaseSeeder::class);
+
+    expect(Permission::query()->where('name', 'default.erp_fiscal_periods.close')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_fiscal_periods.reopen')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_fiscal_years.close')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_journal_entries.reverse')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_sales_orders.amend')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_invoices.force_post')->exists())->toBeTrue();
+});
+
+it('does not seed force_post on non-invoice models', function (): void {
+    $this->seed(ERPDatabaseSeeder::class);
+
+    expect(Permission::query()->where('name', 'default.erp_sales_orders.force_post')->exists())->toBeFalse()
+        ->and(Permission::query()->where('name', 'default.erp_delivery_notes.force_post')->exists())->toBeFalse();
+});

@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\SalesOrders\Pages;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\ERP\Filament\Resources\SalesOrders\Actions\SalesOrderAmendmentActions;
 use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
@@ -16,6 +17,17 @@ final class EditSalesOrder extends EditRecord
 {
     #[Override]
     protected static string $resource = SalesOrderResource::class;
+
+    /**
+     * @return array<int, \Filament\Actions\Action>
+     */
+    #[Override]
+    protected function getHeaderActions(): array
+    {
+        return [
+            SalesOrderAmendmentActions::amend(),
+        ];
+    }
 
     #[Override]
     protected function mutateFormDataBeforeFill(array $data): array

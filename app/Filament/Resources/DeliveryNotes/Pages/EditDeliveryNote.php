@@ -10,6 +10,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\ERP\Filament\Resources\DeliveryNotes\Actions\DeliveryNotePostingActions;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
@@ -24,6 +25,8 @@ final class EditDeliveryNote extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            DeliveryNotePostingActions::post(),
+            DeliveryNotePostingActions::unpost(),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),

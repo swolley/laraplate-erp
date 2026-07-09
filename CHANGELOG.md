@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🧪 Testing
 
+- *(erp)* Add feature tests for ERPServiceProvider and e-invoice provider binding
+- *(erp)* Expand Filament resources and domain action coverage
+
+## [1.14.6] - 2026-07-09
+
+### 🧪 Testing
+
 - *(erp)* Enhance coverage for invoice and journal entry models, add bank statement CSV validation tests
 
 ## [1.14.4] - 2026-06-30

@@ -11,6 +11,7 @@ use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Quotation;
@@ -120,6 +121,7 @@ class ERPServiceProvider extends ModuleServiceProvider
             DeliveryNote::class,
             DocumentSequence::class,
             FiscalPeriod::class,
+            FiscalYear::class,
             Invoice::class,
             JournalEntry::class,
             Quotation::class,
