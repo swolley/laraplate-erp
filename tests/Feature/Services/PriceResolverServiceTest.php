@@ -86,6 +86,73 @@ it('applies party percent discount rules to the resolved unit price', function (
     expect($result->resolvedUnitPrice)->toBe('90.0000');
 });
 
+it('applies party fixed-amount discounts without going below zero', function (): void {
+    [$company, $item, $taxonomy] = createPricingFixture();
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Fixed discount customer',
+        'is_customer' => true,
+        'is_supplier' => false,
+    ]);
+    PartyPriceRule::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'taxonomy_id' => $taxonomy->id,
+        'priority' => 1,
+        'discount_type' => DiscountType::FixedAmount,
+        'discount_value' => '15.0000',
+    ]);
+
+    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+
+    expect($result->resolvedUnitPrice)->toBe('85.0000');
+});
+
+it('floors fixed discounts that would make the unit price negative', function (): void {
+    [$company, $item, $taxonomy] = createPricingFixture();
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Deep discount customer',
+        'is_customer' => true,
+        'is_supplier' => false,
+    ]);
+    PartyPriceRule::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'taxonomy_id' => $taxonomy->id,
+        'priority' => 1,
+        'discount_type' => DiscountType::FixedAmount,
+        'discount_value' => '150.0000',
+    ]);
+
+    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+
+    expect($result->resolvedUnitPrice)->toBe('0.0000');
+});
+
+it('replaces the list price when a party override rule is configured', function (): void {
+    [$company, $item, $taxonomy] = createPricingFixture();
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Contract price customer',
+        'is_customer' => true,
+        'is_supplier' => false,
+    ]);
+    PartyPriceRule::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'taxonomy_id' => $taxonomy->id,
+        'priority' => 1,
+        'discount_type' => DiscountType::OverridePrice,
+        'discount_value' => '42.5000',
+    ]);
+
+    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+
+    expect($result->baseUnitPrice)->toBe('100.0000')
+        ->and($result->resolvedUnitPrice)->toBe('42.5000');
+});
+
 it('rejects items without pricing taxonomy', function (): void {
     $company = Company::query()->create([
         'slug' => 'price-no-tax-' . uniqid(),

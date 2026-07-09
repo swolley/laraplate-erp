@@ -152,3 +152,125 @@ it('rejects csv files with duplicate header names', function (): void {
         @unlink($path);
     }
 });
+
+it('rejects CSV rows with an invalid value date while booked date is valid', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-bad-value-date',
+        'name' => 'CSV Bad Value Date',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,value_at,description,amount_doc\n2026-05-01,not-a-date,Valid booked date,100.00\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class, 'Row 1 contains an invalid value date.');
+    } finally {
+        @unlink($path);
+    }
+});
+
+it('rejects CSV rows missing a description', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-no-description',
+        'name' => 'CSV No Description',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,description,amount_doc\n2026-05-01,,100.00\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class, 'Row 1 is missing a description.');
+    } finally {
+        @unlink($path);
+    }
+});
+
+it('rejects CSV rows with non-numeric amounts', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'csv-bad-amount',
+        'name' => 'CSV Bad Amount',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "booked_at,description,amount_doc\n2026-05-02,Wire fee,abc\n",
+    );
+
+    try {
+        expect(fn () => app(BankStatementCsvImporter::class)->import($statement, $path))
+            ->toThrow(ValidationException::class, 'Row 1 is missing a numeric amount.');
+    } finally {
+        @unlink($path);
+    }
+});
+
+it('skips blank preamble lines before the CSV header row', function (): void {
+    $company = createBankImportCompany();
+    $account = BankAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main bank',
+        'iban' => 'IT60X0542811101000000123456',
+        'currency' => 'EUR',
+    ]);
+    $statement = BankStatement::query()->create([
+        'company_id' => $company->id,
+        'bank_account_id' => $account->id,
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents(
+        $path,
+        "\n\nbooked_at,description,amount_doc\n2026-05-01,Preamble skipped,25.00\n",
+    );
+
+    try {
+        $created = app(BankStatementCsvImporter::class)->import($statement, $path);
+
+        expect($created)->toBe(1)
+            ->and(BankStatementLine::query()->where('description', 'Preamble skipped')->exists())->toBeTrue();
+    } finally {
+        @unlink($path);
+    }
+});

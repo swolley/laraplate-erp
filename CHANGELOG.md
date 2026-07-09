@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🧪 Testing
+
+- *(erp)* Enhance coverage for invoice and journal entry models, add bank statement CSV validation tests
+
 ## [1.14.4] - 2026-06-30
 
 ### 🧪 Testing

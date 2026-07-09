@@ -154,6 +154,41 @@ it('creates negative register entry for credit note', function (): void {
         ->and((float) $entry->tax_amount)->toBe(-22.0);
 });
 
+it('rejects registration when no fiscal year exists for the invoice posting year', function (): void {
+    [$company, , $vat] = createVatTestCompanyWithFiscalYear();
+    $invoice = createPostedInvoice($company, $vat);
+    $invoice->posted_at = now()->subYears(5)->startOfYear();
+    $invoice->save();
+
+    expect(fn () => app(VatRegisterService::class)->register($invoice))
+        ->toThrow(ValidationException::class, 'No fiscal year found');
+});
+
+it('accepts invoices whose posted_at is persisted as a plain datetime string', function (): void {
+    [$company, , $vat] = createVatTestCompanyWithFiscalYear();
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+        'posted_at' => now()->startOfYear()->toDateTimeString(),
+    ]);
+    $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'String posted date',
+        'quantity' => 1,
+        'unit_price' => 50,
+        'tax_code_id' => $vat->id,
+        'tax_code' => $vat->code,
+        'tax_rate' => (string) $vat->rate,
+        'tax_label' => $vat->label,
+    ]);
+
+    app(VatRegisterService::class)->register($invoice->fresh());
+
+    expect(VatRegisterEntry::query()->withoutGlobalScopes()->where('invoice_id', $invoice->id)->exists())->toBeTrue();
+});
+
 it('computes VAT settlement correctly', function (): void {
     [$company, $fiscal_year, $vat] = createVatTestCompanyWithFiscalYear();
 

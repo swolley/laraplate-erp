@@ -84,3 +84,40 @@ it('returns empty totals when the company has no stock levels', function (): voi
         ->and($result['total_quantity'])->toBe('0.0000')
         ->and($result['total_value'])->toBe('0.0000');
 });
+
+it('still values stock for items with a blank sku', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'stock-no-sku-' . uniqid(),
+        'name' => 'Blank SKU Co',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $item = new Item([
+        'company_id' => $company->id,
+        'name' => 'Legacy item',
+        'sku' => '',
+        'uom' => 'ea',
+        'costing_method' => 'weighted_avg',
+    ]);
+    $item->setSkipValidation(true);
+    $item->save();
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Main',
+        'code' => 'MAIN',
+    ]);
+    StockLevel::query()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => '4.0000',
+        'weighted_avg_cost' => '2.5000',
+    ]);
+
+    $result = app(StockValuationService::class)->generate((int) $company->id);
+
+    expect($result['rows'])->toHaveCount(1)
+        ->and($result['rows'][0]['sku'])->toBe('')
+        ->and($result['rows'][0]['item_name'])->toBe('Legacy item')
+        ->and($result['rows'][0]['value'])->toBe('10.0000');
+});

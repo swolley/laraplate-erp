@@ -85,10 +85,10 @@ final class BankStatementLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
-            'raw_payload' => ['nullable', 'json'],
+            'raw_payload' => ['nullable', 'array'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
-            'raw_payload' => ['nullable', 'json'],
+            'raw_payload' => ['nullable', 'array'],
         ]);
 
         return $rules;
