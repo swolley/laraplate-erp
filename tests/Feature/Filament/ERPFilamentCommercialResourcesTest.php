@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Filament\Schemas\Schema;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
 use Modules\ERP\Filament\Pages\BankReconciliationPage;
 use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
@@ -12,9 +14,11 @@ use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
 use Modules\ERP\Filament\Resources\Contacts\ContactResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
+use Modules\ERP\Filament\Resources\Parties\RelationManagers\PriceRulesRelationManager;
 use Modules\ERP\Filament\Resources\Leads\LeadResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Projects\ProjectResource;
+use Modules\ERP\Filament\Resources\PriceLists\PriceListResource;
 use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
@@ -42,6 +46,50 @@ it('party resource form includes core fields', function (): void {
         ->and($names)->toContain('is_customer')
         ->and($names)->toContain('is_supplier')
         ->and($names)->toContain('is_active');
+});
+
+it('registers party price-rule relation manager', function (): void {
+    expect(PartyResource::getRelations())->toContain(PriceRulesRelationManager::class);
+});
+
+it('party price-rule relation manager exposes pricing fields', function (): void {
+    $manager = new PriceRulesRelationManager;
+    $schema = $manager->form(new Schema());
+    $names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $schema->getComponents(),
+    );
+
+    expect($names)->toContain('item_id')
+        ->and($names)->toContain('taxonomy_id')
+        ->and($names)->toContain('discount_type')
+        ->and($names)->toContain('discount_value')
+        ->and($names)->toContain('priority')
+        ->and($names)->toContain('valid_from')
+        ->and($names)->toContain('valid_to')
+        ->and($manager->table(Table::make($this->createStub(HasTable::class))))->toBeInstanceOf(Table::class);
+});
+
+it('defines Filament pages for price list resource', function (): void {
+    expect(PriceListResource::getPages())
+        ->toHaveKey('index')
+        ->toHaveKey('create')
+        ->toHaveKey('edit');
+});
+
+it('price list resource form includes list header and item repeater fields', function (): void {
+    $schema = PriceListResource::form(new Schema());
+    $names = array_map(
+        static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
+        $schema->getComponents(),
+    );
+
+    expect($names)->toContain('company_id')
+        ->and($names)->toContain('name')
+        ->and($names)->toContain('currency')
+        ->and($names)->toContain('valid_from')
+        ->and($names)->toContain('valid_to')
+        ->and($names)->toContain('price_list_items');
 });
 
 it('defines Filament pages for contact resource', function (): void {

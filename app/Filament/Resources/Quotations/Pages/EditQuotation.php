@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\Quotations\Pages;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\ERP\Filament\Resources\Quotations\Actions\QuotationActions;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\QuotationItem;
@@ -16,6 +17,17 @@ final class EditQuotation extends EditRecord
 {
     #[Override]
     protected static string $resource = QuotationResource::class;
+
+    /**
+     * @return array<int, \Filament\Actions\Action>
+     */
+    #[Override]
+    protected function getHeaderActions(): array
+    {
+        return [
+            QuotationActions::unlock(),
+        ];
+    }
 
     #[Override]
     protected function mutateFormDataBeforeFill(array $data): array

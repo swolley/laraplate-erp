@@ -101,6 +101,14 @@ final class Party extends Model
     }
 
     /**
+     * @return HasMany<PartyPriceRule, $this>
+     */
+    public function price_rules(): HasMany
+    {
+        return $this->hasMany(PartyPriceRule::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function getRules(): array

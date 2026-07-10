@@ -27,6 +27,7 @@ use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
 use Modules\ERP\Filament\Resources\Payments\PaymentResource;
 use Modules\ERP\Filament\Resources\PaymentTerms\PaymentTermResource;
+use Modules\ERP\Filament\Resources\PriceLists\PriceListResource;
 use Modules\ERP\Filament\Resources\Projects\ProjectResource;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
@@ -150,6 +151,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         PartyResource::class,
         PaymentResource::class,
         PaymentTermResource::class,
+        PriceListResource::class,
         ProjectResource::class,
         QuotationResource::class,
         TaxCodeResource::class,

@@ -19,6 +19,7 @@ use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Policies\ERPModelPolicy;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
 use Modules\ERP\Services\Accounting\InvoiceDeliveryNoteValidationService;
@@ -90,6 +91,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(FiscalCalendarInstaller::class);
         $this->app->singleton(FiscalPeriodCloser::class);
         $this->app->singleton(DocumentNumberAllocator::class);
+        $this->app->singleton(DocumentSequenceResetService::class);
         $this->app->singleton(JournalPostingService::class);
         $this->app->singleton(InvoiceDeliveryNoteValidationService::class);
         $this->app->singleton(ErpCompanySettings::class);

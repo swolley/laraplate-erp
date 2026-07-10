@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Filament\Resources\Parties\Pages\CreateParty;
 use Modules\ERP\Filament\Resources\Parties\Pages\EditParty;
 use Modules\ERP\Filament\Resources\Parties\Pages\ListParties;
+use Modules\ERP\Filament\Resources\Parties\RelationManagers\PriceRulesRelationManager;
 use Modules\ERP\Filament\Resources\Parties\Schemas\PartyForm;
 use Modules\ERP\Filament\Resources\Parties\Tables\PartiesTable;
 use Modules\ERP\Models\Party;
@@ -56,7 +57,9 @@ final class PartyResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            PriceRulesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -10,10 +10,12 @@ use Modules\Core\Models\User;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
 
 final class ERPModelPolicy
@@ -119,6 +121,22 @@ final class ERPModelPolicy
 
             return in_array($record->status, [SalesOrderStatus::Confirmed, SalesOrderStatus::PartiallyEvased], true);
         });
+    }
+
+    public function unlock(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'unlock', static function (Model $record): bool {
+            if (! $record instanceof Quotation) {
+                return false;
+            }
+
+            return $record->isLocked();
+        });
+    }
+
+    public function reset(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'reset', static fn (Model $record): bool => $record instanceof DocumentSequence);
     }
 
     public function forcePost(User $user, Model $record): bool

@@ -17,12 +17,14 @@ use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Preset;
+use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
@@ -224,7 +226,7 @@ final class ERPDatabaseSeeder extends Seeder
      */
     private function domainPermissions(): array
     {
-        $entities = [DeliveryNote::class, FiscalPeriod::class, Invoice::class, JournalEntry::class, SalesOrder::class];
+        $entities = [DeliveryNote::class, DocumentSequence::class, FiscalPeriod::class, Invoice::class, JournalEntry::class, Quotation::class, SalesOrder::class];
         $permissions = [];
 
         foreach ($entities as $model) {
@@ -253,6 +255,14 @@ final class ERPDatabaseSeeder extends Seeder
 
             if ($model === SalesOrder::class) {
                 $permissions[] = "{$connection}." . $table . '.amend';
+            }
+
+            if ($model === Quotation::class) {
+                $permissions[] = "{$connection}." . $table . '.unlock';
+            }
+
+            if ($model === DocumentSequence::class) {
+                $permissions[] = "{$connection}." . $table . '.reset';
             }
         }
 

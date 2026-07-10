@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(erp)* Add document sequence reset functionality and price rules management
+
 ### 🐛 Bug Fixes
 
 - *(erp)* Improve document number allocation under sqlite contention
