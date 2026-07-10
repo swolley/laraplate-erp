@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- *(erp)* Improve document number allocation under sqlite contention
+
+## [1.14.7] - 2026-07-09
+
 ### 🧪 Testing
 
 - *(erp)* Add feature tests for ERPServiceProvider and e-invoice provider binding

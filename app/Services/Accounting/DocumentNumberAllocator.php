@@ -16,9 +16,9 @@ use Modules\ERP\Models\DocumentSequence;
  */
 final class DocumentNumberAllocator
 {
-    private const int MAX_RETRY_ATTEMPTS = 8;
+    private const int MAX_RETRY_ATTEMPTS = 24;
 
-    private const int RETRY_BASE_MICROSECONDS = 25000;
+    private const int RETRY_BASE_MICROSECONDS = 50000;
 
     /**
      * Allocates and returns the next display number (prefix, optional year, padded counter).
