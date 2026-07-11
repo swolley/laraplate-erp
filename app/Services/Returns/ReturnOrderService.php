@@ -14,12 +14,14 @@ use Modules\ERP\Models\Party;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 
 final readonly class ReturnOrderService
 {
     public function __construct(
         private CustomerReturnReceiptService $receipt_service,
         private CreditNoteService $credit_note_service,
+        private ErpCompanySettings $erp_company_settings,
     ) {}
 
     public function approve(ReturnOrder $return_order): ReturnOrder
@@ -44,7 +46,16 @@ final readonly class ReturnOrderService
 
     public function complete(ReturnOrder $return_order): ReturnOrder
     {
-        return $this->receipt_service->receive($return_order);
+        return DB::transaction(function () use ($return_order): ReturnOrder {
+            $processed = $this->receipt_service->receive($return_order);
+
+            if ($this->shouldAutoCreateCreditNote($processed)) {
+                $this->createCreditNote($processed);
+                $processed = $processed->fresh() ?? $processed;
+            }
+
+            return $processed;
+        });
     }
 
     public function createCreditNote(ReturnOrder $return_order): Invoice
@@ -128,6 +139,17 @@ final readonly class ReturnOrderService
                 'party_id' => ['Customer return party must be a customer for the same company.'],
             ]);
         }
+    }
+
+    private function shouldAutoCreateCreditNote(ReturnOrder $return_order): bool
+    {
+        if ($return_order->credit_note_invoice_id !== null || $return_order->invoice_id === null) {
+            return false;
+        }
+
+        $company = $return_order->company()->firstOrFail();
+
+        return $this->erp_company_settings->autoCreateNotesOnComplete($company);
     }
 
     /**

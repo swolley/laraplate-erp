@@ -499,9 +499,9 @@ flowchart LR
 
 | Service                         | Purpose                                                                                                      |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `ReturnOrderService`            | Orchestrates customer return approval, completion, cancellation, and manual credit-note follow-up             |
+| `ReturnOrderService`            | Orchestrates customer return approval, completion, cancellation, manual credit-note follow-up, and optional auto credit-note creation on completion |
 | `CustomerReturnReceiptService`  | Generates/links inbound DDTs for customer-return physical receipts and records returned quantities            |
-| `SupplierReturnService`         | Orchestrates supplier return approval, completion, cancellation, and manual debit-note follow-up              |
+| `SupplierReturnService`         | Orchestrates supplier return approval, completion, cancellation, manual debit-note follow-up, and optional auto debit-note creation on completion |
 | `SupplierReturnShipmentService` | Generates/links outbound DDTs for supplier-return physical shipments and records returned quantities          |
 
 
@@ -515,7 +515,7 @@ flowchart LR
 - Customer return credit notes use `ReturnOrderLine.invoice_line_id` and default to the source sales `InvoiceLine.unit_price`; `ReturnOrderLine.unit_price` is an optional manual credit-note override.
 - Supplier return debit notes use `SupplierReturnLine.invoice_line_id` and default to the source purchase `InvoiceLine.unit_price`; `purchase_order_line_id` and `goods_receipt_line_id` remain logistics lineage only.
 - Supplier return debit-note creation is blocked without a source purchase invoice line. A physical supplier return can be completed from PO/GR before invoice correction, but fiscal correction must wait for the purchase invoice line.
-- Credit/debit-note creation is a manual follow-up action in v1. Automatic NC/ND creation remains backlog; it must reuse the invoice-line contracts above.
+- Credit/debit-note creation is manual by default. If `erp.returns.auto_create_notes_on_complete` is true for the company, `complete()` creates the credit/debit note draft automatically using the same invoice-line contracts. Validation failures abort the completion transaction.
 
 #### Return flow
 
@@ -693,7 +693,7 @@ Trial Balance, Balance Sheet, Income Statement
 | Sales and inventory | Implemented | CRM, quotations, sales orders, DDTs, stock movements, cost layers, COGS journals, invoice posting. |
 | Purchasing | Implemented | Purchase orders, goods receipts, purchase invoices, and three-way match. |
 | Payments and VAT | Implemented | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement. |
-| Returns | Implemented v1 | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual; auto NC/ND remains backlog. |
+| Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
 | Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
 | Policies and domain actions | Implemented Phase 2A + partial 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
@@ -718,7 +718,7 @@ Trial Balance, Balance Sheet, Income Statement
 - **How are credit notes handled?**
 → `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
 - **How do customer and supplier returns work?**
-→ Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual follow-up actions in v1. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
+→ Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual by default, or automatic during completion when `erp.returns.auto_create_notes_on_complete` is true. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
 - **How does e-invoice submission work?**
 → `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`. Full FatturaPA XML is outside the core ERP module.
 - **How do payment schedules work?**

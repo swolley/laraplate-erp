@@ -23,6 +23,8 @@ final class ErpCompanySettings
 
     public const string INVOICE_GENERATION_MODE = 'erp.invoice_generation_mode';
 
+    public const string AUTO_CREATE_NOTES_ON_COMPLETE = 'erp.returns.auto_create_notes_on_complete';
+
     public const string INVOICE_GENERATION_MODE_EXPANDED = 'expanded';
 
     public const string INVOICE_GENERATION_MODE_COMPACT = 'compact';
@@ -47,6 +49,9 @@ final class ErpCompanySettings
                     'qty_tolerance_percent' => 0,
                 ],
                 'invoice_generation_mode' => self::INVOICE_GENERATION_MODE_EXPANDED,
+                'returns' => [
+                    'auto_create_notes_on_complete' => false,
+                ],
             ],
         ];
     }
@@ -80,6 +85,13 @@ final class ErpCompanySettings
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Invoice line generation mode (expanded or compact)',
                 'choices' => [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT],
+            ],
+            [
+                'name' => self::AUTO_CREATE_NOTES_ON_COMPLETE,
+                'value' => false,
+                'type' => SettingTypeEnum::Boolean,
+                'group_name' => self::GLOBAL_SETTINGS_GROUP,
+                'description' => 'Automatically create credit/debit note drafts when returns are completed',
             ],
         ];
     }
@@ -143,5 +155,10 @@ final class ErpCompanySettings
         return in_array($mode, [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT], true)
             ? (string) $mode
             : self::INVOICE_GENERATION_MODE_EXPANDED;
+    }
+
+    public function autoCreateNotesOnComplete(Company $company): bool
+    {
+        return (bool) $this->get($company, self::AUTO_CREATE_NOTES_ON_COMPLETE, false);
     }
 }

@@ -229,7 +229,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Supplier returns generate/link outbound DDTs for physical stock shipments
 -   DDT lines remain quantity/source-link only; no prices or costs on bolle
 -   Return completion tracks returned quantities on source invoice / sales order / purchase order / goods receipt lines
--   Manual follow-up actions create and link credit/debit note drafts; automatic NC/ND creation remains optional backlog
+-   Manual follow-up actions create and link credit/debit note drafts; optional setting `erp.returns.auto_create_notes_on_complete` creates NC/ND drafts during return completion
 -   Customer return credit notes use `ReturnOrderLine.invoice_line_id` and the source sales `InvoiceLine.unit_price`; `ReturnOrderLine.unit_price` is an optional manual override.
 -   Supplier return debit notes use `SupplierReturnLine.invoice_line_id` and the source purchase `InvoiceLine.unit_price`; `purchase_order_line_id` and `goods_receipt_line_id` remain logistics references.
 -   Supplier return debit-note creation is blocked when the source purchase invoice line is missing. Returning goods physically can happen from PO/GR, but fiscal correction must reference the purchase invoice.
@@ -247,8 +247,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.
 -   Domain abilities seeded in `ERPDatabaseSeeder` include posting/unposting, forced posting, e-invoice submit/refresh, quotation unlock, and document-sequence reset.
 -   Filament edit/list actions call services; they do not implement business mutations inline.
--   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, and return line fiscal override contract.
--   Remaining Phase 2B items: automatic NC/ND on return complete, bank difference journals, match-with-difference UI, CAMT/MT940 import, financial report export UI, and BI/operational dashboard polish.
+-   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
+-   Remaining Phase 2B items: bank difference journals, match-with-difference UI, CAMT/MT940 import, financial report export UI, and BI/operational dashboard polish.
 
 ### Filament Admin UI
 
@@ -263,15 +263,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
 | M4 Permissions & reporting | Implemented v1 | Domain permissions, invoice action auth, accounting/operational reports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
 | M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
-| M6.2 Returns management | Implemented v1 + fiscal override contract | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, and invoice-line-based fiscal pricing are present. |
+| M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
-| Spec 2 Phase 2B | In progress | 2B-01/02/03/07/08/09 are done; 2B-04/05/06/10/11/12 remain. |
+| Spec 2 Phase 2B | In progress | 2B-01/02/03/06/07/08/09 are done; 2B-04/05/10/11/12 remain. |
 
 ### Roadmap
 
--   2B-06: automatic NC/ND creation on return `complete()` using the invoice-line fiscal contracts above
 -   2B-04/05/10: bank reconciliation difference journals, UI matching with differences, CAMT/MT940 import
 -   2B-11/12: financial export UI and BI/operational dashboard polish
 -   Phase 2C: full FatturaPA XML/XSD/provider work remains optional backlog
@@ -345,11 +344,12 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] M6.1 — Bank reconciliation and statement import
 - [x] M6.2 — Returns management (customer and supplier)
 - [x] M6.2/2B-07 — Invoice-line-based return credit/debit note pricing contract
+- [x] M6.2/2B-06 — Optional automatic NC/ND creation on return completion
 - [x] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
 - [x] M7.1 — Advanced pricelists with party-specific pricing
 - [x] M4 — Policies, permissions, and reporting pages
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
-- [x] Spec 2 Phase 2B partial — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract
+- [x] Spec 2 Phase 2B partial — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
 - [ ] Export CSV/PDF for financial reports

@@ -24,6 +24,7 @@ use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\Warehouse;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Returns\ReturnOrderService;
 
 uses(RefreshDatabase::class);
@@ -369,6 +370,85 @@ it('prevents creating duplicate customer return credit notes', function (): void
 
     expect(fn () => $service->createCreditNote($return_order->fresh()))
         ->toThrow(ValidationException::class);
+});
+
+it('automatically creates a credit note when completing customer returns if enabled', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+    createFiscalYearForReturnOrderCompany($company);
+
+    $company->settings = [
+        'erp' => [
+            'returns' => [
+                'auto_create_notes_on_complete' => true,
+            ],
+        ],
+    ];
+    $company->save();
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $invoice_line = $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned item',
+        'quantity' => 5,
+        'unit_price' => '10.0000',
+    ]);
+    $invoice->update(['posted_at' => now()]);
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'invoice_id' => $invoice->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'invoice_line_id' => $invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_cost' => '12.5000',
+        'unit_price' => '7.5000',
+    ]);
+
+    $processed = app(ReturnOrderService::class)->complete($return_order);
+    $credit_note = Invoice::query()->findOrFail((int) $processed->fresh()->credit_note_invoice_id);
+
+    expect($processed->status)->toBe(ReturnStatus::Processed)
+        ->and($credit_note->invoice_type)->toBe(InvoiceType::CreditNote)
+        ->and($credit_note->direction)->toBe(InvoiceDirection::Sale)
+        ->and((int) $credit_note->credited_invoice_id)->toBe((int) $invoice->id)
+        ->and((string) $credit_note->lines()->firstOrFail()->quantity)->toBe('2.0000')
+        ->and((string) $credit_note->lines()->firstOrFail()->unit_price)->toBe('7.5000');
+});
+
+it('does not automatically create a credit note when completing customer returns by default', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    expect(app(ErpCompanySettings::class)->autoCreateNotesOnComplete($company))->toBeFalse();
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+        'unit_cost' => '1.0000',
+    ]);
+
+    $processed = app(ReturnOrderService::class)->complete($return_order);
+
+    expect($processed->status)->toBe(ReturnStatus::Processed)
+        ->and($processed->fresh()->credit_note_invoice_id)->toBeNull();
 });
 
 it('cancels draft customer returns', function (): void {

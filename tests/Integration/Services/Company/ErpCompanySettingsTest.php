@@ -23,7 +23,8 @@ it('exposes conservative default erp settings', function (): void {
         ->and(data_get($defaults, ErpCompanySettings::PRICE_TOLERANCE_PERCENT))->toBe(0)
         ->and(data_get($defaults, ErpCompanySettings::QTY_TOLERANCE_PERCENT))->toBe(0)
         ->and(data_get($defaults, ErpCompanySettings::INVOICE_GENERATION_MODE))
-        ->toBe(ErpCompanySettings::INVOICE_GENERATION_MODE_EXPANDED);
+        ->toBe(ErpCompanySettings::INVOICE_GENERATION_MODE_EXPANDED)
+        ->and(data_get($defaults, ErpCompanySettings::AUTO_CREATE_NOTES_ON_COMPLETE))->toBeFalse();
 });
 
 it('merges defaults without overwriting existing company values', function (): void {
@@ -145,4 +146,23 @@ it('falls back to expanded invoice generation mode for invalid values', function
 
     expect(app(ErpCompanySettings::class)->invoiceGenerationMode($company))
         ->toBe(ErpCompanySettings::INVOICE_GENERATION_MODE_EXPANDED);
+});
+
+it('reads return auto note creation from company settings', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'settings-return-notes',
+        'name' => 'Settings Return Notes',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $company->settings = [
+        'erp' => [
+            'returns' => [
+                'auto_create_notes_on_complete' => true,
+            ],
+        ],
+    ];
+    $company->save();
+
+    expect(app(ErpCompanySettings::class)->autoCreateNotesOnComplete($company))->toBeTrue();
 });

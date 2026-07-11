@@ -22,6 +22,7 @@ use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\Warehouse;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\StockMovementService;
 use Modules\ERP\Services\Returns\SupplierReturnService;
 
@@ -392,4 +393,95 @@ it('prevents supplier return debit notes without source purchase invoice lines',
 
     expect(fn () => app(SupplierReturnService::class)->createDebitNote($supplier_return))
         ->toThrow(ValidationException::class);
+});
+
+it('automatically creates a debit note when completing supplier returns if enabled', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $company->settings = [
+        'erp' => [
+            'returns' => [
+                'auto_create_notes_on_complete' => true,
+            ],
+        ],
+    ];
+    $company->save();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+        'unit_price' => '11.5000',
+    ]);
+    $purchase_invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $purchase_invoice_line = $purchase_invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned supplier item',
+        'quantity' => 5,
+        'unit_price' => '13.2500',
+        'purchase_order_line_id' => $purchase_order_line->id,
+    ]);
+
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $purchase_order_line->id,
+        'invoice_line_id' => $purchase_invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_price' => '12.0000',
+    ]);
+
+    $processed = app(SupplierReturnService::class)->complete($supplier_return);
+    $debit_note = Invoice::query()->findOrFail((int) $processed->fresh()->debit_note_invoice_id);
+
+    expect($processed->status)->toBe(ReturnStatus::Processed)
+        ->and($debit_note->invoice_type)->toBe(InvoiceType::DebitNote)
+        ->and($debit_note->direction)->toBe(InvoiceDirection::Purchase)
+        ->and((int) $debit_note->credited_invoice_id)->toBe((int) $purchase_invoice->id)
+        ->and((string) $debit_note->lines()->firstOrFail()->quantity)->toBe('2.0000')
+        ->and((string) $debit_note->lines()->firstOrFail()->unit_price)->toBe('12.0000');
+});
+
+it('does not automatically create a debit note when completing supplier returns by default', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    expect(app(ErpCompanySettings::class)->autoCreateNotesOnComplete($company))->toBeFalse();
+
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 1,
+    ]);
+
+    $processed = app(SupplierReturnService::class)->complete($supplier_return);
+
+    expect($processed->status)->toBe(ReturnStatus::Processed)
+        ->and($processed->fresh()->debit_note_invoice_id)->toBeNull();
 });

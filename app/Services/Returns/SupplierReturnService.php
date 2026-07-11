@@ -17,11 +17,13 @@ use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\SupplierReturnLine;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 
 final readonly class SupplierReturnService
 {
     public function __construct(
         private SupplierReturnShipmentService $shipment_service,
+        private ErpCompanySettings $erp_company_settings,
     ) {}
 
     public function approve(SupplierReturn $supplier_return): SupplierReturn
@@ -47,7 +49,16 @@ final readonly class SupplierReturnService
 
     public function complete(SupplierReturn $supplier_return): SupplierReturn
     {
-        return $this->shipment_service->ship($supplier_return);
+        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+            $processed = $this->shipment_service->ship($supplier_return);
+
+            if ($this->shouldAutoCreateDebitNote($processed)) {
+                $this->createDebitNote($processed);
+                $processed = $processed->fresh() ?? $processed;
+            }
+
+            return $processed;
+        });
     }
 
     public function createDebitNote(SupplierReturn $supplier_return): Invoice
@@ -223,6 +234,17 @@ final readonly class SupplierReturnService
                 'party_id' => ['Supplier return party must be a supplier for the same company.'],
             ]);
         }
+    }
+
+    private function shouldAutoCreateDebitNote(SupplierReturn $supplier_return): bool
+    {
+        if ($supplier_return->debit_note_invoice_id !== null || $supplier_return->purchase_order_id === null) {
+            return false;
+        }
+
+        $company = $supplier_return->company()->firstOrFail();
+
+        return $this->erp_company_settings->autoCreateNotesOnComplete($company);
     }
 
     private function invoiceLineForDebitNote(

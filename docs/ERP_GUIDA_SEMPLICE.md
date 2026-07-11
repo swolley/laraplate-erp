@@ -181,6 +181,8 @@ Il flusso cliente separa due momenti:
 
 Ogni riga reso cliente deve indicare la riga fattura vendita (`invoice_line_id`) quando si vuole generare la nota credito. Il sistema usa il prezzo della riga fattura vendita; `unit_price` sulla riga reso serve solo se l'operatore deve forzare un prezzo diverso con motivo commerciale.
 
+La nota credito puo essere creata manualmente dopo il completamento del reso. Se l'impostazione aziendale `erp.returns.auto_create_notes_on_complete` e attiva, il completamento del reso crea automaticamente la bozza di nota credito nella stessa transazione. Se la nota non puo essere creata, il completamento fallisce invece di lasciare il reso processato senza rettifica fiscale.
+
 ### Resi fornitore
 
 Il flusso fornitore separa ancora di piu logistica e contabilita:
@@ -189,6 +191,8 @@ Il flusso fornitore separa ancora di piu logistica e contabilita:
 2. **Rettifica fiscale**: nota debito/credito fornitore collegata alla fattura acquisto sorgente.
 
 La riga ordine fornitore (`purchase_order_line_id`) e la ricezione merce (`goods_receipt_line_id`) servono per sapere cosa e stato reso fisicamente. Per generare la nota fiscale serve anche la riga fattura acquisto (`invoice_line_id`). Se manca, il sistema deve bloccare la generazione automatica/manuale della nota fiscale: il reso logistico puo esistere, ma la rettifica contabile deve aspettare la fattura.
+
+La nota debito/credito fornitore puo essere creata manualmente dopo il completamento del reso. Se `erp.returns.auto_create_notes_on_complete` e attiva, il completamento del reso fornitore crea automaticamente la bozza di nota debito usando la fattura acquisto sorgente.
 
 ## 4.7 Workflow posting fattura (vendita e acquisto)
 
@@ -567,7 +571,6 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 
 ### Ancora aperto
 
-- creazione automatica NC/ND al completamento del reso
 - scritture automatiche per differenze bancarie (commissioni, arrotondamenti, write-off)
 - UI di riconciliazione con differenze
 - import CAMT.053 / MT940
