@@ -109,6 +109,14 @@ final class Party extends Model
     }
 
     /**
+     * @return HasMany<PartyBankAccount, $this>
+     */
+    public function bank_accounts(): HasMany
+    {
+        return $this->hasMany(PartyBankAccount::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function getRules(): array

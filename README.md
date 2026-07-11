@@ -181,6 +181,10 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `PaymentScheduleGeneratorService` (integrated in InvoicePostingService)
 -   `PaymentAllocationService` (allocate / deallocate with status tracking)
 -   `AgingReportService` (AR / AP aging by 30 / 60 / 90 / 120+ day buckets)
+-   `PartyBankAccount`, `PaymentRun`, and `PaymentRunLine` for supplier payment runs
+-   `PaymentRunBuilderService` builds draft outbound supplier payment batches from open purchase schedule lines
+-   `SepaPain001Exporter` exports approved supplier payment runs as auditable SEPA SCT `pain.001` XML files
+-   Payment execution is file generation only: no direct bank/API submission, no CBI/Ri.Ba/SDD in v1
 
 ### M5.2 — Credit & Debit Notes
 
@@ -248,11 +252,21 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Domain abilities seeded in `ERPDatabaseSeeder` include posting/unposting, forced posting, e-invoice submit/refresh, quotation unlock, and document-sequence reset.
 -   Filament edit/list actions call services; they do not implement business mutations inline.
 -   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
--   Remaining Phase 2B items: bank difference journals, match-with-difference UI, CAMT/MT940 import, supplier payment runs with SEPA `pain.001` export, financial report export UI, and BI/operational dashboard polish.
+-   Implemented Phase 2B items also include supplier payment runs with SEPA `pain.001` export.
+-   Remaining Phase 2B items: bank difference journals, match-with-difference UI, CAMT/MT940 import, financial report export UI, and BI/operational dashboard polish.
+
+### Supplier Payment Runs
+
+-   Supplier bank coordinates live on `PartyBankAccount`, not on invoices or payment lines.
+-   `PaymentRunBuilderService` selects open/partial purchase invoice schedule lines and creates a draft payment run.
+-   `PaymentRunLine` stores a beneficiary snapshot: name, IBAN, BIC, amount, due date, and remittance text.
+-   Payment runs move through `draft -> approved -> exported`; `cancelled` is available before export.
+-   Exported payment runs are immutable and store file name, export timestamp, and SHA-256 checksum.
+-   The first supported bank format is SEPA Credit Transfer `pain.001`; bank submission and Italian/proprietary formats remain backlog.
 
 ### Filament Admin UI
 
--   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
+-   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 -   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
 -   **Report pages:** Trial Balance, Balance Sheet, Income Statement, Sales Pipeline, Stock Valuation
 
@@ -262,17 +276,17 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | --- | --- | --- |
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
 | M4 Permissions & reporting | Implemented v1 | Domain permissions, invoice action auth, accounting/operational reports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
+| M5.1 Payment execution | Implemented v1 | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, checksum metadata, and Filament resource are present. Direct bank submission and CBI/Ri.Ba/SDD remain backlog. |
 | M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
-| Spec 2 Phase 2B | In progress | 2B-01/02/03/06/07/08/09 are done; 2B-04/05/10/11/12/13 remain. |
+| Spec 2 Phase 2B | In progress | 2B-01/02/03/06/07/08/09/13 are done; 2B-04/05/10/11/12 remain. |
 
 ### Roadmap
 
 -   2B-04/05/10: bank reconciliation difference journals, UI matching with differences, CAMT/MT940 import
--   2B-13: supplier payment runs and SEPA `pain.001` bank file export
 -   2B-11/12: financial export UI and BI/operational dashboard polish
 -   Phase 2C: full FatturaPA XML/XSD/provider work remains optional backlog
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements

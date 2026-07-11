@@ -58,6 +58,9 @@ enum ERPTables: string
     case Payments = 'erp_payments';
     case PaymentScheduleLines = 'erp_payment_schedule_lines';
     case PaymentAllocations = 'erp_payment_allocations';
+    case PartyBankAccounts = 'erp_party_bank_accounts';
+    case PaymentRuns = 'erp_payment_runs';
+    case PaymentRunLines = 'erp_payment_run_lines';
     case VatRegisterEntries = 'erp_vat_register_entries';
     case VatSettlements = 'erp_vat_settlements';
     case BankAccounts = 'erp_bank_accounts';

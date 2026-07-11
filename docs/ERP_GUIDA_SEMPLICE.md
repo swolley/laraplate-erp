@@ -557,6 +557,7 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 - ciclo acquisti con ordine, ricezione merce e three-way match
 - scadenzario da condizioni di pagamento, pagamenti e allocazioni
 - registri IVA e liquidazione IVA
+- distinte pagamenti fornitori ed export bancario SEPA pain.001
 - report contabili principali: bilancio di verifica, stato patrimoniale, conto economico
 - CRM commerciale: lead, opportunita, preventivi
 - price list, regole prezzo per cliente/fornitore e resolver prezzi
@@ -574,7 +575,6 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 - scritture automatiche per differenze bancarie (commissioni, arrotondamenti, write-off)
 - UI di riconciliazione con differenze
 - import CAMT.053 / MT940
-- distinte pagamenti fornitori ed export bancario SEPA pain.001
 - export Filament dei report finanziari
 - dashboard BI/operativa piu completa
 - FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale

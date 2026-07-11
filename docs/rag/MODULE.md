@@ -679,7 +679,7 @@ Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote,
 
 ### Financial group
 
-PaymentTerm, Payment, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
+PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 
 ### Report pages
 
@@ -692,12 +692,12 @@ Trial Balance, Balance Sheet, Income Statement
 | Accounting backbone | Implemented | Companies, accounts, journals, fiscal years/periods, document sequences, posting/reversal services. |
 | Sales and inventory | Implemented | CRM, quotations, sales orders, DDTs, stock movements, cost layers, COGS journals, invoice posting. |
 | Purchasing | Implemented | Purchase orders, goods receipts, purchase invoices, and three-way match. |
-| Payments and VAT | Implemented + execution backlog | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement. Supplier payment runs and SEPA `pain.001` export remain backlog. |
+| Payments and VAT | Implemented + payment execution v1 | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement, supplier payment runs, and SEPA `pain.001` export. |
 | Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
 | Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
 | Policies and domain actions | Implemented Phase 2A + partial 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
-| Banking | Implemented v1 | CSV import, suggestions, manual reconciliation, minimal page. Difference journals, match-with-difference UI, CAMT/MT940, and outbound payment-file export remain backlog. |
+| Banking | Implemented v1 | CSV import, suggestions, manual reconciliation, minimal page. Difference journals, match-with-difference UI, and CAMT/MT940 remain backlog. Outbound supplier payment-file export is handled by PaymentRun. |
 | E-invoice | Stub implemented | Provider contract, stub provider, submission persistence, submit/refresh actions. Full FatturaPA remains optional backlog. |
 | Reporting | Implemented v1 | Trial balance, balance sheet, income statement, sales pipeline, stock valuation. Filament report exports and dashboard polish remain backlog. |
 
@@ -717,6 +717,8 @@ Trial Balance, Balance Sheet, Income Statement
 → On purchase invoice posting, `InvoicePostingService` calls `ThreeWayMatchService::validate()` per line. Tolerances: `ErpCompanySettings` on `companies.settings`. Exceeding tolerance blocks posting unless **Force three-way match** is checked (sets `forceThreeWayMatchOnPosting`). Status stored in `match_status` / `match_discrepancy`.
 - **How are credit notes handled?**
 → `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
+- **How are supplier payment files generated?**
+→ Create a `PaymentRun` from open/partial purchase invoice schedule lines. `PaymentRunBuilderService` locks the schedule lines, validates supplier bank coordinates, and stores beneficiary snapshots on `PaymentRunLine`. After approval, `SepaPain001Exporter` generates SEPA SCT `pain.001` XML and marks the run exported with checksum metadata. No direct bank/API submission is performed.
 - **How do customer and supplier returns work?**
 → Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual by default, or automatic during completion when `erp.returns.auto_create_notes_on_complete` is true. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
 - **How does e-invoice submission work?**

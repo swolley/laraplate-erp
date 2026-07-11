@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -74,6 +75,14 @@ final class PaymentScheduleLine extends Model
         return $this->belongsToMany(Payment::class, 'payment_allocations')
             ->withPivot(['allocated_amount_doc', 'allocated_amount_local'])
             ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<PaymentRunLine, $this>
+     */
+    public function payment_run_lines(): HasMany
+    {
+        return $this->hasMany(PaymentRunLine::class);
     }
 
     /**
