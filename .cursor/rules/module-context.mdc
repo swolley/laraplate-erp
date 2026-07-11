@@ -12,3 +12,25 @@ alwaysApply: false
 - Keep ERP boundaries clean.
 - Reuse Core shared pieces before creating new ones.
 - Touch other modules only when user asks.
+
+## Current architecture truth
+
+- ERP is not a demo module. Treat it as an enterprise ERP slice: operational documents and fiscal/accounting documents are related but not interchangeable.
+- Physical logistics uses orders, DDTs, goods receipts, stock movements, and returned quantities.
+- Fiscal/accounting correction uses invoices and invoice lines as the source of prices and legal references.
+- Customer return credit notes must price from source sales `InvoiceLine`; `ReturnOrderLine.unit_price` is only a manual override.
+- Supplier return debit notes must price from source purchase `InvoiceLine`; `SupplierReturnLine.purchase_order_line_id` remains logistics lineage only.
+- Do not put prices on DDT lines. DDT/bolle lines remain quantity/source-link documents.
+- New ERP schema/test code must use `Modules\ERP\Enums\ERPTables` and physical `erp_*` table names.
+- Portable migrations matter: MySQL/MariaDB, PostgreSQL, Oracle, and SQLite. Prefer Laravel schema builder and `ERPMigrateUtils` helpers; avoid vendor-specific SQL unless guarded.
+- Money, quantities, prices, and costs use decimals, not integers or floats, when persisted. Validate non-negative values where business rules require it.
+- Domain mutations belong in services. Filament actions call services; services own validation, transactions, locks, and side effects.
+- Permissions use Core CRUD abilities (`select`, `insert`, `update`, `delete`, etc.) plus explicitly seeded domain abilities only when needed (`post`, `unpost`, `force_post`, `reset`, `unlock`, etc.).
+
+## Documentation truth
+
+- Developer overview: `Modules/ERP/README.md`.
+- User/operator guide: `Modules/ERP/docs/ERP_GUIDA_SEMPLICE.md`.
+- RAG source: `Modules/ERP/docs/rag/MODULE.md` and `Modules/ERP/docs/rag/GLOSSARY.md`.
+- Planning source: `docs/superpowers/specs/2026-06-30-erp-hardening-spec2-filament-domain-actions-design.md` and related plans.
+- When ERP behavior changes, update normal docs and RAG docs in the same change.

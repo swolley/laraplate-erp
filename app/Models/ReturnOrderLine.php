@@ -20,6 +20,7 @@ use Override;
  * @property int $warehouse_id
  * @property numeric-string $quantity
  * @property numeric-string|null $unit_cost
+ * @property numeric-string|null $unit_price
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrderLine
  */
@@ -43,6 +44,7 @@ final class ReturnOrderLine extends Model
         'warehouse_id',
         'quantity',
         'unit_cost',
+        'unit_price',
     ];
 
     /**
@@ -88,10 +90,12 @@ final class ReturnOrderLine extends Model
         $rules['create'] = array_merge($rules['create'], [
             'quantity' => ['required', 'numeric', 'min:0.0001'],
             'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
             'unit_cost' => ['sometimes', 'numeric', 'min:0'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         return $rules;
@@ -119,6 +123,7 @@ final class ReturnOrderLine extends Model
         return [
             'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
+            'unit_price' => 'decimal:4',
         ];
     }
 }

@@ -42,6 +42,23 @@ it('rejects negative operational quantities through model rules', function (Mode
     'supplier return line quantity' => [new SupplierReturnLine, 'quantity'],
 ]);
 
+it('rejects negative return line override prices through model rules', function (Model $model): void {
+    $model->forceFill(['unit_price' => '-0.0001']);
+
+    try {
+        $model->validateWithRules(CrudExecutor::INSERT);
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('unit_price');
+
+        return;
+    }
+
+    $this->fail($model::class . ' accepted a negative unit_price.');
+})->with([
+    'customer return line unit price' => [new ReturnOrderLine],
+    'supplier return line unit price' => [new SupplierReturnLine],
+]);
+
 it('rejects non-positive stock movement quantities through model rules', function (): void {
     $movement = new StockMovement;
     $movement->forceFill([

@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Returns;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\ReturnStatus;
+use Modules\ERP\Data\Returns\ReturnLineCreditOverride;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Party;
@@ -84,7 +85,9 @@ final readonly class ReturnOrderService
                 ]);
             }
 
-            $line_overrides = $this->creditNoteLineOverrides($locked, $invoice);
+            $line_overrides = $this->creditNoteLineOverridePayload(
+                $this->buildCreditOverrides($locked),
+            );
             $credit_note = $this->credit_note_service->createFromInvoice($invoice, $line_overrides);
 
             $locked->credit_note_invoice_id = $this->modelId($credit_note);
@@ -128,10 +131,27 @@ final readonly class ReturnOrderService
     }
 
     /**
-     * @return array<int, array{quantity: numeric-string, unit_price: numeric-string}>
+     * @return array<int, ReturnLineCreditOverride>
      */
-    private function creditNoteLineOverrides(ReturnOrder $return_order, Invoice $invoice): array
+    public function buildCreditOverrides(ReturnOrder $return_order): array
     {
+        if ($return_order->invoice_id === null) {
+            throw ValidationException::withMessages([
+                'invoice_id' => ['Customer return requires a source invoice before creating credit overrides.'],
+            ]);
+        }
+
+        $return_order->loadMissing('lines');
+
+        /** @var Invoice $invoice */
+        $invoice = Invoice::query()->whereKey($return_order->invoice_id)->firstOrFail();
+
+        if ((int) $invoice->company_id !== (int) $return_order->company_id) {
+            throw ValidationException::withMessages([
+                'invoice_id' => ['The source invoice must belong to the same company as the customer return.'],
+            ]);
+        }
+
         $invoice_lines = InvoiceLine::query()
             ->where('invoice_id', $invoice->id)
             ->orderBy('line_no')
@@ -144,14 +164,17 @@ final readonly class ReturnOrderService
             ]);
         }
 
-        /** @var array<int, array{quantity: numeric-string, unit_price: numeric-string}> $line_overrides */
+        /** @var array<int, ReturnLineCreditOverride> $line_overrides */
         $line_overrides = [];
 
         foreach ($invoice_lines as $invoice_line) {
-            $line_overrides[$this->modelId($invoice_line)] = [
-                'quantity' => '0.0000',
-                'unit_price' => $invoice_line->unit_price,
-            ];
+            $source_line_id = $this->modelId($invoice_line);
+
+            $line_overrides[$source_line_id] = new ReturnLineCreditOverride(
+                source_line_id: $source_line_id,
+                quantity: '0.0000',
+                unit_price: $invoice_line->unit_price,
+            );
         }
 
         foreach ($return_order->lines as $line) {
@@ -169,16 +192,21 @@ final readonly class ReturnOrderService
                 ]);
             }
 
-            $line_overrides[$invoice_line_id] = [
-                'quantity' => $this->formatQuantity(
-                    (float) $line_overrides[$invoice_line_id]['quantity'] + (float) $line->quantity,
-                ),
-                'unit_price' => $line_overrides[$invoice_line_id]['unit_price'],
-            ];
+            /** @var ReturnLineCreditOverride $current */
+            $current = $line_overrides[$invoice_line_id];
+
+            /** @var InvoiceLine $invoice_line */
+            $invoice_line = $invoice_lines->get($invoice_line_id);
+
+            $line_overrides[$invoice_line_id] = new ReturnLineCreditOverride(
+                source_line_id: $invoice_line_id,
+                quantity: $this->formatQuantity((float) $current->quantity + (float) $line->quantity),
+                unit_price: $line->unit_price ?? $invoice_line->unit_price,
+            );
         }
 
         $has_returned_quantity = collect($line_overrides)
-            ->contains(static fn (array $override): bool => (float) $override['quantity'] > 0.0);
+            ->contains(static fn (ReturnLineCreditOverride $override): bool => (float) $override->quantity > 0.0);
 
         if (! $has_returned_quantity) {
             throw ValidationException::withMessages([
@@ -187,6 +215,22 @@ final readonly class ReturnOrderService
         }
 
         return $line_overrides;
+    }
+
+    /**
+     * @param  array<int, ReturnLineCreditOverride>  $line_overrides
+     * @return array<int, array{quantity: numeric-string, unit_price: numeric-string}>
+     */
+    private function creditNoteLineOverridePayload(array $line_overrides): array
+    {
+        return collect($line_overrides)
+            ->mapWithKeys(static fn (ReturnLineCreditOverride $override): array => [
+                $override->source_line_id => [
+                    'quantity' => $override->quantity,
+                    'unit_price' => $override->unit_price,
+                ],
+            ])
+            ->all();
     }
 
     /**

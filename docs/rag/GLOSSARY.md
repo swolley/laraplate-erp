@@ -111,7 +111,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term                         | Meaning                                                                                                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Invoice**                  | Header with `direction` (sale/purchase), `invoice_type` (invoice, credit_note, debit_note), `currency`, `posted_at`, `reference` (assigned by `DocumentNumberAllocator` at posting). |
-| **InvoiceLine**              | Commercial line with quantity, unit_price, optional tax_code_id, and **snapshot** columns (tax_code, tax_rate, tax_label) frozen at posting.                                         |
+| **InvoiceLine**              | Commercial/fiscal line with quantity, `unit_price`, optional tax code, and **snapshot** columns frozen at posting. Purchase lines may link PO/GR and store match status. Return fiscal corrections use invoice lines as price source. |
 | **InvoicePostingService**    | Orchestrates posting: journal entry, document numbering, tax snapshot, payment schedule generation, VAT registration, SO evasion tracking, DDT validation (sale), three-way match (purchase). Full reversal on unpost. Triggered by `InvoiceObserver` when `posted_at` changes. |
 | **InvoiceObserver**          | On `posted_at` change: calls `InvoicePostingService::post()` or `::unpost()`. Keeps UI actions and domain logic in sync.                                                          |
 | **InvoicePostingActions**    | Filament **Post** / **Unpost** actions (edit page + list). Purchase Post modal includes **Force three-way match** checkbox.                                                       |
@@ -166,6 +166,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **CreditNoteService**   | Creates a credit note from a posted invoice; copies lines, validates total ≤ remaining creditable amount.   |
 | **credited_invoice_id** | FK on `invoices` linking a credit/debit note to the original invoice.                                       |
 | **Inverted journal**    | Credit notes produce journal entries with flipped debits/credits (negative amounts in `buildJournalLines`). |
+| **Fiscal correction price source** | Credit/debit notes default to source invoice-line prices, not order prices. Return-line `unit_price` is an explicit manual override only. |
 
 ## Returns management
 
@@ -173,9 +174,9 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term                              | Meaning                                                                                                   |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | **ReturnOrder**                   | Customer-return workflow header: approval, cancellation, completion, source invoice link, generated DDT link, and manual credit-note follow-up link. |
-| **ReturnOrderLine**               | Customer-return line with item, warehouse, quantity, optional source invoice line, DDT line link, and optional manual inventory cost. |
+| **ReturnOrderLine**               | Customer-return line with item, warehouse, quantity, source sales `invoice_line_id`, DDT line link, optional inventory cost, and optional credit-note price override. |
 | **SupplierReturn**                | Supplier-return workflow header: approval, cancellation, completion, source purchase order link, generated DDT link, and manual debit-note follow-up link. |
-| **SupplierReturnLine**            | Supplier-return line with item, warehouse, quantity, optional purchase order / goods receipt source links, and generated DDT line link. |
+| **SupplierReturnLine**            | Supplier-return line with item, warehouse, quantity, logistics source links (`purchase_order_line_id`, `goods_receipt_line_id`), fiscal source purchase `invoice_line_id`, generated DDT line link, and optional debit-note price override. |
 | **CustomerReturnReceiptService**  | Generates/links inbound DDTs for customer returns and updates returned quantities on source invoice / sales order lines. |
 | **SupplierReturnShipmentService** | Generates/links outbound DDTs for supplier returns and updates returned quantities on source purchase order / goods receipt lines. |
 | **ReturnStatus**                  | Enum: `draft`, `approved`, `processed`, `cancelled`.                                                       |

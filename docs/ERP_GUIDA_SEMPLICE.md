@@ -160,10 +160,35 @@ Effetti tipici:
 ## 4.6 Workflow note credito/debito
 
 1. Da una fattura postata si puo creare una nota di credito (storna totale o parziale)
-2. La NC copia le righe della fattura originale (l'utente puo modificare quantita/importi)
+2. La NC/ND copia o deriva le righe dalla fattura originale, non dall'ordine
 3. Il totale della NC non puo superare l'importo residuo creditabile della fattura originale
 4. Al posting, la NC genera movimenti contabili invertiti (debiti↔crediti)
 5. Numerazione dedicata (sezionale): SalesCreditNote, PurchaseCreditNote, ecc.
+
+Regola enterprise importante:
+
+- se il cliente rende merce, la nota credito cliente deve usare il prezzo della **fattura vendita originale**
+- se rendiamo merce a un fornitore, la nota debito/credito fornitore deve usare il prezzo della **fattura acquisto originale**
+- l'ordine cliente/fornitore serve per logistica e tracciabilita, ma non e la fonte naturale del prezzo fiscale
+- un prezzo indicato sulla riga reso e solo un override manuale controllato, non il prezzo "normale" del reso
+
+### Resi cliente
+
+Il flusso cliente separa due momenti:
+
+1. **Reso fisico**: `ReturnOrder` approvato/completato, DDT inbound, rientro a magazzino, quantita rese aggiornate.
+2. **Rettifica fiscale**: nota credito collegata alla fattura vendita sorgente.
+
+Ogni riga reso cliente deve indicare la riga fattura vendita (`invoice_line_id`) quando si vuole generare la nota credito. Il sistema usa il prezzo della riga fattura vendita; `unit_price` sulla riga reso serve solo se l'operatore deve forzare un prezzo diverso con motivo commerciale.
+
+### Resi fornitore
+
+Il flusso fornitore separa ancora di piu logistica e contabilita:
+
+1. **Reso fisico**: `SupplierReturn` approvato/completato, DDT outbound, uscita merce, quantita rese aggiornate su ordine/ricezione.
+2. **Rettifica fiscale**: nota debito/credito fornitore collegata alla fattura acquisto sorgente.
+
+La riga ordine fornitore (`purchase_order_line_id`) e la ricezione merce (`goods_receipt_line_id`) servono per sapere cosa e stato reso fisicamente. Per generare la nota fiscale serve anche la riga fattura acquisto (`invoice_line_id`). Se manca, il sistema deve bloccare la generazione automatica/manuale della nota fiscale: il reso logistico puo esistere, ma la rettifica contabile deve aspettare la fattura.
 
 ## 4.7 Workflow posting fattura (vendita e acquisto)
 
@@ -513,6 +538,44 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 - magazzino
 - contabile
 - controllo gestionale
+
+---
+
+## 14) Stato attuale del modulo in questo progetto
+
+### Gia implementato
+
+- aziende, piano dei conti, giornali, periodi fiscali, numeratori
+- preventivi, ordini cliente, DDT, fatture vendita/acquisto
+- posting/unposting fatture tramite azioni Filament
+- magazzino con movimenti, livelli stock, cost layers FIFO/media ponderata
+- COGS su DDT outbound
+- ciclo acquisti con ordine, ricezione merce e three-way match
+- scadenzario da condizioni di pagamento, pagamenti e allocazioni
+- registri IVA e liquidazione IVA
+- report contabili principali: bilancio di verifica, stato patrimoniale, conto economico
+- CRM commerciale: lead, opportunita, preventivi
+- price list, regole prezzo per cliente/fornitore e resolver prezzi
+- resi cliente e fornitore con DDT e aggiornamento quantita rese
+- note credito/debito manuali collegate ai resi
+- contratto corretto per i prezzi delle note da reso:
+  - cliente: prezzo da riga fattura vendita
+  - fornitore: prezzo da riga fattura acquisto
+- permessi e azioni dominio principali: post, unpost, force post, unlock quotation, reset document sequence
+- e-invoice stub con invio/refresh locale deterministico
+- riconciliazione bancaria v1: import CSV, suggerimenti, match manuale
+
+### Ancora aperto
+
+- creazione automatica NC/ND al completamento del reso
+- scritture automatiche per differenze bancarie (commissioni, arrotondamenti, write-off)
+- UI di riconciliazione con differenze
+- import CAMT.053 / MT940
+- export Filament dei report finanziari
+- dashboard BI/operativa piu completa
+- FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale
+- API esterne e governance esposizione modelli
+- reverse/revert di resi gia processati
 
 Se vuoi, nel prossimo step posso prepararti anche:
 

@@ -14,12 +14,14 @@ use Override;
  * @property int|string $id
  * @property int $company_id
  * @property int $supplier_return_id
+ * @property int|null $invoice_line_id
  * @property int|null $purchase_order_line_id
  * @property int|null $goods_receipt_line_id
  * @property int|null $delivery_note_line_id
  * @property int $item_id
  * @property int $warehouse_id
  * @property numeric-string $quantity
+ * @property numeric-string|null $unit_price
  * @mixin \Eloquent
  * @mixin IdeHelperSupplierReturnLine
  */
@@ -37,12 +39,14 @@ final class SupplierReturnLine extends Model
     protected $fillable = [
         'company_id',
         'supplier_return_id',
+        'invoice_line_id',
         'purchase_order_line_id',
         'goods_receipt_line_id',
         'delivery_note_line_id',
         'item_id',
         'warehouse_id',
         'quantity',
+        'unit_price',
     ];
 
     /**
@@ -51,6 +55,14 @@ final class SupplierReturnLine extends Model
     public function supplier_return(): BelongsTo
     {
         return $this->belongsTo(SupplierReturn::class);
+    }
+
+    /**
+     * @return BelongsTo<InvoiceLine, $this>
+     */
+    public function invoice_line(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceLine::class);
     }
 
     /**
@@ -102,10 +114,14 @@ final class SupplierReturnLine extends Model
     {
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
+            'invoice_line_id' => ['nullable', 'integer', 'exists:' . ERPTables::InvoiceLines->value . ',id'],
             'quantity' => ['required', 'numeric', 'min:0.0001'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
+            'invoice_line_id' => ['nullable', 'integer', 'exists:' . ERPTables::InvoiceLines->value . ',id'],
             'quantity' => ['sometimes', 'numeric', 'min:0.0001'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         return $rules;
@@ -132,6 +148,7 @@ final class SupplierReturnLine extends Model
     {
         return [
             'quantity' => 'decimal:4',
+            'unit_price' => 'decimal:4',
         ];
     }
 }

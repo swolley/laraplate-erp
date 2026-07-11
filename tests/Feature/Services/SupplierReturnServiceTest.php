@@ -236,7 +236,7 @@ it('cancels draft supplier returns', function (): void {
     expect($cancelled->status)->toBe(ReturnStatus::Cancelled);
 });
 
-it('creates a manual debit note draft for processed supplier returns from purchase order lines', function (): void {
+it('creates a manual debit note draft for processed supplier returns from purchase invoice lines', function (): void {
     [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
 
     $purchase_order = PurchaseOrder::query()->create([
@@ -261,6 +261,20 @@ it('creates a manual debit note draft for processed supplier returns from purcha
         'qty_received' => 3,
         'unit_price' => '9.0000',
     ]);
+    $purchase_invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $returned_invoice_line = $purchase_invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned supplier item',
+        'quantity' => 5,
+        'unit_price' => '13.2500',
+        'purchase_order_line_id' => $returned_purchase_order_line->id,
+    ]);
     $supplier_return = SupplierReturn::query()->create([
         'company_id' => $company->id,
         'party_id' => $party->id,
@@ -271,6 +285,7 @@ it('creates a manual debit note draft for processed supplier returns from purcha
     $supplier_return->lines()->create([
         'company_id' => $company->id,
         'purchase_order_line_id' => $returned_purchase_order_line->id,
+        'invoice_line_id' => $returned_invoice_line->id,
         'item_id' => $item->id,
         'warehouse_id' => $warehouse->id,
         'quantity' => 2,
@@ -282,13 +297,68 @@ it('creates a manual debit note draft for processed supplier returns from purcha
         ->and($debit_note->invoice_type)->toBe(InvoiceType::DebitNote)
         ->and($debit_note->direction)->toBe(InvoiceDirection::Purchase)
         ->and((int) $debit_note->party_id)->toBe((int) $party->id)
+        ->and((int) $debit_note->credited_invoice_id)->toBe((int) $purchase_invoice->id)
         ->and((int) $supplier_return->fresh()->debit_note_invoice_id)->toBe((int) $debit_note->id)
         ->and($debit_note->lines()->count())->toBe(1)
         ->and((string) $debit_note->lines()->firstOrFail()->quantity)->toBe('2.0000')
-        ->and((string) $debit_note->lines()->firstOrFail()->unit_price)->toBe('11.5000');
+        ->and((string) $debit_note->lines()->firstOrFail()->unit_price)->toBe('13.2500');
 });
 
 it('prevents creating duplicate supplier return debit notes', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+        'unit_price' => '11.5000',
+    ]);
+    $purchase_invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $purchase_invoice_line = $purchase_invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned supplier item',
+        'quantity' => 5,
+        'unit_price' => '11.5000',
+        'purchase_order_line_id' => $purchase_order_line->id,
+    ]);
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Processed,
+        'processed_at' => now(),
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $purchase_order_line->id,
+        'invoice_line_id' => $purchase_invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+    ]);
+
+    $service = app(SupplierReturnService::class);
+    $service->createDebitNote($supplier_return);
+
+    expect(fn () => $service->createDebitNote($supplier_return->fresh()))
+        ->toThrow(ValidationException::class);
+});
+
+it('prevents supplier return debit notes without source purchase invoice lines', function (): void {
     [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
 
     $purchase_order = PurchaseOrder::query()->create([
@@ -320,9 +390,6 @@ it('prevents creating duplicate supplier return debit notes', function (): void 
         'quantity' => 2,
     ]);
 
-    $service = app(SupplierReturnService::class);
-    $service->createDebitNote($supplier_return);
-
-    expect(fn () => $service->createDebitNote($supplier_return->fresh()))
+    expect(fn () => app(SupplierReturnService::class)->createDebitNote($supplier_return))
         ->toThrow(ValidationException::class);
 });
