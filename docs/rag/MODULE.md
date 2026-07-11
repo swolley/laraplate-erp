@@ -692,12 +692,12 @@ Trial Balance, Balance Sheet, Income Statement
 | Accounting backbone | Implemented | Companies, accounts, journals, fiscal years/periods, document sequences, posting/reversal services. |
 | Sales and inventory | Implemented | CRM, quotations, sales orders, DDTs, stock movements, cost layers, COGS journals, invoice posting. |
 | Purchasing | Implemented | Purchase orders, goods receipts, purchase invoices, and three-way match. |
-| Payments and VAT | Implemented | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement. |
+| Payments and VAT | Implemented + execution backlog | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement. Supplier payment runs and SEPA `pain.001` export remain backlog. |
 | Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
 | Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
 | Policies and domain actions | Implemented Phase 2A + partial 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
-| Banking | Implemented v1 | CSV import, suggestions, manual reconciliation, minimal page. Difference journals, match-with-difference UI, CAMT/MT940 remain backlog. |
+| Banking | Implemented v1 | CSV import, suggestions, manual reconciliation, minimal page. Difference journals, match-with-difference UI, CAMT/MT940, and outbound payment-file export remain backlog. |
 | E-invoice | Stub implemented | Provider contract, stub provider, submission persistence, submit/refresh actions. Full FatturaPA remains optional backlog. |
 | Reporting | Implemented v1 | Trial balance, balance sheet, income statement, sales pipeline, stock valuation. Filament report exports and dashboard polish remain backlog. |
 
