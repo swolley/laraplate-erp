@@ -568,11 +568,10 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
   - fornitore: prezzo da riga fattura acquisto
 - permessi e azioni dominio principali: post, unpost, force post, unlock quotation, reset document sequence
 - e-invoice stub con invio/refresh locale deterministico
-- riconciliazione bancaria v1: import CSV, suggerimenti, match manuale, match con differenze e scritture contabili per commissioni/arrotondamenti
+- riconciliazione bancaria v1: import CSV/CAMT.053/MT940 minimale, suggerimenti, match manuale, match con differenze e scritture contabili per commissioni/arrotondamenti
 
 ### Ancora aperto
 
-- import CAMT.053 / MT940
 - export Filament dei report finanziari
 - dashboard BI/operativa piu completa
 - FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale

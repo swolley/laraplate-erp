@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+    <BkToCstmrStmt>
+        <Stmt>
+            <Ntry>
+                <NtryRef>CAMT-TRX-1</NtryRef>
+                <Amt Ccy="EUR">125.50</Amt>
+                <CdtDbtInd>CRDT</CdtDbtInd>
+                <BookgDt>
+                    <Dt>2026-05-01</Dt>
+                </BookgDt>
+                <ValDt>
+                    <Dt>2026-05-02</Dt>
+                </ValDt>
+                <NtryDtls>
+                    <TxDtls>
+                        <Refs>
+                            <EndToEndId>INV-100</EndToEndId>
+                        </Refs>
+                        <RmtInf>
+                            <Ustrd>Customer payment</Ustrd>
+                        </RmtInf>
+                    </TxDtls>
+                </NtryDtls>
+            </Ntry>
+            <Ntry>
+                <NtryRef>CAMT-FEE-1</NtryRef>
+                <Amt Ccy="EUR">5.25</Amt>
+                <CdtDbtInd>DBIT</CdtDbtInd>
+                <BookgDt>
+                    <Dt>2026-05-03</Dt>
+                </BookgDt>
+                <AddtlNtryInf>Bank fee</AddtlNtryInf>
+            </Ntry>
+        </Stmt>
+    </BkToCstmrStmt>
+</Document>

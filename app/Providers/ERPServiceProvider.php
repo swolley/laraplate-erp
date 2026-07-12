@@ -28,6 +28,7 @@ use Modules\ERP\Services\Accounting\ItalianCoaProvider;
 use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Services\Banking\BankReconciliationService;
 use Modules\ERP\Services\Banking\BankStatementCsvImporter;
+use Modules\ERP\Services\Banking\BankStatementImportService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Currency\NoopCurrencyConverter;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
@@ -106,6 +107,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(SalesOrderAmendmentService::class);
         $this->app->singleton(EInvoiceSubmissionService::class);
         $this->app->singleton(BankReconciliationService::class);
+        $this->app->singleton(BankStatementImportService::class);
         $this->app->singleton(BankStatementCsvImporter::class);
         $this->app->singleton(CustomerReturnReceiptService::class);
         $this->app->singleton(ReturnOrderService::class);

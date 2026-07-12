@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Banking;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Models\BankStatement;
 use SplFileObject;
 use Throwable;
 
-final class BankStatementCsvImporter
+final readonly class BankStatementCsvImporter
 {
+    public function __construct(
+        private BankStatementImportService $import_service,
+    ) {}
+
     /**
      * @param  array{booked_at?:string,value_at?:string,reference?:string,description?:string,amount_doc?:string,currency_doc?:string}  $columns
      */
@@ -28,41 +30,35 @@ final class BankStatementCsvImporter
             'currency_doc' => 'currency_doc',
         ], $columns);
 
+        return $this->import_service->importLines($statement, $this->parseRows($path, $columns));
+    }
+
+    /**
+     * @param  array<string, string>  $columns
+     * @return list<BankStatementLineData>
+     */
+    private function parseRows(string $path, array $columns): array
+    {
         $rows = $this->readRows($path);
-        $created = 0;
+        $lines = [];
 
-        DB::transaction(function () use ($statement, $rows, $columns, &$created): void {
-            $statement->loadMissing('bank_account');
-            $bank_account = $statement->bank_account;
-            $default_currency = $bank_account !== null ? $bank_account->currency : 'EUR';
+        foreach ($rows as $index => $row) {
+            $this->assertRowIsValid($row, $columns, $index);
 
-            foreach ($rows as $index => $row) {
-                $this->assertRowIsValid($row, $columns, $index);
+            $lines[] = new BankStatementLineData(
+                booked_at: CarbonImmutable::parse((string) $row[$columns['booked_at']])->toDateString(),
+                value_at: isset($row[$columns['value_at']]) && $row[$columns['value_at']] !== ''
+                    ? CarbonImmutable::parse((string) $row[$columns['value_at']])->toDateString()
+                    : null,
+                reference: $row[$columns['reference']] ?? null,
+                description: (string) ($row[$columns['description']] ?? ''),
+                amount_doc: $this->decimal4((string) $row[$columns['amount_doc']]),
+                currency_doc: (string) ($row[$columns['currency_doc']] ?? ''),
+                raw_payload: array_merge(['format' => 'csv'], $row),
+            );
+        }
 
-                $statement->lines()->create([
-                    'company_id' => $statement->company_id,
-                    'booked_at' => CarbonImmutable::parse((string) $row[$columns['booked_at']])->toDateString(),
-                    'value_at' => isset($row[$columns['value_at']]) && $row[$columns['value_at']] !== ''
-                        ? CarbonImmutable::parse((string) $row[$columns['value_at']])->toDateString()
-                        : null,
-                    'reference' => $row[$columns['reference']] ?? null,
-                    'description' => $row[$columns['description']] ?? null,
-                    'amount_doc' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_doc' => $row[$columns['currency_doc']] ?? $default_currency,
-                    'amount_local' => $this->normalizeDecimal((string) $row[$columns['amount_doc']]),
-                    'currency_local' => $default_currency,
-                    'fx_rate' => '1.00000000',
-                    'status' => BankStatementLineStatus::Imported,
-                    'raw_payload' => $row,
-                ]);
-                $created++;
-            }
-
-            $statement->imported_at = now();
-            $statement->save();
-        });
-
-        return $created;
+        return $lines;
     }
 
     /**
@@ -160,6 +156,14 @@ final class BankStatementCsvImporter
     private function normalizeDecimal(string $value): string
     {
         return str_replace(',', '.', mb_trim($value));
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function decimal4(string $value): string
+    {
+        return number_format(round((float) $this->normalizeDecimal($value), 4), 4, '.', '');
     }
 
     private function isParseableDate(string $value): bool
