@@ -22,7 +22,7 @@ final class VatSettlementResource extends Resource
     protected static ?string $model = VatSettlement::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPercentBadge;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

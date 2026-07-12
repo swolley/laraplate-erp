@@ -31,7 +31,7 @@ final class JournalEntryResource extends Resource
     protected static ?string $recordTitleAttribute = 'id';
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

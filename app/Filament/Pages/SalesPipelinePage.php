@@ -27,7 +27,7 @@ final class SalesPipelinePage extends Page
     public array $report_data = [];
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFunnel;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

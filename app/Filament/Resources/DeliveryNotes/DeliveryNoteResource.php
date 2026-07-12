@@ -25,7 +25,7 @@ final class DeliveryNoteResource extends Resource
     protected static ?string $model = DeliveryNote::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

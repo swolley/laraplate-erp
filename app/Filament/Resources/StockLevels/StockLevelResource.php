@@ -25,7 +25,7 @@ final class StockLevelResource extends Resource
     protected static ?string $model = StockLevel::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

@@ -25,7 +25,7 @@ final class GoodsReceiptResource extends Resource
     protected static ?string $model = GoodsReceipt::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

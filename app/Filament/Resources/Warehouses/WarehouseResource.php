@@ -25,7 +25,7 @@ final class WarehouseResource extends Resource
     protected static ?string $model = Warehouse::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

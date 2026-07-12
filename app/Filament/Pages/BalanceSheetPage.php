@@ -28,7 +28,7 @@ final class BalanceSheetPage extends Page
     public array $report_data = [];
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

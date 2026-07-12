@@ -27,7 +27,7 @@ final class StockValuationPage extends Page
     public array $report_data = [];
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

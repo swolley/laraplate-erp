@@ -29,7 +29,7 @@ final class ProjectResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolderOpen;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

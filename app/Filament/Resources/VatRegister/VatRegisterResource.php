@@ -22,7 +22,7 @@ final class VatRegisterResource extends Resource
     protected static ?string $model = VatRegisterEntry::class;
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

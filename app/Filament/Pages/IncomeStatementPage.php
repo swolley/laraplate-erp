@@ -28,7 +28,7 @@ final class IncomeStatementPage extends Page
     public array $report_data = [];
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

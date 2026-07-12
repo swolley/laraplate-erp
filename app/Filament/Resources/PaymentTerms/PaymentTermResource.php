@@ -29,7 +29,7 @@ final class PaymentTermResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';
