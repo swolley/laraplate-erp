@@ -652,7 +652,7 @@ Phase 2C is the active e-invoice implementation slice. It extends the existing n
 2. **Done:** Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
 3. **Done:** Build FatturaPA ordinary FPR12 XML and validate it through vendored official XSD resources.
 4. **Done:** Add a production-oriented configurable Aruba adapter behind Laravel config and HTTP fakes in tests.
-5. **Next:** Gate tax-code, company-switch, sequence, and e-invoice admin actions through explicit permissions.
+5. **Done:** Gate tax-code supersession, company context switching, and document-sequence reservation through explicit permissions.
 
 ### Lock & Safety Mechanisms
 
@@ -710,9 +710,9 @@ Trial Balance, Balance Sheet, Income Statement
 | Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
 | Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
-| Policies and domain actions | Implemented Phase 2A + 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
+| Policies and domain actions | Implemented Phase 2A + 2B + 2C | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset/reserve, tax-code supersession, and company context switch. |
 | Banking | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, suggestions, manual reconciliation, match-with-difference UI, and accounting journals for bank fees/rounding/write-offs. Outbound supplier payment-file export is handled by PaymentRun. |
-| E-invoice | Stub implemented; FatturaPA local XML active | Provider contract, stub provider, submission persistence, submit/refresh actions, FatturaPA / SDI schema data, mapping, and FPR12 XML/XSD validation. Provider integration and extended permissions remain Phase 2C follow-up. |
+| E-invoice | Stub implemented; FatturaPA local XML active | Provider contract, stub provider, submission persistence, submit/refresh actions, FatturaPA / SDI schema data, mapping, FPR12 XML/XSD validation, configurable Aruba adapter, and extended admin permissions. Real provider certification remains an operational go-live task. |
 | Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
 
 ## Known gaps, limitations, and correction notes
@@ -735,7 +735,7 @@ These items are intentional current-state truth for RAG retrieval. Do not answer
 | Analytic accounting | Project/site-style analytic references are limited and not a full journal-line dimension model. | Do not claim cost centers, profit centers, or arbitrary analytic dimensions. |
 | Pricing | Price lists, price list items, party rules, and taxonomy/activity-based pricing are implemented. | Do not claim direct item-specific list pricing beyond the current schema. |
 | Locks and DB triggers | Application locks are the cross-database source of truth. MySQL triggers exist as an extra safety net for selected lock chains. | Do not rely on DB triggers as portable enforcement across PostgreSQL, Oracle, or SQLite. |
-| Permissions | Core CRUD permissions plus seeded domain abilities are used. A model without explicit `$connection` correctly uses the default connection. | Do not treat the default permission connection as a bug; central permission-name helper work is only needed if explicit model connections become relevant. |
+| Permissions | Core CRUD permissions plus seeded domain abilities are used. A model without explicit `$connection` correctly uses the default connection. Extended admin abilities include `default.erp_tax_codes.supersede`, `default.erp_companies.switch_context`, and `default.erp_document_sequences.reserve`. | Do not treat the default permission connection as a bug; central permission-name helper work is only needed if explicit model connections become relevant. Do not assume a company switcher or tax-code supersession Filament action exists until one is built. |
 | Concurrency proof | Document numbering uses pessimistic locks and focused tests exist. A broad 50-worker stress suite remains backlog. | Do not use stress-test coverage claims unless the dedicated concurrency suite has been run. |
 | Legacy/vertical work | ETL, ICS/calendar export, Gantt planning, mobile API, and Tricount refactor are future phases. MES is not part of the current ERP scope. | Do not mix MES assumptions or vertical scheduling behavior into ERP core decisions. |
 
@@ -766,7 +766,7 @@ These items are intentional current-state truth for RAG retrieval. Do not answer
 - **How does e-invoice submission work?**
 → `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. With `erp.einvoice.driver = fatturapa`, the provider builds and XSD-validates FPR12 XML before persisting the local submission. With `erp.einvoice.driver = aruba`, the provider posts the validated XML to configured HTTP endpoints and maps provider statuses during refresh. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`.
 - **What is Phase 2C adding to e-invoice?**
-→ Phase 2C turns the current stub workflow into the Italian production path. SDI/FatturaPA fields, `FatturaPaAnagraphicMapper`, FPR12 XML building, XSD validation, and configurable Aruba adapter are implemented; permissions for high-risk fiscal actions remain next.
+→ Phase 2C turns the current stub workflow into the Italian production path. SDI/FatturaPA fields, `FatturaPaAnagraphicMapper`, FPR12 XML building, XSD validation, configurable Aruba adapter, and extended permissions for high-risk fiscal/admin actions are implemented. Real provider certification and advanced SDI operations remain go-live/backlog work.
 - **How do payment schedules work?**
 → At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
 - **Where is VAT register logic?**

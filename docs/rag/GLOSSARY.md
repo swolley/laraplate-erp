@@ -245,7 +245,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term | Meaning |
 | ---- | ------- |
 | **Stub e-invoice** | Current implemented e-invoice mode. It records submissions and statuses locally; it is not legal FatturaPA delivery. |
-| **Phase 2C e-invoice gap** | Remaining production-readiness work after schema readiness and mapper: XML builder, XSD validation, provider adapter, and extended permissions. |
+| **Phase 2C e-invoice scope** | Implemented production-readiness slice: schema readiness, mapper, XML builder, XSD validation, configurable provider adapter, and extended permissions. |
+| **Extended admin domain permissions** | Seeded Phase 2C abilities for high-risk admin operations: `default.erp_tax_codes.supersede`, `default.erp_companies.switch_context`, and `default.erp_document_sequences.reserve`. |
 | **Payment file only** | Supplier payment execution exports bank files (`pain.001`) but does not submit them to a bank API. |
 | **Minimal MT940** | Only the implemented transaction subset is parsed. Do not treat MT940 support as full-format coverage. |
 | **No processed-return revert** | Processed returns cannot yet be safely reversed. Draft/approved cancellation exists; processed revert is Phase 3 backlog. |

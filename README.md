@@ -262,7 +262,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.
--   Domain abilities seeded in `ERPDatabaseSeeder` include posting/unposting, forced posting, e-invoice submit/refresh, quotation unlock, and document-sequence reset.
+-   Domain abilities seeded in `ERPDatabaseSeeder` include posting/unposting, forced posting, e-invoice submit/refresh, quotation unlock, document-sequence reset/reserve, tax-code supersession, and company context switch.
 -   Filament edit/list actions call services; they do not implement business mutations inline.
 -   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
 -   Implemented Phase 2B items also include supplier payment runs with SEPA `pain.001` export.
@@ -298,9 +298,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
-| Spec 2 Phase 2C | Active | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), and configurable Aruba adapter (`2C-03`) are present. Next: extended permissions. |
+| Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), configurable Aruba adapter (`2C-03`), and extended admin permissions (`2C-04`) are present. |
 
-### Known Limitations During Phase 2C
+### Known Limitations After Phase 2C
 
 -   E-invoice defaults to the deterministic `stub` workflow. The optional `fatturapa` driver generates and XSD-validates ordinary FPR12 XML locally, but it does not deliver to SDI.
 -   The optional `aruba` driver is an HTTP adapter with configurable endpoints/token and tested request/status mapping. It still needs verification against the real contracted Aruba API before production use.
@@ -319,7 +319,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Roadmap
 
--   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Schema/readiness fields, mapper, FPR12 XML/XSD validation, and configurable Aruba adapter are done; next order is extended permissions.
+-   Phase 2C: FatturaPA / SDI production-readiness and extended admin permissions are implemented.
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements
 
 ## Scripts
@@ -396,7 +396,7 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] M4 — Policies, permissions, and reporting pages
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
 - [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
-- [ ] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, and configurable Aruba adapter done; extended permissions remain
+- [x] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, configurable Aruba adapter, and extended admin permissions
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
 - [x] Export CSV for financial reports
