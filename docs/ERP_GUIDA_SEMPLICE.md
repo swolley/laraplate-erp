@@ -585,7 +585,7 @@ Oggi il modulo ERP ha gia il flusso base per tracciare un invio e-invoice, ma l'
 
 La fase 2C serve a portare questo flusso verso l'uso reale italiano:
 
-- raccogliere sui dati azienda, cliente e fattura i campi fiscali necessari per FatturaPA
+- raccogliere sui dati azienda, cliente e fattura i campi fiscali necessari per FatturaPA: questa base dati e stata aggiunta
 - preparare il mapping corretto tra anagrafiche ERP e tracciato SDI
 - generare XML FatturaPA
 - validare l'XML con gli schemi XSD
@@ -595,7 +595,7 @@ La fase 2C serve a portare questo flusso verso l'uso reale italiano:
 ### Ancora aperto
 
 - FatturaPA / SDI completa: oggi c'e lo stub, non ancora XML valido, XSD, invio reale SDI/Aruba o conservazione.
-- Dati anagrafici FatturaPA: alcuni campi fiscali necessari su azienda, cliente/fornitore e fattura devono ancora essere aggiunti.
+- Dati anagrafici FatturaPA: i campi base sono presenti e il submit controlla che siano compilati, ma devono ancora essere trasformati nel payload/XML ufficiale.
 - Pagamenti fornitori: oggi si genera il file SEPA pain.001, ma non si invia direttamente alla banca; CBI, Ri.Ba e SDD non sono pronti.
 - Estratti conto: import CSV, CAMT.053 e MT940 minimale; non c'e sincronizzazione automatica con la banca.
 - API esterne e azioni dominio HTTP: le azioni esistono in Filament, ma l'esposizione API governata e una fase successiva.

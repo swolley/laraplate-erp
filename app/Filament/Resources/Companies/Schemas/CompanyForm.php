@@ -33,6 +33,40 @@ final class CompanyForm
                     ->length(2)
                     ->default('IT')
                     ->placeholder('IT'),
+                TextInput::make('fiscal_regime')
+                    ->label('Fiscal regime')
+                    ->maxLength(4)
+                    ->placeholder('RF01'),
+                TextInput::make('legal_address_line')
+                    ->label('Legal address')
+                    ->maxLength(255),
+                TextInput::make('legal_postal_code')
+                    ->label('Legal postal code')
+                    ->maxLength(16),
+                TextInput::make('legal_city')
+                    ->label('Legal city')
+                    ->maxLength(128),
+                TextInput::make('legal_province')
+                    ->label('Legal province')
+                    ->maxLength(8),
+                TextInput::make('legal_country')
+                    ->label('Legal country')
+                    ->length(2)
+                    ->default('IT'),
+                TextInput::make('rea_office')
+                    ->label('REA office')
+                    ->maxLength(8),
+                TextInput::make('rea_number')
+                    ->label('REA number')
+                    ->maxLength(32),
+                TextInput::make('share_capital')
+                    ->numeric()
+                    ->minValue(0),
+                Toggle::make('sole_shareholder')
+                    ->label('Sole shareholder'),
+                TextInput::make('liquidation_status')
+                    ->label('Liquidation status')
+                    ->maxLength(2),
                 TextInput::make('default_currency')
                     ->required()
                     ->length(3)

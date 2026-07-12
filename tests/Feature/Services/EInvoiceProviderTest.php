@@ -13,31 +13,88 @@ use Modules\ERP\Data\EInvoice\EInvoiceRemoteStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
 
 uses(RefreshDatabase::class);
 
-function createEInvoiceCompany(string $slug = 'einvoice'): Company
+function createEInvoiceCompany(string $slug = 'einvoice', bool $fatturapa_ready = true): Company
 {
-    return Company::query()->create([
+    $data = [
         'slug' => $slug,
         'name' => ucfirst($slug),
+        'legal_name' => ucfirst($slug) . ' SRL',
+        'tax_id' => '01234567890',
         'fiscal_country' => 'IT',
         'default_currency' => 'EUR',
-    ]);
+    ];
+
+    if ($fatturapa_ready) {
+        $data = array_merge($data, [
+            'fiscal_regime' => 'RF01',
+            'legal_address_line' => 'Via Roma 1',
+            'legal_postal_code' => '00100',
+            'legal_city' => 'Roma',
+            'legal_province' => 'RM',
+            'legal_country' => 'IT',
+        ]);
+    }
+
+    return Company::query()->create($data);
 }
 
-function createEInvoiceInvoice(Company $company, InvoiceDirection $direction = InvoiceDirection::Sale, bool $posted = true): Invoice
+function createEInvoiceParty(Company $company, bool $fatturapa_ready = true): Party
 {
-    $invoice = Invoice::query()->create([
+    $data = [
         'company_id' => $company->id,
+        'name' => 'Customer SRL',
+        'is_customer' => true,
+        'is_supplier' => false,
+    ];
+
+    if ($fatturapa_ready) {
+        $data = array_merge($data, [
+            'vat_number' => '09876543210',
+            'fiscal_country' => 'IT',
+            'address_line' => 'Via Milano 10',
+            'postal_code' => '20100',
+            'city' => 'Milano',
+            'province' => 'MI',
+            'country' => 'IT',
+            'einvoice_recipient_code' => 'ABCDEFG',
+        ]);
+    }
+
+    return Party::query()->create($data);
+}
+
+function createEInvoiceInvoice(
+    Company $company,
+    InvoiceDirection $direction = InvoiceDirection::Sale,
+    bool $posted = true,
+    bool $fatturapa_ready = true,
+): Invoice
+{
+    $party = createEInvoiceParty($company, $fatturapa_ready);
+    $data = [
+        'company_id' => $company->id,
+        'party_id' => $party->id,
         'direction' => $direction,
         'invoice_type' => InvoiceType::Invoice->value,
         'reference' => $posted ? 'INV-001' : null,
         'currency' => 'EUR',
         'posted_at' => $posted ? now() : null,
-    ]);
+    ];
+
+    if ($fatturapa_ready) {
+        $data = array_merge($data, [
+            'einvoice_transmission_format' => 'FPR12',
+            'einvoice_recipient_code' => 'ABCDEFG',
+        ]);
+    }
+
+    $invoice = Invoice::query()->create($data);
 
     $invoice->lines()->create([
         'line_no' => 1,
@@ -54,8 +111,8 @@ it('resolves the stub e-invoice provider by default', function (): void {
 });
 
 it('prepares a neutral payload without requiring fatturapa fields', function (): void {
-    $company = createEInvoiceCompany();
-    $invoice = createEInvoiceInvoice($company);
+    $company = createEInvoiceCompany(fatturapa_ready: false);
+    $invoice = createEInvoiceInvoice($company, fatturapa_ready: false);
 
     $payload = app(EInvoiceProvider::class)->prepare($invoice);
 
@@ -119,6 +176,14 @@ it('rejects unposted or purchase invoices', function (): void {
     expect(fn () => app(EInvoiceSubmissionService::class)->submit($unposted))
         ->toThrow(ValidationException::class)
         ->and(fn () => app(EInvoiceSubmissionService::class)->submit($purchase))
+        ->toThrow(ValidationException::class);
+});
+
+it('rejects sale e-invoice submission when mandatory fatturapa readiness data is missing', function (): void {
+    $company = createEInvoiceCompany('einvoice-missing-sdi', fatturapa_ready: false);
+    $invoice = createEInvoiceInvoice($company);
+
+    expect(fn () => app(EInvoiceSubmissionService::class)->submit($invoice))
         ->toThrow(ValidationException::class);
 });
 

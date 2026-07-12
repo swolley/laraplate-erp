@@ -77,6 +77,20 @@ final class InvoiceForm
                 TextInput::make('reference')
                     ->disabled()
                     ->helperText('Assigned automatically at posting time'),
+                TextInput::make('einvoice_transmission_format')
+                    ->label('FatturaPA format')
+                    ->maxLength(5)
+                    ->placeholder('FPR12')
+                    ->visible(static fn (Get $get): bool => InvoiceDirection::Sale->value === $get('direction')),
+                TextInput::make('einvoice_recipient_code')
+                    ->label('SDI recipient code')
+                    ->maxLength(7)
+                    ->visible(static fn (Get $get): bool => InvoiceDirection::Sale->value === $get('direction')),
+                TextInput::make('einvoice_pec_email')
+                    ->label('PEC email')
+                    ->email()
+                    ->maxLength(255)
+                    ->visible(static fn (Get $get): bool => InvoiceDirection::Sale->value === $get('direction')),
                 Placeholder::make('posted_at_display')
                     ->label('Posted at')
                     ->content(static fn (?Invoice $record): string => $record?->posted_at?->format('Y-m-d H:i:s') ?? 'Draft')

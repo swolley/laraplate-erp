@@ -28,6 +28,37 @@ it('creates e_invoice_submissions table with expected columns', function (): voi
         ]))->toBeTrue();
 });
 
+it('creates fatturapa readiness columns on company party and invoice records', function (): void {
+    expect(Schema::hasColumns(ERPTables::Companies->value, [
+        'fiscal_regime',
+        'legal_address_line',
+        'legal_postal_code',
+        'legal_city',
+        'legal_country',
+        'rea_office',
+        'rea_number',
+        'share_capital',
+        'sole_shareholder',
+        'liquidation_status',
+    ]))->toBeTrue()
+        ->and(Schema::hasColumns(ERPTables::Parties->value, [
+            'tax_id',
+            'vat_number',
+            'fiscal_country',
+            'address_line',
+            'postal_code',
+            'city',
+            'country',
+            'einvoice_recipient_code',
+            'einvoice_pec_email',
+        ]))->toBeTrue()
+        ->and(Schema::hasColumns(ERPTables::Invoices->value, [
+            'einvoice_transmission_format',
+            'einvoice_recipient_code',
+            'einvoice_pec_email',
+        ]))->toBeTrue();
+});
+
 it('persists an e-invoice submission linked to an invoice', function (): void {
     $company = Company::query()->create([
         'slug' => 'acme',

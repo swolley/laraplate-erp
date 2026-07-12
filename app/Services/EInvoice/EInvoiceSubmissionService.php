@@ -36,6 +36,8 @@ final readonly class EInvoiceSubmissionService
                 ]);
             }
 
+            $this->validateFatturaPaReadiness($locked);
+
             $has_active_submission = $locked->eInvoiceSubmissions()
                 ->whereIn('status', [
                     EInvoiceSubmissionStatus::Submitted->value,
@@ -101,5 +103,62 @@ final readonly class EInvoiceSubmissionService
             EInvoiceRemoteStatus::Pending, EInvoiceRemoteStatus::Processing => EInvoiceSubmissionStatus::Submitted,
             EInvoiceRemoteStatus::Unknown => $current_status,
         };
+    }
+
+    private function validateFatturaPaReadiness(Invoice $invoice): void
+    {
+        $invoice->loadMissing(['company', 'party']);
+
+        $company = $invoice->company;
+        $party = $invoice->party;
+        $messages = [];
+
+        if ($company === null) {
+            $messages['company'] = ['A company is required for FatturaPA submission.'];
+        } else {
+            $this->requireFilled($messages, 'company.tax_id', $company->tax_id, 'Company VAT/tax id is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'company.fiscal_regime', $company->fiscal_regime, 'Company fiscal regime is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'company.legal_address_line', $company->legal_address_line, 'Company legal address is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'company.legal_postal_code', $company->legal_postal_code, 'Company legal postal code is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'company.legal_city', $company->legal_city, 'Company legal city is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'company.legal_country', $company->legal_country, 'Company legal country is required for FatturaPA submission.');
+        }
+
+        if ($party === null) {
+            $messages['party'] = ['A customer party is required for FatturaPA submission.'];
+        } else {
+            if (blank($party->vat_number) && blank($party->tax_id)) {
+                $messages['party.tax_id'] = ['Customer VAT number or tax id is required for FatturaPA submission.'];
+            }
+
+            $this->requireFilled($messages, 'party.fiscal_country', $party->fiscal_country, 'Customer fiscal country is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'party.address_line', $party->address_line, 'Customer address is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'party.postal_code', $party->postal_code, 'Customer postal code is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'party.city', $party->city, 'Customer city is required for FatturaPA submission.');
+            $this->requireFilled($messages, 'party.country', $party->country, 'Customer country is required for FatturaPA submission.');
+        }
+
+        $this->requireFilled($messages, 'invoice.einvoice_transmission_format', $invoice->einvoice_transmission_format, 'FatturaPA transmission format is required.');
+
+        $recipient_code = $invoice->einvoice_recipient_code ?: $party?->einvoice_recipient_code;
+        $pec_email = $invoice->einvoice_pec_email ?: $party?->einvoice_pec_email;
+
+        if (blank($recipient_code) && blank($pec_email)) {
+            $messages['invoice.einvoice_recipient_code'] = ['Recipient code or PEC email is required for FatturaPA submission.'];
+        }
+
+        if ($messages !== []) {
+            throw ValidationException::withMessages($messages);
+        }
+    }
+
+    /**
+     * @param  array<string, array<int, string>>  $messages
+     */
+    private function requireFilled(array &$messages, string $key, mixed $value, string $message): void
+    {
+        if (blank($value)) {
+            $messages[$key] = [$message];
+        }
     }
 }

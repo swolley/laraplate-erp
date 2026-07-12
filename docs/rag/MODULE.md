@@ -644,8 +644,8 @@ flowchart LR
 
 Phase 2C is the active e-invoice implementation slice. It extends the existing neutral provider contract instead of replacing it:
 
-1. Add the FatturaPA / SDI fiscal fields needed on company, party, and invoice records.
-2. Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
+1. **Done:** Add the FatturaPA / SDI fiscal fields needed on company, party, and invoice records, and block sale e-invoice submit when mandatory readiness data is missing.
+2. **Next:** Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
 3. Build FatturaPA XML and validate it through vendored XSD resources.
 4. Add a production-oriented provider adapter, starting with Aruba behind Laravel config and HTTP fakes in tests.
 5. Gate tax-code, company-switch, sequence, and e-invoice admin actions through explicit permissions.
@@ -717,8 +717,8 @@ These items are intentional current-state truth for RAG retrieval. Do not answer
 
 | Area | Current truth | Do not assume |
 | ---- | ------------- | ------------- |
-| FatturaPA / SDI | Only the neutral e-invoice workflow and stub provider exist today. Phase 2C is active but not implemented yet. | Do not claim valid FatturaPA XML, official XSD validation, real SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention. |
-| Fiscal anagraphic data | Company, party, and invoice records still need the complete FatturaPA/SDI fields planned in `2C-05`. | Do not build FatturaPA payloads from incomplete master data without explicit validation failures. |
+| FatturaPA / SDI | The neutral workflow, stub provider, readiness fields, and submit-time readiness validation exist. Mapper, XML/XSD, real provider, and SDI status handling are still pending. | Do not claim valid FatturaPA XML, official XSD validation, real SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention. |
+| Fiscal anagraphic data | Company, party, and invoice records now store the minimum FatturaPA/SDI readiness fields. `EInvoiceSubmissionService` rejects sale submit when mandatory readiness data is missing. | Do not claim those fields are already mapped into legal XML; that is `2C-02`/`2C-01` work. |
 | Payment runs | ERP exports SEPA SCT `pain.001` files with checksum/audit metadata. | Do not claim direct bank API submission, CBI, Ri.Ba, SDD, or proprietary Italian bank tracks. |
 | Bank statement import | CSV, CAMT.053, and a minimal MT940 transaction subset are supported. | Do not claim full MT940 coverage, bank API sync, or automatic reconciliation without operator confirmation. |
 | Domain HTTP/API | Filament actions call services, but generic internal domain-action routes and opt-in external API governance are Phase 3 work. | Do not expose domain mutations through ad hoc routes before the Phase 3 Core exposure model exists. |

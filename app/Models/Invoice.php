@@ -27,6 +27,9 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property InvoiceType $invoice_type
  * @property int|null $credited_invoice_id
  * @property string|null $reference
+ * @property string|null $einvoice_transmission_format
+ * @property string|null $einvoice_recipient_code
+ * @property string|null $einvoice_pec_email
  * @property string $currency
  * @property \Carbon\CarbonInterface|null $posted_at
  * @property int|null $journal_entry_id
@@ -62,6 +65,9 @@ final class Invoice extends Model
         'invoice_type',
         'credited_invoice_id',
         'reference',
+        'einvoice_transmission_format',
+        'einvoice_recipient_code',
+        'einvoice_pec_email',
         'currency',
         'posted_at',
         'journal_entry_id',
@@ -133,6 +139,9 @@ final class Invoice extends Model
             'credited_invoice_id' => ['nullable', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'currency' => ['required', 'string', 'size:3'],
             'reference' => ['nullable', 'string', 'max:64'],
+            'einvoice_transmission_format' => ['nullable', 'string', 'max:5'],
+            'einvoice_recipient_code' => ['nullable', 'string', 'max:7'],
+            'einvoice_pec_email' => ['nullable', 'email', 'max:255'],
             'posted_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -142,6 +151,9 @@ final class Invoice extends Model
             'invoice_type' => ['sometimes', 'string', InvoiceType::validationRule()],
             'credited_invoice_id' => ['nullable', 'integer', 'exists:' . ERPTables::Invoices->value . ',id'],
             'reference' => ['nullable', 'string', 'max:64'],
+            'einvoice_transmission_format' => ['nullable', 'string', 'max:5'],
+            'einvoice_recipient_code' => ['nullable', 'string', 'max:7'],
+            'einvoice_pec_email' => ['nullable', 'email', 'max:255'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'posted_at' => ['nullable', 'date'],
             'journal_entry_id' => ['nullable', 'integer', 'exists:' . ERPTables::JournalEntries->value . ',id'],

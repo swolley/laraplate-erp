@@ -40,6 +40,16 @@ final class Party extends Model
     #[Override]
     protected $fillable = [
         'name',
+        'tax_id',
+        'vat_number',
+        'fiscal_country',
+        'address_line',
+        'postal_code',
+        'city',
+        'province',
+        'country',
+        'einvoice_recipient_code',
+        'einvoice_pec_email',
         'is_customer',
         'is_supplier',
     ];
@@ -124,9 +134,29 @@ final class Party extends Model
         $rules = parent::getRules();
         $rules['create'] = array_merge($rules['create'], [
             'name' => ['required', 'string', 'max:255'],
+            'tax_id' => ['nullable', 'string', 'max:32'],
+            'vat_number' => ['nullable', 'string', 'max:32'],
+            'fiscal_country' => ['nullable', 'string', 'size:2'],
+            'address_line' => ['nullable', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:16'],
+            'city' => ['nullable', 'string', 'max:128'],
+            'province' => ['nullable', 'string', 'max:8'],
+            'country' => ['nullable', 'string', 'size:2'],
+            'einvoice_recipient_code' => ['nullable', 'string', 'max:7'],
+            'einvoice_pec_email' => ['nullable', 'email', 'max:255'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'name' => ['sometimes', 'string', 'max:255'],
+            'tax_id' => ['nullable', 'string', 'max:32'],
+            'vat_number' => ['nullable', 'string', 'max:32'],
+            'fiscal_country' => ['nullable', 'string', 'size:2'],
+            'address_line' => ['nullable', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:16'],
+            'city' => ['nullable', 'string', 'max:128'],
+            'province' => ['nullable', 'string', 'max:8'],
+            'country' => ['nullable', 'string', 'size:2'],
+            'einvoice_recipient_code' => ['nullable', 'string', 'max:7'],
+            'einvoice_pec_email' => ['nullable', 'email', 'max:255'],
         ]);
 
         return $rules;
