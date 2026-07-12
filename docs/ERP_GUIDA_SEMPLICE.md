@@ -594,11 +594,14 @@ La fase 2C serve a portare questo flusso verso l'uso reale italiano:
 
 ### Ancora aperto
 
-- FatturaPA / SDI completa: XML, XSD, dati anagrafici completi, provider reale
-- API esterne e governance esposizione modelli
-- reverse/revert di resi gia processati
-
-Se vuoi, nel prossimo step posso prepararti anche:
-
-- una versione **visuale** con diagrammi semplici (flussi + relazioni)
-- un "percorso guidato" documento per documento usando i nomi reali del tuo modulo.
+- FatturaPA / SDI completa: oggi c'e lo stub, non ancora XML valido, XSD, invio reale SDI/Aruba o conservazione.
+- Dati anagrafici FatturaPA: alcuni campi fiscali necessari su azienda, cliente/fornitore e fattura devono ancora essere aggiunti.
+- Pagamenti fornitori: oggi si genera il file SEPA pain.001, ma non si invia direttamente alla banca; CBI, Ri.Ba e SDD non sono pronti.
+- Estratti conto: import CSV, CAMT.053 e MT940 minimale; non c'e sincronizzazione automatica con la banca.
+- API esterne e azioni dominio HTTP: le azioni esistono in Filament, ma l'esposizione API governata e una fase successiva.
+- Resi gia processati: si possono annullare resi draft/approved, ma manca ancora il reverse sicuro di un reso gia completato.
+- Report: disponibili a video e CSV; non ci sono ancora PDF, schedulazioni o archivi immutabili del report.
+- Multi-valuta: la struttura e predisposta, ma cambi reali, rivalutazioni e differenze cambio non sono ancora implementati.
+- Dimensioni analitiche: non ci sono ancora centri di costo/profitto completi sulle righe contabili.
+- DDT/bolle: restano documenti di quantita e collegamento; non devono contenere prezzi. I prezzi di note credito/debito arrivano dalle fatture.
+- MES, Gantt, calendario ICS, API mobile, ETL legacy e Tricount avanzato non fanno parte della fase ERP corrente.

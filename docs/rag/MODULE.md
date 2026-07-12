@@ -711,6 +711,30 @@ Trial Balance, Balance Sheet, Income Statement
 | E-invoice | Stub implemented; Phase 2C active | Provider contract, stub provider, submission persistence, submit/refresh actions. Phase 2C now covers FatturaPA / SDI schema data, mapping, XML/XSD validation, provider integration, and extended permissions. |
 | Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
 
+## Known gaps, limitations, and correction notes
+
+These items are intentional current-state truth for RAG retrieval. Do not answer as if they are already implemented.
+
+| Area | Current truth | Do not assume |
+| ---- | ------------- | ------------- |
+| FatturaPA / SDI | Only the neutral e-invoice workflow and stub provider exist today. Phase 2C is active but not implemented yet. | Do not claim valid FatturaPA XML, official XSD validation, real SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention. |
+| Fiscal anagraphic data | Company, party, and invoice records still need the complete FatturaPA/SDI fields planned in `2C-05`. | Do not build FatturaPA payloads from incomplete master data without explicit validation failures. |
+| Payment runs | ERP exports SEPA SCT `pain.001` files with checksum/audit metadata. | Do not claim direct bank API submission, CBI, Ri.Ba, SDD, or proprietary Italian bank tracks. |
+| Bank statement import | CSV, CAMT.053, and a minimal MT940 transaction subset are supported. | Do not claim full MT940 coverage, bank API sync, or automatic reconciliation without operator confirmation. |
+| Domain HTTP/API | Filament actions call services, but generic internal domain-action routes and opt-in external API governance are Phase 3 work. | Do not expose domain mutations through ad hoc routes before the Phase 3 Core exposure model exists. |
+| Processed returns | Draft/approved returns can be cancelled; processed returns do not yet have a safe revert/reverse flow. | Do not reverse stock/DDT/NC-ND effects manually or by deleting processed records. |
+| Return fiscal pricing | Credit/debit notes from returns default to source invoice-line prices; return-line `unit_price` is only an explicit override. | Do not price fiscal corrections from orders, goods receipts, DDT lines, or current price lists. |
+| Delivery notes | DDT/bolle lines are quantity and source-link documents. | Do not add prices or costs to DDT lines; stock cost lives in stock movements/cost layers. |
+| Reporting/export | Financial and operational reports are live-query reports with CSV export. | Do not claim PDF export, scheduled report snapshots, or immutable report archives. |
+| Multi-currency | Schema and converter foundation exist; the converter is effectively no-op until real FX work lands. | Do not claim FX rates, realized/unrealized exchange differences, or revaluation journals. |
+| Money model | Persisted money, prices, costs, and quantities use decimals; selected services use decimal math helpers. | Do not claim a full domain-wide Money value object is implemented. |
+| Analytic accounting | Project/site-style analytic references are limited and not a full journal-line dimension model. | Do not claim cost centers, profit centers, or arbitrary analytic dimensions. |
+| Pricing | Price lists, price list items, party rules, and taxonomy/activity-based pricing are implemented. | Do not claim direct item-specific list pricing beyond the current schema. |
+| Locks and DB triggers | Application locks are the cross-database source of truth. MySQL triggers exist as an extra safety net for selected lock chains. | Do not rely on DB triggers as portable enforcement across PostgreSQL, Oracle, or SQLite. |
+| Permissions | Core CRUD permissions plus seeded domain abilities are used. A model without explicit `$connection` correctly uses the default connection. | Do not treat the default permission connection as a bug; central permission-name helper work is only needed if explicit model connections become relevant. |
+| Concurrency proof | Document numbering uses pessimistic locks and focused tests exist. A broad 50-worker stress suite remains backlog. | Do not use stress-test coverage claims unless the dedicated concurrency suite has been run. |
+| Legacy/vertical work | ETL, ICS/calendar export, Gantt planning, mobile API, and Tricount refactor are future phases. MES is not part of the current ERP scope. | Do not mix MES assumptions or vertical scheduling behavior into ERP core decisions. |
+
 ## Typical developer questions (FAQ for RAG)
 
 - **Which service posts inventory when a delivery note is confirmed?**

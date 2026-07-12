@@ -238,6 +238,25 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | **MovementType** | Synthetic direction for legacy cash adapters: `income` / `expense`. Mapped to journal lines, not to a separate `EntityType` tree. |
 
+## Known limitation terms
+
+
+| Term | Meaning |
+| ---- | ------- |
+| **Stub e-invoice** | Current implemented e-invoice mode. It records submissions and statuses locally; it is not legal FatturaPA delivery. |
+| **Phase 2C e-invoice gap** | Missing production-readiness work: FatturaPA/SDI fields, mapper, XML builder, XSD validation, provider adapter, and extended permissions. |
+| **Payment file only** | Supplier payment execution exports bank files (`pain.001`) but does not submit them to a bank API. |
+| **Minimal MT940** | Only the implemented transaction subset is parsed. Do not treat MT940 support as full-format coverage. |
+| **No processed-return revert** | Processed returns cannot yet be safely reversed. Draft/approved cancellation exists; processed revert is Phase 3 backlog. |
+| **No DDT pricing** | Delivery note lines intentionally have no prices or costs. Fiscal correction pricing comes from invoice lines. |
+| **Live report** | Report data is queried live from accounting/operational tables. CSV export exists; PDF, scheduled snapshots, and immutable archives do not. |
+| **FX foundation only** | Multi-currency columns and converter seam exist, but real FX rates, revaluation, and exchange-difference journals are not implemented. |
+| **No full Money VO** | Decimal persistence and decimal helpers exist, but a domain-wide Money value object is still Phase 5 backlog. |
+| **No analytic dimensions** | Journal lines do not yet support a complete cost-center/profit-center/dimension model. |
+| **App-lock portability** | Application locks are portable across supported databases. MySQL triggers are an additional vendor-specific safety net only. |
+| **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
+| **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |
+
 
 ## Related reading
 

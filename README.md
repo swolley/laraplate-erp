@@ -289,6 +289,21 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Active | Start from FatturaPA schema fields (`2C-05`), then SDI mapping, XML/XSD validation, Aruba/provider integration, and extended permissions. |
 
+### Known Limitations Before Phase 2C
+
+-   E-invoice is still a deterministic stub workflow: no valid FatturaPA XML, XSD validation, SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention yet.
+-   FatturaPA / SDI master data is incomplete until Phase 2C adds the required company, party, and invoice fields.
+-   Supplier payment execution exports SEPA SCT `pain.001` files only; direct bank submission, CBI, Ri.Ba, SDD, and proprietary Italian tracks are not implemented.
+-   Bank import supports CSV, CAMT.053, and a minimal MT940 subset; it is not full bank API sync and it does not auto-confirm matches without the reconciliation workflow.
+-   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
+-   Processed returns cannot yet be safely reverted; only draft/approved return cancellation is supported.
+-   DDT/bolle lines intentionally do not carry prices or costs. Fiscal corrections price from source invoice lines, not from DDTs, orders, goods receipts, or current price lists.
+-   Reports are live-query Filament pages with CSV export; PDF export, scheduled snapshots, and immutable report archives are not implemented.
+-   Multi-currency is a schema/converter foundation only; real FX rates, revaluation, and realized/unrealized exchange journals remain Phase 5 work.
+-   A full domain-wide `Money` value object and analytic journal dimensions are not implemented.
+-   Application locks are portable; MySQL DB triggers are an extra safety net for selected lock chains and should not be treated as cross-database enforcement.
+-   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
+
 ### Roadmap
 
 -   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Order: schema fields, mapper, XML/XSD, provider, permissions.
