@@ -638,7 +638,17 @@ flowchart LR
 - `StubEInvoiceProvider` is bound by default and produces deterministic local responses.
 - `EInvoiceSubmissionService` persists submit attempts and refreshes remote status.
 - Invoice edit actions can submit posted sale invoices and refresh submitted rows.
-- No production SDI / PEPPOL / FatturaPA provider lives in the core ERP module.
+- Current runtime is still local/stub only.
+
+#### Phase 2C — FatturaPA / SDI production readiness
+
+Phase 2C is the active e-invoice implementation slice. It extends the existing neutral provider contract instead of replacing it:
+
+1. Add the FatturaPA / SDI fiscal fields needed on company, party, and invoice records.
+2. Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
+3. Build FatturaPA XML and validate it through vendored XSD resources.
+4. Add a production-oriented provider adapter, starting with Aruba behind Laravel config and HTTP fakes in tests.
+5. Gate tax-code, company-switch, sequence, and e-invoice admin actions through explicit permissions.
 
 ### Lock & Safety Mechanisms
 
@@ -696,9 +706,9 @@ Trial Balance, Balance Sheet, Income Statement
 | Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
 | Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
-| Policies and domain actions | Implemented Phase 2A + partial 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
+| Policies and domain actions | Implemented Phase 2A + 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
 | Banking | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, suggestions, manual reconciliation, match-with-difference UI, and accounting journals for bank fees/rounding/write-offs. Outbound supplier payment-file export is handled by PaymentRun. |
-| E-invoice | Stub implemented | Provider contract, stub provider, submission persistence, submit/refresh actions. Full FatturaPA remains optional backlog. |
+| E-invoice | Stub implemented; Phase 2C active | Provider contract, stub provider, submission persistence, submit/refresh actions. Phase 2C now covers FatturaPA / SDI schema data, mapping, XML/XSD validation, provider integration, and extended permissions. |
 | Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
 
 ## Typical developer questions (FAQ for RAG)
@@ -726,7 +736,9 @@ Trial Balance, Balance Sheet, Income Statement
 - **How do customer and supplier returns work?**
 → Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual by default, or automatic during completion when `erp.returns.auto_create_notes_on_complete` is true. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
 - **How does e-invoice submission work?**
-→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`. Full FatturaPA XML is outside the core ERP module.
+→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`.
+- **What is Phase 2C adding to e-invoice?**
+→ Phase 2C turns the current stub workflow into the Italian production path: first SDI/FatturaPA fields on company/party/invoice, then a FatturaPA anagraphic mapper, XML builder with XSD validation, provider adapter, and permissions for high-risk fiscal actions.
 - **How do payment schedules work?**
 → At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
 - **Where is VAT register logic?**

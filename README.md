@@ -216,7 +216,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `EInvoiceSubmission` model + `EInvoiceSubmissionStatus` enum
 -   Stub provider binding and deterministic local submission workflow
 -   Filament actions for posted sale invoice submit / status refresh
--   No production SDI / PEPPOL / FatturaPA provider in the core module
+-   Current runtime is still local/stub only
+-   Phase 2C is the active production-readiness slice for Italian FatturaPA / SDI: fiscal schema fields, company/party mapping, XML/XSD validation, provider integration, and extended admin permissions
 
 ### M6.1 — Bank Reconciliation
 
@@ -282,14 +283,15 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M5.1 Payment execution | Implemented v1 | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, checksum metadata, and Filament resource are present. Direct bank submission and CBI/Ri.Ba/SDD remain backlog. |
 | M6.1 Bank reconciliation | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
-| M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
+| M6.3 E-invoice stub | Implemented v1; Phase 2C active | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present. Phase 2C now adds the production FatturaPA / SDI path. |
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
+| Spec 2 Phase 2C | Active | Start from FatturaPA schema fields (`2C-05`), then SDI mapping, XML/XSD validation, Aruba/provider integration, and extended permissions. |
 
 ### Roadmap
 
--   Phase 2C: full FatturaPA XML/XSD/provider work remains optional backlog
+-   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Order: schema fields, mapper, XML/XSD, provider, permissions.
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements
 
 ## Scripts
@@ -361,11 +363,12 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] M6.2 — Returns management (customer and supplier)
 - [x] M6.2/2B-07 — Invoice-line-based return credit/debit note pricing contract
 - [x] M6.2/2B-06 — Optional automatic NC/ND creation on return completion
-- [x] M6.3 — E-invoice stub workflow; full FatturaPA optional backlog
+- [x] M6.3 — E-invoice stub workflow
 - [x] M7.1 — Advanced pricelists with party-specific pricing
 - [x] M4 — Policies, permissions, and reporting pages
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
 - [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
+- [ ] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, provider integration, extended permissions
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
 - [x] Export CSV for financial reports

@@ -579,9 +579,22 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 - e-invoice stub con invio/refresh locale deterministico
 - riconciliazione bancaria v1: import CSV/CAMT.053/MT940 minimale, suggerimenti, match manuale, match con differenze e scritture contabili per commissioni/arrotondamenti
 
+### Prossima fase: FatturaPA / SDI
+
+Oggi il modulo ERP ha gia il flusso base per tracciare un invio e-invoice, ma l'invio e ancora locale/stub: serve per testare il workflow, non per mandare davvero una fattura al Sistema di Interscambio.
+
+La fase 2C serve a portare questo flusso verso l'uso reale italiano:
+
+- raccogliere sui dati azienda, cliente e fattura i campi fiscali necessari per FatturaPA
+- preparare il mapping corretto tra anagrafiche ERP e tracciato SDI
+- generare XML FatturaPA
+- validare l'XML con gli schemi XSD
+- collegare un provider reale, partendo da un adapter tipo Aruba
+- proteggere le azioni fiscali piu delicate con permessi dedicati
+
 ### Ancora aperto
 
-- FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale
+- FatturaPA / SDI completa: XML, XSD, dati anagrafici completi, provider reale
 - API esterne e governance esposizione modelli
 - reverse/revert di resi gia processati
 
