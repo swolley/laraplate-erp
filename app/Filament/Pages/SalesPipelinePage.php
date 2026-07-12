@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Services\Reporting\OperationalReportCsvExporter;
 use Modules\ERP\Services\Reporting\SalesPipelineService;
 use Override;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
 
 final class SalesPipelinePage extends Page
@@ -53,6 +56,10 @@ final class SalesPipelinePage extends Page
                     ->label('Company')
                     ->options(Company::query()->pluck('name', 'id')->all())
                     ->required(),
+                DatePicker::make('won_from')
+                    ->label('Won from'),
+                DatePicker::make('won_to')
+                    ->label('Won to'),
             ]);
     }
 
@@ -62,6 +69,26 @@ final class SalesPipelinePage extends Page
 
         $service = resolve(SalesPipelineService::class);
 
-        $this->report_data = $service->generate((int) $state['company_id']);
+        $this->report_data = $service->generate((int) $state['company_id'], [
+            'won_from' => $state['won_from'] ?? null,
+            'won_to' => $state['won_to'] ?? null,
+        ]);
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        if ($this->report_data === []) {
+            $this->generate();
+        }
+
+        $csv = resolve(OperationalReportCsvExporter::class)->salesPipeline($this->report_data);
+
+        return response()->streamDownload(
+            static function () use ($csv): void {
+                echo $csv;
+            },
+            'sales-pipeline.csv',
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
+        );
     }
 }

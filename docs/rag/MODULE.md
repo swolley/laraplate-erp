@@ -699,7 +699,7 @@ Trial Balance, Balance Sheet, Income Statement
 | Policies and domain actions | Implemented Phase 2A + partial 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
 | Banking | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, suggestions, manual reconciliation, match-with-difference UI, and accounting journals for bank fees/rounding/write-offs. Outbound supplier payment-file export is handled by PaymentRun. |
 | E-invoice | Stub implemented | Provider contract, stub provider, submission persistence, submit/refresh actions. Full FatturaPA remains optional backlog. |
-| Reporting | Implemented v1 + financial CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline and stock valuation exist; dashboard polish remains backlog. |
+| Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
 
 ## Typical developer questions (FAQ for RAG)
 
@@ -733,6 +733,8 @@ Trial Balance, Balance Sheet, Income Statement
 → `VatRegisterService::register()` is called by `InvoicePostingService` after journal creation. Creates one `VatRegisterEntry` per tax code on the invoice, with sequential protocol numbers. `VatSettlementService::compute()` calculates periodic settlement.
 - **How do financial reports work?**
 → `TrialBalanceService`, `BalanceSheetService`, `IncomeStatementService` query posted `JournalEntryLine` records aggregated by account. No separate snapshot tables — always live from journal. `FinancialReportCsvExporter` exports trial balance, balance sheet, and income statement; the related Filament pages expose **Export CSV** actions.
+- **How do operational dashboards work?**
+→ `SalesPipelineService` summarizes opportunities by status and computes won-period KPIs from `won_from` / `won_to` filters. `StockValuationService` summarizes current `StockLevel` rows and supports an optional `warehouse_id` filter. `OperationalReportCsvExporter` exports both dashboards to CSV from their Filament pages.
 - **What is the Party entity?**
 → `Party` (table: `parties`) is the unified customer/supplier entity. Boolean flags `is_customer`/`is_supplier` distinguish roles. Scopes: `scopeCustomers()`, `scopeSuppliers()`. Sales-side models validate party is_customer, purchase-side validates is_supplier.
 - **How does document numbering work?**

@@ -369,6 +369,14 @@ sequenceDiagram
 4. Tutti i report sono derivati in tempo reale dai journal postati (nessuna tabella separata)
 5. Le pagine Filament dei tre report permettono export CSV dei dati visualizzati
 
+## 4.9 Workflow dashboard operative
+
+1. **Sales Pipeline**: mostra opportunita per stato, valore pipeline, valore vinto nel periodo e conteggio perse
+2. Il filtro `won_from` / `won_to` limita i KPI del vinto al periodo scelto senza cancellare la pipeline aperta
+3. **Stock Valuation**: mostra quantita, costo medio e valore per articolo/magazzino
+4. Il filtro magazzino limita righe e totali al magazzino selezionato
+5. Entrambe le pagine permettono export CSV dei dati visualizzati
+
 ---
 
 ## 5) Relazioni fondamentali tra entita
@@ -573,7 +581,6 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 
 ### Ancora aperto
 
-- dashboard BI/operativa piu completa
 - FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale
 - API esterne e governance esposizione modelli
 - reverse/revert di resi gia processati

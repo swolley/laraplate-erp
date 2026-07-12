@@ -12,6 +12,7 @@ use Modules\ERP\Models\StockLevel;
 final class StockValuationService
 {
     /**
+     * @param  array{warehouse_id?: int|null}  $filters
      * @return array{
      *     rows: array<int, array{
      *         item_id: int,
@@ -28,11 +29,14 @@ final class StockValuationService
      *     total_value: string,
      * }
      */
-    public function generate(int $company_id): array
+    public function generate(int $company_id, array $filters = []): array
     {
+        $warehouse_id = $filters['warehouse_id'] ?? null;
+
         $stock_levels = StockLevel::query()
             ->with(['item', 'warehouse'])
             ->where('company_id', $company_id)
+            ->when($warehouse_id !== null && $warehouse_id > 0, static fn ($query) => $query->where('warehouse_id', $warehouse_id))
             ->get()
             ->sortBy([
                 static fn (StockLevel $left, StockLevel $right): int => strcmp(self::itemSku($left), self::itemSku($right)),
@@ -74,11 +78,6 @@ final class StockValuationService
         ];
     }
 
-    private function formatAmount(float $amount): string
-    {
-        return number_format(round($amount, 4), 4, '.', '');
-    }
-
     private static function itemSku(StockLevel $stock_level): string
     {
         $item = $stock_level->item;
@@ -95,5 +94,10 @@ final class StockValuationService
         $warehouse = $stock_level->warehouse;
 
         return $warehouse === null ? '' : $warehouse->code;
+    }
+
+    private function formatAmount(float $amount): string
+    {
+        return number_format(round($amount, 4), 4, '.', '');
     }
 }

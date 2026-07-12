@@ -1,14 +1,31 @@
 <x-filament-panels::page>
     <form wire:submit="generate">
         {{ $this->form }}
-        <x-filament::button type="submit" class="mt-4">
-            Generate
-        </x-filament::button>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <x-filament::button type="submit">
+                Generate
+            </x-filament::button>
+            <x-filament::button type="button" color="gray" wire:click="exportCsv">
+                Export CSV
+            </x-filament::button>
+        </div>
     </form>
 
     @if (! empty($report_data))
         <x-filament::section heading="Pipeline Summary">
             <div class="mb-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                <div>
+                    <span class="font-medium">Total pipeline:</span>
+                    {{ number_format((float) $report_data['total_expected_value_local'], 2) }}
+                </div>
+                <div>
+                    <span class="font-medium">Won value:</span>
+                    {{ number_format((float) $report_data['won_value_local'], 2) }}
+                </div>
+                <div>
+                    <span class="font-medium">Lost count:</span>
+                    {{ $report_data['lost_count'] }}
+                </div>
                 <div>
                     <span class="font-medium">Total opportunities:</span>
                     {{ $report_data['total_count'] }}
@@ -23,34 +40,38 @@
                 </div>
             </div>
 
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b font-medium">
-                        <th class="py-2 text-left">Status</th>
-                        <th class="py-2 text-right">Count</th>
-                        <th class="py-2 text-right">Expected Doc</th>
-                        <th class="py-2 text-right">Expected Local</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($report_data['by_status'] as $row)
-                        <tr class="border-b">
-                            <td class="py-1">{{ ucfirst($row['status']) }}</td>
-                            <td class="py-1 text-right">{{ $row['count'] }}</td>
-                            <td class="py-1 text-right">{{ number_format((float) $row['expected_value_doc'], 2) }}</td>
-                            <td class="py-1 text-right">{{ number_format((float) $row['expected_value_local'], 2) }}</td>
+            @if ((int) $report_data['total_count'] === 0)
+                <div class="text-sm text-gray-500">No pipeline data for the selected filters.</div>
+            @else
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b font-medium">
+                            <th class="py-2 text-left">Status</th>
+                            <th class="py-2 text-right">Count</th>
+                            <th class="py-2 text-right">Expected Doc</th>
+                            <th class="py-2 text-right">Expected Local</th>
                         </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr class="border-t-2 font-bold">
-                        <td class="py-2">Total</td>
-                        <td class="py-2 text-right">{{ $report_data['total_count'] }}</td>
-                        <td class="py-2 text-right">{{ number_format((float) $report_data['total_expected_value_doc'], 2) }}</td>
-                        <td class="py-2 text-right">{{ number_format((float) $report_data['total_expected_value_local'], 2) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($report_data['by_status'] as $row)
+                            <tr class="border-b">
+                                <td class="py-1">{{ ucfirst($row['status']) }}</td>
+                                <td class="py-1 text-right">{{ $row['count'] }}</td>
+                                <td class="py-1 text-right">{{ number_format((float) $row['expected_value_doc'], 2) }}</td>
+                                <td class="py-1 text-right">{{ number_format((float) $row['expected_value_local'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 font-bold">
+                            <td class="py-2">Total</td>
+                            <td class="py-2 text-right">{{ $report_data['total_count'] }}</td>
+                            <td class="py-2 text-right">{{ number_format((float) $report_data['total_expected_value_doc'], 2) }}</td>
+                            <td class="py-2 text-right">{{ number_format((float) $report_data['total_expected_value_local'], 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            @endif
         </x-filament::section>
     @endif
 </x-filament-panels::page>
