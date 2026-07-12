@@ -367,6 +367,7 @@ sequenceDiagram
 2. **Stato patrimoniale**: attivita = passivita + patrimonio netto + utile netto
 3. **Conto economico**: ricavi − costi per un periodo scelto
 4. Tutti i report sono derivati in tempo reale dai journal postati (nessuna tabella separata)
+5. Le pagine Filament dei tre report permettono export CSV dei dati visualizzati
 
 ---
 
@@ -572,7 +573,6 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
 
 ### Ancora aperto
 
-- export Filament dei report finanziari
 - dashboard BI/operativa piu completa
 - FatturaPA completa: XML, XSD, dati anagrafici completi, provider reale
 - API esterne e governance esposizione modelli

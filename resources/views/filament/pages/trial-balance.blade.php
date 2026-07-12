@@ -1,9 +1,14 @@
 <x-filament-panels::page>
     <form wire:submit="generate">
         {{ $this->form }}
-        <x-filament::button type="submit" class="mt-4">
-            Generate
-        </x-filament::button>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <x-filament::button type="submit">
+                Generate
+            </x-filament::button>
+            <x-filament::button type="button" color="gray" wire:click="exportCsv">
+                Export CSV
+            </x-filament::button>
+        </div>
     </form>
 
     @if (count($report_data) > 0)

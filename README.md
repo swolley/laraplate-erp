@@ -255,7 +255,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
 -   Implemented Phase 2B items also include supplier payment runs with SEPA `pain.001` export.
 -   Implemented Phase 2B banking items also include bank difference journals, match-with-difference UI, and CAMT.053 / MT940 statement import.
--   Remaining Phase 2B items: financial report export UI and BI/operational dashboard polish.
+-   Implemented Phase 2B reporting items also include CSV export actions for trial balance, balance sheet, and income statement.
+-   Remaining Phase 2B item: BI/operational dashboard polish.
 
 ### Supplier Payment Runs
 
@@ -277,18 +278,18 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Area | Status | Notes |
 | --- | --- | --- |
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
-| M4 Permissions & reporting | Implemented v1 | Domain permissions, invoice action auth, accounting/operational reports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
+| M4 Permissions & reporting | Implemented v1 + financial CSV export | Domain permissions, invoice action auth, accounting/operational reports, financial report CSV exports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
 | M5.1 Payment execution | Implemented v1 | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, checksum metadata, and Filament resource are present. Direct bank submission and CBI/Ri.Ba/SDD remain backlog. |
 | M6.1 Bank reconciliation | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
-| Spec 2 Phase 2B | In progress | 2B-01/02/03/04/05/06/07/08/09/10/13 are done; 2B-11/12 remain. |
+| Spec 2 Phase 2B | In progress | 2B-01/02/03/04/05/06/07/08/09/10/11/13 are done; 2B-12 remains. |
 
 ### Roadmap
 
--   2B-11/12: financial export UI and BI/operational dashboard polish
+-   2B-12: BI/operational dashboard polish
 -   Phase 2C: full FatturaPA XML/XSD/provider work remains optional backlog
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements
 
@@ -368,4 +369,4 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] Spec 2 Phase 2B partial — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
-- [ ] Export CSV/PDF for financial reports
+- [x] Export CSV for financial reports

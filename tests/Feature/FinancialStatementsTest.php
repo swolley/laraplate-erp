@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\AccountKind;
+use Modules\ERP\Filament\Pages\BalanceSheetPage;
+use Modules\ERP\Filament\Pages\IncomeStatementPage;
+use Modules\ERP\Filament\Pages\TrialBalancePage;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\JournalEntry;
@@ -49,6 +52,7 @@ function postBalancedEntry(Company $company, array $lines, ?CarbonImmutable $pos
     ]);
 
     $line_no = 1;
+
     foreach ($lines as $line) {
         JournalEntryLine::query()->create([
             'journal_entry_id' => $entry->getKey(),
@@ -94,6 +98,7 @@ it('trial balance debits equal credits', function (): void {
 
     $total_debit = 0.0;
     $total_credit = 0.0;
+
     foreach ($result as $row) {
         $total_debit += (float) $row['debit'];
         $total_credit += (float) $row['credit'];
@@ -386,4 +391,44 @@ it('exports income statement rows as csv', function (): void {
         'Total,"Net income",,2250.2500',
         '',
     ]));
+});
+
+it('exports balance sheet rows as csv', function (): void {
+    $report = [
+        'assets' => [
+            ['account_code' => '1000', 'account_name' => 'Cash, main bank', 'balance' => '16200.0000'],
+        ],
+        'liabilities' => [
+            ['account_code' => '2000', 'account_name' => 'Loans Payable', 'balance' => '5000.0000'],
+        ],
+        'equity' => [
+            ['account_code' => '3000', 'account_name' => 'Share Capital', 'balance' => '10000.0000'],
+        ],
+        'total_assets' => '16200.0000',
+        'total_liabilities' => '5000.0000',
+        'total_equity' => '10000.0000',
+        'net_income' => '1200.0000',
+        'is_balanced' => true,
+    ];
+
+    $csv = app(FinancialReportCsvExporter::class)->balanceSheet($report);
+
+    expect($csv)->toBe(implode("\n", [
+        'Section,"Account code","Account name",Balance',
+        'Assets,1000,"Cash, main bank",16200.0000',
+        'Liabilities,2000,"Loans Payable",5000.0000',
+        'Equity,3000,"Share Capital",10000.0000',
+        'Total,"Total assets",,16200.0000',
+        'Total,"Total liabilities",,5000.0000',
+        'Total,"Total equity",,10000.0000',
+        'Total,"Net income",,1200.0000',
+        'Total,Balanced,,Yes',
+        '',
+    ]));
+});
+
+it('financial report pages expose csv export actions', function (): void {
+    expect(method_exists(TrialBalancePage::class, 'exportCsv'))->toBeTrue()
+        ->and(method_exists(BalanceSheetPage::class, 'exportCsv'))->toBeTrue()
+        ->and(method_exists(IncomeStatementPage::class, 'exportCsv'))->toBeTrue();
 });

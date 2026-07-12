@@ -12,8 +12,10 @@ use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Modules\ERP\Services\Reporting\IncomeStatementService;
 use Override;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
 
 final class IncomeStatementPage extends Page
@@ -79,6 +81,23 @@ final class IncomeStatementPage extends Page
             (int) $state['company_id'],
             new DateTimeImmutable($state['from_date']),
             new DateTimeImmutable($state['to_date']),
+        );
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        if ($this->report_data === []) {
+            $this->generate();
+        }
+
+        $csv = resolve(FinancialReportCsvExporter::class)->incomeStatement($this->report_data);
+
+        return response()->streamDownload(
+            static function () use ($csv): void {
+                echo $csv;
+            },
+            'income-statement.csv',
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
         );
     }
 }

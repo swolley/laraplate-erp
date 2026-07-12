@@ -100,4 +100,76 @@ final readonly class FinancialReportCsvExporter
             rows: $rows,
         );
     }
+
+    /**
+     * @param  array{
+     *     assets: array<int, array{account_code: string, account_name: string, balance: string}>,
+     *     liabilities: array<int, array{account_code: string, account_name: string, balance: string}>,
+     *     equity: array<int, array{account_code: string, account_name: string, balance: string}>,
+     *     total_assets: string,
+     *     total_liabilities: string,
+     *     total_equity: string,
+     *     net_income: string,
+     *     is_balanced: bool,
+     * }  $report
+     */
+    public function balanceSheet(array $report): string
+    {
+        $rows = [];
+
+        foreach ($report['assets'] as $row) {
+            $rows[] = $this->statementRow('Assets', $row);
+        }
+
+        foreach ($report['liabilities'] as $row) {
+            $rows[] = $this->statementRow('Liabilities', $row);
+        }
+
+        foreach ($report['equity'] as $row) {
+            $rows[] = $this->statementRow('Equity', $row);
+        }
+
+        $rows[] = $this->totalRow('Total assets', $report['total_assets']);
+        $rows[] = $this->totalRow('Total liabilities', $report['total_liabilities']);
+        $rows[] = $this->totalRow('Total equity', $report['total_equity']);
+        $rows[] = $this->totalRow('Net income', $report['net_income']);
+        $rows[] = $this->totalRow('Balanced', $report['is_balanced'] ? 'Yes' : 'No');
+
+        return $this->csv_exporter->export(
+            columns: [
+                ['key' => 'section', 'label' => 'Section'],
+                ['key' => 'account_code', 'label' => 'Account code'],
+                ['key' => 'account_name', 'label' => 'Account name'],
+                ['key' => 'balance', 'label' => 'Balance'],
+            ],
+            rows: $rows,
+        );
+    }
+
+    /**
+     * @param  array{account_code: string, account_name: string, balance: string}  $row
+     * @return array{section: string, account_code: string, account_name: string, balance: string}
+     */
+    private function statementRow(string $section, array $row): array
+    {
+        return [
+            'section' => $section,
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'balance' => $row['balance'],
+        ];
+    }
+
+    /**
+     * @return array{section: string, account_code: string, account_name: string, balance: string}
+     */
+    private function totalRow(string $label, string $value): array
+    {
+        return [
+            'section' => 'Total',
+            'account_code' => $label,
+            'account_name' => '',
+            'balance' => $value,
+        ];
+    }
 }

@@ -13,7 +13,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Reporting\BalanceSheetService;
+use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Override;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
 
 final class BalanceSheetPage extends Page
@@ -74,6 +76,23 @@ final class BalanceSheetPage extends Page
         $this->report_data = $service->generate(
             (int) $state['company_id'],
             new DateTimeImmutable($state['as_of_date']),
+        );
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        if ($this->report_data === []) {
+            $this->generate();
+        }
+
+        $csv = resolve(FinancialReportCsvExporter::class)->balanceSheet($this->report_data);
+
+        return response()->streamDownload(
+            static function () use ($csv): void {
+                echo $csv;
+            },
+            'balance-sheet.csv',
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
         );
     }
 }
