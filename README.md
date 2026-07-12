@@ -287,12 +287,12 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
-| Spec 2 Phase 2C | Active | FatturaPA schema/readiness fields (`2C-05`) are present. Next: SDI mapping, XML/XSD validation, Aruba/provider integration, and extended permissions. |
+| Spec 2 Phase 2C | Active | FatturaPA schema/readiness fields (`2C-05`) and SDI/FatturaPA mapping (`2C-02`) are present. Next: XML/XSD validation, Aruba/provider integration, and extended permissions. |
 
 ### Known Limitations Before Phase 2C
 
 -   E-invoice is still a deterministic stub workflow: no valid FatturaPA XML, XSD validation, SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention yet.
--   FatturaPA / SDI readiness fields now exist on company, party, and invoice records, and sale e-invoice submit validates that mandatory data is present. Mapping those fields into the final payload is still pending.
+-   FatturaPA / SDI readiness fields now exist on company, party, and invoice records, sale e-invoice submit validates that mandatory data is present, and `FatturaPaAnagraphicMapper` maps those fields into a FatturaPA-shaped neutral payload. XML/XSD generation is still pending.
 -   Supplier payment execution exports SEPA SCT `pain.001` files only; direct bank submission, CBI, Ri.Ba, SDD, and proprietary Italian tracks are not implemented.
 -   Bank import supports CSV, CAMT.053, and a minimal MT940 subset; it is not full bank API sync and it does not auto-confirm matches without the reconciliation workflow.
 -   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
@@ -306,7 +306,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Roadmap
 
--   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Schema/readiness fields are done; next order is mapper, XML/XSD, provider, permissions.
+-   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Schema/readiness fields and mapper are done; next order is XML/XSD, provider, permissions.
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements
 
 ## Scripts
