@@ -6,11 +6,16 @@ namespace Modules\ERP\Filament\Pages;
 
 use BackedEnum;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
+use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\BankStatementLineStatus;
+use Modules\ERP\Casts\PaymentDirection;
+use Modules\ERP\Models\Account;
 use Modules\ERP\Models\BankStatementLine;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Services\Banking\BankReconciliationService;
@@ -57,6 +62,17 @@ final class BankReconciliationPage extends Page
                     ->label('Payment')
                     ->options(fn (): array => $this->paymentOptions())
                     ->searchable()
+                    ->live()
+                    ->required(),
+                TextInput::make('difference_amount')
+                    ->label('Difference')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn (): string => $this->currentDifferenceAmount()),
+                Select::make('expense_account_id')
+                    ->label('Difference account')
+                    ->options(fn (): array => $this->expenseAccountOptions())
+                    ->searchable()
                     ->required(),
             ]);
     }
@@ -90,6 +106,55 @@ final class BankReconciliationPage extends Page
             ->title('Bank statement line ignored')
             ->success()
             ->send();
+    }
+
+    public function matchWithDifference(): void
+    {
+        $state = $this->form->getState();
+        $line = BankStatementLine::query()->findOrFail((int) $state['bank_statement_line_id']);
+        $payment = Payment::query()->findOrFail((int) $state['payment_id']);
+        $expense_account_id = (int) $state['expense_account_id'];
+
+        app(BankReconciliationService::class)->matchPaymentWithDifference($line, $payment, $expense_account_id);
+
+        $this->form->fill();
+
+        Notification::make()
+            ->title('Matched with difference')
+            ->success()
+            ->send();
+    }
+
+    public function currentDifferenceAmount(): string
+    {
+        $line_id = (int) ($this->data['bank_statement_line_id'] ?? 0);
+        $payment_id = (int) ($this->data['payment_id'] ?? 0);
+
+        if ($line_id === 0 || $payment_id === 0) {
+            return '0.0000';
+        }
+
+        $line = BankStatementLine::query()->find($line_id);
+        $payment = Payment::query()->find($payment_id);
+
+        if ($line === null || $payment === null) {
+            return '0.0000';
+        }
+
+        $expected_sign = $payment->direction === PaymentDirection::Inbound ? 1 : -1;
+        $expected_line_amount = $expected_sign * (float) $payment->amount_doc;
+
+        return number_format(round((float) $line->amount_doc - $expected_line_amount, 4), 4, '.', '');
+    }
+
+    public function canMatchWithDifference(): bool
+    {
+        $difference = $this->currentDifferenceAmount();
+
+        return abs((float) $difference) > 0.00005
+            && (int) ($this->data['bank_statement_line_id'] ?? 0) > 0
+            && (int) ($this->data['payment_id'] ?? 0) > 0
+            && (int) ($this->data['expense_account_id'] ?? 0) > 0;
     }
 
     /**
@@ -168,6 +233,31 @@ final class BankReconciliationPage extends Page
                     $payment->currency_doc,
                     $payment->reference ?? 'Payment #' . $payment->getKey(),
                 ),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function expenseAccountOptions(): array
+    {
+        $line_id = (int) ($this->data['bank_statement_line_id'] ?? 0);
+        $company_id = null;
+
+        if ($line_id !== 0) {
+            $company_id = BankStatementLine::query()->whereKey($line_id)->value('company_id');
+        }
+
+        return Account::query()
+            ->when($company_id !== null, static fn (Builder $query): Builder => $query->where('company_id', $company_id))
+            ->where('kind', AccountKind::Expense->value)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->limit(100)
+            ->get()
+            ->mapWithKeys(static fn (Account $account): array => [
+                (int) $account->getKey() => sprintf('%s | %s', $account->code, $account->name),
             ])
             ->all();
     }

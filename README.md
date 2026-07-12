@@ -223,8 +223,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `BankAccount`, `BankStatement`, and `BankStatementLine` models
 -   CSV bank statement import
 -   Manual reconciliation service with ranked payment suggestions
--   Minimal Filament reconciliation workflow
--   Difference journal entries for fees, rounding, and write-offs remain a follow-up
+-   Match-with-difference service and Filament workflow for fees, rounding, and write-offs
+-   `BankDifferenceJournalService` posts balanced journals against `bank_cash` and the selected difference account
+-   `BankStatementLine.difference_journal_entry_id` keeps audit linkage to the accounting adjustment
 
 ### M6.2 — Returns Management
 
@@ -253,7 +254,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Filament edit/list actions call services; they do not implement business mutations inline.
 -   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
 -   Implemented Phase 2B items also include supplier payment runs with SEPA `pain.001` export.
--   Remaining Phase 2B items: bank difference journals, match-with-difference UI, CAMT/MT940 import, financial report export UI, and BI/operational dashboard polish.
+-   Implemented Phase 2B banking items also include bank difference journals and match-with-difference UI.
+-   Remaining Phase 2B items: CAMT/MT940 import, financial report export UI, and BI/operational dashboard polish.
 
 ### Supplier Payment Runs
 
@@ -277,16 +279,16 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
 | M4 Permissions & reporting | Implemented v1 | Domain permissions, invoice action auth, accounting/operational reports, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
 | M5.1 Payment execution | Implemented v1 | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, checksum metadata, and Filament resource are present. Direct bank submission and CBI/Ri.Ba/SDD remain backlog. |
-| M6.1 Bank reconciliation | Implemented v1 | CSV import, manual match, suggestions, and minimal UI are present; difference journal entries remain backlog. |
+| M6.1 Bank reconciliation | Implemented v1 + differences | CSV import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. CAMT/MT940 remains backlog. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 | Provider binding, deterministic stub submission workflow, and minimal invoice actions are present; full FatturaPA remains optional backlog. |
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
-| Spec 2 Phase 2B | In progress | 2B-01/02/03/06/07/08/09/13 are done; 2B-04/05/10/11/12 remain. |
+| Spec 2 Phase 2B | In progress | 2B-01/02/03/04/05/06/07/08/09/13 are done; 2B-10/11/12 remain. |
 
 ### Roadmap
 
--   2B-04/05/10: bank reconciliation difference journals, UI matching with differences, CAMT/MT940 import
+-   2B-10: CAMT/MT940 import
 -   2B-11/12: financial export UI and BI/operational dashboard polish
 -   Phase 2C: full FatturaPA XML/XSD/provider work remains optional backlog
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements

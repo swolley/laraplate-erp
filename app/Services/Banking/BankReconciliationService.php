@@ -11,10 +11,15 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
 use Modules\ERP\Models\BankStatementLine;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Payment;
 
 final class BankReconciliationService
 {
+    public function __construct(
+        private readonly BankDifferenceJournalService $bank_difference_journal_service,
+    ) {}
+
     public function matchPayment(BankStatementLine $line, Payment $payment): BankStatementLine
     {
         $this->assertCanMatch($line, $payment);
@@ -42,6 +47,13 @@ final class BankReconciliationService
     {
         return DB::transaction(function () use ($line): BankStatementLine {
             $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
+
+            if ($line->difference_journal_entry_id !== null) {
+                throw ValidationException::withMessages([
+                    'difference_journal_entry_id' => ['Bank statement lines matched with a difference cannot be unmatched without reversing the difference journal.'],
+                ]);
+            }
+
             $line->matched_payment_id = null;
             $line->status = BankStatementLineStatus::Imported;
             $line->save();
@@ -57,6 +69,61 @@ final class BankReconciliationService
             $line->matched_payment_id = null;
             $line->status = BankStatementLineStatus::Ignored;
             $line->save();
+
+            return $line;
+        });
+    }
+
+    public function matchPaymentWithDifference(
+        BankStatementLine $line,
+        Payment $payment,
+        int $expense_account_id,
+    ): BankStatementLine {
+        return DB::transaction(function () use ($line, $payment, $expense_account_id): BankStatementLine {
+            $line = BankStatementLine::query()
+                ->with('bank_statement')
+                ->lockForUpdate()
+                ->whereKey($line->id)
+                ->firstOrFail();
+            $payment = Payment::query()->lockForUpdate()->whereKey($payment->id)->firstOrFail();
+
+            $this->assertCanMatchContext($line, $payment);
+
+            $difference_amount_doc = $this->differenceAmount($line, $payment);
+
+            if (abs((float) $difference_amount_doc) <= 0.00005) {
+                throw ValidationException::withMessages([
+                    'amount_doc' => ['Use exact match when there is no bank reconciliation difference.'],
+                ]);
+            }
+
+            $company = Company::query()->withoutGlobalScopes()->findOrFail($line->company_id);
+            $bank_account_id = $line->bank_statement?->bank_account_id;
+
+            if ($bank_account_id === null) {
+                throw ValidationException::withMessages([
+                    'bank_statement_id' => ['The bank statement line is missing its bank account.'],
+                ]);
+            }
+
+            $difference_journal_entry = $this->bank_difference_journal_service->postDifference(
+                $company,
+                $line,
+                $payment,
+                $difference_amount_doc,
+                $expense_account_id,
+                (int) $bank_account_id,
+            );
+
+            $line->matched_payment_id = $this->paymentId($payment);
+            $line->difference_journal_entry_id = $this->journalEntryId($difference_journal_entry);
+            $line->status = BankStatementLineStatus::Matched;
+            $line->save();
+
+            if ($payment->bank_account_id === null) {
+                $payment->bank_account_id = $bank_account_id;
+                $payment->save();
+            }
 
             return $line;
         });
@@ -109,6 +176,19 @@ final class BankReconciliationService
 
     private function assertCanMatch(BankStatementLine $line, Payment $payment): void
     {
+        $this->assertCanMatchContext($line, $payment);
+
+        $difference_amount_doc = $this->differenceAmount($line, $payment);
+
+        if (abs((float) $difference_amount_doc) > 0.0001) {
+            throw ValidationException::withMessages([
+                'amount_doc' => ['The payment amount does not match the bank statement line.'],
+            ]);
+        }
+    }
+
+    private function assertCanMatchContext(BankStatementLine $line, Payment $payment): void
+    {
         $line->loadMissing('bank_statement');
 
         $statement_bank_account_id = $line->bank_statement?->bank_account_id;
@@ -134,13 +214,26 @@ final class BankReconciliationService
 
         $expected_sign = $payment->direction === PaymentDirection::Inbound ? 1 : -1;
         $line_amount = (float) $line->amount_doc;
-        $payment_amount = (float) $payment->amount_doc;
 
-        if (($line_amount <=> 0.0) !== $expected_sign || abs(abs($line_amount) - $payment_amount) > 0.0001) {
+        if (($line_amount <=> 0.0) !== $expected_sign) {
             throw ValidationException::withMessages([
                 'amount_doc' => ['The payment amount does not match the bank statement line.'],
             ]);
         }
+    }
+
+    /**
+     * Signed difference aligned with the bank statement direction.
+     *
+     * @return numeric-string
+     */
+    private function differenceAmount(BankStatementLine $line, Payment $payment): string
+    {
+        $expected_sign = $payment->direction === PaymentDirection::Inbound ? 1 : -1;
+        $line_amount = (float) $line->amount_doc;
+        $expected_line_amount = $expected_sign * (float) $payment->amount_doc;
+
+        return number_format(round($line_amount - $expected_line_amount, 4), 4, '.', '');
     }
 
     private function suggestionScore(BankStatementLine $line, Payment $payment): int
@@ -170,5 +263,10 @@ final class BankReconciliationService
     private function paymentId(Payment $payment): int
     {
         return is_int($payment->id) ? $payment->id : (int) $payment->id;
+    }
+
+    private function journalEntryId(\Modules\ERP\Models\JournalEntry $journal_entry): int
+    {
+        return is_int($journal_entry->id) ? $journal_entry->id : (int) $journal_entry->id;
     }
 }

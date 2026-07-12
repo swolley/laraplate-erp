@@ -7,6 +7,10 @@
                 Match
             </x-filament::button>
 
+            <x-filament::button type="button" color="warning" wire:click="matchWithDifference" :disabled="! $this->canMatchWithDifference()">
+                Match with difference
+            </x-filament::button>
+
             <x-filament::button type="button" color="gray" wire:click="ignoreSelected">
                 Ignore
             </x-filament::button>

@@ -16,6 +16,7 @@ use Override;
  * @property int $company_id
  * @property int $bank_statement_id
  * @property int|null $matched_payment_id
+ * @property int|null $difference_journal_entry_id
  * @property \Carbon\CarbonInterface|null $booked_at
  * @property \Carbon\CarbonInterface|null $value_at
  * @property string|null $reference
@@ -29,6 +30,8 @@ use Override;
  * @property array<string, mixed>|null $raw_payload
  * @property-read BankStatement|null $bank_statement
  * @property-read Payment|null $matched_payment
+ * @property-read JournalEntry|null $difference_journal_entry
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatementLine
  */
@@ -47,6 +50,7 @@ final class BankStatementLine extends Model
         'company_id',
         'bank_statement_id',
         'matched_payment_id',
+        'difference_journal_entry_id',
         'booked_at',
         'value_at',
         'reference',
@@ -77,9 +81,16 @@ final class BankStatementLine extends Model
     }
 
     /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
+    public function difference_journal_entry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'difference_journal_entry_id');
+    }
+
+    /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
