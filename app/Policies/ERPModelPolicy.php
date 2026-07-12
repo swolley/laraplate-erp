@@ -9,6 +9,7 @@ use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\SalesOrderStatus;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
@@ -17,6 +18,7 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\TaxCode;
 
 final class ERPModelPolicy
 {
@@ -139,6 +141,11 @@ final class ERPModelPolicy
         return $this->allowsDomainAction($user, $record, 'reset', static fn (Model $record): bool => $record instanceof DocumentSequence);
     }
 
+    public function reserve(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'reserve', static fn (Model $record): bool => $record instanceof DocumentSequence);
+    }
+
     public function forcePost(User $user, Model $record): bool
     {
         return $this->allowsDomainAction($user, $record, 'force_post', static function (Model $record): bool {
@@ -159,6 +166,16 @@ final class ERPModelPolicy
     public function refreshEInvoice(User $user, Model $record): bool
     {
         return $this->allows($user, $record, 'refreshEInvoice');
+    }
+
+    public function supersede(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'supersede', static fn (Model $record): bool => $record instanceof TaxCode);
+    }
+
+    public function switchContext(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'switch_context', static fn (Model $record): bool => $record instanceof Company);
     }
 
     private function allows(User $user, Model $record, string $operation): bool

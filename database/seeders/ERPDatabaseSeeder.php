@@ -26,6 +26,7 @@ use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\ERP\Services\Company\ErpCompanySettings;
@@ -263,6 +264,7 @@ final class ERPDatabaseSeeder extends Seeder
 
             if ($model === DocumentSequence::class) {
                 $permissions[] = "{$connection}." . $table . '.reset';
+                $permissions[] = "{$connection}." . $table . '.reserve';
             }
         }
 
@@ -270,6 +272,16 @@ final class ERPDatabaseSeeder extends Seeder
         $fy_connection = $fiscal_year->getConnectionName() ?? 'default';
         $fy_table = $fiscal_year->getTable();
         $permissions[] = "{$fy_connection}.{$fy_table}.close";
+
+        $company = new ReflectionClass(Company::class)->newInstanceWithoutConstructor();
+        $company_connection = $company->getConnectionName() ?? 'default';
+        $company_table = $company->getTable();
+        $permissions[] = "{$company_connection}.{$company_table}.switch_context";
+
+        $tax_code = new ReflectionClass(TaxCode::class)->newInstanceWithoutConstructor();
+        $tax_code_connection = $tax_code->getConnectionName() ?? 'default';
+        $tax_code_table = $tax_code->getTable();
+        $permissions[] = "{$tax_code_connection}.{$tax_code_table}.supersede";
 
         return $permissions;
     }

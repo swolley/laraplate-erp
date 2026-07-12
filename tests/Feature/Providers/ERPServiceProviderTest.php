@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Gate;
 use Modules\ERP\Contracts\EInvoiceProvider;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Policies\ERPModelPolicy;
 use Modules\ERP\Providers\ERPServiceProvider;
 use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
@@ -37,5 +41,7 @@ it('binds the Aruba e-invoice provider for the aruba driver', function (): void 
 it('registers erp model policies on boot', function (): void {
     $provider = new ERPServiceProvider(app());
 
-    expect(fn () => $provider->boot())->not->toThrow(Throwable::class);
+    expect(fn () => $provider->boot())->not->toThrow(Throwable::class)
+        ->and(Gate::getPolicyFor(Company::class))->toBeInstanceOf(ERPModelPolicy::class)
+        ->and(Gate::getPolicyFor(TaxCode::class))->toBeInstanceOf(ERPModelPolicy::class);
 });

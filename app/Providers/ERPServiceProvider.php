@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
@@ -16,6 +17,7 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Policies\ERPModelPolicy;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
@@ -126,6 +128,7 @@ class ERPServiceProvider extends ModuleServiceProvider
     private function policyModels(): array
     {
         return [
+            Company::class,
             DeliveryNote::class,
             DocumentSequence::class,
             FiscalPeriod::class,
@@ -134,6 +137,7 @@ class ERPServiceProvider extends ModuleServiceProvider
             JournalEntry::class,
             Quotation::class,
             SalesOrder::class,
+            TaxCode::class,
         ];
     }
 }

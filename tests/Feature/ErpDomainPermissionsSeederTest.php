@@ -41,3 +41,11 @@ it('does not seed force_post on non-invoice models', function (): void {
     expect(Permission::query()->where('name', 'default.erp_sales_orders.force_post')->exists())->toBeFalse()
         ->and(Permission::query()->where('name', 'default.erp_delivery_notes.force_post')->exists())->toBeFalse();
 });
+
+it('seeds extended admin domain permissions for guarded ERP operations', function (): void {
+    $this->seed(ERPDatabaseSeeder::class);
+
+    expect(Permission::query()->where('name', 'default.erp_tax_codes.supersede')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_companies.switch_context')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'default.erp_document_sequences.reserve')->exists())->toBeTrue();
+});
