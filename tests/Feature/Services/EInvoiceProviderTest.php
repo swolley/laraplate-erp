@@ -14,6 +14,7 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Party;
+use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
@@ -114,6 +115,12 @@ it('resolves the FatturaPA provider when configured', function (): void {
     config()->set('erp.einvoice.driver', 'fatturapa');
 
     expect(app(EInvoiceProvider::class))->toBeInstanceOf(FatturaPaEInvoiceProvider::class);
+});
+
+it('resolves the Aruba provider when configured', function (): void {
+    config()->set('erp.einvoice.driver', 'aruba');
+
+    expect(app(EInvoiceProvider::class))->toBeInstanceOf(ArubaEInvoiceProvider::class);
 });
 
 it('prepares a neutral payload without requiring fatturapa fields', function (): void {

@@ -590,12 +590,12 @@ La fase 2C serve a portare questo flusso verso l'uso reale italiano:
 - preparare il mapping corretto tra anagrafiche ERP e tracciato SDI: il payload dati strutturato e stato aggiunto
 - generare XML FatturaPA FPR12: il builder locale e stato aggiunto
 - validare l'XML con gli schemi XSD: lo schema ufficiale FPR12 v1.2.3 e vendorizzato nel modulo
-- collegare un provider reale, partendo da un adapter tipo Aruba
+- collegare un provider reale, partendo da un adapter tipo Aruba: l'adapter configurabile e stato aggiunto, ma va verificato contro l'ambiente/API Aruba contrattuale prima del go-live
 - proteggere le azioni fiscali piu delicate con permessi dedicati
 
 ### Ancora aperto
 
-- FatturaPA / SDI completa: oggi ci sono XML FPR12 e validazione XSD locale, ma non ancora invio reale SDI/Aruba, polling avanzato o conservazione.
+- FatturaPA / SDI completa: oggi ci sono XML FPR12, validazione XSD locale e adapter Aruba configurabile, ma non ancora certificazione contro l'ambiente Aruba reale, polling avanzato o conservazione.
 - Dati anagrafici FatturaPA: i campi base sono presenti, il submit controlla che siano compilati e il payload dati strutturato alimenta l'XML; casi fiscali speciali richiedono ancora mapping dedicato.
 - Pagamenti fornitori: oggi si genera il file SEPA pain.001, ma non si invia direttamente alla banca; CBI, Ri.Ba e SDD non sono pronti.
 - Estratti conto: import CSV, CAMT.053 e MT940 minimale; non c'e sincronizzazione automatica con la banca.

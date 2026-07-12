@@ -63,9 +63,18 @@ When the module is active, configuration is published under the **`erp`** key (f
 ```php
 // Example
 config('erp.name'); // "ERP"
+config('erp.einvoice.driver'); // "stub", "fatturapa", or "aruba"
 ```
 
-Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpCompanySettings` to read dotted keys (e.g. `erp.three_way_match.price_tolerance_percent`). The `config/erp.php` file only exposes module metadata.
+E-invoice provider configuration is read through Laravel config/env:
+
+-   `ERP_EINVOICE_DRIVER`: `stub` by default; supported values are `stub`, `fatturapa`, `aruba`
+-   `ERP_EINVOICE_ARUBA_BASE_URL`: base URL for the contracted Aruba/sandbox API
+-   `ERP_EINVOICE_ARUBA_SUBMIT_PATH`: submit endpoint path, default `/einvoices`
+-   `ERP_EINVOICE_ARUBA_STATUS_PATH`: status endpoint template, default `/einvoices/{external_id}`
+-   `ERP_EINVOICE_ARUBA_TOKEN`: bearer token used by the Aruba adapter
+
+Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpCompanySettings` to read dotted keys (e.g. `erp.three_way_match.price_tolerance_percent`).
 
 ## Features
 
@@ -217,8 +226,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Stub provider binding and deterministic local submission workflow
 -   Filament actions for posted sale invoice submit / status refresh
 -   Phase 2C FatturaPA readiness: fiscal schema fields on company/party/invoice, `FatturaPaAnagraphicMapper`, `FatturaPaXmlBuilder`, vendored official FPR12 v1.2.3 XSD resources, and local `fatturapa` driver validation
--   Current runtime is still local by default: the `stub` driver remains default; `fatturapa` generates and validates XML but does not send to SDI
--   Remaining production work: provider integration (for example Aruba), provider credentials/configuration, advanced SDI statuses, legal retention, and extended admin permissions
+-   `aruba` driver: configurable HTTP adapter that sends validated FatturaPA XML to configured endpoints, maps submit ids/status responses, and keeps credentials in Laravel config/env only
+-   Current runtime is still local by default: the `stub` driver remains default; `fatturapa` generates and validates XML without delivery
+-   Remaining production work: verify the adapter against the contracted Aruba API/environment, advanced SDI statuses/callbacks, legal retention, and extended admin permissions
 
 ### M6.1 — Bank Reconciliation
 
@@ -288,13 +298,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
-| Spec 2 Phase 2C | Active | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), and FPR12 XML/XSD validation (`2C-01`) are present. Next: Aruba/provider integration and extended permissions. |
+| Spec 2 Phase 2C | Active | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), and configurable Aruba adapter (`2C-03`) are present. Next: extended permissions. |
 
 ### Known Limitations During Phase 2C
 
 -   E-invoice defaults to the deterministic `stub` workflow. The optional `fatturapa` driver generates and XSD-validates ordinary FPR12 XML locally, but it does not deliver to SDI.
+-   The optional `aruba` driver is an HTTP adapter with configurable endpoints/token and tested request/status mapping. It still needs verification against the real contracted Aruba API before production use.
 -   FatturaPA / SDI readiness fields now exist on company, party, and invoice records, sale e-invoice submit validates mandatory data, `FatturaPaAnagraphicMapper` maps those fields into a FatturaPA-shaped neutral payload, and `FatturaPaXmlBuilder` generates XML from it. Edge-case fiscal mappings still need dedicated fields and rules.
--   Aruba production submission, advanced SDI statuses, provider callbacks/polling, and legal retention are not implemented yet.
+-   Advanced SDI statuses, provider callbacks/polling beyond the basic status endpoint, and legal retention are not implemented yet.
 -   Supplier payment execution exports SEPA SCT `pain.001` files only; direct bank submission, CBI, Ri.Ba, SDD, and proprietary Italian tracks are not implemented.
 -   Bank import supports CSV, CAMT.053, and a minimal MT940 subset; it is not full bank API sync and it does not auto-confirm matches without the reconciliation workflow.
 -   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
@@ -308,7 +319,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Roadmap
 
--   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Schema/readiness fields, mapper, and FPR12 XML/XSD validation are done; next order is provider integration and permissions.
+-   Phase 2C: FatturaPA / SDI production-readiness work is the current implementation slice. Schema/readiness fields, mapper, FPR12 XML/XSD validation, and configurable Aruba adapter are done; next order is extended permissions.
 -   Phase 3+: domain HTTP actions, API exposure governance, reverse processed returns, and later accounting architecture improvements
 
 ## Scripts
@@ -385,7 +396,7 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] M4 — Policies, permissions, and reporting pages
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
 - [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
-- [ ] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, and XML/XSD validation done; provider integration and extended permissions remain
+- [ ] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, and configurable Aruba adapter done; extended permissions remain
 - [ ] API resources and form requests
 - [ ] Comprehensive accounting test plan (golden master)
 - [x] Export CSV for financial reports

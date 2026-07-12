@@ -31,6 +31,7 @@ use Modules\ERP\Services\Banking\BankStatementCsvImporter;
 use Modules\ERP\Services\Banking\BankStatementImportService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Currency\NoopCurrencyConverter;
+use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
@@ -82,6 +83,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(CurrencyConverter::class, NoopCurrencyConverter::class);
         $this->app->bind(EInvoiceProvider::class, function (\Illuminate\Contracts\Foundation\Application $app): EInvoiceProvider {
             return match (config('erp.einvoice.driver', 'stub')) {
+                'aruba' => $app->make(ArubaEInvoiceProvider::class),
                 'fatturapa' => $app->make(FatturaPaEInvoiceProvider::class),
                 'stub' => $app->make(StubEInvoiceProvider::class),
                 default => $app->make(StubEInvoiceProvider::class),

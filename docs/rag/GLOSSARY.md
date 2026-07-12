@@ -144,7 +144,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **Regime Fiscale**           | Italian taxpayer regime code required in FatturaPA sender data.                                                                                                  |
 | **FatturaPaAnagraphicMapper** | Phase 2C service mapping `Company`, `Party`, `Invoice`, and invoice lines into FatturaPA-shaped neutral payload data.                                           |
 | **FatturaPaXmlBuilder**      | Phase 2C service building ordinary FPR12 FatturaPA XML from the mapped payload and validating it with vendored official XSD resources.                           |
-| **ArubaEInvoiceProvider**    | Planned Phase 2C provider adapter for Aruba-style submission/status APIs, configured through Laravel config and tested with HTTP fakes.                          |
+| **ArubaEInvoiceProvider**    | Phase 2C configurable HTTP adapter for Aruba-style submission/status APIs. It sends validated FatturaPA XML to configured endpoints and keeps credentials in Laravel config/env. |
 
 
 ## Purchasing (M3.6)
