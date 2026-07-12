@@ -72,6 +72,9 @@ final readonly class StubEInvoiceProvider implements EInvoiceProvider
     }
 
     #[Override]
+    public function validateXml(string $xml): void {}
+
+    #[Override]
     public function remoteStatus(string $externalId): EInvoiceRemoteStatus
     {
         if (str_starts_with($externalId, 'STUB-')) {

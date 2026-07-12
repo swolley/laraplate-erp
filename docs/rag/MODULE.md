@@ -633,12 +633,15 @@ flowchart LR
 
 ### E-Invoice Interface
 
-- `EInvoiceProvider` contract: `prepare()`, `submit()`, `remoteStatus()`.
+- `EInvoiceProvider` contract: `prepare()`, `submit()`, `validateXml()`, `remoteStatus()`.
 - `EInvoiceSubmission` model tracks submission lifecycle.
 - `StubEInvoiceProvider` is bound by default and produces deterministic local responses.
+- `FatturaPaXmlBuilder` builds ordinary FPR12 XML from ERP sale invoice data through `FatturaPaAnagraphicMapper`.
+- Official FPR12 v1.2.3 XSD resources are vendored under `resources/xsd/fatturapa/` with local XMLDSIG dependency for offline validation.
+- `FatturaPaEInvoiceProvider` is selected with `erp.einvoice.driver = fatturapa`; it generates and validates XML locally but does not contact SDI.
 - `EInvoiceSubmissionService` persists submit attempts and refreshes remote status.
 - Invoice edit actions can submit posted sale invoices and refresh submitted rows.
-- Current runtime is still local/stub only.
+- Current runtime is still local by default; real provider delivery is not implemented yet.
 
 #### Phase 2C — FatturaPA / SDI production readiness
 
@@ -646,8 +649,8 @@ Phase 2C is the active e-invoice implementation slice. It extends the existing n
 
 1. **Done:** Add the FatturaPA / SDI fiscal fields needed on company, party, and invoice records, and block sale e-invoice submit when mandatory readiness data is missing.
 2. **Done:** Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
-3. **Next:** Build FatturaPA XML and validate it through vendored XSD resources.
-4. Add a production-oriented provider adapter, starting with Aruba behind Laravel config and HTTP fakes in tests.
+3. **Done:** Build FatturaPA ordinary FPR12 XML and validate it through vendored official XSD resources.
+4. **Next:** Add a production-oriented provider adapter, starting with Aruba behind Laravel config and HTTP fakes in tests.
 5. Gate tax-code, company-switch, sequence, and e-invoice admin actions through explicit permissions.
 
 ### Lock & Safety Mechanisms
@@ -708,7 +711,7 @@ Trial Balance, Balance Sheet, Income Statement
 | Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
 | Policies and domain actions | Implemented Phase 2A + 2B | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset. |
 | Banking | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, suggestions, manual reconciliation, match-with-difference UI, and accounting journals for bank fees/rounding/write-offs. Outbound supplier payment-file export is handled by PaymentRun. |
-| E-invoice | Stub implemented; Phase 2C active | Provider contract, stub provider, submission persistence, submit/refresh actions. Phase 2C now covers FatturaPA / SDI schema data, mapping, XML/XSD validation, provider integration, and extended permissions. |
+| E-invoice | Stub implemented; FatturaPA local XML active | Provider contract, stub provider, submission persistence, submit/refresh actions, FatturaPA / SDI schema data, mapping, and FPR12 XML/XSD validation. Provider integration and extended permissions remain Phase 2C follow-up. |
 | Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
 
 ## Known gaps, limitations, and correction notes
@@ -717,8 +720,8 @@ These items are intentional current-state truth for RAG retrieval. Do not answer
 
 | Area | Current truth | Do not assume |
 | ---- | ------------- | ------------- |
-| FatturaPA / SDI | The neutral workflow, stub provider, readiness fields, submit-time readiness validation, and FatturaPA-shaped mapper exist. XML/XSD, real provider, and SDI status handling are still pending. | Do not claim valid FatturaPA XML, official XSD validation, real SDI delivery, Aruba production submission, advanced SDI statuses, or legal retention. |
-| Fiscal anagraphic data | Company, party, and invoice records now store the minimum FatturaPA/SDI readiness fields. `EInvoiceSubmissionService` rejects sale submit when mandatory readiness data is missing. `FatturaPaAnagraphicMapper` maps those fields into a neutral payload. | Do not claim those fields are already legal XML; that is `2C-01` work. |
+| FatturaPA / SDI | The neutral workflow, stub provider, readiness fields, submit-time readiness validation, FatturaPA-shaped mapper, FPR12 XML builder, vendored official XSD, and local `fatturapa` driver validation exist. | Do not claim real SDI delivery, Aruba production submission, advanced SDI statuses, legal retention, or complete coverage of every FatturaPA/SDI business rule. |
+| Fiscal anagraphic data | Company, party, and invoice records now store the minimum FatturaPA/SDI readiness fields. `EInvoiceSubmissionService` rejects sale submit when mandatory readiness data is missing. `FatturaPaAnagraphicMapper` maps those fields into a neutral payload used by the XML builder. | Do not claim every Italian fiscal edge case is mapped; unsupported details still require future fields/mapping. |
 | Payment runs | ERP exports SEPA SCT `pain.001` files with checksum/audit metadata. | Do not claim direct bank API submission, CBI, Ri.Ba, SDD, or proprietary Italian bank tracks. |
 | Bank statement import | CSV, CAMT.053, and a minimal MT940 transaction subset are supported. | Do not claim full MT940 coverage, bank API sync, or automatic reconciliation without operator confirmation. |
 | Domain HTTP/API | Filament actions call services, but generic internal domain-action routes and opt-in external API governance are Phase 3 work. | Do not expose domain mutations through ad hoc routes before the Phase 3 Core exposure model exists. |
@@ -760,9 +763,9 @@ These items are intentional current-state truth for RAG retrieval. Do not answer
 - **How do customer and supplier returns work?**
 → Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual by default, or automatic during completion when `erp.returns.auto_create_notes_on_complete` is true. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
 - **How does e-invoice submission work?**
-→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`.
+→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. With `erp.einvoice.driver = fatturapa`, the provider builds and XSD-validates FPR12 XML before persisting the local submission. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`.
 - **What is Phase 2C adding to e-invoice?**
-→ Phase 2C turns the current stub workflow into the Italian production path. SDI/FatturaPA fields and `FatturaPaAnagraphicMapper` are implemented; XML builder with XSD validation, provider adapter, and permissions for high-risk fiscal actions remain next.
+→ Phase 2C turns the current stub workflow into the Italian production path. SDI/FatturaPA fields, `FatturaPaAnagraphicMapper`, FPR12 XML building, and XSD validation are implemented; provider adapter and permissions for high-risk fiscal actions remain next.
 - **How do payment schedules work?**
 → At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
 - **Where is VAT register logic?**

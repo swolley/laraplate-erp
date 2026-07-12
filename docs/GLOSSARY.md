@@ -111,16 +111,17 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 | Term | Meaning |
 |------|---------|
-| **EInvoiceProvider** | Neutral provider contract used by the ERP module for prepare, submit, and remote status operations. |
+| **EInvoiceProvider** | Neutral provider contract used by the ERP module for prepare, submit, XML validation, and remote status operations. |
 | **EInvoiceSubmission** | Submission audit row linked to an invoice. Tracks provider code, external id, status, timestamps, and payload metadata. |
 | **StubEInvoiceProvider** | Current default local provider. It is deterministic and test-friendly; it does not contact SDI or generate valid FatturaPA XML. |
-| **FatturaPA** | Italian electronic invoice XML format. Phase 2C has schema fields and mapper; XML builder and XSD validation are next for this format. |
+| **FatturaPaEInvoiceProvider** | Local FatturaPA provider selected with `erp.einvoice.driver = fatturapa`; it builds and XSD-validates XML but does not send to SDI. |
+| **FatturaPA** | Italian electronic invoice XML format. Phase 2C has schema fields, mapper, ordinary FPR12 XML builder, and XSD validation for this format. |
 | **SDI** | Sistema di Interscambio, the Italian interchange system for electronic invoices. ERP stores the data required for provider submission; direct SDI behavior is provider-specific. |
 | **Codice Destinatario** | Recipient routing code used by SDI. It belongs to the party/invoice fiscal data collected by Phase 2C. |
 | **PEC** | Certified email address used as an alternate SDI delivery channel. It is part of the FatturaPA/SDI anagraphic data. |
 | **Regime Fiscale** | Italian taxpayer regime code required in FatturaPA sender data. |
 | **FatturaPaAnagraphicMapper** | Phase 2C service mapping `Company`, `Party`, `Invoice`, and invoice lines into FatturaPA-shaped neutral payload data. |
-| **FatturaPaXmlBuilder** | Planned Phase 2C service building FatturaPA XML from the mapped payload and validating it with vendored XSD resources. |
+| **FatturaPaXmlBuilder** | Phase 2C service building ordinary FPR12 FatturaPA XML from the mapped payload and validating it with vendored official XSD resources. |
 | **ArubaEInvoiceProvider** | Planned Phase 2C provider adapter for Aruba-style submission/status APIs, configured through Laravel config and tested with HTTP fakes. |
 
 ## Purchasing (M3.6)

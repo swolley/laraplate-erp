@@ -32,6 +32,7 @@ use Modules\ERP\Services\Banking\BankStatementImportService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Currency\NoopCurrencyConverter;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
+use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
 use Modules\ERP\Services\Inventory\DeliveryNoteCogsJournalService;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
@@ -81,6 +82,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(CurrencyConverter::class, NoopCurrencyConverter::class);
         $this->app->bind(EInvoiceProvider::class, function (\Illuminate\Contracts\Foundation\Application $app): EInvoiceProvider {
             return match (config('erp.einvoice.driver', 'stub')) {
+                'fatturapa' => $app->make(FatturaPaEInvoiceProvider::class),
                 'stub' => $app->make(StubEInvoiceProvider::class),
                 default => $app->make(StubEInvoiceProvider::class),
             };

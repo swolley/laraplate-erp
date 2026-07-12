@@ -15,6 +15,7 @@ use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
+use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
 
 uses(RefreshDatabase::class);
@@ -74,8 +75,7 @@ function createEInvoiceInvoice(
     InvoiceDirection $direction = InvoiceDirection::Sale,
     bool $posted = true,
     bool $fatturapa_ready = true,
-): Invoice
-{
+): Invoice {
     $party = createEInvoiceParty($company, $fatturapa_ready);
     $data = [
         'company_id' => $company->id,
@@ -108,6 +108,12 @@ function createEInvoiceInvoice(
 
 it('resolves the stub e-invoice provider by default', function (): void {
     expect(app(EInvoiceProvider::class))->toBeInstanceOf(StubEInvoiceProvider::class);
+});
+
+it('resolves the FatturaPA provider when configured', function (): void {
+    config()->set('erp.einvoice.driver', 'fatturapa');
+
+    expect(app(EInvoiceProvider::class))->toBeInstanceOf(FatturaPaEInvoiceProvider::class);
 });
 
 it('prepares a neutral payload without requiring fatturapa fields', function (): void {
@@ -166,6 +172,22 @@ it('persists an e-invoice submission for a posted sale invoice', function (): vo
         ->and($submission->provider_code)->toBe('stub')
         ->and($submission->external_id)->toBe('STUB-' . $invoice->id)
         ->and($submission->status)->toBe(EInvoiceSubmissionStatus::Submitted);
+});
+
+it('submits a schema-valid FatturaPA XML payload when the driver is fatturapa', function (): void {
+    config()->set('erp.einvoice.driver', 'fatturapa');
+    app()->forgetInstance(EInvoiceSubmissionService::class);
+
+    $company = createEInvoiceCompany('einvoice-fatturapa');
+    $invoice = createEInvoiceInvoice($company);
+
+    $submission = app(EInvoiceSubmissionService::class)->submit($invoice);
+
+    expect($submission->provider_code)->toBe('fatturapa')
+        ->and($submission->external_id)->toBe('FATTURAPA-' . $invoice->id)
+        ->and($submission->response_payload['raw']['provider'])->toBe('fatturapa')
+        ->and($submission->response_payload['raw']['xml'])->toContain('FatturaElettronica')
+        ->and($submission->response_payload['raw']['schema_validated'])->toBeTrue();
 });
 
 it('rejects unposted or purchase invoices', function (): void {

@@ -577,25 +577,26 @@ Un ERP non e solo "fare documenti": e garantire che tutto resti coerente nel tem
   - fornitore: prezzo da riga fattura acquisto
 - permessi e azioni dominio principali: post, unpost, force post, unlock quotation, reset document sequence
 - e-invoice stub con invio/refresh locale deterministico
+- FatturaPA locale: campi fiscali, mapping anagrafico, generazione XML FPR12 e validazione XSD
 - riconciliazione bancaria v1: import CSV/CAMT.053/MT940 minimale, suggerimenti, match manuale, match con differenze e scritture contabili per commissioni/arrotondamenti
 
 ### Prossima fase: FatturaPA / SDI
 
-Oggi il modulo ERP ha gia il flusso base per tracciare un invio e-invoice, ma l'invio e ancora locale/stub: serve per testare il workflow, non per mandare davvero una fattura al Sistema di Interscambio.
+Oggi il modulo ERP ha gia il flusso base per tracciare un invio e-invoice. Il driver predefinito e ancora `stub`, quindi serve per testare il workflow. Se si imposta il driver `fatturapa`, il modulo genera XML FPR12 e lo valida con gli XSD locali, ma non lo manda ancora davvero al Sistema di Interscambio.
 
 La fase 2C serve a portare questo flusso verso l'uso reale italiano:
 
 - raccogliere sui dati azienda, cliente e fattura i campi fiscali necessari per FatturaPA: questa base dati e stata aggiunta
 - preparare il mapping corretto tra anagrafiche ERP e tracciato SDI: il payload dati strutturato e stato aggiunto
-- generare XML FatturaPA
-- validare l'XML con gli schemi XSD
+- generare XML FatturaPA FPR12: il builder locale e stato aggiunto
+- validare l'XML con gli schemi XSD: lo schema ufficiale FPR12 v1.2.3 e vendorizzato nel modulo
 - collegare un provider reale, partendo da un adapter tipo Aruba
 - proteggere le azioni fiscali piu delicate con permessi dedicati
 
 ### Ancora aperto
 
-- FatturaPA / SDI completa: oggi c'e lo stub, non ancora XML valido, XSD, invio reale SDI/Aruba o conservazione.
-- Dati anagrafici FatturaPA: i campi base sono presenti, il submit controlla che siano compilati e il payload dati strutturato esiste; manca ancora l'XML ufficiale.
+- FatturaPA / SDI completa: oggi ci sono XML FPR12 e validazione XSD locale, ma non ancora invio reale SDI/Aruba, polling avanzato o conservazione.
+- Dati anagrafici FatturaPA: i campi base sono presenti, il submit controlla che siano compilati e il payload dati strutturato alimenta l'XML; casi fiscali speciali richiedono ancora mapping dedicato.
 - Pagamenti fornitori: oggi si genera il file SEPA pain.001, ma non si invia direttamente alla banca; CBI, Ri.Ba e SDD non sono pronti.
 - Estratti conto: import CSV, CAMT.053 e MT940 minimale; non c'e sincronizzazione automatica con la banca.
 - API esterne e azioni dominio HTTP: le azioni esistono in Filament, ma l'esposizione API governata e una fase successiva.

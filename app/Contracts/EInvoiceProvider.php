@@ -30,6 +30,11 @@ interface EInvoiceProvider
     public function submit(EInvoicePayload $payload): EInvoiceSubmissionResult;
 
     /**
+     * Validate the provider payload before submission. Providers without a structural validator may no-op.
+     */
+    public function validateXml(string $xml): void;
+
+    /**
      * Poll or resolve remote status for a previously returned {@see EInvoiceSubmissionResult::$externalId}.
      */
     public function remoteStatus(string $externalId): EInvoiceRemoteStatus;
