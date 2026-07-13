@@ -110,6 +110,50 @@ it('consumes fifo layers oldest first and sets movement unit cost', function ():
         ->and((string) $layers[1]->qty_remaining)->toBe('8.0000');
 });
 
+it('consumes only required fifo layers while preserving costing', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'inv-fifo-many',
+        'name' => 'Inv Fifo Many',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'FIFO Hub',
+        'code' => 'FIFO-HUB',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Layered Item',
+        'sku' => 'LAYER-1',
+        'uom' => 'pcs',
+        'costing_method' => 'fifo',
+    ]);
+
+    $service = app(StockMovementService::class);
+
+    for ($i = 1; $i <= 30; $i++) {
+        $service->recordInbound($company->id, $item->id, $warehouse->id, 1, (string) $i);
+    }
+
+    $out = $service->recordOutbound($company->id, $item->id, $warehouse->id, 3);
+
+    assert_decimal_close('2.0000', (string) $out->unit_cost);
+
+    $remaining = StockCostLayer::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->orderBy('id')
+        ->pluck('qty_remaining')
+        ->map(static fn (mixed $value): string => (string) $value)
+        ->all();
+
+    expect(array_slice($remaining, 0, 4))->toBe(['0.0000', '0.0000', '0.0000', '1.0000']);
+});
+
 it('preserves fractional stock quantities', function (): void {
     $company = Company::query()->create([
         'slug' => 'inv-decimal',

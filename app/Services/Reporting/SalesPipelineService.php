@@ -6,6 +6,7 @@ namespace Modules\ERP\Services\Reporting;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Enumerable;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Models\Opportunity;
 
@@ -91,19 +92,21 @@ final class SalesPipelineService
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Opportunity>
+     * @return Enumerable<int, Opportunity>
      */
-    private function loadOpportunities(int $company_id): \Illuminate\Database\Eloquent\Collection
+    protected function loadOpportunities(int $company_id): Enumerable
     {
         return Opportunity::query()
             ->where('company_id', $company_id)
-            ->get([
+            ->select([
                 'status',
                 'expected_value_doc',
                 'expected_value_local',
                 'won_at',
                 'lost_at',
-            ]);
+            ])
+            ->orderBy('id')
+            ->lazy(500);
     }
 
     /**

@@ -246,20 +246,12 @@ final class StockMovementService
         int $warehouse_id,
         string $quantity_out,
     ): string {
-        $layers = StockCostLayer::query()
+        $available = (string) StockCostLayer::query()
             ->where('company_id', $company_id)
             ->where('item_id', $item_id)
             ->where('warehouse_id', $warehouse_id)
             ->where('qty_remaining', '>', 0)
-            ->orderBy('id')
-            ->lockForUpdate()
-            ->get();
-
-        $available = '0.0000';
-
-        foreach ($layers as $layer) {
-            $available = $this->addDecimal($available, $layer->qty_remaining);
-        }
+            ->sum('qty_remaining');
 
         if ((float) $available < (float) $quantity_out) {
             throw ValidationException::withMessages([
@@ -269,6 +261,15 @@ final class StockMovementService
 
         $remaining_to_take = $quantity_out;
         $total_cost = '0.0000';
+
+        $layers = StockCostLayer::query()
+            ->where('company_id', $company_id)
+            ->where('item_id', $item_id)
+            ->where('warehouse_id', $warehouse_id)
+            ->where('qty_remaining', '>', 0)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->lazy(100);
 
         foreach ($layers as $layer) {
             if ((float) $remaining_to_take === 0.0) {
@@ -297,29 +298,16 @@ final class StockMovementService
 
     private function syncFifoDisplayAverage(StockLevel $stock_level): void
     {
-        $layers = StockCostLayer::query()
+        $aggregate = StockCostLayer::query()
             ->where('company_id', $stock_level->company_id)
             ->where('item_id', $stock_level->item_id)
             ->where('warehouse_id', $stock_level->warehouse_id)
             ->where('qty_remaining', '>', 0)
-            ->get();
+            ->selectRaw('SUM(qty_remaining) as qty_sum, SUM(qty_remaining * unit_cost) as value_sum')
+            ->first();
 
-        if ($layers->isEmpty()) {
-            $stock_level->weighted_avg_cost = '0.0000';
-
-            return;
-        }
-
-        $layer_qty_sum = '0.0000';
-        $value = '0.0000';
-
-        foreach ($layers as $layer) {
-            $layer_qty_sum = $this->addDecimal($layer_qty_sum, $layer->qty_remaining);
-            $value = $this->addDecimal(
-                $value,
-                $this->multiplyDecimal($layer->qty_remaining, $layer->unit_cost),
-            );
-        }
+        $layer_qty_sum = (string) ($aggregate?->qty_sum ?? '0.0000');
+        $value = (string) ($aggregate?->value_sum ?? '0.0000');
 
         if ((float) $layer_qty_sum === 0.0) {
             $stock_level->weighted_avg_cost = '0.0000';

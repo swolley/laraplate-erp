@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Tests\Stubs;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Enumerable;
 use Modules\ERP\Services\Reporting\SalesPipelineService;
 
 /**
@@ -13,13 +14,13 @@ use Modules\ERP\Services\Reporting\SalesPipelineService;
 final class SalesPipelineServiceStub extends SalesPipelineService
 {
     /**
-     * @param Collection<int, object> $opportunities
+     * @param  Collection<int, object>  $opportunities
      */
     public function __construct(
         private readonly Collection $opportunities,
     ) {}
 
-    protected function loadOpportunities(int $company_id): Collection
+    protected function loadOpportunities(int $company_id): Enumerable
     {
         return $this->opportunities;
     }

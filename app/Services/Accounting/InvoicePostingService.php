@@ -158,19 +158,41 @@ final readonly class InvoicePostingService
     {
         $net_total = '0.0000';
         $tax_total = '0.0000';
+        $tax_code_ids = $lines->pluck('tax_code_id')->filter()->unique()->values();
+        $tax_codes = $tax_code_ids->isEmpty()
+            ? collect()
+            : TaxCode::query()
+                ->withoutGlobalScopes()
+                ->whereIn('id', $tax_code_ids)
+                ->get()
+                ->keyBy('id');
 
         foreach ($lines as $line) {
             $line_net = Decimal::mul((string) $line->quantity, (string) $line->unit_price);
             $line_tax = '0.0000';
 
             if ($line->tax_code_id !== null) {
-                $tax_code = TaxCode::query()->withoutGlobalScopes()->findOrFail($line->tax_code_id);
+                $tax_code = $tax_codes->get($line->tax_code_id);
+
+                if (! $tax_code instanceof TaxCode) {
+                    throw ValidationException::withMessages([
+                        'tax_code_id' => ['The selected tax code is invalid.'],
+                    ]);
+                }
+
                 $line_tax = $this->tax_line_calculator->lineTax($line_net, (string) $tax_code->rate);
 
                 $line->tax_code = $tax_code->code;
                 $line->tax_rate = $tax_code->rate;
                 $line->tax_label = $tax_code->label;
-                $line->save();
+
+                InvoiceLine::query()
+                    ->whereKey($line->id)
+                    ->update([
+                        'tax_code' => $tax_code->code,
+                        'tax_rate' => $tax_code->rate,
+                        'tax_label' => $tax_code->label,
+                    ]);
             }
 
             $net_total = Decimal::add($net_total, $line_net);

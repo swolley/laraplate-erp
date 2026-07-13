@@ -305,6 +305,29 @@ it('filters stock valuation by warehouse', function (): void {
         ->and($result['total_value'])->toBe('20.0000');
 });
 
+it('orders stock valuation by item sku and warehouse code while preserving totals', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'stock-valuation-ordering',
+        'name' => 'Stock Valuation Ordering Company',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+        'is_default' => false,
+    ]);
+    $warehouse_b = Warehouse::query()->create(['company_id' => $company->id, 'name' => 'B Warehouse', 'code' => 'B']);
+    $warehouse_a = Warehouse::query()->create(['company_id' => $company->id, 'name' => 'A Warehouse', 'code' => 'A']);
+    $item_b = Item::query()->create(['company_id' => $company->id, 'name' => 'B Item', 'sku' => 'B-ITEM', 'uom' => 'pcs', 'costing_method' => 'weighted_avg']);
+    $item_a = Item::query()->create(['company_id' => $company->id, 'name' => 'A Item', 'sku' => 'A-ITEM', 'uom' => 'pcs', 'costing_method' => 'weighted_avg']);
+
+    StockLevel::query()->create(['company_id' => $company->id, 'item_id' => $item_b->id, 'warehouse_id' => $warehouse_b->id, 'quantity' => '2.0000', 'weighted_avg_cost' => '5.0000']);
+    StockLevel::query()->create(['company_id' => $company->id, 'item_id' => $item_a->id, 'warehouse_id' => $warehouse_a->id, 'quantity' => '3.0000', 'weighted_avg_cost' => '7.0000']);
+
+    $result = app(StockValuationService::class)->generate((int) $company->id);
+
+    expect($result['rows'][0]['sku'])->toBe('A-ITEM')
+        ->and($result['total_quantity'])->toBe('5.0000')
+        ->and($result['total_value'])->toBe('31.0000');
+});
+
 it('exports operational reports as csv', function (): void {
     $exporter = app(OperationalReportCsvExporter::class);
 

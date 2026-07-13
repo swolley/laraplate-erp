@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
 use Modules\ERP\Models\Company;
@@ -18,6 +18,13 @@ use Modules\ERP\Tests\Stubs\SalesPipelineOpportunityRowDouble;
 use Modules\ERP\Tests\Stubs\SalesPipelineServiceStub;
 
 uses(RefreshDatabase::class);
+
+it('streams opportunity rows for pipeline aggregation', function (): void {
+    $source = file_get_contents(base_path('Modules/ERP/app/Services/Reporting/SalesPipelineService.php'));
+
+    expect($source)->not->toContain('->get([')
+        ->and($source)->toContain('->lazy(500)');
+});
 
 it('creates buckets for unknown opportunity status values', function (): void {
     $legacy_row = new SalesPipelineOpportunityRowDouble(

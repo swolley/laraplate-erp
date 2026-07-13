@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
@@ -18,6 +19,7 @@ use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Party;
@@ -27,6 +29,7 @@ use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Models\Warehouse;
+use Modules\ERP\Services\Accounting\InvoicePostingService;
 use Modules\ERP\Services\Inventory\StockMovementService;
 
 uses(RefreshDatabase::class);
@@ -49,6 +52,67 @@ function createInvoicePostingCompany(string $slug): Company
 
     return $company;
 }
+
+/**
+ * @return array{0: Company, 1: Invoice, 2: TaxCode}
+ */
+function erpInvoicePostingFixtureWithRepeatedTaxCode(): array
+{
+    $company = createInvoicePostingCompany('inv-tax-preload');
+
+    Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Tax preload customer',
+    ]);
+
+    $tax_code = TaxCode::query()->create([
+        'company_id' => $company->id,
+        'code' => 'VAT22-PRELOAD',
+        'kind' => 'vat',
+        'country' => 'IT',
+        'rate' => 22,
+        'label' => 'IVA 22%',
+        'is_active' => true,
+        'effective_from' => now()->toDateString(),
+    ]);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice->value,
+        'currency' => 'EUR',
+        'posted_at' => now(),
+    ]);
+
+    return [$company, $invoice, $tax_code];
+}
+
+it('preloads tax codes while posting invoices with repeated tax codes', function (): void {
+    [$company, $invoice, $tax_code] = erpInvoicePostingFixtureWithRepeatedTaxCode();
+
+    for ($i = 1; $i <= 8; $i++) {
+        InvoiceLine::query()->create([
+            'invoice_id' => $invoice->id,
+            'line_no' => $i,
+            'description' => 'Taxed line ' . $i,
+            'quantity' => '1.0000',
+            'unit_price' => '10.0000',
+            'tax_code_id' => $tax_code->id,
+        ]);
+    }
+
+    DB::enableQueryLog();
+
+    app(InvoicePostingService::class)->post($invoice);
+
+    $tax_code_queries = collect(DB::getQueryLog())
+        ->pluck('query')
+        ->filter(static fn (string $query): bool => str_contains($query, 'erp_tax_codes'))
+        ->count();
+
+    expect($company)->toBeInstanceOf(Company::class)
+        ->and($tax_code_queries)->toBeLessThanOrEqual(2);
+});
 
 it('posts invoice journal, snapshots tax, and updates sales order invoiced quantities', function (): void {
     $company = createInvoicePostingCompany('inv-sale');
