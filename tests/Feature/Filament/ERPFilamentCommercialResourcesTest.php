@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Modules\ERP\Tests\Stubs\FilamentSchemaTestHarness;
 use Modules\ERP\Filament\Pages\BankReconciliationPage;
 use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
@@ -285,10 +286,10 @@ it('delivery note resource form includes core fields', function (): void {
 });
 
 it('invoice resource form includes core fields', function (): void {
-    $schema = InvoiceResource::form(new Schema());
+    $schema = InvoiceResource::form(Schema::make(new FilamentSchemaTestHarness()));
     $names = array_map(
         static fn ($component): ?string => method_exists($component, 'getName') ? $component->getName() : null,
-        $schema->getComponents(),
+        $schema->getComponents(withHidden: true),
     );
 
     expect($names)->toContain('direction')

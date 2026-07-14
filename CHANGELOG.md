@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - *(erp)* Add document sequence reset functionality and price rules management
 
+## [1.14.8] - 2026-07-10
+
 ### 🐛 Bug Fixes
 
 - *(erp)* Improve document number allocation under sqlite contention
