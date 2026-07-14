@@ -31,7 +31,6 @@ use Override;
  * @property-read BankStatement|null $bank_statement
  * @property-read Payment|null $matched_payment
  * @property-read JournalEntry|null $difference_journal_entry
- *
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatementLine
  */

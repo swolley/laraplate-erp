@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Enums;
 
+use Modules\Core\Enums\Concerns\HasModuleTablesUtils;
+
 enum ERPTables: string
 {
+    use HasModuleTablesUtils;
+    
     case Companies = 'erp_companies';
     case Entities = 'erp_entities';
     case Presets = 'erp_presets';

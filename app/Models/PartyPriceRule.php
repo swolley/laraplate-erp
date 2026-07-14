@@ -17,7 +17,6 @@ use Override;
 /**
  * @property DiscountType $discount_type
  * @property numeric-string $discount_value
- *
  * @mixin \Eloquent
  * @mixin IdeHelperPartyPriceRule
  */
