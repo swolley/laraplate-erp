@@ -25,6 +25,9 @@ return new class extends Migration
             $table->string('iban', 34);
             $table->string('bic', 11)->nullable();
             $table->char('currency', 3)->default('EUR');
+            $table->string('direct_debit_mandate_reference', 35)->nullable();
+            $table->date('direct_debit_mandate_signed_on')->nullable();
+            $table->string('direct_debit_mandate_scheme', 16)->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->index(['company_id', 'party_id'], "{$party_bank_accounts_table}_company_party_idx");

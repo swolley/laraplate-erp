@@ -14,6 +14,7 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PartyBankAccount;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Services\Payments\CbiBonificiExporter;
 use Modules\ERP\Services\Payments\PaymentRunBuilderService;
 use Modules\ERP\Services\Payments\SepaPain001Exporter;
 
@@ -140,4 +141,24 @@ it('marks the payment run exported with checksum metadata', function (): void {
         ->and($fresh->export_file_name)->toEndWith('.xml')
         ->and($fresh->export_checksum)->not->toBeNull()
         ->and($fresh->lines->pluck('status')->unique()->first())->toBe(Modules\ERP\Casts\PaymentRunLineStatus::Exported);
+});
+
+
+it('exports a payment run as CBI bonifici text', function (): void {
+    $run = createSepaExporterRun();
+
+    $content = app(CbiBonificiExporter::class)->export($run);
+
+    expect($content)->toContain('IBPAYRUN')
+        ->and($content)->toContain('14PAYRUN')
+        ->and($content)->toContain('IT60X0542811101000000123456')
+        ->and($content)->toContain('IT02L1234512345123456789012')
+        ->and($content)->toContain('000000000120000')
+        ->and($content)->toContain('SUP-2026-001');
+
+    $fresh = $run->fresh('lines');
+
+    expect($fresh->status)->toBe(PaymentRunStatus::Exported)
+        ->and($fresh->export_file_name)->toEndWith('cbi-bonifici.txt')
+        ->and($fresh->export_checksum)->toBe(hash('sha256', $content));
 });

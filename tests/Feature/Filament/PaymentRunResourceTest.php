@@ -18,6 +18,7 @@ it('registers Filament pages for payment runs', function (): void {
 it('defines payment run approve export and cancel actions', function (): void {
     expect(PaymentRunActions::approve()->getName())->toBe('approve')
         ->and(PaymentRunActions::exportSepa()->getName())->toBe('export_sepa')
+        ->and(PaymentRunActions::exportCbiBonifici()->getName())->toBe('export_cbi_bonifici')
         ->and(PaymentRunActions::cancel()->getName())->toBe('cancel');
 });
 

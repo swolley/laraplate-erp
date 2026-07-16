@@ -20,6 +20,9 @@ use Override;
  * @property string $iban
  * @property string|null $bic
  * @property string $currency
+ * @property string|null $direct_debit_mandate_reference
+ * @property \Carbon\CarbonInterface|null $direct_debit_mandate_signed_on
+ * @property string|null $direct_debit_mandate_scheme
  * @property bool $is_default
  * @property bool $is_active
  * @mixin \Eloquent
@@ -43,6 +46,9 @@ final class PartyBankAccount extends Model
         'iban',
         'bic',
         'currency',
+        'direct_debit_mandate_reference',
+        'direct_debit_mandate_signed_on',
+        'direct_debit_mandate_scheme',
         'is_default',
         'is_active',
     ];
@@ -69,6 +75,9 @@ final class PartyBankAccount extends Model
             'iban' => ['required', 'string', 'max:34'],
             'bic' => ['nullable', 'string', 'max:11'],
             'currency' => ['required', 'string', 'size:3'],
+            'direct_debit_mandate_reference' => ['nullable', 'string', 'max:35'],
+            'direct_debit_mandate_signed_on' => ['nullable', 'date'],
+            'direct_debit_mandate_scheme' => ['nullable', 'string', 'max:16'],
             'is_default' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -77,6 +86,9 @@ final class PartyBankAccount extends Model
             'iban' => ['sometimes', 'string', 'max:34'],
             'bic' => ['nullable', 'string', 'max:11'],
             'currency' => ['sometimes', 'string', 'size:3'],
+            'direct_debit_mandate_reference' => ['nullable', 'string', 'max:35'],
+            'direct_debit_mandate_signed_on' => ['nullable', 'date'],
+            'direct_debit_mandate_scheme' => ['nullable', 'string', 'max:16'],
             'is_default' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -98,6 +110,7 @@ final class PartyBankAccount extends Model
     protected function casts(): array
     {
         return [
+            'direct_debit_mandate_signed_on' => 'date',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
         ];

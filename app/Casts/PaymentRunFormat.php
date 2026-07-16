@@ -7,6 +7,7 @@ namespace Modules\ERP\Casts;
 enum PaymentRunFormat: string
 {
     case SepaPain001 = 'sepa_pain_001';
+    case CbiBonifici = 'cbi_bonifici';
 
     /**
      * @return array<string>

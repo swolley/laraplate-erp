@@ -23,6 +23,7 @@ final class EditPaymentRun extends EditRecord
         return [
             PaymentRunActions::approve(),
             PaymentRunActions::exportSepa(),
+            PaymentRunActions::exportCbiBonifici(),
             PaymentRunActions::cancel(),
         ];
     }

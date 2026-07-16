@@ -9,6 +9,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Casts\PaymentRunStatus;
 use Modules\ERP\Models\PaymentRun;
+use Modules\ERP\Services\Payments\CbiBonificiExporter;
 use Modules\ERP\Services\Payments\SepaPain001Exporter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -49,6 +50,26 @@ final class PaymentRunActions
                     echo $xml;
                 }, $file_name, [
                     'Content-Type' => 'application/xml; charset=UTF-8',
+                ]);
+            });
+    }
+
+
+    public static function exportCbiBonifici(): Action
+    {
+        return Action::make('export_cbi_bonifici')
+            ->label('Export CBI')
+            ->icon(Heroicon::OutlinedArrowDownTray)
+            ->color('gray')
+            ->visible(static fn (PaymentRun $record): bool => $record->status === PaymentRunStatus::Approved)
+            ->action(static function (PaymentRun $record): StreamedResponse {
+                $content = app(CbiBonificiExporter::class)->export($record);
+                $file_name = $record->fresh()?->export_file_name ?? 'payment-run-cbi-bonifici.txt';
+
+                return response()->streamDownload(static function () use ($content): void {
+                    echo $content;
+                }, $file_name, [
+                    'Content-Type' => 'text/plain; charset=UTF-8',
                 ]);
             });
     }
