@@ -75,4 +75,9 @@ enum ERPTables: string
     case SupplierReturns = 'erp_supplier_returns';
     case SupplierReturnLines = 'erp_supplier_return_lines';
     case PartyPriceRules = 'erp_party_price_rules';
+    case ReportSnapshots = 'erp_report_snapshots';
+    case ExchangeRates = 'erp_exchange_rates';
+    case AnalyticDimensions = 'erp_analytic_dimensions';
+    case AnalyticDimensionValues = 'erp_analytic_dimension_values';
+    case JournalEntryLineAnalyticDimensionValue = 'erp_journal_entry_line_analytic_dimension_value';
 }
