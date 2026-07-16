@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Contracts\RestrictsCrudWrites;
 use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Models\AnalyticDimensionValue;
+use Modules\ERP\Models\Pivot\JournalEntryLineHasAnalyticDimensionValue;
 use Modules\ERP\Exceptions\PostedJournalImmutableException;
 use Override;
 
@@ -84,6 +87,18 @@ final class JournalEntryLine extends Model implements RestrictsCrudWrites
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+
+    /**
+     * @return BelongsToMany<AnalyticDimensionValue, $this>
+     */
+    public function analytic_dimension_values(): BelongsToMany
+    {
+        return $this->belongsToMany(AnalyticDimensionValue::class, ERPTables::JournalEntryLineAnalyticDimensionValue->value)
+            ->using(JournalEntryLineHasAnalyticDimensionValue::class)
+            ->withPivot(['allocation_percent'])
+            ->withTimestamps();
     }
 
     /**
