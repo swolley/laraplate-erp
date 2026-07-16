@@ -81,9 +81,9 @@ function createArubaEInvoiceInvoice(Company $company, Party $party): Invoice
 function configureArubaEInvoiceProvider(): void
 {
     config()->set('erp.einvoice.driver', 'aruba');
-    config()->set('erp.einvoice.aruba.base_url', 'https://aruba.test/api');
-    config()->set('erp.einvoice.aruba.submit_path', '/einvoices');
-    config()->set('erp.einvoice.aruba.status_path', '/einvoices/{external_id}');
+    config()->set('erp.einvoice.aruba.base_url', 'https://aruba.test');
+    config()->set('erp.einvoice.aruba.upload_path', '/services/invoice/upload');
+    config()->set('erp.einvoice.aruba.notifications_path', '/api/v2/invoices-out/notifications');
     config()->set('erp.einvoice.aruba.token', 'secret-token');
 }
 
@@ -97,11 +97,11 @@ it('submits FatturaPA XML to the configured Aruba endpoint', function (): void {
     configureArubaEInvoiceProvider();
 
     Http::fake([
-        'https://aruba.test/api/einvoices' => Http::response([
-            'id' => 'ARB-123',
-            'status' => 'received',
-            'message' => 'Queued',
-        ], 202),
+        'https://aruba.test/services/invoice/upload' => Http::response([
+            'errorCode' => '0000',
+            'errorDescription' => 'Operazione effettuata - request-123',
+            'uploadFileName' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+        ]),
     ]);
 
     $company = createArubaEInvoiceCompany();
@@ -113,35 +113,51 @@ it('submits FatturaPA XML to the configured Aruba endpoint', function (): void {
     $result = $provider->submit($payload);
 
     expect($result->success)->toBeTrue()
-        ->and($result->externalId)->toBe('ARB-123')
-        ->and($result->message)->toBe('Queued')
+        ->and($result->externalId)->toBe('IT01234567890_INV-ARUBA-001.xml.p7m')
+        ->and($result->message)->toBe('Operazione effettuata - request-123')
         ->and($result->raw['provider'])->toBe('aruba')
-        ->and($result->raw['status'])->toBe('received');
+        ->and($result->raw['upload_file_name'])->toBe('IT01234567890_INV-ARUBA-001.xml.p7m');
 
     Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Bearer secret-token')
-        && $request->url() === 'https://aruba.test/api/einvoices'
-        && $request['file_name'] === 'IT01234567890_INV-ARUBA-001.xml'
-        && base64_decode($request['xml_base64'], true) !== false);
+        && $request->url() === 'https://aruba.test/services/invoice/upload'
+        && base64_decode($request['dataFile'], true) !== false
+        && $request['senderPIVA'] === 'IT01234567890'
+        && $request['skipExtraSchema'] === false
+        && $request['dryRun'] === false);
 });
 
 it('maps Aruba remote statuses through the configured endpoint', function (): void {
     configureArubaEInvoiceProvider();
 
     Http::fake([
-        'https://aruba.test/api/einvoices/ARB-123' => Http::response([
-            'status' => 'accepted',
+        'https://aruba.test/api/v2/invoices-out/notifications?filename=IT01234567890_INV-ARUBA-001.xml.p7m' => Http::response([
+            'count' => 1,
+            'notifications' => [[
+                'docType' => 'RC',
+                'filename' => 'IT01234567890_INV-ARUBA-001_RC_001.xml',
+                'invoiceId' => '42',
+                'result' => 'EC01',
+            ]],
+            'pddAvailable' => true,
         ]),
     ]);
 
-    expect(app(EInvoiceProvider::class)->remoteStatus('ARB-123'))->toBe(EInvoiceRemoteStatus::Accepted);
+    expect(app(EInvoiceProvider::class)->remoteStatus('IT01234567890_INV-ARUBA-001.xml.p7m'))->toBe(EInvoiceRemoteStatus::Accepted);
 });
 
 it('refreshes Aruba submissions through the submission service', function (): void {
     configureArubaEInvoiceProvider();
 
     Http::fake([
-        'https://aruba.test/api/einvoices/ARB-123' => Http::response([
-            'status' => 'rejected',
+        'https://aruba.test/api/v2/invoices-out/notifications?filename=IT01234567890_INV-ARUBA-001.xml.p7m' => Http::response([
+            'count' => 1,
+            'notifications' => [[
+                'docType' => 'NS',
+                'filename' => 'IT01234567890_INV-ARUBA-001_NS_001.xml',
+                'invoiceId' => '42',
+                'result' => null,
+            ]],
+            'pddAvailable' => false,
         ]),
     ]);
 
@@ -152,14 +168,16 @@ it('refreshes Aruba submissions through the submission service', function (): vo
         'company_id' => $company->id,
         'invoice_id' => $invoice->id,
         'provider_code' => 'aruba',
-        'external_id' => 'ARB-123',
+        'external_id' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
         'status' => Modules\ERP\Casts\EInvoiceSubmissionStatus::Submitted,
     ]);
 
     $refreshed = app(EInvoiceSubmissionService::class)->refresh($submission);
 
     expect($refreshed->status)->toBe(Modules\ERP\Casts\EInvoiceSubmissionStatus::Rejected)
-        ->and($refreshed->response_payload['last_remote_status'])->toBe('rejected');
+        ->and($refreshed->response_payload['last_remote_status'])->toBe('rejected')
+        ->and($refreshed->response_payload['provider_poll']['notifications'][0]['docType'])->toBe('NS')
+        ->and($refreshed->response_payload['conservation']['pdd_available'])->toBeFalse();
 });
 
 it('requires Aruba base url and token before HTTP operations', function (): void {
@@ -174,4 +192,108 @@ it('requires Aruba base url and token before HTTP operations', function (): void
 
     expect(fn () => $provider->submit($provider->prepare($invoice)))
         ->toThrow(RuntimeException::class, 'Aruba e-invoice base URL is not configured.');
+});
+
+it('applies Aruba callback payloads to stored submissions', function (): void {
+    configureArubaEInvoiceProvider();
+
+    $company = createArubaEInvoiceCompany();
+    $party = createArubaEInvoiceParty($company);
+    $invoice = createArubaEInvoiceInvoice($company, $party);
+    $submission = EInvoiceSubmission::query()->create([
+        'company_id' => $company->id,
+        'invoice_id' => $invoice->id,
+        'provider_code' => 'aruba',
+        'external_id' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+        'status' => Modules\ERP\Casts\EInvoiceSubmissionStatus::Submitted,
+    ]);
+
+    $updated = app(EInvoiceSubmissionService::class)->applyProviderCallback('aruba', [
+        'invoiceFileName' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+        'sdiIdentification' => '123456789',
+        'notifyType' => 'RC',
+        'notifyFileName' => 'IT01234567890_INV-ARUBA-001_RC_001.xml',
+        'notificationDate' => '2026-07-16T10:00:00+02:00',
+        'result' => 'EC01',
+    ]);
+
+    expect($updated->id)->toBe($submission->id)
+        ->and($updated->status)->toBe(Modules\ERP\Casts\EInvoiceSubmissionStatus::Accepted)
+        ->and($updated->response_payload['callbacks'][0]['notifyType'])->toBe('RC')
+        ->and($updated->response_payload['aruba']['sdi_identification'])->toBe('123456789');
+});
+
+
+it('accepts signed Aruba callbacks through the module api route', function (): void {
+    configureArubaEInvoiceProvider();
+    config()->set('erp.einvoice.aruba.callback_api_key', 'callback-secret');
+
+    $company = createArubaEInvoiceCompany();
+    $party = createArubaEInvoiceParty($company);
+    $invoice = createArubaEInvoiceInvoice($company, $party);
+    $submission = EInvoiceSubmission::query()->create([
+        'company_id' => $company->id,
+        'invoice_id' => $invoice->id,
+        'provider_code' => 'aruba',
+        'external_id' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+        'status' => Modules\ERP\Casts\EInvoiceSubmissionStatus::Submitted,
+    ]);
+
+    $this->withHeader('Authorization', 'Bearer callback-secret')
+        ->postJson('/api/v1/erp/einvoice/aruba/callbacks', [
+            'invoiceFileName' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+            'notifyType' => 'RC',
+            'notifyFileName' => 'IT01234567890_INV-ARUBA-001_RC_001.xml',
+            'result' => 'EC01',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.id', $submission->id)
+        ->assertJsonPath('data.status', 'accepted');
+
+    expect($submission->refresh()->response_payload['callbacks'][0]['notifyType'])->toBe('RC');
+});
+
+it('rejects Aruba callbacks when the configured api key does not match', function (): void {
+    configureArubaEInvoiceProvider();
+    config()->set('erp.einvoice.aruba.callback_api_key', 'callback-secret');
+
+    $this->withHeader('Authorization', 'Bearer wrong')
+        ->postJson('/api/v1/erp/einvoice/aruba/callbacks', [])
+        ->assertUnauthorized();
+});
+
+it('refreshes open Aruba submissions through the polling command', function (): void {
+    configureArubaEInvoiceProvider();
+
+    Http::fake([
+        'https://aruba.test/api/v2/invoices-out/notifications?filename=IT01234567890_INV-ARUBA-001.xml.p7m' => Http::response([
+            'count' => 1,
+            'notifications' => [[
+                'docType' => 'RC',
+                'filename' => 'IT01234567890_INV-ARUBA-001_RC_001.xml',
+                'invoiceId' => '42',
+                'result' => 'EC01',
+            ]],
+            'pddAvailable' => true,
+        ]),
+    ]);
+
+    $company = createArubaEInvoiceCompany();
+    $party = createArubaEInvoiceParty($company);
+    $invoice = createArubaEInvoiceInvoice($company, $party);
+    $submission = EInvoiceSubmission::query()->create([
+        'company_id' => $company->id,
+        'invoice_id' => $invoice->id,
+        'provider_code' => 'aruba',
+        'external_id' => 'IT01234567890_INV-ARUBA-001.xml.p7m',
+        'status' => Modules\ERP\Casts\EInvoiceSubmissionStatus::Submitted,
+    ]);
+
+    $this->artisan('erp:einvoice:refresh-statuses', [
+        '--company' => (string) $company->id,
+        '--limit' => '10',
+    ])->assertSuccessful();
+
+    expect($submission->refresh()->status)->toBe(Modules\ERP\Casts\EInvoiceSubmissionStatus::Accepted)
+        ->and($submission->response_payload['conservation']['pdd_available'])->toBeTrue();
 });

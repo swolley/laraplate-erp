@@ -79,18 +79,81 @@ final readonly class EInvoiceSubmissionService
             ]);
         }
 
-        $remote_status = $this->provider->remoteStatus($submission->external_id);
+        $provider_payload = null;
+
+        if ($this->provider instanceof ArubaEInvoiceProvider) {
+            $provider_payload = $this->provider->remotePayload($submission->external_id);
+            $remote_status = $this->provider->remoteStatusFromPayload($provider_payload);
+        } else {
+            $remote_status = $this->provider->remoteStatus($submission->external_id);
+        }
+
         $status = $this->mapRemoteStatus($remote_status, $submission->status);
 
         $payload = $submission->response_payload ?? [];
         $payload['last_remote_status'] = $remote_status->value;
         $payload['last_refreshed_at'] = now()->toISOString();
 
+        if ($provider_payload !== null) {
+            $payload['provider_poll'] = $provider_payload;
+
+            if (array_key_exists('pddAvailable', $provider_payload)) {
+                $payload['conservation'] = array_merge($payload['conservation'] ?? [], [
+                    'pdd_available' => (bool) $provider_payload['pddAvailable'],
+                ]);
+            }
+        }
+
         $submission->status = $status;
         $submission->response_payload = $payload;
         $submission->save();
 
         return $submission;
+    }
+
+    /**
+     * @param  array<string, mixed>  $callback
+     */
+    public function applyProviderCallback(string $provider_code, array $callback): EInvoiceSubmission
+    {
+        $external_id = $this->callbackExternalId($callback);
+
+        if ($external_id === '') {
+            throw ValidationException::withMessages([
+                'callback' => ['Provider callback does not include an invoice filename.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($provider_code, $callback, $external_id): EInvoiceSubmission {
+            /** @var EInvoiceSubmission $submission */
+            $submission = EInvoiceSubmission::query()
+                ->where('provider_code', $provider_code)
+                ->where('external_id', $external_id)
+                ->lockForUpdate()
+                ->latest('id')
+                ->firstOrFail();
+
+            $remote_status = $this->remoteStatusFromCallback($callback);
+            $payload = $submission->response_payload ?? [];
+            $payload['callbacks'] ??= [];
+            $payload['callbacks'][] = $callback;
+            $payload['last_remote_status'] = $remote_status->value;
+            $payload['last_callback_at'] = now()->toISOString();
+
+            if ($provider_code === 'aruba') {
+                $payload['aruba'] = array_merge($payload['aruba'] ?? [], [
+                    'sdi_identification' => $this->stringValue($callback['sdiIdentification'] ?? null),
+                    'last_notify_type' => $this->stringValue($callback['notifyType'] ?? null),
+                    'last_notify_file_name' => $this->stringValue($callback['notifyFileName'] ?? null),
+                ]);
+            }
+
+            $submission->status = $this->mapRemoteStatus($remote_status, $submission->status);
+            $submission->response_payload = $payload;
+            $submission->save();
+
+            return $submission;
+        });
     }
 
     private function mapRemoteStatus(
@@ -160,5 +223,54 @@ final readonly class EInvoiceSubmissionService
         if (blank($value)) {
             $messages[$key] = [$message];
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $callback
+     */
+    private function callbackExternalId(array $callback): string
+    {
+        foreach (['invoiceFileName', 'sdiInvoiceFileName', 'uploadFileName', 'filename', 'fileName'] as $key) {
+            $value = $callback[$key] ?? null;
+
+            if (is_string($value) && mb_trim($value) !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $callback
+     */
+    private function remoteStatusFromCallback(array $callback): EInvoiceRemoteStatus
+    {
+        $result = mb_strtoupper($this->stringValue($callback['result'] ?? null));
+        $notify_type = mb_strtoupper($this->stringValue($callback['notifyType'] ?? $callback['docType'] ?? null));
+        $status = mb_strtolower($this->stringValue($callback['status'] ?? null));
+
+        if ($result === 'EC01') {
+            return EInvoiceRemoteStatus::Accepted;
+        }
+
+        if ($result === 'EC02' || $notify_type === 'NS') {
+            return EInvoiceRemoteStatus::Rejected;
+        }
+
+        if (str_contains($status, 'errore') || str_contains($status, 'error')) {
+            return EInvoiceRemoteStatus::Rejected;
+        }
+
+        return match ($notify_type) {
+            'RC', 'MC', 'NE' => EInvoiceRemoteStatus::Delivered,
+            'AT' => EInvoiceRemoteStatus::Processing,
+            default => EInvoiceRemoteStatus::Unknown,
+        };
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        return $value === null ? '' : (string) $value;
     }
 }
