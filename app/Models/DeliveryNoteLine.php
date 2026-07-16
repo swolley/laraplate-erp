@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Models\Pivot\InvoiceLineHasDeliveryNoteLine;
 use Override;
 
 /**
@@ -89,7 +90,7 @@ final class DeliveryNoteLine extends Model
         return $this->belongsToMany(
             InvoiceLine::class,
             ERPTables::InvoiceLineDeliveryNoteLine->value,
-        )->withPivot('quantity');
+        )->using(InvoiceLineHasDeliveryNoteLine::class)->withPivot('quantity')->withTimestamps();
     }
 
     /**

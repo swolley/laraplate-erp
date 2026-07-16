@@ -12,6 +12,7 @@ use Modules\Core\Models\Concerns\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Models\Pivot\Contactable;
 use Override;
 
 /**
@@ -59,7 +60,9 @@ final class Party extends Model
      */
     public function contacts(): BelongsToMany
     {
-        return $this->belongsToMany(Contact::class, 'contactables', 'party_id')->withTimestamps();
+        return $this->belongsToMany(Contact::class, ERPTables::Contactables->value, 'party_id', 'contact_id')
+            ->using(Contactable::class)
+            ->withTimestamps();
     }
 
     /**
