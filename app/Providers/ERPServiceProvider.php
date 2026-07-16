@@ -32,7 +32,7 @@ use Modules\ERP\Services\Banking\BankReconciliationService;
 use Modules\ERP\Services\Banking\BankStatementCsvImporter;
 use Modules\ERP\Services\Banking\BankStatementImportService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
-use Modules\ERP\Services\Currency\NoopCurrencyConverter;
+use Modules\ERP\Services\Currency\DatabaseCurrencyConverter;
 use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
@@ -50,7 +50,7 @@ use Modules\ERP\Services\Returns\SupplierReturnShipmentService;
 use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
-use Nwidart\Modules\Support\ModuleServiceProvider;
+use Modules\Core\Overrides\ModuleServiceProvider;
 use Override;
 
 class ERPServiceProvider extends ModuleServiceProvider
@@ -82,7 +82,7 @@ class ERPServiceProvider extends ModuleServiceProvider
     {
         parent::register();
 
-        $this->app->singleton(CurrencyConverter::class, NoopCurrencyConverter::class);
+        $this->app->singleton(CurrencyConverter::class, DatabaseCurrencyConverter::class);
         $this->app->bind(EInvoiceProvider::class, function (\Illuminate\Contracts\Foundation\Application $app): EInvoiceProvider {
             return match (config('erp.einvoice.driver', 'stub')) {
                 'aruba' => $app->make(ArubaEInvoiceProvider::class),
