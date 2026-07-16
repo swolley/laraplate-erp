@@ -126,7 +126,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 | Term                                | Meaning                                                                                                     |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **invoice_line_delivery_note_line** | Pivot table (`erp_invoice_line_delivery_note_line`) linking invoice lines to delivery note lines (M:N) with pivot `quantity`. Optional at posting; validated by `InvoiceDeliveryNoteValidationService`. |
+| **invoice_line_delivery_note_line** | Pivot table (`erp_invoice_line_delivery_note_line`) linking invoice lines to delivery note lines with covered quantity and timestamps. Mapped by `InvoiceLineHasDeliveryNoteLine`; optional at posting and validated by `InvoiceDeliveryNoteValidationService`. |
 
 ## E-invoice / FatturaPA
 
@@ -245,16 +245,23 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term | Meaning |
 | ---- | ------- |
 | **Stub e-invoice** | Current implemented e-invoice mode. It records submissions and statuses locally; it is not legal FatturaPA delivery. |
-| **Phase 2C e-invoice scope** | Implemented production-readiness slice: schema readiness, mapper, XML builder, XSD validation, configurable provider adapter, and extended permissions. |
+| **Phase 2C e-invoice scope** | Implemented production-readiness slice: schema/readiness fields, mapper, FPR12 XML builder, XSD validation, Aruba upload/polling/callback adapter, polling command, and extended permissions. Remaining work is contracted Aruba go-live verification and full legal retention governance. |
+| **ReportSnapshot** | Immutable archive row for generated ERP financial reports. Stores parameters, payload, CSV content, base64 PDF content, content hash, and generated timestamp. |
+| **ExchangeRate** | Historical FX rate row used by `DatabaseCurrencyConverter`; supports direct and inverse currency conversion as of a given date. |
+| **Money** | Immutable amount/currency value object using ERP `Decimal` math for same-currency add/subtract/multiply/allocation. |
+| **AnalyticDimension** | Company-owned analytic axis, such as cost center or profit center. Values attach to journal entry lines through a pivot with allocation percentage. |
+| **FxRevaluationService** | Posts balanced unrealized FX revaluation journals for open foreign-currency payment schedules. |
 | **Extended admin domain permissions** | Seeded Phase 2C abilities for high-risk admin operations: `default.erp_tax_codes.supersede`, `default.erp_companies.switch_context`, and `default.erp_document_sequences.reserve`. |
-| **Payment file only** | Supplier payment execution exports bank files (`pain.001`) but does not submit them to a bank API. |
+| **Payment file only** | ERP generates bank files but does not submit them to a bank API. Supplier payment runs support SEPA `pain.001` and CBI bonifici; receivable services generate Ri.Ba and SDD CORE files. |
+| **CBI bonifici** | Italian fixed-record bank transfer export generated from approved supplier `PaymentRun` records and audited through export checksum metadata. |
+| **Ri.Ba / SDD CORE** | Customer receivable bank-file generators. Ri.Ba exports text records; SDD exports SEPA `pain.008` XML and requires mandate data on `PartyBankAccount`. |
 | **Minimal MT940** | Only the implemented transaction subset is parsed. Do not treat MT940 support as full-format coverage. |
-| **No processed-return revert** | Processed returns cannot yet be safely reversed. Draft/approved cancellation exists; processed revert is Phase 3 backlog. |
+| **Processed-return reverse** | Safe service/UI action that reverses a processed return before linked fiscal notes exist: unposts the generated DDT, restores source returned quantities, clears `processed_at`, and returns the document to `approved`. |
 | **No DDT pricing** | Delivery note lines intentionally have no prices or costs. Fiscal correction pricing comes from invoice lines. |
-| **Live report** | Report data is queried live from accounting/operational tables. CSV export exists; PDF, scheduled snapshots, and immutable archives do not. |
-| **FX foundation only** | Multi-currency columns and converter seam exist, but real FX rates, revaluation, and exchange-difference journals are not implemented. |
-| **No full Money VO** | Decimal persistence and decimal helpers exist, but a domain-wide Money value object is still Phase 5 backlog. |
-| **No analytic dimensions** | Journal lines do not yet support a complete cost-center/profit-center/dimension model. |
+| **Live report** | Report data is queried live from accounting/operational tables. CSV export exists; financial report snapshots also archive immutable payload/CSV/simple-PDF content. |
+| **FX rates and revaluation** | Database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules are implemented; external feed imports and realized FX automation remain future work. |
+| **Money value object** | `Money` provides decimal-safe amount/currency arithmetic and allocation. Some legacy services still use lower-level decimal helpers. |
+| **Analytic dimensions** | Journal lines support analytic dimension values through a first-class pivot with allocation percentage; analytic reporting cubes remain future work. |
 | **App-lock portability** | Application locks are portable across supported databases. MySQL triggers are an additional vendor-specific safety net only. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |
@@ -269,3 +276,4 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 - `VatRegisterService` / `VatSettlementService` in `app/Services/Accounting/`
 - `PaymentScheduleGeneratorService` / `PaymentAllocationService` / `AgingReportService` in `app/Services/Payments/`
 - `TrialBalanceService` / `BalanceSheetService` / `IncomeStatementService` in `app/Services/Reporting/`
+

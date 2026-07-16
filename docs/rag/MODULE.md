@@ -1,797 +1,413 @@
-# ERP module — commercial, logistics, accounting, and fiscal domain
+<p>&nbsp;</p>
+<p align="center">
+	<a href="https://github.com/swolley" target="_blank">
+		<img src="https://raw.githubusercontent.com/swolley/images/refs/heads/master/logo_laraplate.png?raw=true" width="400" alt="Laraplate Logo" />
+    </a>
+</p>
+<p>&nbsp;</p>
 
-## Purpose
+> ⚠️ **Caution**: This package is a **work in progress**. **Don't use this in production or use at your own risk**—no guarantees are provided... or better yet, collaborate with me to create the definitive Laravel boilerplate; that's the right place to introduce your ideas. Let me know your ideas...
 
-`ERP` delivers operational business workflows in Laraplate: CRM, sales, purchasing, inventory, accounting, tax management, payments, and fiscal governance for Italian compliance.
+## Table of Contents
 
-It models the transactional backbone where business documents, stock movements, accounting entries, and fiscal records must remain consistent and auditable.
+-   [Description](#description)
+-   [Installation](#installation)
+-   [Configuration](#configuration)
+-   [Features](#features)
+-   [Scripts](#scripts)
+-   [Contributing](#contributing)
+-   [License](#license)
 
-## Module metadata
+## Description
 
-- **Namespace:** `Modules\ERP`
-- **Composer package:** `swolley/laraplate-erp`
-- **Config key:** `erp`
-- **Directory:** `Modules/ERP/`
-- **Dependencies:** `Core` module (users, permissions, locks, settings, versioning)
+The **ERP** module provides Laraplate’s **accounting and operations** domain: multi-company, chart of accounts, journal entries, fiscal calendar, tax codes, commercial scaffolding (customers, quotations, projects), and related Filament admin resources. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
 
-## Architecture principles
+The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
 
-- All business transitions pass through the **service layer** — never direct model updates from controllers.
-- **Observers** react to model events for side effects (e.g., SO lock on quotation acceptance).
-- **Posting services** are the only path to create/reverse journal entries.
-- Currency conversion is pluggable via `CurrencyConverter` (default: no-op with fx_rate=1.0).
-- Multi-tenancy via `BelongsToCompany` trait with automatic global scope.
-- Dual-currency on every transactional amount: `amount_doc`/`currency_doc` + `amount_local`/`fx_rate`.
-- Versioning: `HasVersions` trait with `VersionStrategy::DIFF` enforced on accounting models.
+## Installation
 
-### Cross-cutting concerns diagram
+If you want to add this module to your project, you can use the `joshbrw/laravel-module-installer` package.
 
-Every transactional ERP model is automatically scoped by `BelongsToCompanyScope` (filters by `current_company_id`), versioned via `HasVersions` (the model property `protected VersionStrategy $versionStrategy = VersionStrategy::DIFF` takes priority over the `settings` table fallback), and may use `HasLocks` for application-level lock policies. Quotations and Sales Orders also have MySQL `BEFORE UPDATE`/`BEFORE DELETE` triggers as a SQL-level safety net.
+In a full Laraplate application you typically depend on **Core** first, then add **ERP**. Add the repositories to your `composer.json` file (adjust URLs if you use forks or private registries):
 
-```mermaid
-flowchart LR
-  subgraph models [ERP business models]
-    Account
-    JournalEntry
-    JournalEntryLine
-    Invoice
-    InvoiceLine
-    FiscalYear
-    FiscalPeriod
-    DocumentSequence
-    TaxCode
-    Payment
-    PaymentScheduleLine
-    PaymentAllocation
-    PaymentTerm
-    VatRegisterEntry
-    VatSettlement
-    EInvoiceSubmission
-    Quotation
-    SalesOrder
-  end
-  subgraph traits [Cross-cutting traits and scopes]
-    Scope[BelongsToCompanyScope]
-    Versions["HasVersions VersionStrategy::DIFF"]
-    Locks[HasLocks]
-  end
-  subgraph core [Core inalterato]
-    Companies[(companies)]
-    Settings[("settings: version_strategy_*, soft_deletes_*")]
-    Triggers[("MySQL BEFORE UPDATE/DELETE triggers")]
-  end
-
-  models -->|"global scope"| Scope
-  Scope -->|"company_id = current_company_id"| Companies
-  models -->|"use trait"| Versions
-  models -->|"use trait"| Locks
-  Versions -.->|"fallback if no model property"| Settings
-  Quotation -.->|"defended at SQL level"| Triggers
-  SalesOrder -.->|"defended at SQL level"| Triggers
+```json
+"repositories": [
+    {
+        "type": "composer",
+        "url": "https://github.com/swolley/laraplate-core.git"
+    },
+    {
+        "type": "composer",
+        "url": "https://github.com/swolley/laraplate-erp.git"
+    }
+]
 ```
 
-## Core functional areas
-
-### Master data
-
-
-| Entity    | Model       | Table        | Key aspects                                                      |
-| --------- | ----------- | ------------ | ---------------------------------------------------------------- |
-| Company   | `Company`   | `companies`  | Tenant root, functional_currency, locale                         |
-| Party     | `Party`     | `parties`    | Unified customer/supplier with `is_customer`/`is_supplier` flags |
-| Contact   | `Contact`   | `contacts`   | M:N with Party via `contactables` pivot                          |
-| Site      | `Site`      | `sites`      | Physical location linked to `places`                             |
-| Item      | `Item`      | `items`      | Product/service with SKU and costing_method                      |
-| Warehouse | `Warehouse` | `warehouses` | Storage location per company                                     |
-
-
-#### Commercial domain entity-relationship diagram
-
-`Party` is the unified customer/supplier root, linked M:N to `Contact` via the `contactables` pivot. The CRM funnel is `Lead -> Opportunity -> Quotation`; an `Opportunity` becomes `won` automatically when its `Quotation` transitions to `accepted` (see `OpportunityLifecycleService` + `QuotationObserver`). `Project` aggregates work and may bind to a `Quotation`. `Task` and `TimeEntry` are typed by `Taxonomy` (Core abstract model); `TimeEntry` may reference a `QuotationItem` for billing-side valorization.
-
-```mermaid
-classDiagram
-  direction TB
-  class Party {
-    +bool is_customer
-    +bool is_supplier
-  }
-  class Contact
-  class Site
-  class Lead
-  class Opportunity
-  class Quotation
-  class QuotationItem
-  class PriceList
-  class PriceListItem
-  class Project
-  class Task
-  class TimeEntry
-  class Taxonomy
-  Party "*" --> "*" Contact
-  Party "1" --> "*" Lead
-  Party "1" --> "*" Opportunity
-  Party "1" --> "*" Quotation
-  Party "1" --> "*" Project
-  Lead "0..1" --> "0..1" Opportunity
-  Opportunity "1" --> "*" Quotation
-  Quotation "1" --> "*" QuotationItem
-  PriceList "1" --> "*" PriceListItem
-  QuotationItem --> PriceListItem
-  Taxonomy "1" --> "*" PriceListItem
-  Project --> Quotation
-  Project "0..1" --> "*" Task
-  Task --> Site
-  Project "0..1" --> "*" TimeEntry
-  Task "0..1" --> "*" TimeEntry
-  TimeEntry --> QuotationItem
-  Taxonomy "1" --> "*" Task
-  Taxonomy "1" --> "*" TimeEntry
+```bash
+composer require joshbrw/laravel-module-installer swolley/laraplate-core swolley/laraplate-erp
 ```
 
+Then install and activate the modules:
 
-### CRM
-
-
-| Entity           | Service                       | Purpose                                    |
-| ---------------- | ----------------------------- | ------------------------------------------ |
-| Lead             | —                             | Early-stage prospect with status lifecycle |
-| Opportunity      | `OpportunityLifecycleService` | Qualified deal with pipeline stages        |
-| OpportunityStage | —                             | Taxonomy-based CRM pipeline configuration  |
-
-
-- `QuotationObserver` auto-marks opportunity as `won` when quotation status = accepted.
-
-### Order-to-Cash
-
-**Flow:** Quotation → Sales Order → Delivery Note → Invoice → Payment
-
-
-| Step          | Model(s)                           | Service(s)                                                       | Key behaviors                                                                    |
-| ------------- | ---------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Quotation     | `Quotation`, `QuotationItem`       | —                                                                | HasLocks, HasValidity, lock on SO confirmation                                   |
-| Sales Order   | `SalesOrder`, `SalesOrderLine`     | `SalesOrderEvasionService`, `SalesOrderAmendmentService`         | Lock-chain, qty tracking (ordered/delivered/invoiced), amendment from confirmed  |
-| Delivery Note | `DeliveryNote`, `DeliveryNoteLine` | `DeliveryNoteInventoryService`, `DeliveryNoteCogsJournalService` | Stock posting (outbound), COGS journal, full rollback on unpost                  |
-| Invoice       | `Invoice`, `InvoiceLine`           | `InvoicePostingService`, `InvoiceCompactionService`, `InvoiceDeliveryNoteValidationService` | Journal posting, tax snapshot, document numbering at posting, optional DDT pivot, Filament Post/Unpost |
-| Payment       | `Payment`, `PaymentAllocation`     | `PaymentAllocationService`                                       | Allocate to schedule lines, status tracking                                      |
-
-
-#### Invoice posting workflow (M3.5 + Filament)
-
-Posting is **not** done by editing `posted_at` in the form. Operators use Filament **Post** / **Unpost** actions (`InvoicePostingActions`) on the invoice edit page and list table. Setting `posted_at` triggers `InvoiceObserver`, which delegates to `InvoicePostingService::post()` or `::unpost()`.
-
-**Draft → Posted (`InvoicePostingService::post()` inside a DB transaction):**
-
-1. Lock invoice row (`lockForUpdate`).
-2. Load lines; fail if empty.
-3. **Sale only:** `InvoiceDeliveryNoteValidationService::validateForPosting()` — optional pivot `invoice_line_delivery_note_line` links must reference posted DDT lines, respect delivered qty caps, and align `sales_order_line_id` when present.
-4. **Purchase only:** `ThreeWayMatchService::validate()` per line — compares qty/price to linked `PurchaseOrderLine` / `GoodsReceiptLine`; persists `match_status` + `match_discrepancy` on each `InvoiceLine`. Tolerances from `ErpCompanySettings` reading `companies.settings` JSON (`erp.three_way_match.price_tolerance_percent`, `erp.three_way_match.qty_tolerance_percent`, default 0%). Throws `ValidationException` on breach unless `Invoice::$forceThreeWayMatchOnPosting` is true (Filament checkbox on Post).
-5. Allocate fiscal `reference` via `DocumentNumberAllocator::next()` — `DocumentType` from `direction` + `invoice_type` (SalesInvoice, PurchaseInvoice, credit/debit note streams; `gap_allowed=false`).
-6. Snapshot tax columns on lines (`tax_code`, `tax_rate`, `tax_label`).
-7. Credit notes: `CreditNoteService::validateCreditNoteTotal()` + negated amounts for journal.
-8. `JournalPostingService::post()` — balanced entry; invoice stored as `reference` on journal.
-9. `VatRegisterService::register()`.
-10. `PaymentScheduleGeneratorService::generate()` — schedule lines from `payment_term_id` or single immediate line.
-11. **Sale only:** `SalesOrderEvasionService::registerInvoice()` from `sales_order_line_id` on lines.
-12. Set `journal_entry_id` on invoice header.
-
-**Posted → Draft (`::unpost()`):** reverse journal, unregister VAT, `PaymentScheduleGeneratorService::removeAll()` (blocked if schedule lines have allocations), rollback SO invoicing, clear `reference` and `journal_entry_id`.
-
-**Filament UX rules:**
-
-- Form shows `posted_at_display` placeholder (read-only); `posted_at` is not edited manually.
-- Line repeater disabled when `journal_entry_id` is set.
-- Purchase lines expose `purchase_order_line_id`, `goods_receipt_line_id`, read-only `match_status` after posting.
-- Sale lines expose nested `delivery_note_line_links` repeater (DDT line + qty).
-- `InvoiceResource::canDelete()` false when posted.
-
-```mermaid
-sequenceDiagram
-  participant UI as Filament Post/Unpost
-  participant Obs as InvoiceObserver
-  participant IPS as InvoicePostingService
-  participant DDN as InvoiceDeliveryNoteValidationService
-  participant TWM as ThreeWayMatchService
-  participant DNA as DocumentNumberAllocator
-  participant JPS as JournalPostingService
-  participant VAT as VatRegisterService
-  participant PSG as PaymentScheduleGeneratorService
-
-  UI->>Obs: update posted_at
-  alt posting
-    Obs->>IPS: post(invoice)
-    IPS->>DDN: validateForPosting (sale)
-    IPS->>TWM: validate per line (purchase)
-    IPS->>DNA: next(reference)
-    IPS->>JPS: post(journal lines)
-    IPS->>VAT: register
-    IPS->>PSG: generate(gross_total)
-  else unposting
-    Obs->>IPS: unpost(invoice)
-    IPS->>JPS: reverse
-    IPS->>VAT: unregister
-    IPS->>PSG: removeAll
-  end
+```bash
+php artisan module:install Core
+php artisan module:install ERP
 ```
 
-#### Sale invoice ↔ DDT linking (optional)
+Ensure `modules_statuses.json` lists `ERP` as enabled when you want the module loaded.
 
-Pivot `erp_invoice_line_delivery_note_line` links `InvoiceLine` to `DeliveryNoteLine` with a pivot `quantity`. Linking is **optional** (lines without pivot still post). When links exist, `InvoiceDeliveryNoteValidationService` requires: parent DDT `posted_at` set; sum of pivot qty on the invoice line ≤ line `quantity`; total invoiced qty on the DDT line (other posted invoices + current) ≤ DDT line `quantity`; matching `sales_order_line_id` when both sides set. Filament: nested repeater **Delivery note lines** on sale invoice line items.
+## Configuration
 
-```mermaid
-flowchart LR
-  DDT["DeliveryNote posted"]
-  DNL[DeliveryNoteLine]
-  IL[InvoiceLine draft]
-  Pivot["invoice_line_delivery_note_line"]
-  Post[Filament Post]
-  IPS[InvoicePostingService]
+When the module is active, configuration is published under the **`erp`** key (file: `Modules/ERP/config/config.php`).
 
-  DDT --> DNL
-  IL --> Pivot
-  Pivot --> DNL
-  Post --> IPS
-  IPS --> Validate[InvoiceDeliveryNoteValidationService]
-  Validate --> Journal[Journal + reference]
+```php
+// Example
+config('erp.name'); // "ERP"
+config('erp.einvoice.driver'); // "stub", "fatturapa", or "aruba"
 ```
 
+E-invoice provider configuration is read through Laravel config/env:
 
-#### End-to-end document flow to Journal
-
-The full document chain from CRM to accounting entries: a `Quotation` confirmation creates a `SalesOrder` (which locks the Quotation header). Each `DeliveryNote` posting calls `StockMovementService` to consume FIFO/avg layers and `DeliveryNoteCogsJournalService` to post a COGS `JournalEntry`. The `Invoice` posting allocates a `DocumentSequence` number (gap_allowed=false), creates the balanced `JournalEntry`, generates `PaymentScheduleLine` rows from `PaymentTerm`, and registers each line in the `VatRegisterEntry` table. Credit notes (`invoice_type=credit_note`) reuse the same posting service with sign-flipped amounts and reduce open schedule lines. The purchase cycle mirrors sales but adds `ThreeWayMatchService` validation across PO, GR, and Invoice lines.
-
-```mermaid
-flowchart TB
-  subgraph crm [CRM]
-    Lead
-    Opportunity
-  end
-  subgraph sales [Sales]
-    Quotation
-    SalesOrder
-    SalesOrderLine
-    DeliveryNote
-    InvoiceSale["Invoice direction=sale"]
-    CreditNote["Invoice invoice_type=credit_note"]
-  end
-  subgraph inventory [Inventory]
-    StockOut["StockMovement direction=out"]
-    StockIn["StockMovement direction=in"]
-    StockCostLayer
-  end
-  subgraph purchasing [Purchasing]
-    PurchaseOrder
-    GoodsReceipt
-    InvoicePurchase["Invoice direction=purchase"]
-    ThreeWay[ThreeWayMatchService]
-  end
-  subgraph payments [M5.1 Payments]
-    PaymentTerm
-    PaymentScheduleLine
-    Payment
-    PaymentAllocation
-  end
-  subgraph vat [M5.3 VAT]
-    VatRegisterEntry
-    VatSettlement
-  end
-  subgraph accounting [Accounting backbone]
-    JournalEntry
-    Account
-    TaxCode
-    DocumentSequence
-  end
-  subgraph einvoice [E-invoice]
-    EInvoiceSubmission
-  end
-
-  Lead --> Opportunity
-  Opportunity -->|"converts to"| Quotation
-  Quotation -->|"confirm SO -> Q locked"| SalesOrder
-  SalesOrder --> SalesOrderLine
-  SalesOrderLine -->|"qty_delivered++"| DeliveryNote
-  DeliveryNote -->|"StockMovementService"| StockOut
-  StockOut -.->|"consumes FIFO"| StockCostLayer
-  SalesOrderLine -->|"qty_invoiced++"| InvoiceSale
-  DeliveryNote -.->|"pivot DDT-Invoice"| InvoiceSale
-  InvoiceSale -->|"posting"| JournalEntry
-  StockOut -.->|"COGS unit_cost"| JournalEntry
-  InvoiceSale -.->|"CreditNoteService"| CreditNote
-  CreditNote -->|"posting reversed"| JournalEntry
-
-  PurchaseOrder --> GoodsReceipt
-  GoodsReceipt -->|"StockMovementService"| StockIn
-  StockIn -.->|"opens layer / updates avg"| StockCostLayer
-  PurchaseOrder --> ThreeWay
-  GoodsReceipt --> ThreeWay
-  ThreeWay -->|"writes match_status"| InvoicePurchase
-  InvoicePurchase -->|"posting"| JournalEntry
-
-  InvoiceSale -->|"PaymentScheduleGeneratorService"| PaymentScheduleLine
-  PaymentTerm -.->|"rate_lines JSON"| PaymentScheduleLine
-  Payment -->|"PaymentAllocationService"| PaymentAllocation
-  PaymentAllocation -->|"updates status + paid_amount"| PaymentScheduleLine
-  CreditNote -.->|"reduces open lines"| PaymentScheduleLine
-
-  InvoiceSale -->|"VatRegisterService"| VatRegisterEntry
-  InvoicePurchase -->|"VatRegisterService"| VatRegisterEntry
-  TaxCode --> VatRegisterEntry
-  VatRegisterEntry --> VatSettlement
-
-  InvoiceSale -.->|"submit"| EInvoiceSubmission
-
-  JournalEntry --> Account
-  JournalEntry --> TaxCode
-  InvoiceSale -.->|"next number"| DocumentSequence
-  InvoicePurchase -.->|"next number"| DocumentSequence
-  CreditNote -.->|"NC sectional number"| DocumentSequence
-```
-
-#### Lock-chain on Sales Order
-
-The lock chain protects in-progress documents from accidental modification: when a `SalesOrder` is `confirmed`, its source `Quotation` header is locked via `HasLocks`. As soon as the first `DeliveryNote` or `Invoice` is created against a line, that line's `qty_ordered` is locked. MySQL `BEFORE UPDATE`/`BEFORE DELETE` triggers on `quotations` and `sales_orders` provide a SQL-level safety net: even a buggy service that bypassed observers would be rejected at the DB level.
-
-```mermaid
-flowchart LR
-  Q["Quotation: draft"]
-  QA["Quotation: accepted"]
-  QL["Quotation header: locked"]
-  SO["SalesOrder: draft"]
-  SOC["SalesOrder: confirmed"]
-  SOPE["SalesOrder: partially_evased"]
-  Line["SalesOrderLine: open"]
-  LineLocked["SalesOrderLine: qty_ordered locked"]
-  Trigger[("MySQL BEFORE UPDATE/DELETE triggers")]
-
-  Q --> QA
-  QA -->|"create SO"| SO
-  SO -->|"confirm"| SOC
-  SOC -.->|"locks"| QL
-  SOC --> SOPE
-  Line --> LineLocked
-  SOPE -.->|"first DDT/Invoice on line"| LineLocked
-  Trigger -.->|"safety net"| QL
-  Trigger -.->|"safety net"| SOC
-```
-
-
-### Procure-to-Pay
-
-**Flow:** Purchase Order → Goods Receipt → Purchase Invoice → Payment
-
-
-| Step           | Model(s)                             | Service(s)             | Key behaviors                                                         |
-| -------------- | ------------------------------------ | ---------------------- | --------------------------------------------------------------------- |
-| Purchase Order | `PurchaseOrder`, `PurchaseOrderLine` | —                      | Document numbering, qty tracking                                      |
-| Goods Receipt  | `GoodsReceipt`, `GoodsReceiptLine`   | —                      | Stock inbound posting                                                 |
-| 3-Way Match    | —                                    | `ThreeWayMatchService` | Validates PO/GR/Invoice line consistency with configurable tolerances |
-
-
-#### 3-Way match flow
-
-`ThreeWayMatchService::validate()` cross-checks `PurchaseOrderLine`, `GoodsReceiptLine` and `InvoiceLine` qty/price triplets. It is invoked automatically from `InvoicePostingService::applyThreeWayMatch()` when `Invoice.direction = purchase` (before journal creation). Each `InvoiceLine` carries `purchase_order_line_id` and `goods_receipt_line_id` plus `match_status` (`MatchStatus` enum: `matched`, `tolerance`, `forced`, `unmatched`) and a `match_discrepancy` JSON column. Tolerances come from `companies.settings` via `ErpCompanySettings` (default 0%). Exceeding tolerance throws `ValidationException` unless `Invoice::$forceThreeWayMatchOnPosting` is true (set via Filament Post modal checkbox **Force three-way match** or programmatically before `posted_at` update). GR quantity comparison uses `GoodsReceiptLine.quantity`. Results are persisted on the line for audit before the invoice is considered posted.
-
-```mermaid
-flowchart TB
-  PO[PurchaseOrder]
-  POL[PurchaseOrderLine]
-  GR[GoodsReceipt]
-  GRL[GoodsReceiptLine]
-  Inv["Invoice direction=purchase"]
-  IL[InvoiceLine]
-  TWM[ThreeWayMatchService]
-  Status["match_status: matched / tolerance / forced / unmatched"]
-  Disc[match_discrepancy JSON]
-
-  PO --> POL
-  GR --> GRL
-  GRL -->|"links"| POL
-  IL -->|"purchase_order_line_id"| POL
-  IL -->|"goods_receipt_line_id"| GRL
-  POL --> TWM
-  GRL --> TWM
-  IL --> TWM
-  TWM --> Status
-  TWM --> Disc
-  Status -.->|"persisted on InvoiceLine"| IL
-  Disc -.->|"persisted on InvoiceLine"| IL
-```
-
-
-### Inventory
-
-- `StockMovement` records every stock change with document reference.
-- `stock_cost_layers` for FIFO and weighted-average costing.
-- `StockMovementService` handles inbound/outbound with cost layer management.
-- `StockLevel` derived from movements (not manually set).
-
-### Accounting
-
-
-| Service                      | Purpose                                                             |
-| ---------------------------- | ------------------------------------------------------------------- |
-| `JournalPostingService`      | Post and reverse balanced journal entries (immutable after posting) |
-| `ChartOfAccountsInstaller`   | Auto-install Italian PDC on first use                               |
-| `DocumentNumberAllocator`    | Pessimistic-lock numbering per company/type/year                    |
-| `FiscalPeriodCloser`         | Close/reopen fiscal periods with audit                              |
-| `TaxLineCalculator`          | Resolve active tax code at date, compute amounts                    |
-| `TaxCodeSupersessionService` | Handle tax code versioning (new code replaces old)                  |
-
-
-### Payment Schedule & Receivables
-
-
-| Service                           | Purpose                                                                                      |
-| --------------------------------- | -------------------------------------------------------------------------------------------- |
-| `PaymentScheduleGeneratorService` | Auto-generates schedule lines at invoice posting (from PaymentTerm or single immediate line) |
-| `PaymentAllocationService`        | Allocates payments to schedule lines with status updates (open→partial→paid)                 |
-| `AgingReportService`              | AR/AP aging by 30/60/90/120+ day buckets grouped by party                                    |
-
-
-- `PaymentTerm` defines installment rules via `rate_lines` JSON: `[{days, percent, payment_method}]`.
-- Schedule lines are auto-created on invoice posting and removed on unpost (if no allocations exist).
-
-#### Payment lifecycle
-
-When `InvoicePostingService::post()` runs, it reads the invoice's `payment_term_id` and delegates to `PaymentScheduleGeneratorService`, which expands the term's `rate_lines` JSON into one `PaymentScheduleLine` per installment (initial status `open`). Each `Payment` (direction `inbound` or `outbound`) is allocated to one or more schedule lines through the `PaymentAllocation` pivot via `PaymentAllocationService::allocate()`; allocations update `paid_amount_doc` and the line status (`open -> partial -> paid`). `AgingReportService` aggregates open lines by party into 30/60/90/120+ day buckets.
-
-```mermaid
-flowchart LR
-  Inv["Invoice posted"]
-  PT[PaymentTerm]
-  Gen[PaymentScheduleGeneratorService]
-  PSL["PaymentScheduleLine: open / partial / paid"]
-  P["Payment direction=inbound/outbound"]
-  Alloc[PaymentAllocation pivot]
-  PAS[PaymentAllocationService]
-  Aging[AgingReportService]
-
-  Inv -->|"reads payment_term_id"| PT
-  Inv -->|"on posting"| Gen
-  PT -.->|"rate_lines JSON"| Gen
-  Gen --> PSL
-  P --> PAS
-  PAS --> Alloc
-  Alloc -->|"updates status + paid_amount"| PSL
-  PSL --> Aging
-```
-
-### Credit & Debit Notes
-
-
-| Service             | Purpose                                                                                        |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| `CreditNoteService` | Creates credit note from posted invoice, copies lines, validates total doesn't exceed original |
-
-
-- `InvoiceType` enum: `invoice`, `credit_note`, `debit_note`.
-- Credit notes use inverted journal entries (debits↔credits flipped).
-- Separate document numbering: `SalesCreditNote`, `PurchaseCreditNote`, `SalesDebitNote`, `PurchaseDebitNote`.
-- CN total cannot exceed remaining creditable amount of original invoice.
-
-#### Credit note flow
-
-`CreditNoteService::createFromInvoice()` clones the original `Invoice` into a new one with `invoice_type=credit_note` and `credited_invoice_id` referencing the source. Lines are duplicated and amounts validated to never exceed the residual credit-able amount. On posting, `InvoicePostingService::post()` produces a sign-flipped `JournalEntry` (debits and credits swapped), allocates a number from a dedicated sectional (`DocumentType::SalesCreditNote` / `PurchaseCreditNote`), and reduces or cancels open `PaymentScheduleLine` entries linked to the original invoice.
-
-Credit/debit notes are fiscal corrections. Their natural price source is the original invoice line, not the sales or purchase order line. Order lines can explain logistics and fulfilment; invoice lines explain fiscal value. Return-line `unit_price` exists only as an explicit manual override.
-
-```mermaid
-flowchart LR
-  Orig["Invoice: original (posted)"]
-  CNS["CreditNoteService::createFromInvoice"]
-  CN["Invoice: invoice_type=credit_note"]
-  Posting["InvoicePostingService::post"]
-  RevJE["JournalEntry: reversed amounts"]
-  PSL[PaymentScheduleLine open]
-  DocSeq["DocumentSequence: SalesCreditNote / PurchaseCreditNote"]
-
-  Orig --> CNS
-  CNS -->|"copies + flips lines"| CN
-  Orig -.->|"credited_invoice_id"| CN
-  CN --> Posting
-  Posting --> RevJE
-  Posting -.->|"reduces / cancels"| PSL
-  Posting -->|"sectional numbering"| DocSeq
-```
-
-### Returns Management
-
-
-| Service                         | Purpose                                                                                                      |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `ReturnOrderService`            | Orchestrates customer return approval, completion, cancellation, manual credit-note follow-up, and optional auto credit-note creation on completion |
-| `CustomerReturnReceiptService`  | Generates/links inbound DDTs for customer-return physical receipts and records returned quantities            |
-| `SupplierReturnService`         | Orchestrates supplier return approval, completion, cancellation, manual debit-note follow-up, and optional auto debit-note creation on completion |
-| `SupplierReturnShipmentService` | Generates/links outbound DDTs for supplier-return physical shipments and records returned quantities          |
-
-
-- Customer returns use `ReturnOrder` / `ReturnOrderLine`.
-- Supplier returns use `SupplierReturn` / `SupplierReturnLine`.
-- Physical customer returns generate or link inbound `DeliveryNote` records.
-- Physical supplier returns generate or link outbound `DeliveryNote` records.
-- Delivery-note lines remain quantity/source-link only; commercial prices and inventory costs stay out of bolle.
-- Customer return completion increments `qty_returned` on linked `InvoiceLine` and `SalesOrderLine` records.
-- Supplier return completion increments `qty_returned` on linked `PurchaseOrderLine` and `GoodsReceiptLine` records.
-- Customer return credit notes use `ReturnOrderLine.invoice_line_id` and default to the source sales `InvoiceLine.unit_price`; `ReturnOrderLine.unit_price` is an optional manual credit-note override.
-- Supplier return debit notes use `SupplierReturnLine.invoice_line_id` and default to the source purchase `InvoiceLine.unit_price`; `purchase_order_line_id` and `goods_receipt_line_id` remain logistics lineage only.
-- Supplier return debit-note creation is blocked without a source purchase invoice line. A physical supplier return can be completed from PO/GR before invoice correction, but fiscal correction must wait for the purchase invoice line.
-- Credit/debit-note creation is manual by default. If `erp.returns.auto_create_notes_on_complete` is true for the company, `complete()` creates the credit/debit note draft automatically using the same invoice-line contracts. Validation failures abort the completion transaction.
-
-#### Return flow
-
-```mermaid
-flowchart LR
-  CRO["ReturnOrder: customer return"]
-  SRO["SupplierReturn"]
-  InDDT["DeliveryNote direction=inbound"]
-  OutDDT["DeliveryNote direction=outbound"]
-  Stock["StockMovementService / DeliveryNoteInventoryService"]
-  SourceQty["Source lines qty_returned"]
-  SalesInvLine["Sales InvoiceLine price"]
-  PurchaseInvLine["Purchase InvoiceLine price"]
-  CN["Manual credit note draft"]
-  DN["Manual debit note draft"]
-
-  CRO -->|"complete"| InDDT
-  SRO -->|"complete"| OutDDT
-  InDDT --> Stock
-  OutDDT --> Stock
-  CRO --> SourceQty
-  SRO --> SourceQty
-  SalesInvLine -.->|"price source"| CN
-  PurchaseInvLine -.->|"price source"| DN
-  CRO -.->|"manual action"| CN
-  SRO -.->|"manual action"| DN
-```
-
-#### Return fiscal-source rules
-
-| Flow | Logistics source | Fiscal source | Price default |
-| ---- | ---------------- | ------------- | ------------- |
-| Customer return credit note | DDT / sales order / returned stock | Source sales `InvoiceLine` | Sales invoice line `unit_price` |
-| Supplier return debit note | Purchase order / goods receipt / outbound DDT | Source purchase `InvoiceLine` | Purchase invoice line `unit_price` |
-
-Do not add prices to DDT/bolle. DDTs prove movement of goods; invoices and invoice lines prove fiscal value.
-
-### VAT Registers & Settlement (Italian Compliance)
-
-
-| Service                | Purpose                                                                                                  |
-| ---------------------- | -------------------------------------------------------------------------------------------------------- |
-| `VatRegisterService`   | Auto-registers invoices in VAT register at posting (one entry per tax code, progressive protocol number) |
-| `VatSettlementService` | Computes periodic VAT settlement (sales VAT − purchase VAT − previous credit)                            |
-
-
-- `VatRegisterEntry`: protocol_number is sequential per company/register_type/fiscal_year.
-- `VatSettlement`: draft → confirmed lifecycle with carry-forward of credit.
-- Credit notes create negative register entries.
-
-#### VAT registers and settlement flow
-
-At invoice posting, `VatRegisterService::register()` writes one `VatRegisterEntry` per `tax_code` on the invoice, assigning a `protocol_number` progressive per `(company_id, register_type, fiscal_year)`. The entries are scoped by `register_type` (`sales` / `purchases`). At period close, `VatSettlementService::compute()` aggregates the period's entries: `vat_sales - vat_purchases - previous_credit = settlement_amount`. The resulting `VatSettlement` (status `draft -> confirmed`) carries any negative balance forward as `previous_credit` to the next period.
-
-```mermaid
-flowchart LR
-  Inv["Invoice posting"]
-  VRS["VatRegisterService::register"]
-  VRE["VatRegisterEntry: protocol_number, register_type"]
-  TC[TaxCode]
-  FY[FiscalYear]
-  FP[FiscalPeriod]
-  VSS["VatSettlementService::compute"]
-  VS["VatSettlement: draft -> confirmed"]
-
-  Inv --> VRS
-  VRS -->|"one entry per tax_code"| VRE
-  TC --> VRE
-  FY --> VRE
-  FP --> VRE
-  VRE --> VSS
-  VSS -->|"sales - purchases - previous_credit"| VS
-  VS -.->|"carries forward credit"| VSS
-```
-
-### Financial Statements
-
-
-| Service                  | Purpose                                          |
-| ------------------------ | ------------------------------------------------ |
-| `TrialBalanceService`    | Debit/credit balance per account at a given date |
-| `BalanceSheetService`    | Assets = Liabilities + Equity + Net Income       |
-| `IncomeStatementService` | Revenue − Expenses for a date range              |
-
-
-- Filament pages with Blade templates for tabular display.
-- All data derived from posted journal entries (no separate snapshot tables).
-
-#### Financial reports flow
-
-All three report services read posted `JournalEntryLine` records (filtered by `posted_at IS NOT NULL`) without any separate snapshot table: the journal is the single source of truth. `TrialBalanceService` aggregates by account producing debit/credit balances at a point-in-time. `BalanceSheetService` slices the trial balance by account `kind` (asset/liability/equity) and includes net income from the income statement. `IncomeStatementService` aggregates revenue/expense accounts over a `FiscalPeriod` range. Filament Blade pages render the structured DTO arrays returned by each service.
-
-```mermaid
-flowchart LR
-  JEL["JournalEntryLine (posted)"]
-  TBS[TrialBalanceService]
-  BSS[BalanceSheetService]
-  ISS[IncomeStatementService]
-  TB["Trial Balance: debit/credit per account"]
-  BS["Balance Sheet: Assets = Liabilities + Equity + Net Income"]
-  IS["Income Statement: Revenue - Expenses"]
-  Filament["Filament Blade pages"]
-
-  JEL --> TBS
-  JEL --> BSS
-  JEL --> ISS
-  TBS --> TB
-  BSS --> BS
-  ISS --> IS
-  IS -.->|"net income feeds equity"| BS
-  TB --> Filament
-  BS --> Filament
-  IS --> Filament
-```
+-   `ERP_EINVOICE_DRIVER`: `stub` by default; supported values are `stub`, `fatturapa`, `aruba`
+-   `ERP_EINVOICE_ARUBA_BASE_URL`: Aruba API base URL, for example the contracted demo/production web-service host
+-   `ERP_EINVOICE_ARUBA_AUTH_BASE_URL`: optional Aruba auth base URL when using username/password token acquisition
+-   `ERP_EINVOICE_ARUBA_UPLOAD_PATH`: upload endpoint path, default `/services/invoice/upload`
+-   `ERP_EINVOICE_ARUBA_NOTIFICATIONS_PATH`: notifications polling endpoint path, default `/api/v2/invoices-out/notifications`
+-   `ERP_EINVOICE_ARUBA_TOKEN`: bearer token used by the Aruba adapter; if missing, username/password auth is attempted
+-   `ERP_EINVOICE_ARUBA_USERNAME` / `ERP_EINVOICE_ARUBA_PASSWORD`: optional credentials for Aruba `/auth/signin`
+-   `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY`: optional static API key expected on Aruba callback requests
+-   `ERP_EINVOICE_ARUBA_SIGNATURE_CREDENTIAL` / `ERP_EINVOICE_ARUBA_SIGNATURE_DOMAIN`: optional Aruba signature parameters
+-   `ERP_EINVOICE_ARUBA_SENDER_PIVA`: optional sender VAT override; defaults to company fiscal country + tax id
+-   `ERP_EINVOICE_ARUBA_SKIP_EXTRA_SCHEMA` / `ERP_EINVOICE_ARUBA_DRY_RUN`: optional upload flags
+
+Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpCompanySettings` to read dotted keys (e.g. `erp.three_way_match.price_tolerance_percent`).
+
+## Features
+
+### Requirements
+
+-   PHP >= 8.5
+-   Laravel 12.0+
+-   **Recommended:** Laraplate **Core** for users, permissions, and shared infrastructure (typical production setup)
+
+### Installed Packages (development)
+
+The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
+
+-   [pestphp/pest](https://github.com/pestphp/pest) and Laravel / type-coverage plugins
+-   [laravel/pint](https://github.com/laravel/pint)
+-   [larastan/larastan](https://github.com/larastan/larastan)
+-   [rector/rector](https://github.com/rectorphp/rector) and [driftingly/rector-laravel](https://github.com/driftingly/rector-laravel)
+-   [filament/filament](https://github.com/filamentphp/filament) (v5) for admin UI
+-   [nunomaduro/phpinsights](https://github.com/nunomaduro/phpinsights), [peckphp/peck](https://github.com/peckphp/peck)
+
+### Module metadata
+
+-   **Priority:** `999` in `module.json` (load order consistent with other feature modules)
+-   **Namespace:** `Modules\ERP\...`
+-   **Composer package:** `swolley/laraplate-erp`
+-   **Web / API routes:** `Modules/ERP/routes/web.php`, `Modules/ERP/routes/api.php`
+
+### M0 — Multi-tenancy & Multi-currency Foundation
+
+-   `companies` table with functional currency
+-   `BelongsToCompany` trait + global scope for tenant isolation
+-   Dual-currency columns via `ERPMigrateUtils::moneyColumns()` (amount_doc / currency_doc / amount_local / fx_rate)
+-   `CurrencyConverter` service (no-op in M0, pluggable for live FX)
+
+### M0 — Versioning
+
+-   `HasVersions` trait with `VersionStrategy::DIFF` on accounting models
+-   Immutable version strategy on contabile models (cannot be overridden via settings)
+
+### M1 — Accounting Backbone
+
+-   Chart of Accounts (`accounts` table, `Account` model, `ChartOfAccountsProvider` interface, Italian PDC default)
+-   Journal Entries (`JournalEntry` / `JournalEntryLine`, `JournalPostingService::post/reverse`, immutability after posting)
+-   Fiscal Calendar (`FiscalYear`, `FiscalPeriod`, `FiscalPeriodCloser` with re-open audit)
+-   Document Sequences (`DocumentSequence`, `DocumentNumberAllocator`, `DocumentType` enum with gap policy)
+
+### M2 — Tax & Invoice Foundation
+
+-   Tax Codes (`TaxCode`, `TaxKind` enum, immutable fiscal snapshot, `TaxLineCalculator`, `TaxCodeSupersessionService`)
+-   `ItalianTaxCodesSeeder` baseline
+-   Invoice / InvoiceLine stub with tax snapshot columns
+
+### M3.1 — CRM
+
+-   Leads (`Lead` model, `LeadStatus` enum)
+-   Opportunities (`Opportunity`, `OpportunityStatus`, `OpportunityStage` taxonomy)
+-   `OpportunityLifecycleService` + `QuotationObserver` (auto-win on quotation accepted)
+
+### M3.2 — Sales Order Processing
+
+-   `SalesOrder` / `SalesOrderLine` with lock-chain progression
+-   `SalesOrderEvasionService` (delivery + invoice qty tracking, status management)
+-   `SalesOrderAmendmentService` (creates amendment SO from confirmed / partially evaded orders)
+-   Lock propagation: confirming SO locks linked Quotation
+
+### M3.3 — Inventory Management
+
+-   Items, Warehouses, StockLevels
+-   `StockMovement` / `stock_cost_layers` tables
+-   `StockMovementService` with FIFO and weighted-average costing
+-   COGS calculation integrated with delivery posting
+
+### M3.4 — Delivery Notes
+
+-   `DeliveryNote` / `DeliveryNoteLine` with SO line linking
+-   `DeliveryNoteInventoryService` (stock posting + rollback)
+-   `DeliveryNoteCogsJournalService` (COGS journal on posting, full reversal on unpost)
+-   Automatic SO qty_delivered updates
+
+### M3.5 — Invoice Posting & DDT Integration
+
+-   `InvoicePostingService` with full journal post / unpost cycle (observer-driven via `posted_at`)
+-   `DocumentNumberAllocator` integration at posting time (reference assigned on post, cleared on unpost)
+-   Tax snapshot on invoice lines (tax_code, tax_rate, tax_label frozen at posting)
+-   SO qty_invoiced tracking via `SalesOrderEvasionService`
+-   Pivot `erp_invoice_line_delivery_note_line` for flexible Invoice↔DDT linking, mapped by `Models\Pivot\InvoiceLineHasDeliveryNoteLine` with covered quantity and timestamps
+-   `InvoiceDeliveryNoteValidationService` — optional DDT linkage rules at posting (posted DDT, qty caps, SO line consistency)
+-   `InvoiceCompactionService` (compact / expand invoice lines by item)
+-   Filament **Post** / **Unpost** actions on invoice edit page and list (no manual `posted_at` editing)
+-   See `docs/ERP_GUIDA_SEMPLICE.md` §4.7 and `docs/rag/MODULE.md` § Invoice posting workflow for end-to-end flows
+
+### M3.6 — Purchasing Cycle
+
+-   Unified `Party` entity (replaces `Customer`) with `is_customer` / `is_supplier` boolean flags
+-   Party type validation on all models (saving callback) + filtered Filament dropdowns
+-   `PurchaseOrder` / `PurchaseOrderLine`, `GoodsReceipt` / `GoodsReceiptLine`
+-   `ThreeWayMatchService` with configurable price / quantity tolerances (wired in `InvoicePostingService` on purchase posting)
+-   `MatchStatus` enum (matched, tolerance, forced, unmatched) persisted on `invoice_lines` with `match_discrepancy` JSON
+-   Filament **Force three-way match** checkbox on purchase invoice Post action
+-   Per-company settings via `ErpCompanySettings` on `companies.settings` JSON (`erp.three_way_match.*`, default 0%)
+
+### M3+ — Database Lock Triggers
+
+-   MySQL `BEFORE UPDATE` / `BEFORE DELETE` triggers on `quotations` and `sales_orders`
+-   Safety net preventing modification of locked records at DB level
+-   Coexists with application-level observer locks
+
+### M5.1 — Payment Schedule & Receivables
+
+-   `PaymentTerm` model (rate_lines JSON with days / percent / payment_method)
+-   `PaymentScheduleLine` (auto-generated at invoice posting)
+-   `Payment` / `PaymentAllocation` (allocation to schedule lines)
+-   `PaymentScheduleGeneratorService` (integrated in InvoicePostingService)
+-   `PaymentAllocationService` (allocate / deallocate with status tracking)
+-   `AgingReportService` (AR / AP aging by 30 / 60 / 90 / 120+ day buckets)
+-   `PartyBankAccount`, `PaymentRun`, and `PaymentRunLine` for supplier payment runs
+-   `PaymentRunBuilderService` builds draft outbound supplier payment batches from open purchase schedule lines
+-   `SepaPain001Exporter` exports approved supplier payment runs as auditable SEPA SCT `pain.001` XML files
+-   Payment execution is file generation only: no direct bank/API submission, no CBI/Ri.Ba/SDD in v1
+
+### M5.2 — Credit & Debit Notes
+
+-   `InvoiceType` enum (invoice, credit_note, debit_note)
+-   Separate document numbering (SalesCreditNote, PurchaseCreditNote, SalesDebitNote, PurchaseDebitNote)
+-   `CreditNoteService` (create CN from posted invoice, line copying, total validation)
+-   Inverted journal entries on credit note posting
+-   Filament "Create Credit Note" action on invoice page
+-   Credit/debit notes are fiscal corrections: natural prices come from source invoice lines, not from orders.
+
+### M5.3 — VAT Registers & Settlement (Italian Compliance)
+
+-   `VatRegisterEntry` with progressive protocol numbers per register / year
+-   `VatRegisterService` (auto-registration at invoice posting, one entry per tax code)
+-   `VatSettlement` (IVA debito − IVA credito − credito precedente)
+-   `VatSettlementService` (compute + confirm with carry-forward)
+-   Filament read-only register and settlement pages
+
+### M5.4 — Financial Statements
+
+-   `TrialBalanceService` (debit / credit balance per account at date)
+-   `BalanceSheetService` (assets = liabilities + equity + net income)
+-   `IncomeStatementService` (revenue − expenses for date range)
+-   Filament pages with Blade templates for tabular reports
 
 ### E-Invoice Interface
 
-- `EInvoiceProvider` contract: `prepare()`, `submit()`, `validateXml()`, `remoteStatus()`.
-- `EInvoiceSubmission` model tracks submission lifecycle.
-- `StubEInvoiceProvider` is bound by default and produces deterministic local responses.
-- `FatturaPaXmlBuilder` builds ordinary FPR12 XML from ERP sale invoice data through `FatturaPaAnagraphicMapper`.
-- Official FPR12 v1.2.3 XSD resources are vendored under `resources/xsd/fatturapa/` with local XMLDSIG dependency for offline validation.
-- `FatturaPaEInvoiceProvider` is selected with `erp.einvoice.driver = fatturapa`; it generates and validates XML locally but does not contact SDI.
-- `ArubaEInvoiceProvider` is selected with `erp.einvoice.driver = aruba`; it sends validated XML to configured HTTP endpoints and maps submit/status responses.
-- `EInvoiceSubmissionService` persists submit attempts and refreshes remote status.
-- Invoice edit actions can submit posted sale invoices and refresh submitted rows.
-- Current runtime is still local by default; real provider delivery is not implemented yet.
+-   `EInvoiceProvider` contract (prepare, submit, validateXml, remoteStatus)
+-   `EInvoiceSubmission` model + `EInvoiceSubmissionStatus` enum
+-   Stub provider binding and deterministic local submission workflow
+-   Filament actions for posted sale invoice submit / status refresh
+-   Phase 2C FatturaPA readiness: fiscal schema fields on company/party/invoice, `FatturaPaAnagraphicMapper`, `FatturaPaXmlBuilder`, vendored official FPR12 v1.2.3 XSD resources, and local `fatturapa` driver validation
+-   `aruba` driver: production-oriented adapter for Aruba v2-style upload (`dataFile`), notifications polling, optional auth signin, provider callbacks, and conservation availability metadata in `response_payload`
+-   `POST /api/v1/erp/einvoice/aruba/callbacks` applies signed provider callbacks when `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY` is configured
+-   `erp:einvoice:refresh-statuses` polls open submissions for the configured provider and supports `--company`, `--provider`, `--limit`, and `--dry-run`
+-   Current runtime is still local by default: the `stub` driver remains default; `fatturapa` generates and validates XML without delivery
+-   Remaining go-live work: verify the configured Aruba tenant/contract, callback accreditation/IP allowlist, production credentials, and legal retention obligations with the provider
 
-#### Phase 2C — FatturaPA / SDI production readiness
+### M6.1 — Bank Reconciliation
 
-Phase 2C is the active e-invoice implementation slice. It extends the existing neutral provider contract instead of replacing it:
+-   `BankAccount`, `BankStatement`, and `BankStatementLine` models
+-   Bank statement import from CSV, CAMT.053, and a minimal MT940 transaction subset
+-   Manual reconciliation service with ranked payment suggestions
+-   Match-with-difference service and Filament workflow for fees, rounding, and write-offs
+-   `BankDifferenceJournalService` posts balanced journals against `bank_cash` and the selected difference account
+-   `BankStatementLine.difference_journal_entry_id` keeps audit linkage to the accounting adjustment
 
-1. **Done:** Add the FatturaPA / SDI fiscal fields needed on company, party, and invoice records, and block sale e-invoice submit when mandatory readiness data is missing.
-2. **Done:** Map `Company`, `Party`, and `Invoice` into an extended neutral payload with FatturaPA-shaped anagraphic data.
-3. **Done:** Build FatturaPA ordinary FPR12 XML and validate it through vendored official XSD resources.
-4. **Done:** Add a production-oriented configurable Aruba adapter behind Laravel config and HTTP fakes in tests.
-5. **Done:** Gate tax-code supersession, company context switching, and document-sequence reservation through explicit permissions.
+### M6.2 — Returns Management
 
-### Lock & Safety Mechanisms
+-   `ReturnOrder` for customer returns and `SupplierReturn` for supplier returns
+-   Customer returns generate/link inbound DDTs for physical stock receipts
+-   Supplier returns generate/link outbound DDTs for physical stock shipments
+-   DDT lines remain quantity/source-link only; no prices or costs on bolle
+-   Return completion tracks returned quantities on source invoice / sales order / purchase order / goods receipt lines
+-   Manual follow-up actions create and link credit/debit note drafts; optional setting `erp.returns.auto_create_notes_on_complete` creates NC/ND drafts during return completion
+-   Customer return credit notes use `ReturnOrderLine.invoice_line_id` and the source sales `InvoiceLine.unit_price`; `ReturnOrderLine.unit_price` is an optional manual override.
+-   Supplier return debit notes use `SupplierReturnLine.invoice_line_id` and the source purchase `InvoiceLine.unit_price`; `purchase_order_line_id` and `goods_receipt_line_id` remain logistics references.
+-   Supplier return debit-note creation is blocked when the source purchase invoice line is missing. Returning goods physically can happen from PO/GR, but fiscal correction must reference the purchase invoice.
 
-- Application-level: `HasLocks` trait with observers that apply locks on business events.
-- Database-level: MySQL `BEFORE UPDATE`/`BEFORE DELETE` triggers on `quotations` and `sales_orders` as safety net.
-- Observer and trigger coexist: observer applies the lock, trigger defends it.
+### M7.1 — Advanced Pricelists & Party Rules
 
-## Key enums
+-   `PriceList` / `PriceListItem` with validity windows and Filament resource
+-   `PartyPriceRule` with percent, fixed, and override discounts
+-   `Party::price_rules()` relation and Party Filament relation manager
+-   `PriceResolverService` and `InvoiceLinePricingService` apply commercial pricing to quotation / sales order / invoice lines
+-   `Activity` is the concrete ERP taxonomy used for activity-based price rules; do not point UI directly at abstract Core `Taxonomy`.
 
+### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
-| Enum                    | Values                                                                                                                                                                    | Used by                   |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `InvoiceDirection`      | sale, purchase                                                                                                                                                            | Invoice                   |
-| `InvoiceType`           | invoice, credit_note, debit_note                                                                                                                                          | Invoice                   |
-| `DocumentType`          | quotation, sales_order, purchase_order, sales_invoice, purchase_invoice, sales_credit_note, purchase_credit_note, sales_debit_note, purchase_debit_note, internal_journal | DocumentSequence          |
-| `PaymentDirection`      | inbound, outbound                                                                                                                                                         | Payment                   |
-| `PaymentScheduleStatus` | open, partial, paid, cancelled                                                                                                                                            | PaymentScheduleLine       |
-| `MatchStatus`           | matched, tolerance, forced, unmatched                                                                                                                                     | InvoiceLine (3-way match) |
-| `ReturnStatus`          | draft, approved, processed, cancelled                                                                                                                                     | ReturnOrder, SupplierReturn |
-| `DeliveryNoteDirection` | outbound, inbound                                                                                                                                                         | DeliveryNote              |
-| `VatRegisterType`       | sales, purchases                                                                                                                                                          | VatRegisterEntry          |
-| `VatSettlementStatus`   | draft, confirmed                                                                                                                                                          | VatSettlement             |
-| `QuoteStatus`           | draft, sent, accepted, rejected, expired                                                                                                                                  | Quotation                 |
-| `SalesOrderStatus`      | draft, confirmed, partially_evased, fully_evased, cancelled                                                                                                               | SalesOrder                |
-| `LeadStatus`            | new, contacted, qualified, converted, lost                                                                                                                                | Lead                      |
-| `OpportunityStatus`     | open, won, lost                                                                                                                                                           | Opportunity               |
+-   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.
+-   Domain abilities seeded in `ERPDatabaseSeeder` include posting/unposting, forced posting, e-invoice submit/refresh, quotation unlock, document-sequence reset/reserve, tax-code supersession, and company context switch.
+-   Filament edit/list actions call services; they do not implement business mutations inline.
+-   Implemented Phase 2B items: Party price rules UI, PriceList resource, quotation unlock, document sequence reset, return line fiscal override contract, and optional auto NC/ND on return complete.
+-   Implemented Phase 2B items also include supplier payment runs with SEPA `pain.001` and CBI bonifici exports.
+-   Implemented Phase 2B banking items also include bank difference journals, match-with-difference UI, and CAMT.053 / MT940 statement import.
+-   Implemented Phase 2B reporting items also include CSV export actions and immutable CSV/PDF snapshot archives for trial balance, balance sheet, and income statement.
+-   Implemented Phase 2B operational dashboard items also include Sales Pipeline filters/KPIs/CSV export and Stock Valuation warehouse filter/KPIs/CSV export.
 
+### Supplier Payment Runs
 
-## Filament admin resources
+-   Supplier bank coordinates live on `PartyBankAccount`, not on invoices or payment lines.
+-   `PaymentRunBuilderService` selects open/partial purchase invoice schedule lines and creates a draft payment run.
+-   `PaymentRunLine` stores a beneficiary snapshot: name, IBAN, BIC, amount, due date, and remittance text.
+-   Payment runs move through `draft -> approved -> exported`; `cancelled` is available before export.
+-   Exported payment runs are immutable and store file name, export timestamp, and SHA-256 checksum.
+-   Supported supplier payment file formats are SEPA Credit Transfer `pain.001` and CBI bonifici text export; bank submission remains outside ERP.
 
-### Accounting group
+### Filament Admin UI
 
-Company, Account, JournalEntry (view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
+-   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
+-   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
+-   **Report pages:** Trial Balance, Balance Sheet, Income Statement, Sales Pipeline, Stock Valuation. Financial and operational report pages expose CSV export actions; financial reports can be archived through immutable CSV/PDF snapshots.
 
-### Commercial group
-
-Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice (Post/Unpost header + table actions), PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn
-
-### Financial group
-
-PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
-
-### Report pages
-
-Trial Balance, Balance Sheet, Income Statement
-
-## Current implementation state
+### Current ERP Status
 
 | Area | Status | Notes |
-| ---- | ------ | ----- |
-| Accounting backbone | Implemented | Companies, accounts, journals, fiscal years/periods, document sequences, posting/reversal services. |
-| Sales and inventory | Implemented | CRM, quotations, sales orders, DDTs, stock movements, cost layers, COGS journals, invoice posting. |
-| Purchasing | Implemented | Purchase orders, goods receipts, purchase invoices, and three-way match. |
-| Payments and VAT | Implemented + payment execution v1 | Payment terms, payment schedules, allocations, aging, VAT register, VAT settlement, supplier payment runs, and SEPA `pain.001` export. |
-| Returns | Implemented v1 + optional fiscal automation | Physical customer/supplier returns with DDT integration and returned-quantity tracking. Fiscal follow-up is manual by default; company setting `erp.returns.auto_create_notes_on_complete` can create NC/ND drafts during completion. |
-| Return fiscal pricing | Implemented | Customer credits default to sales invoice lines; supplier debits default to purchase invoice lines; order prices are not fiscal default prices. |
-| Pricing | Implemented v1 + UI | Price lists, price list items, party price rules, resolver, Party relation manager, PriceList resource. |
-| Policies and domain actions | Implemented Phase 2A + 2B + 2C | State-aware `ERPModelPolicy`, seeded domain permissions, invoice/fiscal/DDT/journal/SO actions, quotation unlock, document sequence reset/reserve, tax-code supersession, and company context switch. |
-| Banking | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, suggestions, manual reconciliation, match-with-difference UI, and accounting journals for bank fees/rounding/write-offs. Outbound supplier payment-file export is handled by PaymentRun. |
-| E-invoice | Stub implemented; FatturaPA local XML active | Provider contract, stub provider, submission persistence, submit/refresh actions, FatturaPA / SDI schema data, mapping, FPR12 XML/XSD validation, configurable Aruba adapter, and extended admin permissions. Real provider certification remains an operational go-live task. |
-| Reporting | Implemented v1 + CSV export | Trial balance, balance sheet, and income statement have Filament CSV exports. Sales pipeline has won-date filters, KPIs, and CSV export. Stock valuation has warehouse filter, KPIs, and CSV export. |
+| --- | --- | --- |
+| M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
+| M4 Permissions & reporting | Implemented v1 + CSV/PDF snapshots | Domain permissions, invoice action auth, accounting/operational reports, financial/operational report CSV exports, immutable report snapshots, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
+| M5.1 Payment execution | Implemented v1 + Italian bank exports | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, CBI bonifici export, checksum metadata, and Filament resource are present. Ri.Ba/SDD generators cover customer receivable schedules; direct bank submission remains backlog. |
+| M6.1 Bank reconciliation | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. |
+| M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
+| M6.3 E-invoice stub | Implemented v1 + Phase 2C + Aruba operations | Provider binding, deterministic stub submission workflow, invoice actions, FatturaPA readiness fields, local XML/XSD validation, Aruba upload/polling/callback adapter, and polling command are present. |
+| M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
+| Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
+| Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
+| Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
 
-## Known gaps, limitations, and correction notes
+### Known Limitations After Phase 2C
 
-These items are intentional current-state truth for RAG retrieval. Do not answer as if they are already implemented.
+-   E-invoice defaults to the deterministic `stub` workflow. The optional `fatturapa` driver generates and XSD-validates ordinary FPR12 XML locally, but it does not deliver to SDI.
+-   The optional `aruba` driver now follows the Aruba v2-style upload and notifications polling shape, supports optional auth signin, exposes a signed callback route, and records polling/callback/conservation metadata in `EInvoiceSubmission.response_payload`. It still needs verification against the contracted Aruba tenant before production go-live.
+-   FatturaPA / SDI readiness fields now exist on company, party, and invoice records, sale e-invoice submit validates mandatory data, `FatturaPaAnagraphicMapper` maps those fields into a FatturaPA-shaped neutral payload, and `FatturaPaXmlBuilder` generates XML from it. Edge-case fiscal mappings still need dedicated fields and rules.
+-   Legal retention is tracked only as provider metadata such as `pddAvailable`; full conservazione governance, retrieval/esibizione workflows, and contract-specific retention checks remain go-live/backlog work.
+-   Supplier payment execution exports SEPA SCT `pain.001` and CBI bonifici files. Ri.Ba and SDD CORE generators exist for customer receivable schedule lines, with SDD mandate validation on `PartyBankAccount`. Direct bank/API submission and bank-specific certification remain outside ERP.
+-   Bank import supports CSV, CAMT.053, and a minimal MT940 subset; it is not full bank API sync and it does not auto-confirm matches without the reconciliation workflow.
+-   Financial report snapshots store immutable payload, CSV, PDF content, hash, and parameters through `erp_report_snapshots`; the built-in PDF renderer is intentionally simple and dependency-free.
+-   Multi-currency now has `ExchangeRate`, `DatabaseCurrencyConverter`, and `FxRevaluationService` for historical/inverse FX rates and unrealized revaluation journals on open foreign-currency schedules. External FX feed imports and realized FX settlement automation remain later enhancements.
+-   Money math now has a `Money` value object built on `Decimal`; analytic accounting has company dimensions, dimension values, and a journal-line pivot with allocation percentage.
+-   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
+-   Processed returns can be safely reversed before any linked credit/debit note exists: the generated DDT is unposted, returned quantities are restored, and the return goes back to approved. Linked fiscal notes must be handled explicitly first.
+-   DDT/bolle lines intentionally do not carry prices or costs. Fiscal corrections price from source invoice lines, not from DDTs, orders, goods receipts, or current price lists.
+-   Reports remain live-query in Filament, but financial report snapshots now archive immutable payload/CSV/simple-PDF rows. Rich paginated PDF design and operational report snapshot scheduling remain enhancements.
+-   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
+-   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
+-   Application locks are portable; MySQL DB triggers are an extra safety net for selected lock chains and should not be treated as cross-database enforcement.
+-   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
 
-| Area | Current truth | Do not assume |
-| ---- | ------------- | ------------- |
-| FatturaPA / SDI | The neutral workflow, stub provider, readiness fields, submit-time readiness validation, FatturaPA-shaped mapper, FPR12 XML builder, vendored official XSD, local `fatturapa` validation, and configurable `aruba` HTTP adapter exist. | Do not claim certified Aruba production submission, direct SDI delivery, advanced SDI statuses/callbacks, legal retention, or complete coverage of every FatturaPA/SDI business rule. |
-| Fiscal anagraphic data | Company, party, and invoice records now store the minimum FatturaPA/SDI readiness fields. `EInvoiceSubmissionService` rejects sale submit when mandatory readiness data is missing. `FatturaPaAnagraphicMapper` maps those fields into a neutral payload used by the XML builder. | Do not claim every Italian fiscal edge case is mapped; unsupported details still require future fields/mapping. |
-| Payment runs | ERP exports SEPA SCT `pain.001` files with checksum/audit metadata. | Do not claim direct bank API submission, CBI, Ri.Ba, SDD, or proprietary Italian bank tracks. |
-| Bank statement import | CSV, CAMT.053, and a minimal MT940 transaction subset are supported. | Do not claim full MT940 coverage, bank API sync, or automatic reconciliation without operator confirmation. |
-| Domain HTTP/API | Filament actions call services, but generic internal domain-action routes and opt-in external API governance are Phase 3 work. | Do not expose domain mutations through ad hoc routes before the Phase 3 Core exposure model exists. |
-| Processed returns | Draft/approved returns can be cancelled; processed returns do not yet have a safe revert/reverse flow. | Do not reverse stock/DDT/NC-ND effects manually or by deleting processed records. |
-| Return fiscal pricing | Credit/debit notes from returns default to source invoice-line prices; return-line `unit_price` is only an explicit override. | Do not price fiscal corrections from orders, goods receipts, DDT lines, or current price lists. |
-| Delivery notes | DDT/bolle lines are quantity and source-link documents. | Do not add prices or costs to DDT lines; stock cost lives in stock movements/cost layers. |
-| Reporting/export | Financial and operational reports are live-query reports with CSV export. | Do not claim PDF export, scheduled report snapshots, or immutable report archives. |
-| Multi-currency | Schema and converter foundation exist; the converter is effectively no-op until real FX work lands. | Do not claim FX rates, realized/unrealized exchange differences, or revaluation journals. |
-| Money model | Persisted money, prices, costs, and quantities use decimals; selected services use decimal math helpers. | Do not claim a full domain-wide Money value object is implemented. |
-| Analytic accounting | Project/site-style analytic references are limited and not a full journal-line dimension model. | Do not claim cost centers, profit centers, or arbitrary analytic dimensions. |
-| Pricing | Price lists, price list items, party rules, and taxonomy/activity-based pricing are implemented. | Do not claim direct item-specific list pricing beyond the current schema. |
-| Locks and DB triggers | Application locks are the cross-database source of truth. MySQL triggers exist as an extra safety net for selected lock chains. | Do not rely on DB triggers as portable enforcement across PostgreSQL, Oracle, or SQLite. |
-| Permissions | Core CRUD permissions plus seeded domain abilities are used. A model without explicit `$connection` correctly uses the default connection. Extended admin abilities include `default.erp_tax_codes.supersede`, `default.erp_companies.switch_context`, and `default.erp_document_sequences.reserve`. | Do not treat the default permission connection as a bug; central permission-name helper work is only needed if explicit model connections become relevant. Do not assume a company switcher or tax-code supersession Filament action exists until one is built. |
-| Concurrency proof | Document numbering uses pessimistic locks and focused tests exist. A broad 50-worker stress suite remains backlog. | Do not use stress-test coverage claims unless the dedicated concurrency suite has been run. |
-| Legacy/vertical work | ETL, ICS/calendar export, Gantt planning, mobile API, and Tricount refactor are future phases. MES is not part of the current ERP scope. | Do not mix MES assumptions or vertical scheduling behavior into ERP core decisions. |
+### Roadmap
 
-## Typical developer questions (FAQ for RAG)
+-   Phase 2C: FatturaPA / SDI production-readiness and extended admin permissions are implemented.
+-   Phase 3+: domain HTTP actions, API exposure governance, and later accounting architecture improvements. Safe processed-return reverse is implemented in ERP services/UI before API exposure.
 
-- **Which service posts inventory when a delivery note is confirmed?**
-→ `DeliveryNoteInventoryService` creates outbound stock movements and updates SO qty_delivered.
-- **How does invoice posting work?**
-→ Filament **Post** sets `posted_at`; `InvoiceObserver` calls `InvoicePostingService::post()` in a DB transaction: DDT validation (sale), three-way match (purchase), document number, tax snapshot, journal, VAT register, payment schedule, SO qty_invoiced. **Unpost** reverses the chain (schedule removal blocked if allocations exist).
-- **How do I post an invoice from the UI?**
-→ Use **Post** on the invoice edit page or list (`InvoicePostingActions`). Do not set `posted_at` manually in the form.
-- **How does optional Invoice ↔ DDT linking work?**
-→ Pivot `erp_invoice_line_delivery_note_line` (qty per link). Optional at posting; `InvoiceDeliveryNoteValidationService` enforces posted DDT, qty caps, and SO line consistency when links exist.
-- **How do purchase receipts affect stock and accounting?**
-→ GoodsReceipt posting creates inbound `StockMovement` entries, updates PO line quantities, and creates cost layers.
-- **How does the 3-way match work?**
-→ On purchase invoice posting, `InvoicePostingService` calls `ThreeWayMatchService::validate()` per line. Tolerances: `ErpCompanySettings` on `companies.settings`. Exceeding tolerance blocks posting unless **Force three-way match** is checked (sets `forceThreeWayMatchOnPosting`). Status stored in `match_status` / `match_discrepancy`.
-- **How are credit notes handled?**
-→ `CreditNoteService::createFromInvoice()` copies lines from original. On posting, `InvoicePostingService` negates amounts for inverted journal entries. Separate numbering via `DocumentType::SalesCreditNote`/`PurchaseCreditNote`.
-- **How are supplier payment files generated?**
-→ Create a `PaymentRun` from open/partial purchase invoice schedule lines. `PaymentRunBuilderService` locks the schedule lines, validates supplier bank coordinates, and stores beneficiary snapshots on `PaymentRunLine`. After approval, `SepaPain001Exporter` generates SEPA SCT `pain.001` XML and marks the run exported with checksum metadata. No direct bank/API submission is performed.
-- **How are bank reconciliation differences handled?**
-→ `BankReconciliationService::matchPaymentWithDifference()` matches the statement line to the payment and calls `BankDifferenceJournalService`. The service posts a balanced journal on the bank cash account (`erp_role=bank_cash`) and the selected difference account, then stores the journal id on `BankStatementLine.difference_journal_entry_id`.
-- **Which bank statement import formats are supported?**
-→ CSV remains supported through `BankStatementCsvImporter`. CAMT.053 XML and a minimal MT940 `:61:` / `:86:` transaction subset are parsed through `BankStatementImportService`, `Camt053Parser`, and `Mt940Parser`; imported rows are persisted as `BankStatementLine` with the original parser metadata in `raw_payload`.
-- **How do customer and supplier returns work?**
-→ Customer returns are `ReturnOrder` documents that complete through inbound DDTs; supplier returns are `SupplierReturn` documents that complete through outbound DDTs. Completion records stock movement through the DDT inventory path and updates `qty_returned` on linked source lines. Credit/debit notes are manual by default, or automatic during completion when `erp.returns.auto_create_notes_on_complete` is true. Customer credits price from sales invoice lines; supplier debits price from purchase invoice lines. Orders/GR/DDT are logistics lineage, not fiscal price sources.
-- **How does e-invoice submission work?**
-→ `EInvoiceProvider` resolves to `StubEInvoiceProvider` by default. `EInvoiceSubmissionService::submit()` accepts only posted sale invoices, stores an `EInvoiceSubmission`, and blocks duplicate active submissions. With `erp.einvoice.driver = fatturapa`, the provider builds and XSD-validates FPR12 XML before persisting the local submission. With `erp.einvoice.driver = aruba`, the provider posts the validated XML to configured HTTP endpoints and maps provider statuses during refresh. `refresh()` maps provider statuses back to `submitted`, `accepted`, or `rejected`.
-- **What is Phase 2C adding to e-invoice?**
-→ Phase 2C turns the current stub workflow into the Italian production path. SDI/FatturaPA fields, `FatturaPaAnagraphicMapper`, FPR12 XML building, XSD validation, configurable Aruba adapter, and extended permissions for high-risk fiscal/admin actions are implemented. Real provider certification and advanced SDI operations remain go-live/backlog work.
-- **How do payment schedules work?**
-→ At invoice posting, `PaymentScheduleGeneratorService::generate()` creates schedule lines based on `PaymentTerm` rate_lines (or single immediate line if no term). Payments are allocated via `PaymentAllocationService`.
-- **Where is VAT register logic?**
-→ `VatRegisterService::register()` is called by `InvoicePostingService` after journal creation. Creates one `VatRegisterEntry` per tax code on the invoice, with sequential protocol numbers. `VatSettlementService::compute()` calculates periodic settlement.
-- **How do financial reports work?**
-→ `TrialBalanceService`, `BalanceSheetService`, `IncomeStatementService` query posted `JournalEntryLine` records aggregated by account. No separate snapshot tables — always live from journal. `FinancialReportCsvExporter` exports trial balance, balance sheet, and income statement; the related Filament pages expose **Export CSV** actions.
-- **How do operational dashboards work?**
-→ `SalesPipelineService` summarizes opportunities by status and computes won-period KPIs from `won_from` / `won_to` filters. `StockValuationService` summarizes current `StockLevel` rows and supports an optional `warehouse_id` filter. `OperationalReportCsvExporter` exports both dashboards to CSV from their Filament pages.
-- **What is the Party entity?**
-→ `Party` (table: `parties`) is the unified customer/supplier entity. Boolean flags `is_customer`/`is_supplier` distinguish roles. Scopes: `scopeCustomers()`, `scopeSuppliers()`. Sales-side models validate party is_customer, purchase-side validates is_supplier.
-- **How does document numbering work?**
-→ `DocumentNumberAllocator::next()` with pessimistic lock per company/DocumentType/fiscal_year. `defaultGapAllowed()` on DocumentType controls whether rollback gaps are acceptable (true for quotations/orders, false for fiscal documents like invoices).
-- **How does the lock-chain work?**
-→ Confirming a SO locks the linked Quotation. Starting evasion locks SO line qty_ordered. DB triggers (BEFORE UPDATE/DELETE on quotations, sales_orders) provide a safety net preventing modification of locked records at SQL level.
-- **What is the safe extension pattern for new ERP document states?**
-→ Create a new service in `app/Services/`, wire it via constructor injection, use `DB::transaction()` + `lockForUpdate()` for concurrency, emit journal entries via `JournalPostingService`, update document status in the same transaction.
+## Scripts
 
-## Dependencies
+The ERP module exposes the same Composer script conventions as **Cms** and **Core**:
 
-- Strong dependency on `Core` lifecycle infrastructure (users, locks, settings, versioning, MigrateUtils).
-- Optional `AI` module support for assistant/search scenarios.
+### Code quality and testing
 
-## Risks and controls
+```bash
+composer test                 # Full test and quality pipeline
+composer test:standalone      # Unit-focused Pest run
+composer test:type-coverage   # Type coverage (target: 100%)
+composer test:typos           # Peck typo check
+composer test:lint            # Pint + Rector dry-run
+composer test:types           # PHPStan
+composer test:refactor        # Rector
+```
 
-- Inventory/accounting divergence if posting logic is bypassed (mitigated by service-only posting).
-- Fiscal period closure without reconciliation can lock incorrect balances (mitigated by `FiscalPeriodCloser` audit).
-- Tax behavior must remain parameterized and version-aware for regulatory changes (mitigated by `TaxCode` supersession).
-- VAT register protocol numbers must be sequential — unpost creates gaps (acceptable per Italian law for cancelled invoices).
+### Maintenance
+
+```bash
+composer lint                 # Rector, Pint, IDE helpers
+composer check                # PHPStan
+composer fix                  # PHPStan with fix
+composer refactor             # Rector
+composer update:requirements  # composer bump + npm-check-updates
+```
+
+### Versioning
+
+```bash
+composer version:major
+composer version:minor
+composer version:patch
+```
+
+### Hooks
+
+```bash
+composer setup:hooks
+```
+
+## Repository rename (from laraplate-business)
+
+If you still have a clone using the old remote:
+
+```bash
+git remote set-url origin git@github.com:swolley/laraplate-erp.git
+# or HTTPS: https://github.com/swolley/laraplate-erp.git
+```
+
+In the parent Laraplate app, update `.gitmodules` to `path = Modules/ERP` and `url` / `pushurl` for `laraplate-erp`, then run `git submodule sync` and `composer update`.
+
+## Contributing
+
+If you want to contribute to this project, follow these steps:
+
+1. Fork the repository.
+2. Create a new branch for your feature or fix.
+3. Open a pull request.
+
+## License
+
+ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html).
+
+## TODO
+
+- [x] M6.1 — Bank reconciliation and statement import
+- [x] M6.2 — Returns management (customer and supplier)
+- [x] M6.2/2B-07 — Invoice-line-based return credit/debit note pricing contract
+- [x] M6.2/2B-06 — Optional automatic NC/ND creation on return completion
+- [x] M6.3 — E-invoice stub workflow
+- [x] M7.1 — Advanced pricelists with party-specific pricing
+- [x] M4 — Policies, permissions, and reporting pages
+- [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
+- [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
+- [x] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, configurable Aruba adapter, and extended admin permissions
+- [ ] API resources and form requests
+- [x] Comprehensive accounting golden-master tests
+- [x] Export CSV for financial reports
