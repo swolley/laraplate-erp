@@ -198,6 +198,124 @@ it('tracks returned quantities on supplier source lines', function (): void {
         ->and((string) $goods_receipt_line->fresh()->qty_returned)->toBe('2.0000');
 });
 
+it('reverses processed supplier returns before fiscal note creation', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+    ]);
+    $goods_receipt = GoodsReceipt::query()->create([
+        'company_id' => $company->id,
+        'purchase_order_id' => $purchase_order->id,
+        'reference' => 'GR-REV-1',
+    ]);
+    $goods_receipt_line = GoodsReceiptLine::query()->create([
+        'company_id' => $company->id,
+        'goods_receipt_id' => $goods_receipt->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 5,
+        'unit_cost' => '10.0000',
+        'purchase_order_line_id' => $purchase_order_line->id,
+    ]);
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $purchase_order_line->id,
+        'goods_receipt_line_id' => $goods_receipt_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+    ]);
+
+    $service = app(SupplierReturnService::class);
+    $processed = $service->complete($supplier_return);
+    $reversed = $service->reverseProcessed($processed);
+    $delivery_note = $processed->delivery_note()->firstOrFail()->fresh();
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect($reversed->status)->toBe(ReturnStatus::Approved)
+        ->and($reversed->processed_at)->toBeNull()
+        ->and($delivery_note->posted_at)->toBeNull()
+        ->and($delivery_note->inventory_posted_at)->toBeNull()
+        ->and((string) $purchase_order_line->fresh()->qty_returned)->toBe('0.0000')
+        ->and((string) $goods_receipt_line->fresh()->qty_returned)->toBe('0.0000')
+        ->and((string) $level->fresh()->quantity)->toBe('5.0000');
+});
+
+it('blocks reversing processed supplier returns with linked debit notes', function (): void {
+    [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
+
+    $purchase_order = PurchaseOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => 'received',
+    ]);
+    $purchase_order_line = PurchaseOrderLine::query()->create([
+        'purchase_order_id' => $purchase_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned supplier item',
+        'qty_ordered' => 5,
+        'qty_received' => 5,
+        'unit_price' => '11.5000',
+    ]);
+    $purchase_invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Purchase,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $purchase_invoice_line = $purchase_invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned supplier item',
+        'quantity' => 5,
+        'unit_price' => '13.2500',
+        'purchase_order_line_id' => $purchase_order_line->id,
+    ]);
+    $supplier_return = SupplierReturn::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'purchase_order_id' => $purchase_order->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $supplier_return->lines()->create([
+        'company_id' => $company->id,
+        'purchase_order_line_id' => $purchase_order_line->id,
+        'invoice_line_id' => $purchase_invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+    ]);
+
+    $service = app(SupplierReturnService::class);
+    $processed = $service->complete($supplier_return);
+    $service->createDebitNote($processed);
+
+    expect(fn () => $service->reverseProcessed($processed->fresh()))
+        ->toThrow(ValidationException::class);
+});
+
 it('rejects completing supplier returns before approval', function (): void {
     [$company, $party, $warehouse, $item] = createSupplierReturnFixtures();
 

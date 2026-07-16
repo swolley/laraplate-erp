@@ -73,6 +73,23 @@ final class EditSupplierReturn extends EditRecord
                         ->success()
                         ->send();
                 }),
+            Action::make('reverse_processed')
+                ->label('Reverse')
+                ->icon(Heroicon::OutlinedArrowUturnLeft)
+                ->color('warning')
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record instanceof SupplierReturn
+                    && $this->record->status === ReturnStatus::Processed
+                    && $this->record->debit_note_invoice_id === null)
+                ->action(function (): void {
+                    app(SupplierReturnService::class)->reverseProcessed($this->record);
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('Supplier return reversed')
+                        ->success()
+                        ->send();
+                }),
             Action::make('create_debit_note')
                 ->label('Create Debit Note')
                 ->icon(Heroicon::OutlinedDocumentDuplicate)

@@ -8,18 +8,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Data\Returns\ReturnLineCreditOverride;
+use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\ReturnOrderLine;
+use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
+use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 
 final readonly class ReturnOrderService
 {
     public function __construct(
         private CustomerReturnReceiptService $receipt_service,
+        private DeliveryNoteInventoryService $delivery_note_inventory_service,
         private CreditNoteService $credit_note_service,
         private ErpCompanySettings $erp_company_settings,
     ) {}
@@ -55,6 +59,64 @@ final readonly class ReturnOrderService
             }
 
             return $processed;
+        });
+    }
+
+    public function reverseProcessed(ReturnOrder $return_order): ReturnOrder
+    {
+        return DB::transaction(function () use ($return_order): ReturnOrder {
+            /** @var ReturnOrder $locked */
+            $locked = ReturnOrder::query()
+                ->with('lines')
+                ->lockForUpdate()
+                ->whereKey($return_order->id)
+                ->firstOrFail();
+
+            if ($locked->status !== ReturnStatus::Processed) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only processed customer returns can be reversed.'],
+                ]);
+            }
+
+            if ($locked->credit_note_invoice_id !== null) {
+                throw ValidationException::withMessages([
+                    'credit_note_invoice_id' => ['Reverse or remove the linked credit note before reversing this customer return.'],
+                ]);
+            }
+
+            if ($locked->delivery_note_id === null) {
+                throw ValidationException::withMessages([
+                    'delivery_note_id' => ['Processed customer return is missing its generated delivery note.'],
+                ]);
+            }
+
+            /** @var DeliveryNote $delivery_note */
+            $delivery_note = DeliveryNote::query()
+                ->whereKey($locked->delivery_note_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ((int) $delivery_note->company_id !== (int) $locked->company_id) {
+                throw ValidationException::withMessages([
+                    'delivery_note_id' => ['Customer return delivery note belongs to a different company.'],
+                ]);
+            }
+
+            if ($delivery_note->posted_at !== null) {
+                $delivery_note->posted_at = null;
+                $delivery_note->save();
+            } elseif ($delivery_note->inventory_posted_at !== null) {
+                $this->delivery_note_inventory_service->unpostInventory($delivery_note);
+                $delivery_note->save();
+            }
+
+            $this->unregisterSourceReturnedQuantities($locked);
+
+            $locked->status = ReturnStatus::Approved;
+            $locked->processed_at = null;
+            $locked->save();
+
+            return $locked;
         });
     }
 
@@ -124,6 +186,54 @@ final readonly class ReturnOrderService
 
             return $locked;
         });
+    }
+
+    private function unregisterSourceReturnedQuantities(ReturnOrder $return_order): void
+    {
+        foreach ($return_order->lines as $line) {
+            if ($line->invoice_line_id === null) {
+                continue;
+            }
+
+            /** @var InvoiceLine $invoice_line */
+            $invoice_line = InvoiceLine::query()
+                ->whereKey($line->invoice_line_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $quantity = (float) $line->quantity;
+            $new_invoice_returned = (float) $invoice_line->qty_returned - $quantity;
+
+            if ($new_invoice_returned < -0.00005) {
+                throw ValidationException::withMessages([
+                    'quantity' => ['Cannot reverse customer return because source invoice returned quantity would become negative.'],
+                ]);
+            }
+
+            $invoice_line->qty_returned = $this->formatQuantity(max(0.0, $new_invoice_returned));
+            $invoice_line->save();
+
+            if ($invoice_line->sales_order_line_id === null) {
+                continue;
+            }
+
+            /** @var SalesOrderLine $sales_order_line */
+            $sales_order_line = SalesOrderLine::query()
+                ->whereKey($invoice_line->sales_order_line_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $new_sales_returned = (float) $sales_order_line->qty_returned - $quantity;
+
+            if ($new_sales_returned < -0.00005) {
+                throw ValidationException::withMessages([
+                    'quantity' => ['Cannot reverse customer return because source sales order returned quantity would become negative.'],
+                ]);
+            }
+
+            $sales_order_line->qty_returned = $this->formatQuantity(max(0.0, $new_sales_returned));
+            $sales_order_line->save();
+        }
     }
 
     private function assertCustomerParty(ReturnOrder $return_order): void

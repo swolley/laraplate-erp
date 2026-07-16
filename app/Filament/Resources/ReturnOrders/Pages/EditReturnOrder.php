@@ -73,6 +73,23 @@ final class EditReturnOrder extends EditRecord
                         ->success()
                         ->send();
                 }),
+            Action::make('reverse_processed')
+                ->label('Reverse')
+                ->icon(Heroicon::OutlinedArrowUturnLeft)
+                ->color('warning')
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record instanceof ReturnOrder
+                    && $this->record->status === ReturnStatus::Processed
+                    && $this->record->credit_note_invoice_id === null)
+                ->action(function (): void {
+                    app(ReturnOrderService::class)->reverseProcessed($this->record);
+                    $this->record->refresh();
+
+                    Notification::make()
+                        ->title('Return reversed')
+                        ->success()
+                        ->send();
+                }),
             Action::make('create_credit_note')
                 ->label('Create Credit Note')
                 ->icon(Heroicon::OutlinedDocumentDuplicate)

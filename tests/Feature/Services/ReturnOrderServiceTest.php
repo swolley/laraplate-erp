@@ -235,6 +235,137 @@ it('tracks returned quantities on customer source lines', function (): void {
         ->and((string) $sales_order_line->fresh()->qty_returned)->toBe('2.0000');
 });
 
+it('reverses processed customer returns before fiscal note creation', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+
+    $sales_order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::Confirmed,
+    ]);
+    $sales_order_line = SalesOrderLine::query()->create([
+        'sales_order_id' => $sales_order->id,
+        'item_id' => $item->id,
+        'name' => 'Returned item',
+        'qty_ordered' => 5,
+        'qty_delivered' => 5,
+        'qty_invoiced' => 5,
+        'status' => SalesOrderLineStatus::FullyEvased,
+    ]);
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $invoice_line = $invoice->lines()->create([
+        'line_no' => 1,
+        'sales_order_line_id' => $sales_order_line->id,
+        'description' => 'Returned item',
+        'quantity' => 5,
+        'unit_price' => 10,
+    ]);
+    $source_delivery_note = DeliveryNote::query()->create([
+        'company_id' => $company->id,
+        'direction' => DeliveryNoteDirection::Outbound,
+        'reference' => 'DN-REV-ORIGINAL',
+        'delivered_at' => now(),
+    ]);
+    $source_delivery_note_line = $source_delivery_note->lines()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 5,
+        'sales_order_line_id' => $sales_order_line->id,
+    ]);
+    StockMovement::query()->create([
+        'company_id' => $company->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'direction' => StockMovementDirection::Out,
+        'quantity' => 5,
+        'unit_cost' => '12.5000',
+        'source_type' => (new DeliveryNoteLine)->getMorphClass(),
+        'source_id' => $source_delivery_note_line->id,
+    ]);
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'invoice_id' => $invoice->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'invoice_line_id' => $invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_cost' => '12.5000',
+    ]);
+
+    $service = app(ReturnOrderService::class);
+    $processed = $service->complete($return_order);
+    $reversed = $service->reverseProcessed($processed);
+    $delivery_note = $processed->delivery_note()->firstOrFail()->fresh();
+    $level = StockLevel::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->firstOrFail();
+
+    expect($reversed->status)->toBe(ReturnStatus::Approved)
+        ->and($reversed->processed_at)->toBeNull()
+        ->and($delivery_note->posted_at)->toBeNull()
+        ->and($delivery_note->inventory_posted_at)->toBeNull()
+        ->and((string) $invoice_line->fresh()->qty_returned)->toBe('0.0000')
+        ->and((string) $sales_order_line->fresh()->qty_returned)->toBe('0.0000')
+        ->and((string) $level->fresh()->quantity)->toBe('0.0000');
+});
+
+it('blocks reversing processed customer returns with linked credit notes', function (): void {
+    [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
+    createFiscalYearForReturnOrderCompany($company);
+
+    $invoice = Invoice::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'direction' => InvoiceDirection::Sale,
+        'invoice_type' => InvoiceType::Invoice,
+        'currency' => 'EUR',
+    ]);
+    $invoice_line = $invoice->lines()->create([
+        'line_no' => 1,
+        'description' => 'Returned item',
+        'quantity' => 5,
+        'unit_price' => 10,
+    ]);
+    $invoice->update(['posted_at' => now()]);
+
+    $return_order = ReturnOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'invoice_id' => $invoice->id,
+        'status' => ReturnStatus::Approved,
+    ]);
+    $return_order->lines()->create([
+        'company_id' => $company->id,
+        'invoice_line_id' => $invoice_line->id,
+        'item_id' => $item->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity' => 2,
+        'unit_cost' => '12.5000',
+    ]);
+
+    $service = app(ReturnOrderService::class);
+    $processed = $service->complete($return_order);
+    $service->createCreditNote($processed);
+
+    expect(fn () => $service->reverseProcessed($processed->fresh()))
+        ->toThrow(ValidationException::class);
+});
+
 it('rejects completing customer returns before approval', function (): void {
     [$company, $party, $warehouse, $item] = createReturnOrderFixtures();
 

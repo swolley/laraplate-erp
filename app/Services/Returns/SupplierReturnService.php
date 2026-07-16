@@ -10,6 +10,8 @@ use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Data\Returns\ReturnLineCreditOverride;
+use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Party;
@@ -18,11 +20,13 @@ use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Services\Company\ErpCompanySettings;
+use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 
 final readonly class SupplierReturnService
 {
     public function __construct(
         private SupplierReturnShipmentService $shipment_service,
+        private DeliveryNoteInventoryService $delivery_note_inventory_service,
         private ErpCompanySettings $erp_company_settings,
     ) {}
 
@@ -58,6 +62,63 @@ final readonly class SupplierReturnService
             }
 
             return $processed;
+        });
+    }
+
+    public function reverseProcessed(SupplierReturn $supplier_return): SupplierReturn
+    {
+        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+            /** @var SupplierReturn $locked */
+            $locked = SupplierReturn::query()
+                ->with('lines')
+                ->lockForUpdate()
+                ->findOrFail((int) $supplier_return->id);
+
+            if ($locked->status !== ReturnStatus::Processed) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only processed supplier returns can be reversed.'],
+                ]);
+            }
+
+            if ($locked->debit_note_invoice_id !== null) {
+                throw ValidationException::withMessages([
+                    'debit_note_invoice_id' => ['Reverse or remove the linked debit note before reversing this supplier return.'],
+                ]);
+            }
+
+            if ($locked->delivery_note_id === null) {
+                throw ValidationException::withMessages([
+                    'delivery_note_id' => ['Processed supplier return is missing its generated delivery note.'],
+                ]);
+            }
+
+            /** @var DeliveryNote $delivery_note */
+            $delivery_note = DeliveryNote::query()
+                ->whereKey($locked->delivery_note_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ((int) $delivery_note->company_id !== (int) $locked->company_id) {
+                throw ValidationException::withMessages([
+                    'delivery_note_id' => ['Supplier return delivery note belongs to a different company.'],
+                ]);
+            }
+
+            if ($delivery_note->posted_at !== null) {
+                $delivery_note->posted_at = null;
+                $delivery_note->save();
+            } elseif ($delivery_note->inventory_posted_at !== null) {
+                $this->delivery_note_inventory_service->unpostInventory($delivery_note);
+                $delivery_note->save();
+            }
+
+            $this->unregisterSourceReturnedQuantities($locked);
+
+            $locked->status = ReturnStatus::Approved;
+            $locked->processed_at = null;
+            $locked->save();
+
+            return $locked;
         });
     }
 
@@ -219,6 +280,58 @@ final readonly class SupplierReturnService
 
             return $locked;
         });
+    }
+
+    private function unregisterSourceReturnedQuantities(SupplierReturn $supplier_return): void
+    {
+        foreach ($supplier_return->lines as $line) {
+            $quantity = (float) $line->quantity;
+            $purchase_order_line_id = $line->purchase_order_line_id;
+
+            if ($line->goods_receipt_line_id !== null) {
+                /** @var GoodsReceiptLine $goods_receipt_line */
+                $goods_receipt_line = GoodsReceiptLine::query()
+                    ->whereKey($line->goods_receipt_line_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $new_goods_returned = (float) $goods_receipt_line->qty_returned - $quantity;
+
+                if ($new_goods_returned < -0.00005) {
+                    throw ValidationException::withMessages([
+                        'quantity' => ['Cannot reverse supplier return because source goods receipt returned quantity would become negative.'],
+                    ]);
+                }
+
+                $goods_receipt_line->qty_returned = $this->formatQuantity(max(0.0, $new_goods_returned));
+                $goods_receipt_line->save();
+
+                if ($purchase_order_line_id === null && $goods_receipt_line->purchase_order_line_id !== null) {
+                    $purchase_order_line_id = $goods_receipt_line->purchase_order_line_id;
+                }
+            }
+
+            if ($purchase_order_line_id === null) {
+                continue;
+            }
+
+            /** @var PurchaseOrderLine $purchase_order_line */
+            $purchase_order_line = PurchaseOrderLine::query()
+                ->whereKey($purchase_order_line_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $new_purchase_returned = (float) $purchase_order_line->qty_returned - $quantity;
+
+            if ($new_purchase_returned < -0.00005) {
+                throw ValidationException::withMessages([
+                    'quantity' => ['Cannot reverse supplier return because source purchase order returned quantity would become negative.'],
+                ]);
+            }
+
+            $purchase_order_line->qty_returned = $this->formatQuantity(max(0.0, $new_purchase_returned));
+            $purchase_order_line->save();
+        }
     }
 
     private function assertSupplierParty(SupplierReturn $supplier_return): void
