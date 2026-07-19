@@ -27,6 +27,14 @@ final readonly class BankStatementImportService
 
     public function importFile(BankStatement $statement, string $path, string $format = 'auto'): int
     {
+        return $this->importLines($statement, $this->parseFile($path, $format));
+    }
+
+    /**
+     * @return list<BankStatementLineData>
+     */
+    public function parseFile(string $path, string $format = 'auto'): array
+    {
         $contents = file_get_contents($path);
 
         if (! is_string($contents)) {
@@ -37,7 +45,7 @@ final readonly class BankStatementImportService
 
         $parser = $this->parserFor($path, $contents, $format);
 
-        return $this->importLines($statement, $parser->parse($contents));
+        return $parser->parse($contents);
     }
 
     /**

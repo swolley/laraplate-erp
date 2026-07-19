@@ -25,6 +25,12 @@ return new class extends Migration
             $table->date('period_end')->nullable();
             $table->timestamp('imported_at')->nullable();
             $table->string('source_filename')->nullable();
+            $table->char('source_checksum', 64)->nullable();
+
+            $table->unique(
+                ['bank_account_id', 'source_checksum'],
+                "{$bank_statements_table}_account_checksum_UN",
+            );
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
         });

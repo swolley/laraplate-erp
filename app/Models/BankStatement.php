@@ -19,6 +19,7 @@ use Override;
  * @property \Carbon\CarbonInterface|null $period_end
  * @property \Carbon\CarbonInterface|null $imported_at
  * @property string|null $source_filename
+ * @property string|null $source_checksum
  * @property-read BankAccount|null $bank_account
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatement
@@ -41,6 +42,7 @@ final class BankStatement extends Model
         'period_end',
         'imported_at',
         'source_filename',
+        'source_checksum',
     ];
 
     /**

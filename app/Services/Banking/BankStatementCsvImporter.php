@@ -21,6 +21,15 @@ final readonly class BankStatementCsvImporter
      */
     public function import(BankStatement $statement, string $path, array $columns = []): int
     {
+        return $this->import_service->importLines($statement, $this->parse($path, $columns));
+    }
+
+    /**
+     * @param  array{booked_at?:string,value_at?:string,reference?:string,description?:string,amount_doc?:string,currency_doc?:string}  $columns
+     * @return list<BankStatementLineData>
+     */
+    public function parse(string $path, array $columns = []): array
+    {
         $columns = array_merge([
             'booked_at' => 'booked_at',
             'value_at' => 'value_at',
@@ -30,7 +39,7 @@ final readonly class BankStatementCsvImporter
             'currency_doc' => 'currency_doc',
         ], $columns);
 
-        return $this->import_service->importLines($statement, $this->parseRows($path, $columns));
+        return $this->parseRows($path, $columns);
     }
 
     /**
