@@ -235,6 +235,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `aruba` driver: production-oriented adapter for Aruba v2-style upload (`dataFile`), notifications polling, optional auth signin, provider callbacks, and conservation availability metadata in `response_payload`
 -   `POST /api/v1/erp/einvoice/aruba/callbacks` applies signed provider callbacks when `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY` is configured
 -   `erp:einvoice:refresh-statuses` polls open submissions for the configured provider and supports `--company`, `--provider`, `--limit`, and `--dry-run`
+-   `erp:health-check --format=table|json` performs read-only installation and operational checks for the default company, chart of accounts, fiscal calendar, domain permissions, current-year sequences, and e-invoice configuration
+-   `erp:sequences:audit --company=ID --year=YYYY --format=table|json` cross-checks persisted invoice/order references against sequence formatters, counters, duplicates, and gap policy without repairing data
+-   `erp:bank-statements:import --bank-account=ID --path=FILE_OR_DIR --format=auto --dry-run` validates or imports CSV, CAMT.053, and MT940 files idempotently by SHA-256 checksum; `--archive-path` explicitly enables post-import file moves
 -   Current runtime is still local by default: the `stub` driver remains default; `fatturapa` generates and validates XML without delivery
 -   Remaining go-live work: verify the configured Aruba tenant/contract, callback accreditation/IP allowlist, production credentials, and legal retention obligations with the provider
 
@@ -408,6 +411,6 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
 - [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
 - [x] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, configurable Aruba adapter, and extended admin permissions
-- [ ] API resources and form requests
+- [ ] ERP-specific API resources/form requests only where domain invariants cannot be represented safely by Core's existing dynamic CRUD/API; design deliberately deferred
 - [x] Comprehensive accounting golden-master tests
 - [x] Export CSV for financial reports
