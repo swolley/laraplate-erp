@@ -23,6 +23,7 @@ use Modules\ERP\Filament\Resources\Items\ItemResource;
 use Modules\ERP\Filament\Resources\JournalEntries\Actions\JournalEntryActions;
 use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
 use Modules\ERP\Filament\Resources\Leads\LeadResource;
+use Modules\ERP\Filament\Resources\Movements\MovementResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
@@ -45,6 +46,7 @@ use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\TaxCode;
 
 uses(RefreshDatabase::class);
@@ -92,6 +94,12 @@ it('registers Filament pages for accounts', function (): void {
 it('registers Filament pages for journal entries including view', function (): void {
     expect(JournalEntryResource::getPages())->toHaveKeys(['index', 'create', 'view', 'edit'])
         ->and(JournalEntryResource::getModel())->toBe(JournalEntry::class);
+});
+
+it('registers journal-only cash movement pages without an edit route', function (): void {
+    expect(MovementResource::getPages())->toHaveKeys(['index', 'create', 'view'])
+        ->and(MovementResource::getPages())->not->toHaveKey('edit')
+        ->and(MovementResource::getModel())->toBe(Movement::class);
 });
 
 it('defines journal entry reverse action', function (): void {
@@ -149,6 +157,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         FiscalYearResource::class,
         LeadResource::class,
         OpportunityResource::class,
+        MovementResource::class,
         PartyResource::class,
         PaymentRunResource::class,
         PaymentResource::class,
