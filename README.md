@@ -14,6 +14,7 @@
 -   [Installation](#installation)
 -   [Configuration](#configuration)
 -   [Features](#features)
+-   [Architecture and Extension Points](#architecture-and-extension-points)
 -   [Scripts](#scripts)
 -   [Contributing](#contributing)
 -   [License](#license)
@@ -23,6 +24,10 @@
 The **ERP** module provides Laraplate’s **accounting and operations** domain: multi-company, chart of accounts, journal entries, fiscal calendar, tax codes, commercial scaffolding (customers, quotations, projects), and related Filament admin resources. The module is **optional** and can be enabled or disabled via `modules_statuses.json` like other Laraplate modules.
 
 The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
+
+## Architecture and Extension Points
+
+The module's boundaries, invariants, supported service-container replacements, outbox event contracts, and change checklist are documented in [docs/VISION.md](docs/VISION.md). ERP currently exposes contract bindings for chart of accounts, currency conversion, and e-invoicing; Core exposes the integration outbox publisher. There are no container-tagged ERP plugin hooks today.
 
 ## Installation
 

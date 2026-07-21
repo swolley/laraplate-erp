@@ -24,6 +24,10 @@ The **ERP** module provides Laraplate’s **accounting and operations** domain: 
 
 The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
 
+## Architecture and Extension Points
+
+ERP is optional and depends on Core, never on other optional vertical modules. Business mutations remain in transactional services. Supported replaceable bindings are `ChartOfAccountsProvider`, `CurrencyConverter`, `EInvoiceProvider`, and Core `OutboxPublisher`. No container-tagged ERP plugin hooks currently exist. See `Modules/ERP/docs/VISION.md` for invariants, module boundaries, stable outbox event names, deferred API governance, and the implementation checklist.
+
 ## Installation
 
 If you want to add this module to your project, you can use the `joshbrw/laravel-module-installer` package.

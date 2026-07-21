@@ -24,6 +24,10 @@ The **ERP** module provides Laraplate’s **accounting and operations** domain: 
 
 The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
 
+## Architecture and Extension Points
+
+ERP can be adapted through explicit contracts for chart of accounts, currency conversion, e-invoicing, and Core outbox delivery. It does not automatically discover plugins through container tags. Developers should use [docs/VISION.md](VISION.md) as the authoritative boundary and extension guide.
+
 ## Installation
 
 If you want to add this module to your project, you can use the `joshbrw/laravel-module-installer` package.
