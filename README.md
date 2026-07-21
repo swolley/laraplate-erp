@@ -81,6 +81,8 @@ E-invoice provider configuration is read through Laravel config/env:
 -   `ERP_EINVOICE_ARUBA_TOKEN`: bearer token used by the Aruba adapter; if missing, username/password auth is attempted
 -   `ERP_EINVOICE_ARUBA_USERNAME` / `ERP_EINVOICE_ARUBA_PASSWORD`: optional credentials for Aruba `/auth/signin`
 -   `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY`: optional static API key expected on Aruba callback requests
+-   `ERP_PAYMENT_REQUEST_DRIVER`: payment-request provider binding (`stub` in the current module)
+-   `ERP_PAYMENT_REQUEST_STUB_CALLBACK_API_KEY`: enables/authenticates the external stub callback endpoint; callbacks are disabled when empty
 -   `ERP_EINVOICE_ARUBA_SIGNATURE_CREDENTIAL` / `ERP_EINVOICE_ARUBA_SIGNATURE_DOMAIN`: optional Aruba signature parameters
 -   `ERP_EINVOICE_ARUBA_SENDER_PIVA`: optional sender VAT override; defaults to company fiscal country + tax id
 -   `ERP_EINVOICE_ARUBA_SKIP_EXTRA_SCHEMA` / `ERP_EINVOICE_ARUBA_DRY_RUN`: optional upload flags
@@ -301,6 +303,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `suggestSettleUp()` proposes debtor-to-creditor transfers; `settle()` validates current balances under a transaction and records the confirmed internal transfer.
 -   The Partner Pools Filament resource manages membership, expense splits, and settle-up. Pool balances are an internal subledger and never replace journal-derived company cash.
 
+### Payment Requests
+
+-   `PaymentRequest` asks one Party or one Core user to pay an amount; it is not itself a `Payment`, journal entry, or pool settlement.
+-   `PaymentRequestProvider` is replaceable. The built-in `stub` creates a deterministic non-payable checkout URL for workflow tests without network I/O.
+-   `PaymentRequestService` sends drafts transactionally and applies authenticated, idempotent provider callbacks. Paid/cancelled states cannot regress.
+-   `POST /api/v1/erp/payment-requests/{provider}/callbacks` is for external providers and is unavailable unless that provider has a callback API key configured.
+-   Filament exposes create/list/edit and a **Send** action. Real Stripe/PayPal/Satispay adapters and accounting reconciliation remain future provider work.
+
 ### Quotation Revisions and Project Locks
 
 -   `QuotationRevisionService` creates a commercial snapshot as a new draft, copies all quotation lines, increments `version`, and links the immediate predecessor through `revises_quotation_id`.
@@ -350,7 +360,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-05 | Journal-backed movements, Partner Pools, exact owed/paid splits, derived participant balances, settlement suggestions, recorded settle-up, and Filament operations are present. |
+| Phase 4 cash sharing | Implemented through 4-06 | Journal-backed movements, Partner Pools, exact splits, settle-up, and provider-neutral Payment Requests with secure stub callbacks are present. |
 
 ### Known Limitations After Phase 2C
 

@@ -20,6 +20,7 @@ ERP is an optional Laraplate domain module for accounting, tax, sales, purchasin
 | `ChartOfAccountsProvider` | `ItalianCoaProvider` | Jurisdiction/company chart templates and account-role definitions |
 | `CurrencyConverter` | `DatabaseCurrencyConverter` | External or cached FX source while preserving dated conversion semantics |
 | `EInvoiceProvider` | Configured `stub`, `fatturapa`, or `aruba` adapter | Contracted e-invoice transport registered by the host application |
+| `PaymentRequestProvider` | Deterministic no-I/O `StubPaymentRequestProvider` | Contracted Stripe/PayPal/Satispay-style checkout adapter |
 | Core `OutboxPublisher` | Core `StubOutboxPublisher` | Broker, webhook, stream, or other external event transport |
 
 The host application can replace a binding from an application service provider loaded after the module. Replacements must preserve the published contract and ERP transaction/state invariants.
@@ -48,6 +49,7 @@ ERP records these event names in `core_outbox_events`:
 
 - External API/domain-action governance remains deferred until Core dynamic CRUD exposure and ERP stateful operations are reviewed together.
 - MES production execution, Gantt, calendar/ICS, and legacy ETL are separate vertical or future scopes. Partner-pool settlement is an ERP internal subledger; external transfer execution remains separate.
+- Payment-request checkout and callbacks are transport concerns. Accounting payment creation, bank reconciliation, and pool settlement remain explicit ERP workflows.
 - Production transports require tenant contracts, credentials, operational monitoring, replay/dead-letter procedures, and certification where applicable.
 
 ## Change checklist

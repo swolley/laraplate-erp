@@ -80,6 +80,8 @@ E-invoice provider configuration is read through Laravel config/env:
 -   `ERP_EINVOICE_ARUBA_TOKEN`: bearer token used by the Aruba adapter; if missing, username/password auth is attempted
 -   `ERP_EINVOICE_ARUBA_USERNAME` / `ERP_EINVOICE_ARUBA_PASSWORD`: optional credentials for Aruba `/auth/signin`
 -   `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY`: optional static API key expected on Aruba callback requests
+-   `ERP_PAYMENT_REQUEST_DRIVER`: payment-request provider binding (`stub` currently)
+-   `ERP_PAYMENT_REQUEST_STUB_CALLBACK_API_KEY`: enables and authenticates stub provider callbacks; empty means disabled
 -   `ERP_EINVOICE_ARUBA_SIGNATURE_CREDENTIAL` / `ERP_EINVOICE_ARUBA_SIGNATURE_DOMAIN`: optional Aruba signature parameters
 -   `ERP_EINVOICE_ARUBA_SENDER_PIVA`: optional sender VAT override; defaults to company fiscal country + tax id
 -   `ERP_EINVOICE_ARUBA_SKIP_EXTRA_SCHEMA` / `ERP_EINVOICE_ARUBA_DRY_RUN`: optional upload flags
@@ -298,6 +300,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `PartnerPoolSettlementService` owns pessimistic locking, atomic split replacement, decimal balance derivation, settlement suggestions, and confirmed transfer writes.
 -   The pool is an internal memorandum subledger. It does not duplicate the general ledger or `CashBalanceService`.
 
+### Payment Requests
+
+-   `PaymentRequest` targets exactly one ERP Party or Core user and persists amount/currency, provider identity, checkout URL, remote ID, status, and callback metadata.
+-   `PaymentRequestProvider::createCheckout()` is the replaceable boundary; `StubPaymentRequestProvider` is deterministic and performs no I/O.
+-   `PaymentRequestService` locks drafts during send and callback updates, validates provider identity, and prevents terminal-state regression.
+-   External callbacks use `POST /api/v1/erp/payment-requests/{provider}/callbacks`, require a configured Bearer key, and only update request state.
+-   Provider callbacks deliberately do not create `Payment`, `JournalEntry`, or `PoolTransaction` records.
+
 ### Quotation Revisions and Project Locks
 
 -   `QuotationRevisionService` locks the source, rejects editable drafts/branches/version overflow, creates a draft successor through unique `revises_quotation_id`, increments `version`, and snapshots all quotation items transactionally.
@@ -345,7 +355,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-05 | Partner pools, exact owed/paid allocations, derived balances, settlement suggestions, confirmed transfers, and Filament actions are present. |
+| Phase 4 cash sharing | Implemented through 4-06 | Partner pools, exact allocations, settle-up, and provider-neutral Payment Requests with secure stub callbacks are present. |
 
 ### Known Limitations After Phase 2C
 

@@ -80,6 +80,8 @@ E-invoice provider configuration is read through Laravel config/env:
 -   `ERP_EINVOICE_ARUBA_TOKEN`: bearer token used by the Aruba adapter; if missing, username/password auth is attempted
 -   `ERP_EINVOICE_ARUBA_USERNAME` / `ERP_EINVOICE_ARUBA_PASSWORD`: optional credentials for Aruba `/auth/signin`
 -   `ERP_EINVOICE_ARUBA_CALLBACK_API_KEY`: optional static API key expected on Aruba callback requests
+-   `ERP_PAYMENT_REQUEST_DRIVER`: provider richieste di pagamento (`stub` al momento)
+-   `ERP_PAYMENT_REQUEST_STUB_CALLBACK_API_KEY`: abilita e protegge il callback esterno; senza chiave il callback è disabilitato
 -   `ERP_EINVOICE_ARUBA_SIGNATURE_CREDENTIAL` / `ERP_EINVOICE_ARUBA_SIGNATURE_DOMAIN`: optional Aruba signature parameters
 -   `ERP_EINVOICE_ARUBA_SENDER_PIVA`: optional sender VAT override; defaults to company fiscal country + tax id
 -   `ERP_EINVOICE_ARUBA_SKIP_EXTRA_SCHEMA` / `ERP_EINVOICE_ARUBA_DRY_RUN`: optional upload flags
@@ -298,6 +300,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Un saldo positivo è un credito e uno negativo è un debito. Il saldo viene ricalcolato dalle quote e dai rimborsi, non salvato manualmente.
 -   **Settle up** propone e registra il rimborso dal debitore al creditore. Non modifica la contabilità generale né il saldo bancario aziendale.
 
+### Payment Requests
+
+-   Una richiesta di pagamento chiede a un cliente/fornitore oppure a un utente interno di pagare un importo. Non equivale ancora a denaro incassato.
+-   **Send** genera il collegamento del provider e porta la richiesta in pending. Lo stub produce un URL di prova e non esegue transazioni reali.
+-   Un servizio esterno può notificare paid/failed/cancelled tramite callback con Bearer token. Paid e cancelled sono stati terminali.
+-   La notifica non crea automaticamente un pagamento o una scrittura: la riconciliazione contabile resta un passaggio esplicito.
+
 ### Quotation Revisions and Project Locks
 
 -   A sent, accepted, rejected, or locked quotation can generate a new draft revision. Products/services, quantities, prices, customer, currency, and notes are copied.
@@ -345,7 +354,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-05 | Pool soci, ripartizione esatta delle spese, saldi derivati, suggerimenti e registrazione dei rimborsi sono disponibili in Filament. |
+| Phase 4 cash sharing | Implemented through 4-06 | Pool soci, settle-up e richieste di pagamento provider-neutral con stub sicuro sono disponibili in Filament. |
 
 ### Known Limitations After Phase 2C
 

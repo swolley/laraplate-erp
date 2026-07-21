@@ -244,6 +244,9 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **MovementAllocation** | One participant's exact owed and paid amounts for an expense; both totals must equal the movement amount. |
 | **Pool balance** | Derived participant position (`paid - owed`, adjusted by confirmed transfers), separate from journal-derived company cash. |
 | **Settle-up** | Debtor-to-creditor reimbursement suggested and transactionally recorded as a confirmed `PoolTransaction`. |
+| **PaymentRequest** | Provider-neutral checkout/status record targeting exactly one ERP Party or Core user; distinct from `Payment`. |
+| **PaymentRequestProvider** | Replaceable contract for checkout creation; current stub is deterministic and no-I/O. |
+| **Payment request callback** | Bearer-authenticated external state update, disabled without configuration and isolated from accounting writes. |
 | **Cash Movements UI** | Filament create/list/detail workflow that posts through `MovementPostingService` atomically and deliberately exposes no edit route for posted movements. |
 | **Quotation revision** | New draft commercial snapshot linked to its immediate predecessor by unique `revises_quotation_id`; lines are copied and branching is prohibited. |
 | **Project bind lock** | Automatic project lock when a linked sales order becomes operational; ORM and Filament prevent business updates/deletion. |
