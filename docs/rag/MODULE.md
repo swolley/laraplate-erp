@@ -291,6 +291,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` processes only unlinked movements and reports per-row failures.
 -   `MovementResource` exposes index/create/view only. `CreateMovement` wraps row creation and `MovementPostingService::post()` in one transaction; no edit route or parallel balance write exists.
 
+### Partner Pools and Settle-up
+
+-   `PartnerPool` is company/currency scoped and relates Core users through first-class pivot `PartnerPoolHasUser`.
+-   `MovementAllocation` stores exact owed/paid amounts. Both aggregate totals must equal the expense movement amount.
+-   `PartnerPoolSettlementService` owns pessimistic locking, atomic split replacement, decimal balance derivation, settlement suggestions, and confirmed transfer writes.
+-   The pool is an internal memorandum subledger. It does not duplicate the general ledger or `CashBalanceService`.
+
 ### Quotation Revisions and Project Locks
 
 -   `QuotationRevisionService` locks the source, rejects editable drafts/branches/version overflow, creates a draft successor through unique `revises_quotation_id`, increments `version`, and snapshots all quotation items transactionally.
@@ -338,6 +345,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
+| Phase 4 cash sharing | Implemented through 4-05 | Partner pools, exact owed/paid allocations, derived balances, settlement suggestions, confirmed transfers, and Filament actions are present. |
 
 ### Known Limitations After Phase 2C
 
@@ -357,7 +365,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
 -   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
 -   Application lock-chain guards cover all supported databases. MySQL/MariaDB and PostgreSQL add DB triggers; SQLite and Oracle rely on application guards for this specific defense.
--   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
+-   MES, ETL, calendar/ICS, Gantt planning, and mobile API are outside the current ERP slice. Partner-pool settlement is implemented; external payment execution remains separate.
 
 ### Roadmap
 

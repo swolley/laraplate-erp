@@ -47,7 +47,7 @@ ERP records these event names in `core_outbox_events`:
 ## Deliberately separate work
 
 - External API/domain-action governance remains deferred until Core dynamic CRUD exposure and ERP stateful operations are reviewed together.
-- MES production execution, Gantt, calendar/ICS, Tricount migration, and legacy ETL are separate vertical or future scopes.
+- MES production execution, Gantt, calendar/ICS, and legacy ETL are separate vertical or future scopes. Partner-pool settlement is an ERP internal subledger; external transfer execution remains separate.
 - Production transports require tenant contracts, credentials, operational monitoring, replay/dead-letter procedures, and certification where applicable.
 
 ## Change checklist

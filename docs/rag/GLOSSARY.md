@@ -240,6 +240,10 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **MovementType** | Synthetic direction for legacy cash adapters: `income` / `expense`. Mapped to journal lines, not to a separate `EntityType` tree. |
 | **MovementPostingService** | Idempotently maps a cash `Movement` to one balanced journal. Income uses bank debit/revenue credit; expense uses expense debit/bank credit. |
 | **CashBalanceService** | Derives company cash balance by summing posted journal lines on `bank_cash` accounts; it never updates a parallel balance table. |
+| **PartnerPool** | Company/currency-scoped group of Core users sharing expenses. It stores membership, not a mutable balance. |
+| **MovementAllocation** | One participant's exact owed and paid amounts for an expense; both totals must equal the movement amount. |
+| **Pool balance** | Derived participant position (`paid - owed`, adjusted by confirmed transfers), separate from journal-derived company cash. |
+| **Settle-up** | Debtor-to-creditor reimbursement suggested and transactionally recorded as a confirmed `PoolTransaction`. |
 | **Cash Movements UI** | Filament create/list/detail workflow that posts through `MovementPostingService` atomically and deliberately exposes no edit route for posted movements. |
 | **Quotation revision** | New draft commercial snapshot linked to its immediate predecessor by unique `revises_quotation_id`; lines are copied and branching is prohibited. |
 | **Project bind lock** | Automatic project lock when a linked sales order becomes operational; ORM and Filament prevent business updates/deletion. |
@@ -276,7 +280,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **ERP extension point** | Explicit service-container contract for chart of accounts, FX conversion, e-invoicing, or Core outbox publication. ERP does not currently provide tagged plugin discovery. |
 | **App-lock portability** | Application guards enforce lock chains on every supported database. MySQL/MariaDB and PostgreSQL additionally enforce them with triggers; SQLite/Oracle use the application fallback. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
-| **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |
+| **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, and ETL legacy are outside the current ERP slice. External pool-payment execution remains separate. |
 
 
 ## Related reading

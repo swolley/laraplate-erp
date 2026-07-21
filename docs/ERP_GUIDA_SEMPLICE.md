@@ -291,6 +291,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Operators can preview or post pending rows with `erp:migrate-movements-to-journal [--company=ID] [--dry-run]`.
 -   In Filament, Cash Movements can be created and inspected but not edited after posting. The account selector is restricted by company and income/expense type.
 
+### Partner Pools and Settle-up
+
+-   Un pool raggruppa utenti interni che condividono spese nella stessa azienda e valuta.
+-   Per ogni spesa si indica quanto ogni partecipante deve sostenere (`owed`) e quanto ha anticipato (`paid`); entrambe le somme devono coincidere con il totale.
+-   Un saldo positivo è un credito e uno negativo è un debito. Il saldo viene ricalcolato dalle quote e dai rimborsi, non salvato manualmente.
+-   **Settle up** propone e registra il rimborso dal debitore al creditore. Non modifica la contabilità generale né il saldo bancario aziendale.
+
 ### Quotation Revisions and Project Locks
 
 -   A sent, accepted, rejected, or locked quotation can generate a new draft revision. Products/services, quantities, prices, customer, currency, and notes are copied.
@@ -338,6 +345,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
+| Phase 4 cash sharing | Implemented through 4-05 | Pool soci, ripartizione esatta delle spese, saldi derivati, suggerimenti e registrazione dei rimborsi sono disponibili in Filament. |
 
 ### Known Limitations After Phase 2C
 
@@ -357,7 +365,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
 -   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
 -   Application lock-chain guards cover all supported databases. MySQL/MariaDB and PostgreSQL add DB triggers; SQLite and Oracle rely on application guards for this specific defense.
--   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
+-   MES, ETL, calendar/ICS, Gantt planning, and mobile API are outside the current ERP slice. Pool soci e settle-up sono implementati; il trasferimento bancario esterno non è automatico.
 
 ### Roadmap
 
