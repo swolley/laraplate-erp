@@ -38,7 +38,7 @@ return new class extends Migration
                 ->restrictOnDelete();
             $table->text('description')->nullable();
 
-            MigrateUtils::timestamps($table, hasCreateUpdate: true);
+            MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
         });
 
         ERPMigrateUtils::positiveCheck($movements_table, 'movement_amount_doc_pos_ck', 'amount_doc');

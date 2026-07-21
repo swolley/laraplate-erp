@@ -26,6 +26,7 @@ use Modules\ERP\Filament\Resources\Leads\LeadResource;
 use Modules\ERP\Filament\Resources\Movements\MovementResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
+use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
 use Modules\ERP\Filament\Resources\Payments\PaymentResource;
 use Modules\ERP\Filament\Resources\PaymentTerms\PaymentTermResource;
@@ -47,6 +48,7 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Movement;
+use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\TaxCode;
 
 uses(RefreshDatabase::class);
@@ -110,6 +112,11 @@ it('registers journal-only cash movement pages without an edit route', function 
         ->and(MovementResource::getModel())->toBe(Movement::class);
 });
 
+it('registers partner pool pages and model', function (): void {
+    expect(PartnerPoolResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(PartnerPoolResource::getModel())->toBe(PartnerPool::class);
+});
+
 it('defines journal entry reverse action', function (): void {
     expect(JournalEntryActions::reverse()->getName())->toBe('reverse');
 });
@@ -167,6 +174,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         OpportunityResource::class,
         MovementResource::class,
         PartyResource::class,
+        PartnerPoolResource::class,
         PaymentRunResource::class,
         PaymentResource::class,
         PaymentTermResource::class,

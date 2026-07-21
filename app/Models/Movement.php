@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -55,6 +56,11 @@ final class Movement extends Model
     public function posted_journal_entry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'posted_journal_entry_id');
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(MovementAllocation::class);
     }
 
     #[Override]
