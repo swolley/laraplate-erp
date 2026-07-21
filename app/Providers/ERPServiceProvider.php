@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
+use Modules\ERP\Contracts\PaymentRequestProvider;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
@@ -39,6 +40,8 @@ use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
+use Modules\ERP\Services\Payments\PaymentRequestService;
+use Modules\ERP\Services\Payments\StubPaymentRequestProvider;
 use Modules\ERP\Services\Inventory\DeliveryNoteCogsJournalService;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
@@ -86,6 +89,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         parent::register();
 
         $this->app->singleton(CurrencyConverter::class, DatabaseCurrencyConverter::class);
+        $this->app->bind(PaymentRequestProvider::class, StubPaymentRequestProvider::class);
         $this->app->bind(EInvoiceProvider::class, function (\Illuminate\Contracts\Foundation\Application $app): EInvoiceProvider {
             return match (config('erp.einvoice.driver', 'stub')) {
                 'aruba' => $app->make(ArubaEInvoiceProvider::class),
@@ -126,6 +130,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(MovementPostingService::class);
         $this->app->singleton(CashBalanceService::class);
         $this->app->singleton(QuotationRevisionService::class);
+        $this->app->singleton(PaymentRequestService::class);
     }
 
     /**

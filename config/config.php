@@ -24,4 +24,10 @@ return [
             'callback_api_key' => env('ERP_EINVOICE_ARUBA_CALLBACK_API_KEY'),
         ],
     ],
+    'payment_requests' => [
+        'driver' => env('ERP_PAYMENT_REQUEST_DRIVER', 'stub'),
+        'providers' => [
+            'stub' => ['callback_api_key' => env('ERP_PAYMENT_REQUEST_STUB_CALLBACK_API_KEY')],
+        ],
+    ],
 ];

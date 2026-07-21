@@ -28,6 +28,7 @@ use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
 use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
+use Modules\ERP\Filament\Resources\PaymentRequests\PaymentRequestResource;
 use Modules\ERP\Filament\Resources\Payments\PaymentResource;
 use Modules\ERP\Filament\Resources\PaymentTerms\PaymentTermResource;
 use Modules\ERP\Filament\Resources\PriceLists\PriceListResource;
@@ -49,6 +50,7 @@ use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\PartnerPool;
+use Modules\ERP\Models\PaymentRequest;
 use Modules\ERP\Models\TaxCode;
 
 uses(RefreshDatabase::class);
@@ -117,6 +119,11 @@ it('registers partner pool pages and model', function (): void {
         ->and(PartnerPoolResource::getModel())->toBe(PartnerPool::class);
 });
 
+it('registers payment request pages and model', function (): void {
+    expect(PaymentRequestResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(PaymentRequestResource::getModel())->toBe(PaymentRequest::class);
+});
+
 it('defines journal entry reverse action', function (): void {
     expect(JournalEntryActions::reverse()->getName())->toBe('reverse');
 });
@@ -176,6 +183,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         PartyResource::class,
         PartnerPoolResource::class,
         PaymentRunResource::class,
+        PaymentRequestResource::class,
         PaymentResource::class,
         PaymentTermResource::class,
         PriceListResource::class,

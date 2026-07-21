@@ -48,6 +48,7 @@ enum ERPTables: string
     case PartnerPoolMembers = 'erp_partner_pool_members';
     case MovementAllocations = 'erp_movement_allocations';
     case PoolTransactions = 'erp_pool_transactions';
+    case PaymentRequests = 'erp_payment_requests';
     case Balances = 'erp_balances';
     case EInvoiceSubmissions = 'erp_e_invoice_submissions';
     case Leads = 'erp_leads';
