@@ -22,7 +22,7 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('party_id')->constrained(ERPTables::Parties->value, 'id', "{$projects_table}_party_id_FK")->restrictOnDelete()->comment('The party that the project belongs to');
-            $table->foreignId('quotation_id')->constrained(ERPTables::Quotations->value, 'id', "{$projects_table}_quotation_id_FK")->nullable(true)->setNullOnDelete()->comment('The quotation that the project belongs to');
+            $table->foreignId('quotation_id')->nullable()->constrained(ERPTables::Quotations->value, 'id', "{$projects_table}_quotation_id_FK")->nullOnDelete()->comment('The quotation that the project belongs to');
             $table->string('name')->comment('The name of the project');
             $table->text('description')->nullable(true)->comment('The description of the project');
             $table->enum('status', ProjectStatus::cases())->nullable(false)->default(ProjectStatus::Active->value)->index("{$projects_table}_status_IDX")->comment('The status of the project');
@@ -32,6 +32,7 @@ return new class extends Migration
                 $table,
                 hasCreateUpdate: true,
                 hasSoftDelete: true,
+                hasLocks: true,
                 hasValidity: true,
                 isValidityRequired: true,
             );

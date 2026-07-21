@@ -60,6 +60,14 @@ it('registers Filament pages for companies', function (): void {
         ->and($pages)->toHaveKey('edit');
 });
 
+it('disallows editing and deleting locked projects via resource gates', function (): void {
+    $project = new \Modules\ERP\Models\Project;
+    $project->setAttribute('locked_at', now());
+
+    expect(ProjectResource::canEdit($project))->toBeFalse()
+        ->and(ProjectResource::canDelete($project))->toBeFalse();
+});
+
 it('binds company resource to Company model', function (): void {
     expect(CompanyResource::getModel())->toBe(Company::class);
 });

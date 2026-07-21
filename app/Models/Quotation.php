@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
@@ -49,6 +50,7 @@ final class Quotation extends Model
         'notes',
         'status',
         'version',
+        'revises_quotation_id',
     ];
 
     /**
@@ -83,6 +85,18 @@ final class Quotation extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
+    /** @return BelongsTo<Quotation, $this> */
+    public function revised_from(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'revises_quotation_id');
+    }
+
+    /** @return HasOne<Quotation, $this> */
+    public function revision(): HasOne
+    {
+        return $this->hasOne(self::class, 'revises_quotation_id');
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -97,6 +111,7 @@ final class Quotation extends Model
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'string', QuoteStatus::validationRule()],
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'revises_quotation_id' => ['nullable', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
         ]);
         $rules['update'] = array_merge($rules['update'], [
             'party_id' => ['sometimes', 'integer', 'exists:' . ERPTables::Parties->value . ',id'],
@@ -105,6 +120,7 @@ final class Quotation extends Model
             'notes' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', QuoteStatus::validationRule()],
             'version' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'revises_quotation_id' => ['nullable', 'integer', 'exists:' . ERPTables::Quotations->value . ',id'],
         ]);
 
         return $rules;

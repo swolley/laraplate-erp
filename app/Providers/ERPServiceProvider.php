@@ -44,6 +44,7 @@ use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
 use Modules\ERP\Services\Inventory\StockMovementService;
 use Modules\ERP\Services\Pricing\PriceResolverService;
+use Modules\ERP\Services\Quotations\QuotationRevisionService;
 use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\Returns\CustomerReturnReceiptService;
 use Modules\ERP\Services\Returns\ReturnOrderService;
@@ -124,6 +125,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(PriceResolverService::class);
         $this->app->singleton(MovementPostingService::class);
         $this->app->singleton(CashBalanceService::class);
+        $this->app->singleton(QuotationRevisionService::class);
     }
 
     /**

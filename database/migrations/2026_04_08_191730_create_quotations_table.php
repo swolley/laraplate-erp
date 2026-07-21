@@ -26,6 +26,12 @@ return new class extends Migration
             $table->text('notes')->nullable(true)->comment('The notes of the quotation');
             $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::Draft->value)->index("{$quotations_table}_status_IDX")->comment('The status of the quotation');
             $table->unsignedTinyInteger('version')->default(0)->comment('The revision number of the quotation');
+            $table->foreignId('revises_quotation_id')
+                ->nullable()
+                ->unique()
+                ->constrained($quotations_table, 'id', "{$quotations_table}_revises_quotation_id_FK")
+                ->restrictOnDelete()
+                ->comment('Immediate previous quotation in the linear revision chain');
 
             MigrateUtils::timestamps(
                 $table,

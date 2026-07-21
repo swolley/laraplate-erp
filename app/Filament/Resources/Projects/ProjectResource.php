@@ -11,6 +11,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Filament\Resources\Projects\Pages\CreateProject;
 use Modules\ERP\Filament\Resources\Projects\Pages\EditProject;
 use Modules\ERP\Filament\Resources\Projects\Pages\ListProjects;
@@ -40,6 +41,26 @@ final class ProjectResource extends Resource
     public static function getSlug(?Panel $panel = null): string
     {
         return 'business/projects';
+    }
+
+    #[Override]
+    public static function canEdit(Model $record): bool
+    {
+        if (auth()->check() && ! parent::canEdit($record)) {
+            return false;
+        }
+
+        return $record instanceof Project && ! $record->isLocked();
+    }
+
+    #[Override]
+    public static function canDelete(Model $record): bool
+    {
+        if (auth()->check() && ! parent::canDelete($record)) {
+            return false;
+        }
+
+        return $record instanceof Project && ! $record->isLocked();
     }
 
     public static function form(Schema $schema): Schema

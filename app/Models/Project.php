@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\Concerns\HasValidity;
+use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -24,6 +25,7 @@ use Override;
 final class Project extends Model
 {
     use BelongsToCompany;
+    use HasLocks;
     use HasValidity;
 
     /**
@@ -116,6 +118,20 @@ final class Project extends Model
     protected static function booted(): void
     {
         self::saving(static function (Project $project): void {
+            if ($project->exists && $project->getOriginal('locked_at') !== null) {
+                $business_changes = array_diff(array_keys($project->getDirty()), [
+                    'locked_at',
+                    'locked_user_id',
+                    'updated_at',
+                ]);
+
+                if ($business_changes !== []) {
+                    throw ValidationException::withMessages([
+                        'project' => ['Projects linked to an operational sales order are locked.'],
+                    ]);
+                }
+            }
+
             if ($project->party_id === null) {
                 return;
             }
@@ -125,6 +141,14 @@ final class Project extends Model
             if ($party !== null && ! $party->is_customer) {
                 throw ValidationException::withMessages([
                     'party_id' => ['The selected party must be a customer.'],
+                ]);
+            }
+        });
+
+        self::deleting(static function (Project $project): void {
+            if ($project->isLocked()) {
+                throw ValidationException::withMessages([
+                    'project' => ['Locked projects cannot be deleted.'],
                 ]);
             }
         });

@@ -21,5 +21,6 @@ it('exposes Phase 2A Filament domain action factories', function (): void {
         ->and(FiscalPeriodActions::close()->getName())->toBe('close_period')
         ->and(DocumentSequenceActions::reset()->getName())->toBe('reset')
         ->and(JournalEntryActions::reverse()->getName())->toBe('reverse')
-        ->and(QuotationActions::unlock()->getName())->toBe('unlock');
+        ->and(QuotationActions::unlock()->getName())->toBe('unlock')
+        ->and(QuotationActions::createRevision()->getName())->toBe('create_revision');
 });

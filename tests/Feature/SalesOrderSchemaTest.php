@@ -7,12 +7,14 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\QuoteStatus;
+use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Party;
+use Modules\ERP\Models\Project;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
@@ -146,6 +148,43 @@ it('locks quotation when sales order is confirmed', function (): void {
     $order->update(['status' => SalesOrderStatus::Confirmed]);
 
     expect($quotation->fresh()?->isLocked())->toBeTrue();
+});
+
+it('locks a bound project when the sales order becomes operational', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'so-lock-project',
+        'name' => 'SO Lock Project',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $party = Party::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Project buyer',
+        'is_customer' => true,
+    ]);
+    $project = Project::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'name' => 'Bound project',
+        'status' => ProjectStatus::Active,
+        'valid_from' => now(),
+    ]);
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => $party->id,
+        'project_id' => $project->id,
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::Draft,
+    ]);
+
+    $order->update(['status' => SalesOrderStatus::Confirmed]);
+    $locked_project = $project->fresh();
+
+    expect($locked_project->isLocked())->toBeTrue()
+        ->and(fn () => $locked_project->update(['name' => 'Changed']))
+        ->toThrow(ValidationException::class)
+        ->and(fn () => $locked_project->delete())
+        ->toThrow(ValidationException::class);
 });
 
 it('rejects header field changes on confirmed sales orders', function (): void {

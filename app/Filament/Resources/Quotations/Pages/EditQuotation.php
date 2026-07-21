@@ -25,6 +25,7 @@ final class EditQuotation extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            QuotationActions::createRevision(),
             QuotationActions::unlock(),
         ];
     }

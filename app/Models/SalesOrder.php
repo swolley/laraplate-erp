@@ -218,21 +218,27 @@ final class SalesOrder extends Model
         });
 
         self::saved(static function (SalesOrder $order): void {
-            if ($order->status !== SalesOrderStatus::Confirmed) {
+            if (! $order->isHeaderLocked()) {
                 return;
             }
 
-            if ($order->quotation_id === null) {
+            if ($order->quotation_id !== null) {
+                $quotation = Quotation::query()->find($order->quotation_id);
+
+                if ($quotation !== null && ! $quotation->isLocked()) {
+                    $quotation->lock();
+                }
+            }
+
+            if ($order->project_id === null) {
                 return;
             }
 
-            $quotation = Quotation::query()->find($order->quotation_id);
+            $project = Project::query()->find($order->project_id);
 
-            if ($quotation === null || $quotation->isLocked()) {
-                return;
+            if ($project !== null && ! $project->isLocked()) {
+                $project->lock();
             }
-
-            $quotation->lock();
         });
     }
 

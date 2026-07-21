@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::create($quotation_items_table, function (Blueprint $table) use ($quotation_items_table): void {
             $table->id();
             $table->foreignId('quotation_id')->constrained(ERPTables::Quotations->value, 'id', "{$quotation_items_table}_quotation_id_FK")->nullable(false)->cascadeOnDelete()->comment('The quotation that the quotation item belongs to');
-            $table->foreignId('price_list_item_id')->constrained(ERPTables::PriceListItems->value, 'id', "{$quotation_items_table}_price_list_item_id_FK")->nullable(true)->setNullOnDelete()->comment('The price list item that the quotation item belongs to');
+            $table->foreignId('price_list_item_id')->nullable()->constrained(ERPTables::PriceListItems->value, 'id', "{$quotation_items_table}_price_list_item_id_FK")->nullOnDelete()->comment('The price list item that the quotation item belongs to');
             $table->string('name')->comment('The name of the quotation item');
             $table->enum('billing_mode', BillingMode::cases())->nullable(false)->default(BillingMode::Unit->value)->index("{$quotation_items_table}_billing_mode_idx")->comment('The billing mode of the quotation item');
             $table->decimal('quantity', 15, 4)->comment('The quantity of the quotation item')->default(1);
