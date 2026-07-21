@@ -126,6 +126,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   `HasVersions` trait with `VersionStrategy::DIFF` on accounting models
 -   Immutable version strategy on contabile models (cannot be overridden via settings)
+-   Core Settings hides historical `version_strategy_erp_*` rows for those class-forced DIFF models; the rows are retained but cannot mislead administrators
 
 ### M1 — Accounting Backbone
 
