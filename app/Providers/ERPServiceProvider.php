@@ -32,6 +32,8 @@ use Modules\ERP\Services\Banking\BankReconciliationService;
 use Modules\ERP\Services\Banking\BankStatementCsvImporter;
 use Modules\ERP\Services\Banking\BankStatementImportService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
+use Modules\ERP\Services\Cash\CashBalanceService;
+use Modules\ERP\Services\Cash\MovementPostingService;
 use Modules\ERP\Services\Currency\DatabaseCurrencyConverter;
 use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
@@ -120,6 +122,8 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(SupplierReturnService::class);
         $this->app->singleton(SupplierReturnShipmentService::class);
         $this->app->singleton(PriceResolverService::class);
+        $this->app->singleton(MovementPostingService::class);
+        $this->app->singleton(CashBalanceService::class);
     }
 
     /**
