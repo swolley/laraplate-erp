@@ -198,6 +198,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 ## Cash / Tricount adapters (M2+)
 
+| **Site / Place** | ERP operational Site linked by required FK to canonical Core Place. Postal/geographic fields remain owned by Core and feed location-aware workflows. |
+
 | Term | Meaning |
 |------|---------|
 | **MovementType** | Synthetic direction for legacy cash adapters: `income` / `expense`. Mapped to journal lines, not to a separate `EntityType` tree. |

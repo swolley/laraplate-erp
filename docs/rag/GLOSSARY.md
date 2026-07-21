@@ -234,6 +234,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 ## Cash / Tricount adapters
 
+| **Site / Place** | ERP operational Site linked to canonical Core Place, with standard validity and no duplicated address fields. |
+
 
 | Term             | Meaning                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |

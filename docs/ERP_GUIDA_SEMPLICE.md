@@ -336,6 +336,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Filament Admin UI
 
+-   **Sites** collega ogni sede operativa a un indirizzo canonico gestito da Core `Place`. L'indirizzo non viene copiato in ERP e può essere riutilizzato da altri moduli.
+-   La sede ha una finestra di validità standard; il Place selezionato fornirà anche la posizione agli export calendario.
+
 -   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 -   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
 -   **Report pages:** Trial Balance, Balance Sheet, Income Statement, Sales Pipeline, Stock Valuation. Financial and operational report pages expose CSV export actions; financial reports can be archived through immutable CSV/PDF snapshots.

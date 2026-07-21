@@ -337,6 +337,9 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Filament Admin UI
 
+-   `SiteResource` manages company/name/validity and selects the canonical Core `Place`; ERP does not duplicate postal/geographic fields.
+-   `Site` uses Core `HasValidity`, exposes `place(): BelongsTo`, and is the location source for task calendar exports.
+
 -   **Resources:** Party, Contact, Quotation, Project, Lead, Opportunity, SalesOrder, DeliveryNote, Invoice, PurchaseOrder, GoodsReceipt, ReturnOrder, SupplierReturn, PaymentTerm, Payment, PaymentRun, BankAccount, BankStatement, VatRegister (read-only), VatSettlement (read-only)
 -   **Core accounting:** Company, Account, JournalEntry (with view page), FiscalYear, FiscalPeriod, DocumentSequence, TaxCode
 -   **Report pages:** Trial Balance, Balance Sheet, Income Statement, Sales Pipeline, Stock Valuation. Financial and operational report pages expose CSV export actions; financial reports can be archived through immutable CSV/PDF snapshots.
