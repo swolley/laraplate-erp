@@ -91,4 +91,12 @@ final class Task extends Model
 
         return $rules;
     }
+
+    protected function casts(): array
+    {
+        return [
+            'valid_from' => 'immutable_datetime',
+            'valid_to' => 'immutable_datetime',
+        ];
+    }
 }

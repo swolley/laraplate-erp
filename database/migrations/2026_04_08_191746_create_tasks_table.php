@@ -19,8 +19,8 @@ return new class extends Migration
         $tasks_table = ERPTables::Tasks->value;
         Schema::create($tasks_table, function (Blueprint $table) use ($tasks_table): void {
             $table->id();
-            $table->foreignId('project_id')->constrained(ERPTables::Projects->value, 'id', "{$tasks_table}_project_id_FK")->nullable(true)->setNullOnDelete()->comment('The project that the task belongs to');
-            $table->foreignId('site_id')->constrained(ERPTables::Sites->value, 'id', "{$tasks_table}_site_id_FK")->nullable(true)->setNullOnDelete()->comment('The site that the task belongs to');
+            $table->foreignId('project_id')->nullable()->constrained(ERPTables::Projects->value, 'id', "{$tasks_table}_project_id_FK")->nullOnDelete()->comment('The project that the task belongs to');
+            $table->foreignId('site_id')->nullable()->constrained(ERPTables::Sites->value, 'id', "{$tasks_table}_site_id_FK")->nullOnDelete()->comment('The site that the task belongs to');
             $table->foreignId('taxonomy_id')->constrained(CoreTables::Taxonomies->value, 'id', "{$tasks_table}_taxonomy_id_FK")->restrictOnDelete()->comment('Activity type node in taxonomies (EntityType activities)');
 
             MigrateUtils::timestamps(

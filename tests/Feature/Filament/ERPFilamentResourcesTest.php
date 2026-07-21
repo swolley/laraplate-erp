@@ -40,6 +40,7 @@ use Modules\ERP\Filament\Resources\Sites\SiteResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use Modules\ERP\Filament\Resources\TaxCodes\TaxCodeResource;
+use Modules\ERP\Filament\Resources\Tasks\TaskResource;
 use Modules\ERP\Filament\Resources\VatRegister\VatRegisterResource;
 use Modules\ERP\Filament\Resources\VatSettlements\VatSettlementResource;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
@@ -54,6 +55,7 @@ use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\PaymentRequest;
 use Modules\ERP\Models\Site;
 use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Models\Task;
 
 uses(RefreshDatabase::class);
 
@@ -131,6 +133,11 @@ it('registers site pages and model', function (): void {
         ->and(SiteResource::getModel())->toBe(Site::class);
 });
 
+it('registers task pages and model', function (): void {
+    expect(TaskResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(TaskResource::getModel())->toBe(Task::class);
+});
+
 it('defines journal entry reverse action', function (): void {
     expect(JournalEntryActions::reverse()->getName())->toBe('reverse');
 });
@@ -198,6 +205,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         SiteResource::class,
         QuotationResource::class,
         TaxCodeResource::class,
+        TaskResource::class,
         VatRegisterResource::class,
         VatSettlementResource::class,
     ];
