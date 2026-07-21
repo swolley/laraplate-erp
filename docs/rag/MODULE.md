@@ -288,6 +288,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `MovementPostingService` locks and posts idempotently. Income: debit `bank_cash`, credit Revenue. Expense: debit Expense, credit `bank_cash`. Counterparty company/kind/activity are validated.
 -   `CashBalanceService` sums posted `bank_cash` journal lines; there is no parallel mutable balance.
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` processes only unlinked movements and reports per-row failures.
+-   `MovementResource` exposes index/create/view only. `CreateMovement` wraps row creation and `MovementPostingService::post()` in one transaction; no edit route or parallel balance write exists.
 
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 

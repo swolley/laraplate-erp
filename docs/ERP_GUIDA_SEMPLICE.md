@@ -288,6 +288,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Posting creates a balanced journal against the company's `bank_cash` account and freezes local amount/rate. Posting the same movement again does not duplicate the journal.
 -   Cash balance is calculated from journal lines, never maintained separately.
 -   Operators can preview or post pending rows with `erp:migrate-movements-to-journal [--company=ID] [--dry-run]`.
+-   In Filament, Cash Movements can be created and inspected but not edited after posting. The account selector is restricted by company and income/expense type.
 
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 

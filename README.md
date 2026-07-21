@@ -290,6 +290,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Document/local amount and FX rate are frozen on posting. Repeated posting is idempotent through `posted_journal_entry_id`.
 -   `CashBalanceService` derives the balance from posted journal lines on accounts carrying `meta.erp_role=bank_cash`; no mutable balance table is updated.
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` posts only unlinked movements and can be rerun safely.
+-   The Filament Cash Movements resource offers create/list/detail only. Creation and journal posting share one transaction; posted movements have no edit route.
 
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
