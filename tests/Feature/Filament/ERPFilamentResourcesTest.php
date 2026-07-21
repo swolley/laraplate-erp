@@ -36,6 +36,7 @@ use Modules\ERP\Filament\Resources\Projects\ProjectResource;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
 use Modules\ERP\Filament\Resources\SalesOrders\Actions\SalesOrderAmendmentActions;
+use Modules\ERP\Filament\Resources\Sites\SiteResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use Modules\ERP\Filament\Resources\TaxCodes\TaxCodeResource;
@@ -51,6 +52,7 @@ use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\Site;
 use Modules\ERP\Models\TaxCode;
 
 uses(RefreshDatabase::class);
@@ -124,6 +126,11 @@ it('registers payment request pages and model', function (): void {
         ->and(PaymentRequestResource::getModel())->toBe(PaymentRequest::class);
 });
 
+it('registers site pages and model', function (): void {
+    expect(SiteResource::getPages())->toHaveKeys(['index', 'create', 'edit'])
+        ->and(SiteResource::getModel())->toBe(Site::class);
+});
+
 it('defines journal entry reverse action', function (): void {
     expect(JournalEntryActions::reverse()->getName())->toBe('reverse');
 });
@@ -188,6 +195,7 @@ it('configures erp resource forms and tables without throwing', function (): voi
         PaymentTermResource::class,
         PriceListResource::class,
         ProjectResource::class,
+        SiteResource::class,
         QuotationResource::class,
         TaxCodeResource::class,
         VatRegisterResource::class,
