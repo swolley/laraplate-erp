@@ -227,6 +227,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **FX rates and revaluation** | Database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules are implemented; external feed imports and realized FX automation remain future work. |
 | **Money value object** | `Money` provides decimal-safe amount/currency arithmetic and allocation. Some legacy services still use lower-level decimal helpers. |
 | **Analytic dimensions** | Journal lines support analytic dimension values through a first-class pivot with allocation percentage; analytic reporting cubes remain future work. |
+| **Direct item price** | A `PriceListItem` targeting one concrete ERP item. It takes precedence over an active taxonomy price; party rules are applied after that base price is selected. A price-list row must target exactly one item or one taxonomy. |
 | **App-lock portability** | Application locks are portable across supported databases. MySQL triggers are an additional vendor-specific safety net only. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |

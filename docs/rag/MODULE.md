@@ -266,6 +266,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 ### M7.1 — Advanced Pricelists & Party Rules
 
 -   `PriceList` / `PriceListItem` with validity windows and Filament resource
+-   Each price-list row targets exactly one direct `Item` or one `Activity` taxonomy; direct item prices take precedence and taxonomy prices are the fallback
 -   `PartyPriceRule` with percent, fixed, and override discounts
 -   `Party::price_rules()` relation and Party Filament relation manager
 -   `PriceResolverService` and `InvoiceLinePricingService` apply commercial pricing to quotation / sales order / invoice lines
@@ -307,7 +308,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | M6.1 Bank reconciliation | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 + Phase 2C + Aruba operations | Provider binding, deterministic stub submission workflow, invoice actions, FatturaPA readiness fields, local XML/XSD validation, Aruba upload/polling/callback adapter, and polling command are present. |
-| M7.1 Advanced pricelists | Implemented v1 + UI | Validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
+| M7.1 Advanced pricelists | Implemented v1 + UI | Direct item and taxonomy fallback prices, validity windows, party rules, percent/fixed/override discounts, resolver, document-line integrations, PriceList resource, and Party price-rule UI are present. |
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
