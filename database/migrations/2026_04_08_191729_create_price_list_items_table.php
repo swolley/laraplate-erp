@@ -20,7 +20,9 @@ return new class extends Migration
         Schema::create($price_list_items_table, function (Blueprint $table) use ($price_list_items_table): void {
             $table->id();
             $table->foreignId('price_list_id')->constrained(ERPTables::PriceLists->value, 'id', "{$price_list_items_table}_price_list_id_FK")->cascadeOnDelete();
-            $table->foreignId('taxonomy_id')->constrained(CoreTables::Taxonomies->value, 'id', "{$price_list_items_table}_taxonomy_id_FK")->restrictOnDelete();
+            $table->foreignId('taxonomy_id')->nullable()->constrained(CoreTables::Taxonomies->value, 'id', "{$price_list_items_table}_taxonomy_id_FK")->restrictOnDelete();
+            // The FK is added by the later items migration, after erp_items exists.
+            $table->unsignedBigInteger('item_id')->nullable()->index("{$price_list_items_table}_item_id_IDX");
             $table->string('name')->comment('The name of the price list item');
             $table->string('uom')->nullable()->comment('Unit of measure label, e.g. h, day');
             $table->decimal('unit_price', 15, 4)->default(0)->comment('Amount in price_lists.currency');

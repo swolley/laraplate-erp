@@ -34,12 +34,18 @@ final class PriceListForm
                 Repeater::make('price_list_items')
                     ->relationship('price_list_items')
                     ->schema([
+                        Select::make('item_id')
+                            ->label('Item')
+                            ->relationship('item', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->rules(['nullable', 'required_without:taxonomy_id', 'prohibits:taxonomy_id']),
                         Select::make('taxonomy_id')
                             ->label('Activity')
                             ->relationship('taxonomy', 'name')
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->rules(['nullable', 'required_without:item_id', 'prohibits:item_id']),
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),

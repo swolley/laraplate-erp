@@ -64,6 +64,71 @@ it('resolves the base unit price from the active price list item', function (): 
         ->and($result->appliedRule)->toBeNull();
 });
 
+it('prefers an item-specific list price over its taxonomy price', function (): void {
+    [$company, $item] = createPricingFixture();
+    $price_list = PriceList::query()->where('company_id', $company->id)->firstOrFail();
+    PriceListItem::query()->create([
+        'price_list_id' => $price_list->id,
+        'item_id' => $item->id,
+        'name' => 'Direct widget price',
+        'unit_price' => '75.0000',
+    ]);
+
+    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id);
+
+    expect($result->baseUnitPrice)->toBe('75.0000')
+        ->and($result->priceListItem->item_id)->toBe($item->id);
+});
+
+it('resolves a direct price for an item without taxonomy', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'price-direct-' . uniqid(),
+        'name' => 'Direct price',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Standalone item',
+        'sku' => 'DIRECT-1',
+        'uom' => 'ea',
+        'costing_method' => 'weighted_avg',
+    ]);
+    $price_list = PriceList::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Direct',
+        'currency' => 'EUR',
+    ]);
+    PriceListItem::query()->create([
+        'price_list_id' => $price_list->id,
+        'item_id' => $item->id,
+        'name' => 'Standalone direct price',
+        'unit_price' => '33.0000',
+    ]);
+
+    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id);
+
+    expect($result->resolvedUnitPrice)->toBe('33.0000');
+});
+
+it('requires exactly one direct item or taxonomy on a price list item', function (): void {
+    [$company, $item, $taxonomy] = createPricingFixture();
+    $price_list = PriceList::query()->where('company_id', $company->id)->firstOrFail();
+
+    expect(fn () => PriceListItem::query()->create([
+        'price_list_id' => $price_list->id,
+        'item_id' => $item->id,
+        'taxonomy_id' => $taxonomy->id,
+        'name' => 'Ambiguous price',
+        'unit_price' => '50.0000',
+    ]))->toThrow(ValidationException::class)
+        ->and(fn () => PriceListItem::query()->create([
+            'price_list_id' => $price_list->id,
+            'name' => 'Untargeted price',
+            'unit_price' => '50.0000',
+        ]))->toThrow(ValidationException::class);
+});
+
 it('applies party percent discount rules to the resolved unit price', function (): void {
     [$company, $item, $taxonomy] = createPricingFixture();
     $party = Party::query()->create([
@@ -153,7 +218,7 @@ it('replaces the list price when a party override rule is configured', function 
         ->and($result->resolvedUnitPrice)->toBe('42.5000');
 });
 
-it('rejects items without pricing taxonomy', function (): void {
+it('rejects items without either a direct price or pricing taxonomy', function (): void {
     $company = Company::query()->create([
         'slug' => 'price-no-tax-' . uniqid(),
         'name' => 'No Taxonomy Co',
@@ -169,7 +234,7 @@ it('rejects items without pricing taxonomy', function (): void {
     ]);
 
     expect(fn () => app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id))
-        ->toThrow(ValidationException::class, 'no pricing taxonomy');
+        ->toThrow(ValidationException::class, 'No active direct or taxonomy price list item');
 });
 
 it('rejects items when no active price list item matches', function (): void {
@@ -177,5 +242,5 @@ it('rejects items when no active price list item matches', function (): void {
     PriceListItem::query()->delete();
 
     expect(fn () => app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id))
-        ->toThrow(ValidationException::class, 'No active price list item');
+        ->toThrow(ValidationException::class, 'No active direct or taxonomy price list item');
 });

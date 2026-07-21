@@ -32,15 +32,13 @@ final class PriceResolverService
             ->where('company_id', $company_id)
             ->first();
 
-        if ($item === null || $item->taxonomy_id === null) {
+        if ($item === null) {
             throw ValidationException::withMessages([
-                'item_id' => ['The item is missing or has no pricing taxonomy.'],
+                'item_id' => ['The item does not exist for the selected company.'],
             ]);
         }
 
-        /** @var PriceListItem|null $price_list_item */
-        $price_list_item = PriceListItem::query()
-            ->where('taxonomy_id', $item->taxonomy_id)
+        $base_query = PriceListItem::query()
             ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
             })
@@ -56,14 +54,27 @@ final class PriceResolverService
                     ->where(function (Builder $query) use ($date): void {
                         $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
                     });
-            })
+            });
+
+        /** @var PriceListItem|null $price_list_item */
+        $price_list_item = (clone $base_query)
+            ->where('item_id', $item->id)
             ->orderByDesc('valid_from')
             ->orderByDesc('id')
             ->first();
 
+        if ($price_list_item === null && $item->taxonomy_id !== null) {
+            $price_list_item = (clone $base_query)
+                ->whereNull('item_id')
+                ->where('taxonomy_id', $item->taxonomy_id)
+                ->orderByDesc('valid_from')
+                ->orderByDesc('id')
+                ->first();
+        }
+
         if ($price_list_item === null) {
             throw ValidationException::withMessages([
-                'item_id' => ['No active price list item matches the item taxonomy.'],
+                'item_id' => ['No active direct or taxonomy price list item matches the item.'],
             ]);
         }
 
