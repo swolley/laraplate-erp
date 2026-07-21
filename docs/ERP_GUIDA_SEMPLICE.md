@@ -282,6 +282,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Event types are `erp.invoice.posted`, `erp.payment.matched`, `erp.customer-return.completed`, and `erp.supplier-return.completed`.
 -   Core queues publication after commit. Its default publisher is a no-I/O stub; an application transport binding is required for external delivery.
 
+### Cash Movements and Journal
+
+-   A cash movement always has a positive amount and is classified as income or expense. The selected counterparty must be a revenue account for income or an expense account for expense.
+-   Posting creates a balanced journal against the company's `bank_cash` account and freezes local amount/rate. Posting the same movement again does not duplicate the journal.
+-   Cash balance is calculated from journal lines, never maintained separately.
+-   Operators can preview or post pending rows with `erp:migrate-movements-to-journal [--company=ID] [--dry-run]`.
+
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.

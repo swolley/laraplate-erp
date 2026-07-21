@@ -201,6 +201,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term | Meaning |
 |------|---------|
 | **MovementType** | Synthetic direction for legacy cash adapters: `income` / `expense`. Mapped to journal lines, not to a separate `EntityType` tree. |
+| **MovementPostingService** | Idempotently maps a cash `Movement` to one balanced journal. Income uses bank debit/revenue credit; expense uses expense debit/bank credit. |
+| **CashBalanceService** | Derives company cash balance by summing posted journal lines on `bank_cash` accounts; it never updates a parallel balance table. |
 
 ## Known limitation terms
 
