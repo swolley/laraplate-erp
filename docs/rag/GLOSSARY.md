@@ -254,6 +254,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **ERP health check** | Read-only `erp:health-check` command that reports installation, accounting setup, permissions, sequence, and e-invoice configuration health in table or JSON format. |
 | **Document sequence audit** | Read-only `erp:sequences:audit` command that compares invoice/order references with configured sequence formatters, counters, duplicates, and gap policy. It reports but never repairs inconsistencies. |
 | **Bank statement batch import** | `erp:bank-statements:import` command for file/directory CSV, CAMT.053, and MT940 ingestion. SHA-256 per-account idempotency prevents duplicates; dry-run does not persist, and archiving requires an explicit path. |
+| **VAT settlement batch** | `erp:vat-settlements:compute` command that previews or persists draft liquidazioni IVA for open fiscal periods. It skips confirmed settlements and never confirms or pays them. |
 | **Extended admin domain permissions** | Seeded Phase 2C abilities for high-risk admin operations: `default.erp_tax_codes.supersede`, `default.erp_companies.switch_context`, and `default.erp_document_sequences.reserve`. |
 | **Payment file only** | ERP generates bank files but does not submit them to a bank API. Supplier payment runs support SEPA `pain.001` and CBI bonifici; receivable services generate Ri.Ba and SDD CORE files. |
 | **CBI bonifici** | Italian fixed-record bank transfer export generated from approved supplier `PaymentRun` records and audited through export checksum metadata. |

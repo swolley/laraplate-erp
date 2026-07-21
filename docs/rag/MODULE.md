@@ -238,6 +238,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `erp:health-check --format=table|json` performs read-only installation and operational checks for the default company, chart of accounts, fiscal calendar, domain permissions, current-year sequences, and e-invoice configuration
 -   `erp:sequences:audit --company=ID --year=YYYY --format=table|json` cross-checks persisted invoice/order references against sequence formatters, counters, duplicates, and gap policy without repairing data
 -   `erp:bank-statements:import --bank-account=ID --path=FILE_OR_DIR --format=auto --dry-run` validates or imports CSV, CAMT.053, and MT940 files idempotently by SHA-256 checksum; `--archive-path` explicitly enables post-import file moves
+-   `erp:vat-settlements:compute --company=ID --year=YYYY --period=YYYY-N --dry-run` previews or computes draft VAT settlements for open fiscal periods; confirmed settlements and closed periods are never modified
 -   Current runtime is still local by default: the `stub` driver remains default; `fatturapa` generates and validates XML without delivery
 -   Remaining go-live work: verify the configured Aruba tenant/contract, callback accreditation/IP allowlist, production credentials, and legal retention obligations with the provider
 
