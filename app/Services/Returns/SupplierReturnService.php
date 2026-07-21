@@ -21,6 +21,7 @@ use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
+use Modules\Core\Services\OutboxRecorder;
 
 final readonly class SupplierReturnService
 {
@@ -28,6 +29,7 @@ final readonly class SupplierReturnService
         private SupplierReturnShipmentService $shipment_service,
         private DeliveryNoteInventoryService $delivery_note_inventory_service,
         private ErpCompanySettings $erp_company_settings,
+        private OutboxRecorder $outbox_recorder,
     ) {}
 
     public function approve(SupplierReturn $supplier_return): SupplierReturn
@@ -60,6 +62,14 @@ final readonly class SupplierReturnService
                 $this->createDebitNote($processed);
                 $processed = $processed->fresh() ?? $processed;
             }
+
+            $this->outbox_recorder->record('erp.supplier-return.completed', $processed, [
+                'company_id' => (int) $processed->company_id,
+                'delivery_note_id' => (int) $processed->delivery_note_id,
+                'debit_note_invoice_id' => $processed->debit_note_invoice_id === null
+                    ? null
+                    : (int) $processed->debit_note_invoice_id,
+            ]);
 
             return $processed;
         });

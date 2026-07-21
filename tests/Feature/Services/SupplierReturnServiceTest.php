@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Models\OutboxEvent;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -143,6 +144,10 @@ it('records outbound stock when completing approved supplier returns', function 
         ->and($delivery_note->posted_at)->not->toBeNull()
         ->and($delivery_note->inventory_posted_at)->not->toBeNull()
         ->and($delivery_note->cogs_journal_entry_id)->toBeNull()
+        ->and(OutboxEvent::query()
+            ->where('event_type', 'erp.supplier-return.completed')
+            ->where('aggregate_id', (string) $supplier_return->id)
+            ->exists())->toBeTrue()
         ->and($supplier_return_line->fresh()->delivery_note_line_id)->toBe($delivery_note_line->id)
         ->and((string) $movement->quantity)->toBe('2.0000');
 });

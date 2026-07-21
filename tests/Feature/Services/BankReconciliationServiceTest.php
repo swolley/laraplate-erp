@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Models\OutboxEvent;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
 use Modules\ERP\Models\BankAccount;
@@ -71,7 +72,11 @@ it('matches and unmatches a bank statement line to a payment', function (): void
 
     expect($matched->status)->toBe(BankStatementLineStatus::Matched)
         ->and((int) $matched->matched_payment_id)->toBe((int) $payment->id)
-        ->and((int) $payment->fresh()->bank_account_id)->toBe((int) $account->id);
+        ->and((int) $payment->fresh()->bank_account_id)->toBe((int) $account->id)
+        ->and(OutboxEvent::query()
+            ->where('event_type', 'erp.payment.matched')
+            ->where('aggregate_id', (string) $line->id)
+            ->exists())->toBeTrue();
 
     $unmatched = app(BankReconciliationService::class)->unmatch($matched);
 

@@ -18,6 +18,7 @@ use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
+use Modules\Core\Services\OutboxRecorder;
 
 final readonly class ReturnOrderService
 {
@@ -26,6 +27,7 @@ final readonly class ReturnOrderService
         private DeliveryNoteInventoryService $delivery_note_inventory_service,
         private CreditNoteService $credit_note_service,
         private ErpCompanySettings $erp_company_settings,
+        private OutboxRecorder $outbox_recorder,
     ) {}
 
     public function approve(ReturnOrder $return_order): ReturnOrder
@@ -57,6 +59,14 @@ final readonly class ReturnOrderService
                 $this->createCreditNote($processed);
                 $processed = $processed->fresh() ?? $processed;
             }
+
+            $this->outbox_recorder->record('erp.customer-return.completed', $processed, [
+                'company_id' => (int) $processed->company_id,
+                'delivery_note_id' => (int) $processed->delivery_note_id,
+                'credit_note_invoice_id' => $processed->credit_note_invoice_id === null
+                    ? null
+                    : (int) $processed->credit_note_invoice_id,
+            ]);
 
             return $processed;
         });

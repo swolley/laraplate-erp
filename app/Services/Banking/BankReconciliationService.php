@@ -13,11 +13,13 @@ use Modules\ERP\Casts\PaymentDirection;
 use Modules\ERP\Models\BankStatementLine;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Payment;
+use Modules\Core\Services\OutboxRecorder;
 
 final class BankReconciliationService
 {
     public function __construct(
         private readonly BankDifferenceJournalService $bank_difference_journal_service,
+        private readonly OutboxRecorder $outbox_recorder,
     ) {}
 
     public function matchPayment(BankStatementLine $line, Payment $payment): BankStatementLine
@@ -38,6 +40,8 @@ final class BankReconciliationService
                 $payment->bank_account_id = $line->bank_statement?->bank_account_id;
                 $payment->save();
             }
+
+            $this->recordPaymentMatched($line, $payment);
 
             return $line;
         });
@@ -125,8 +129,21 @@ final class BankReconciliationService
                 $payment->save();
             }
 
+            $this->recordPaymentMatched($line, $payment);
+
             return $line;
         });
+    }
+
+    private function recordPaymentMatched(BankStatementLine $line, Payment $payment): void
+    {
+        $this->outbox_recorder->record('erp.payment.matched', $line, [
+            'company_id' => (int) $line->company_id,
+            'payment_id' => $this->paymentId($payment),
+            'difference_journal_entry_id' => $line->difference_journal_entry_id === null
+                ? null
+                : (int) $line->difference_journal_entry_id,
+        ]);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Models\OutboxEvent;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -181,7 +182,11 @@ it('posts invoice journal, snapshots tax, and updates sales order invoiced quant
         ->and($line->tax_label)->toBe('IVA 22%');
 
     $journal = JournalEntry::query()->withoutGlobalScopes()->findOrFail((int) $invoice->journal_entry_id);
-    expect($journal->lines)->toHaveCount(3);
+    expect($journal->lines)->toHaveCount(3)
+        ->and(OutboxEvent::query()
+            ->where('event_type', 'erp.invoice.posted')
+            ->where('aggregate_id', (string) $invoice->id)
+            ->exists())->toBeTrue();
 });
 
 it('reverses invoice posting and rolls back invoiced quantities when unposted', function (): void {

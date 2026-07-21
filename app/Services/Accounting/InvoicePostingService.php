@@ -24,6 +24,7 @@ use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
 use Modules\ERP\Support\Decimal;
+use Modules\Core\Services\OutboxRecorder;
 
 final readonly class InvoicePostingService
 {
@@ -39,6 +40,7 @@ final readonly class InvoicePostingService
         private ThreeWayMatchService $three_way_match_service,
         private VatRegisterService $vat_register_service,
         private TaxLineCalculator $tax_line_calculator,
+        private OutboxRecorder $outbox_recorder,
     ) {}
 
     public function post(Invoice $invoice): void
@@ -114,6 +116,12 @@ final readonly class InvoicePostingService
 
             $this->applySalesOrderInvoicingProgress($locked, $lines, true);
             $invoice->journal_entry_id = $this->modelId($entry);
+
+            $this->outbox_recorder->record('erp.invoice.posted', $locked, [
+                'company_id' => (int) $locked->company_id,
+                'reference' => $reference,
+                'journal_entry_id' => $this->modelId($entry),
+            ]);
         });
     }
 
