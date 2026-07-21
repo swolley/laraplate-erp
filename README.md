@@ -272,6 +272,12 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `PriceResolverService` and `InvoiceLinePricingService` apply commercial pricing to quotation / sales order / invoice lines
 -   `Activity` is the concrete ERP taxonomy used for activity-based price rules; do not point UI directly at abstract Core `Taxonomy`.
 
+### Integration Outbox
+
+-   Posted invoices, exact/difference payment matches, completed customer returns, and completed supplier returns write durable Core outbox events in the same database transaction.
+-   Event types are `erp.invoice.posted`, `erp.payment.matched`, `erp.customer-return.completed`, and `erp.supplier-return.completed`.
+-   Core queues publication after commit. Its default publisher is a no-I/O stub; an application transport binding is required for external delivery.
+
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.

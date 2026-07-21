@@ -228,6 +228,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **Money value object** | `Money` provides decimal-safe amount/currency arithmetic and allocation. Some legacy services still use lower-level decimal helpers. |
 | **Analytic dimensions** | Journal lines support analytic dimension values through a first-class pivot with allocation percentage; analytic reporting cubes remain future work. |
 | **Direct item price** | A `PriceListItem` targeting one concrete ERP item. It takes precedence over an active taxonomy price; party rules are applied after that base price is selected. A price-list row must target exactly one item or one taxonomy. |
+| **ERP integration outbox** | Transactional Core events emitted by posted invoices, matched payments, and completed returns. External delivery requires replacing Core's default no-I/O `OutboxPublisher`. |
 | **App-lock portability** | Application locks are portable across supported databases. MySQL triggers are an additional vendor-specific safety net only. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |
