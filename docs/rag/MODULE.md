@@ -409,6 +409,8 @@ composer test:types           # PHPStan
 composer test:refactor        # Rector
 ```
 
+Document-number concurrency coverage is split between the normal 8-worker feature test and `DocumentNumberConcurrencyStressTest`, an opt-in 50-worker test. The stress harness forks with `pcntl`, synchronizes worker start, and uses an isolated temporary SQLite WAL database; it does not migrate or query the configured application database. Run it explicitly with `RUN_ERP_STRESS_TESTS=1 php artisan test --group=stress`. Without the flag or `pcntl`, it is skipped by design.
+
 ### Maintenance
 
 ```bash

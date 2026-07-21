@@ -408,6 +408,14 @@ composer test:types           # PHPStan
 composer test:refactor        # Rector
 ```
 
+La numerazione documenti ha un test ordinario con 8 processi e un test di carico opzionale con 50 processi simultanei. Il test di carico usa un database SQLite temporaneo separato, non il database configurato dell'applicazione, e richiede l'estensione PHP `pcntl`:
+
+```bash
+RUN_ERP_STRESS_TESTS=1 php artisan test --group=stress
+```
+
+La suite normale lo salta. Va eseguito esplicitamente come controllo tecnico prima di un rilascio o dopo modifiche all'allocatore delle numerazioni.
+
 ### Maintenance
 
 ```bash

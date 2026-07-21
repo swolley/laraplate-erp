@@ -41,6 +41,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **JournalEntry** | Balanced double-entry header; **JournalEntryLine** rows sum to zero on `amount_local`. |
 | **JournalPostingService** | Only supported path to post (and **reverse**) journals. Posted rows are immutable from the ORM layer. |
 | **DocumentSequence** / **DocumentNumberAllocator** | Per-company, per-type, per-fiscal-year counters with pessimistic lock; optional `format_pattern` / `suffix`. |
+| **DocumentNumberConcurrencyStressTest** | Opt-in, `pcntl`-based 50-worker verification of unique contiguous allocation on an isolated temporary SQLite WAL database. Run with `RUN_ERP_STRESS_TESTS=1 php artisan test --group=stress`. |
 | **DocumentType** | Stream key for numbering (quotation, invoices, etc.). `defaultGapAllowed()` encodes whether gaps on transaction rollback are acceptable. |
 
 ## Parties (M3.6 — unified customer/supplier)

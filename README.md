@@ -413,6 +413,14 @@ composer test:types           # PHPStan
 composer test:refactor        # Rector
 ```
 
+Document-number concurrency has two isolated checks: the regular feature test forks 8 workers, while the opt-in stress test forks 50 workers against a temporary SQLite WAL database. The stress test never uses the configured application database and is skipped unless both `pcntl` and the explicit flag are available:
+
+```bash
+RUN_ERP_STRESS_TESTS=1 php artisan test --group=stress
+```
+
+Keep the flag disabled in ordinary CI jobs; run it as a dedicated release or infrastructure gate on a host that supports process forking.
+
 ### Maintenance
 
 ```bash
