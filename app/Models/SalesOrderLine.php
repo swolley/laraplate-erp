@@ -35,6 +35,20 @@ final class SalesOrderLine extends Model
     use HasLocks;
 
     /**
+     * Commercial fields that become immutable after the line enters a document chain.
+     *
+     * @var list<string>
+     */
+    private const array LOCKED_COMMERCIAL_FIELDS = [
+        'sales_order_id',
+        'quotation_item_id',
+        'item_id',
+        'name',
+        'qty_ordered',
+        'unit_price',
+    ];
+
+    /**
      * @var string
      */
     #[Override]
@@ -120,6 +134,18 @@ final class SalesOrderLine extends Model
     protected static function booted(): void
     {
         self::saving(static function (SalesOrderLine $line): void {
+            if ($line->exists && $line->getOriginal('locked_at') !== null) {
+                $dirty_fields = array_keys($line->getDirty());
+                $protected_fields = array_intersect($dirty_fields, self::LOCKED_COMMERCIAL_FIELDS);
+
+                if ($protected_fields !== []) {
+                    throw ValidationException::withMessages(array_fill_keys(
+                        $protected_fields,
+                        ['Commercial fields cannot be changed after the line enters a document chain.'],
+                    ));
+                }
+            }
+
             $line_is_progressed = $line->qty_delivered > 0 || $line->qty_invoiced > 0;
 
             if (! $line->exists || ! $line_is_progressed) {
@@ -132,6 +158,16 @@ final class SalesOrderLine extends Model
 
             throw ValidationException::withMessages([
                 'qty_ordered' => ['qty_ordered cannot be changed after delivery or invoicing has started.'],
+            ]);
+        });
+
+        self::deleting(static function (SalesOrderLine $line): void {
+            if ($line->locked_at === null) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'locked_at' => ['A sales order line in a document chain cannot be deleted.'],
             ]);
         });
     }

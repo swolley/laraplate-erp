@@ -111,6 +111,21 @@ final class DeliveryNoteLine extends Model
         return $rules;
     }
 
+    protected static function booted(): void
+    {
+        self::saved(static function (DeliveryNoteLine $line): void {
+            if ($line->sales_order_line_id === null) {
+                return;
+            }
+
+            $sales_order_line = SalesOrderLine::query()->find($line->sales_order_line_id);
+
+            if ($sales_order_line !== null && ! $sales_order_line->isLocked()) {
+                $sales_order_line->lock();
+            }
+        });
+    }
+
     protected function shouldVersioning(): bool
     {
         return false;
