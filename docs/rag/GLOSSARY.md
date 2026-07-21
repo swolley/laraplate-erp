@@ -229,7 +229,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | Term            | Meaning                                                                                                                 |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **HasLocks**    | Core trait for application-level record locking on business events.                                                     |
-| **DB triggers** | MySQL `BEFORE UPDATE` / `BEFORE DELETE` on `quotations` and `sales_orders` as safety net. Coexists with observer locks. |
+| **DB triggers** | MySQL/MariaDB and PostgreSQL safety nets for locked document headers and sales-order lock chains. Sales-order lines protect commercial fields but allow operational counters/status. |
 
 
 ## Cash / Tricount adapters
@@ -274,7 +274,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **Direct item price** | A `PriceListItem` targeting one concrete ERP item. It takes precedence over an active taxonomy price; party rules are applied after that base price is selected. A price-list row must target exactly one item or one taxonomy. |
 | **ERP integration outbox** | Transactional Core events emitted by posted invoices, matched payments, and completed returns. External delivery requires replacing Core's default no-I/O `OutboxPublisher`. |
 | **ERP extension point** | Explicit service-container contract for chart of accounts, FX conversion, e-invoicing, or Core outbox publication. ERP does not currently provide tagged plugin discovery. |
-| **App-lock portability** | Application locks are portable across supported databases. MySQL triggers are an additional vendor-specific safety net only. |
+| **App-lock portability** | Application guards enforce lock chains on every supported database. MySQL/MariaDB and PostgreSQL additionally enforce them with triggers; SQLite/Oracle use the application fallback. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, ETL legacy, and Tricount refactor are not part of the current ERP implementation slice. |
 

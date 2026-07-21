@@ -189,9 +189,10 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### M3+ — Database Lock Triggers
 
--   MySQL `BEFORE UPDATE` / `BEFORE DELETE` triggers on `quotations` and `sales_orders`
--   Safety net preventing modification of locked records at DB level
--   Coexists with application-level observer locks
+-   MySQL/MariaDB and PostgreSQL triggers protect locked quotations, sales orders, and projects from raw updates/deletes
+-   Confirmed/partially/fully evaded sales orders lock their linked quotation and project; DDT lines lock their source sales-order line
+-   Locked order lines reject commercial changes (`qty_ordered`, item, description, source and price) and deletion, while operational counters/status remain writable
+-   SQLite and Oracle use the equivalent Eloquent guards; database triggers remain defense in depth where installed
 
 ### M5.1 — Payment Schedule & Receivables
 
@@ -298,7 +299,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Revision history is linear: revise the latest quotation; a source with an existing successor cannot branch. Editable unlocked drafts are changed directly rather than revised.
 -   Filament exposes **Create revision** for locked or non-draft quotations and redirects to the new draft.
 -   A project linked to a confirmed/partially/fully evaded sales order is locked automatically. Model validation blocks update/delete and Filament hides edit/delete access.
--   Application locking is portable. Additional database trigger defense belongs to backlog `4-04`.
+-   DDT linkage locks the source sales-order line. Commercial values become immutable, while delivery, invoice and return counters and operational status can still progress.
+-   Application locking is portable; MySQL/MariaDB and PostgreSQL add equivalent database trigger defense against raw SQL bypasses.
 
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
@@ -358,7 +360,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Reports remain live-query in Filament, but financial report snapshots now archive immutable payload/CSV/simple-PDF rows. Rich paginated PDF design and operational report snapshot scheduling remain enhancements.
 -   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
 -   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
--   Application locks are portable; MySQL DB triggers are an extra safety net for selected lock chains and should not be treated as cross-database enforcement.
+-   Application lock-chain guards cover all supported databases. MySQL/MariaDB and PostgreSQL add DB triggers; SQLite and Oracle rely on the application layer for this specific defense.
 -   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
 
 ### Roadmap

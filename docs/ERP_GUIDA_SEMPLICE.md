@@ -188,9 +188,10 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### M3+ — Database Lock Triggers
 
--   MySQL `BEFORE UPDATE` / `BEFORE DELETE` triggers on `quotations` and `sales_orders`
--   Safety net preventing modification of locked records at DB level
--   Coexists with application-level observer locks
+-   MySQL/MariaDB and PostgreSQL triggers protect locked quotations, sales orders, and projects from raw updates/deletes
+-   Confirmed/partially/fully evaded sales orders lock their linked quotation and project; DDT lines lock their source sales-order line
+-   Locked order lines reject commercial changes and deletion, but delivery/invoice/return counters and operational status continue to update normally
+-   SQLite and Oracle enforce the same business rule through the application layer
 
 ### M5.1 — Payment Schedule & Receivables
 
@@ -355,7 +356,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Reports remain live-query in Filament, but financial report snapshots now archive immutable payload/CSV/simple-PDF rows. Rich paginated PDF design and operational report snapshot scheduling remain enhancements.
 -   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
 -   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
--   Application locks are portable; MySQL DB triggers are an extra safety net for selected lock chains and should not be treated as cross-database enforcement.
+-   Application lock-chain guards cover all supported databases. MySQL/MariaDB and PostgreSQL add DB triggers; SQLite and Oracle rely on application guards for this specific defense.
 -   MES, ETL, calendar/ICS, Gantt planning, mobile API, and Tricount refactor are outside the current ERP slice.
 
 ### Roadmap
