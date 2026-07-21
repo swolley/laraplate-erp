@@ -292,6 +292,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` posts only unlinked movements and can be rerun safely.
 -   The Filament Cash Movements resource offers create/list/detail only. Creation and journal posting share one transaction; posted movements have no edit route.
 
+### Quotation Revisions and Project Locks
+
+-   `QuotationRevisionService` creates a commercial snapshot as a new draft, copies all quotation lines, increments `version`, and links the immediate predecessor through `revises_quotation_id`.
+-   Revision history is linear: revise the latest quotation; a source with an existing successor cannot branch. Editable unlocked drafts are changed directly rather than revised.
+-   Filament exposes **Create revision** for locked or non-draft quotations and redirects to the new draft.
+-   A project linked to a confirmed/partially/fully evaded sales order is locked automatically. Model validation blocks update/delete and Filament hides edit/delete access.
+-   Application locking is portable. Additional database trigger defense belongs to backlog `4-04`.
+
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.

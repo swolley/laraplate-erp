@@ -241,6 +241,8 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **MovementPostingService** | Idempotently maps a cash `Movement` to one balanced journal. Income uses bank debit/revenue credit; expense uses expense debit/bank credit. |
 | **CashBalanceService** | Derives company cash balance by summing posted journal lines on `bank_cash` accounts; it never updates a parallel balance table. |
 | **Cash Movements UI** | Filament create/list/detail workflow that posts through `MovementPostingService` atomically and deliberately exposes no edit route for posted movements. |
+| **Quotation revision** | New draft commercial snapshot linked to its immediate predecessor by unique `revises_quotation_id`; lines are copied and branching is prohibited. |
+| **Project bind lock** | Automatic project lock when a linked sales order becomes operational; ORM and Filament prevent business updates/deletion. |
 
 ## Known limitation terms
 

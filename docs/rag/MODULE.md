@@ -290,6 +290,12 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` processes only unlinked movements and reports per-row failures.
 -   `MovementResource` exposes index/create/view only. `CreateMovement` wraps row creation and `MovementPostingService::post()` in one transaction; no edit route or parallel balance write exists.
 
+### Quotation Revisions and Project Locks
+
+-   `QuotationRevisionService` locks the source, rejects editable drafts/branches/version overflow, creates a draft successor through unique `revises_quotation_id`, increments `version`, and snapshots all quotation items transactionally.
+-   `Quotation::revised_from()` / `revision()` expose the linear chain. Filament `create_revision` uses the service and opens the successor draft.
+-   Operational sales-order states lock both linked quotation and project. `Project` uses `HasLocks`, an ORM update/delete guard, and `ProjectResource` edit/delete gates. Vendor-specific trigger reinforcement remains `4-04`.
+
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX
 
 -   State-aware `ERPModelPolicy` guards domain actions on top of Core CRUD permissions.
