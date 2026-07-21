@@ -307,6 +307,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Un servizio esterno può notificare paid/failed/cancelled tramite callback con Bearer token. Paid e cancelled sono stati terminali.
 -   La notifica non crea automaticamente un pagamento o una scrittura: la riconciliazione contabile resta un passaggio esplicito.
 
+### Esportazione Calendario Task
+
+-   Da una Task si può scaricare **Export calendar**, ottenendo un file `.ics` importabile nei comuni calendari.
+-   Titolo = attività; inizio/fine = validità della Task; luogo = indirizzo del Core Place collegato al Site.
+-   Le date vengono esportate in UTC e il file applica escaping e folding standard per preservare caratteri e indirizzi.
+-   L'export non mantiene una sincronizzazione: dopo una modifica alla Task occorre scaricare/importare nuovamente il file.
+
 ### Quotation Revisions and Project Locks
 
 -   A sent, accepted, rejected, or locked quotation can generate a new draft revision. Products/services, quantities, prices, customer, currency, and notes are copied.
@@ -357,7 +364,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-06 | Pool soci, settle-up e richieste di pagamento provider-neutral con stub sicuro sono disponibili in Filament. |
+| Phase 4 commercial depth | Implemented through 4-07/4-10 | Pool soci, richieste di pagamento, sedi con Place canonico, gestione Task ed export calendario ICS sono disponibili. |
 
 ### Known Limitations After Phase 2C
 

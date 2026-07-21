@@ -311,6 +311,14 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `POST /api/v1/erp/payment-requests/{provider}/callbacks` is for external providers and is unavailable unless that provider has a callback API key configured.
 -   Filament exposes create/list/edit and a **Send** action. Real Stripe/PayPal/Satispay adapters and accounting reconciliation remain future provider work.
 
+### Task Calendar Export
+
+-   `TaskIcsExporter` generates one RFC 5545 `VEVENT` with stable UID, UTC `DTSTART`/optional `DTEND`, escaped text, CRLF endings, and 75-byte line folding.
+-   `SUMMARY` comes from the Activity taxonomy (with project/task fallback); `LOCATION` comes from `Task -> Site -> Core Place` postal fields.
+-   Task validity columns are explicitly cast as immutable datetimes and the original nullable project/site FK declarations are cross-driver safe.
+-   `TaskResource` provides create/list/edit and **Export calendar**, downloading `erp-task-{id}.ics` as `text/calendar`.
+-   This is a portable file export, not calendar subscription, bidirectional sync, reminder management, or attendee invitation delivery.
+
 ### Quotation Revisions and Project Locks
 
 -   `QuotationRevisionService` creates a commercial snapshot as a new draft, copies all quotation lines, increments `version`, and links the immediate predecessor through `revises_quotation_id`.
@@ -361,7 +369,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-06 | Journal-backed movements, Partner Pools, exact splits, settle-up, and provider-neutral Payment Requests with secure stub callbacks are present. |
+| Phase 4 commercial depth | Implemented through 4-07/4-10 | Cash sharing, Payment Requests, canonical Site/Place locations, Task UI, and RFC 5545 ICS export are present. |
 
 ### Known Limitations After Phase 2C
 

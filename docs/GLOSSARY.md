@@ -212,6 +212,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **PaymentRequest** | Provider-neutral request addressed to exactly one Party or Core user. It tracks checkout/status but is not an accounting payment. |
 | **PaymentRequestProvider** | Replaceable checkout creation contract. The built-in stub returns a deterministic test URL without moving money. |
 | **Payment request callback** | External Bearer-authenticated status notification. Disabled without a configured key and never posts accounting automatically. |
+| **Task ICS export** | RFC 5545 single-event download using Task validity, Activity summary, and canonical Site/Place location; not a live calendar sync. |
 | **Cash Movements UI** | Filament create/list/detail workflow that posts through `MovementPostingService` atomically and deliberately exposes no edit route for posted movements. |
 | **Quotation revision** | New draft commercial snapshot linked to its immediate predecessor by unique `revises_quotation_id`; lines are copied and branching is prohibited. |
 | **Project bind lock** | Automatic project lock when a linked sales order becomes operational; ORM and Filament prevent business updates/deletion. |

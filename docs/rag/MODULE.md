@@ -308,6 +308,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   External callbacks use `POST /api/v1/erp/payment-requests/{provider}/callbacks`, require a configured Bearer key, and only update request state.
 -   Provider callbacks deliberately do not create `Payment`, `JournalEntry`, or `PoolTransaction` records.
 
+### Task Calendar Export
+
+-   `TaskIcsExporter` emits RFC 5545 VCALENDAR/VEVENT content with stable task UID, UTC validity dates, text escaping, CRLF, and 75-byte physical-line folding.
+-   Summary resolves from `Activity`, then project/task fallback. Location is formatted from canonical `Site::place()` address/postcode/city/province/country.
+-   `Task` casts validity columns to immutable datetimes; nullable `project_id`/`site_id` are declared before FK constraints in the original migration for cross-driver correctness.
+-   `TaskResource` exposes CRUD and a streamed `text/calendar` download action. No calendar provider API or two-way synchronization is implemented.
+
 ### Quotation Revisions and Project Locks
 
 -   `QuotationRevisionService` locks the source, rejects editable drafts/branches/version overflow, creates a draft successor through unique `revises_quotation_id`, increments `version`, and snapshots all quotation items transactionally.
@@ -358,7 +365,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 cash sharing | Implemented through 4-06 | Partner pools, exact allocations, settle-up, and provider-neutral Payment Requests with secure stub callbacks are present. |
+| Phase 4 commercial depth | Implemented through 4-07/4-10 | Partner pools, Payment Requests, canonical Site/Place linkage, Task UI, and RFC 5545 ICS export are present. |
 
 ### Known Limitations After Phase 2C
 
