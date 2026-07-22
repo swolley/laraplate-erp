@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class CreditNoteService
 {
@@ -21,7 +22,7 @@ final class CreditNoteService
      */
     public function createFromInvoice(Invoice $original, ?array $line_overrides = null): Invoice
     {
-        return DB::transaction(function () use ($original, $line_overrides): Invoice {
+        return ConnectionScopedTransaction::run($original, function (ConnectionScopedModels $models) use ($original, $line_overrides): Invoice {
             if ($original->journal_entry_id === null) {
                 throw ValidationException::withMessages([
                     'invoice' => ['Cannot create credit note from an unposted invoice.'],
@@ -34,8 +35,8 @@ final class CreditNoteService
                 ]);
             }
 
-            $existing_cn_total = $this->getExistingCreditNoteTotal($original);
-            $original_total = $this->getInvoiceGrossTotal($original);
+            $existing_cn_total = $this->getExistingCreditNoteTotal($models, $original);
+            $original_total = $this->getInvoiceGrossTotal($models, $original);
             $remaining = round((float) $original_total - (float) $existing_cn_total, 4);
 
             if ($remaining <= 0) {
@@ -44,7 +45,7 @@ final class CreditNoteService
                 ]);
             }
 
-            $credit_note = Invoice::query()->create([
+            $credit_note = $models->query(Invoice::class)->create([
                 'company_id' => $original->company_id,
                 'party_id' => $original->party_id,
                 'direction' => $original->direction,
@@ -54,7 +55,7 @@ final class CreditNoteService
                 'notes' => 'Credit note for invoice ' . ($original->reference ?? '#' . $original->id),
             ]);
 
-            $original_lines = InvoiceLine::query()
+            $original_lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', (int) $original->id)
                 ->orderBy('line_no')
                 ->get();
@@ -71,7 +72,7 @@ final class CreditNoteService
                     continue;
                 }
 
-                InvoiceLine::query()->create([
+                $models->query(InvoiceLine::class)->create([
                     'invoice_id' => $credit_note->id,
                     'line_no' => $line_no++,
                     'description' => $original_line->description,
@@ -95,16 +96,17 @@ final class CreditNoteService
     /**
      * Validate that the credit note total does not exceed the remaining creditable amount.
      */
-    public function validateCreditNoteTotal(Invoice $credit_note): void
+    public function validateCreditNoteTotal(Invoice $credit_note, ?ConnectionScopedModels $models = null): void
     {
         if ($credit_note->credited_invoice_id === null) {
             return;
         }
 
-        $original = Invoice::query()->withoutGlobalScopes()->findOrFail((int) $credit_note->credited_invoice_id);
-        $original_total = (float) $this->getInvoiceGrossTotal($original);
-        $existing_cn_total = (float) $this->getExistingCreditNoteTotal($original, (int) $credit_note->id);
-        $cn_total = (float) $this->getInvoiceGrossTotal($credit_note);
+        $models ??= ConnectionScopedModels::for($credit_note);
+        $original = $models->query(Invoice::class)->withoutGlobalScopes()->findOrFail((int) $credit_note->credited_invoice_id);
+        $original_total = (float) $this->getInvoiceGrossTotal($models, $original);
+        $existing_cn_total = (float) $this->getExistingCreditNoteTotal($models, $original, (int) $credit_note->id);
+        $cn_total = (float) $this->getInvoiceGrossTotal($models, $credit_note);
 
         if (round($existing_cn_total + $cn_total, 4) > round($original_total, 4)) {
             throw ValidationException::withMessages([
@@ -113,9 +115,9 @@ final class CreditNoteService
         }
     }
 
-    private function getInvoiceGrossTotal(Invoice $invoice): string
+    private function getInvoiceGrossTotal(ConnectionScopedModels $models, Invoice $invoice): string
     {
-        $lines = InvoiceLine::query()
+        $lines = $models->query(InvoiceLine::class)
             ->where('invoice_id', (int) $invoice->id)
             ->get();
 
@@ -134,9 +136,9 @@ final class CreditNoteService
         return number_format(round($total, 4), 4, '.', '');
     }
 
-    private function getExistingCreditNoteTotal(Invoice $original, ?int $exclude_id = null): string
+    private function getExistingCreditNoteTotal(ConnectionScopedModels $models, Invoice $original, ?int $exclude_id = null): string
     {
-        $query = Invoice::query()->withoutGlobalScopes()
+        $query = $models->query(Invoice::class)->withoutGlobalScopes()
             ->where('credited_invoice_id', (int) $original->id)
             ->where('invoice_type', InvoiceType::CreditNote->value)
             ->whereNotNull('journal_entry_id');
@@ -154,10 +156,10 @@ final class CreditNoteService
         $total = 0.0;
 
         foreach ($cn_ids as $cn_id) {
-            $cn = Invoice::query()->withoutGlobalScopes()->whereKey($cn_id)->first();
+            $cn = $models->query(Invoice::class)->withoutGlobalScopes()->whereKey($cn_id)->first();
 
             if ($cn !== null) {
-                $total += (float) $this->getInvoiceGrossTotal($cn);
+                $total += (float) $this->getInvoiceGrossTotal($models, $cn);
             }
         }
 

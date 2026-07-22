@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Returns;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\ReturnStatus;
@@ -12,6 +11,7 @@ use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\ReturnOrder;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrderLine;
 
@@ -25,7 +25,7 @@ final readonly class CustomerReturnReceiptService
             ]);
         }
 
-        return DB::transaction(function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
             $return_order = ReturnOrder::query()->with('lines')->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if ($return_order->status !== ReturnStatus::Approved) {

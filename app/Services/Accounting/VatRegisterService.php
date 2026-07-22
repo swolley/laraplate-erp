@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -16,6 +15,8 @@ use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
 use Modules\ERP\Support\Decimal;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final class VatRegisterService
 {
@@ -23,7 +24,7 @@ final class VatRegisterService
 
     public function register(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
             $company_id = (int) $invoice->company_id;
             $posted_at = $invoice->posted_at instanceof CarbonImmutable
                 ? $invoice->posted_at
@@ -35,7 +36,7 @@ final class VatRegisterService
 
             $is_credit_note = $invoice->invoice_type === InvoiceType::CreditNote;
 
-            $fiscal_year = FiscalYear::query()
+            $fiscal_year = $models->query(FiscalYear::class)
                 ->withoutGlobalScopes()
                 ->where('company_id', $company_id)
                 ->where('year', $posted_at->year)
@@ -49,7 +50,7 @@ final class VatRegisterService
 
             $fiscal_year_id = (int) $fiscal_year->id;
 
-            $lines = InvoiceLine::query()
+            $lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', (int) $invoice->id)
                 ->whereNotNull('tax_code_id')
                 ->get();
@@ -73,9 +74,9 @@ final class VatRegisterService
                     $tax_amount = Decimal::negate($tax_amount);
                 }
 
-                $protocol_number = $this->nextProtocolNumber($company_id, $register_type->value, $fiscal_year_id);
+                $protocol_number = $this->nextProtocolNumber($models, $company_id, $register_type->value, $fiscal_year_id);
 
-                VatRegisterEntry::query()->create([
+                $models->query(VatRegisterEntry::class)->create([
                     'company_id' => $company_id,
                     'invoice_id' => (int) $invoice->id,
                     'register_type' => $register_type->value,
@@ -92,14 +93,14 @@ final class VatRegisterService
 
     public function unregister(Invoice $invoice): void
     {
-        VatRegisterEntry::query()
+        ConnectionScopedModels::for($invoice)->query(VatRegisterEntry::class)
             ->where('invoice_id', (int) $invoice->id)
             ->forceDelete();
     }
 
-    private function nextProtocolNumber(int $company_id, string $register_type, int $fiscal_year_id): int
+    private function nextProtocolNumber(ConnectionScopedModels $models, int $company_id, string $register_type, int $fiscal_year_id): int
     {
-        $max = VatRegisterEntry::query()
+        $max = $models->query(VatRegisterEntry::class)
             ->where('company_id', $company_id)
             ->where('register_type', $register_type)
             ->where('fiscal_year_id', $fiscal_year_id)

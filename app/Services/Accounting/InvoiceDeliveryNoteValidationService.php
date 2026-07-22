@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Validates optional invoice line links to posted delivery note lines before fiscal posting.
@@ -86,8 +86,8 @@ final readonly class InvoiceDeliveryNoteValidationService
                 }
 
                 $already_invoiced = $this->invoicedQuantityOnDeliveryNoteLine(
-                    $this->modelId($dn_line),
-                    $this->modelId($invoice),
+                    $dn_line,
+                    $invoice,
                 );
 
                 if ($already_invoiced + $pivot_qty > (float) $dn_line->quantity) {
@@ -146,19 +146,19 @@ final readonly class InvoiceDeliveryNoteValidationService
         return (float) $quantity;
     }
 
-    private function invoicedQuantityOnDeliveryNoteLine(
-        int $delivery_note_line_id,
-        int $excluding_invoice_id,
-    ): float {
-        $pivot_table = ERPTables::InvoiceLineDeliveryNoteLine->value;
-        $invoice_lines_table = ERPTables::InvoiceLines->value;
-        $invoices_table = ERPTables::Invoices->value;
+    private function invoicedQuantityOnDeliveryNoteLine(DeliveryNoteLine $delivery_note_line, Invoice $excluding_invoice): float
+    {
+        ConnectionScopedTransaction::connection($excluding_invoice, $delivery_note_line);
 
-        return (float) DB::table($pivot_table)
+        $pivot_table = ERPTables::InvoiceLineDeliveryNoteLine->value;
+        $invoice_lines_table = (new InvoiceLine)->getTable();
+        $invoices_table = $excluding_invoice->getTable();
+
+        return (float) $excluding_invoice->getConnection()->table($pivot_table)
             ->join($invoice_lines_table, "{$invoice_lines_table}.id", '=', "{$pivot_table}.invoice_line_id")
             ->join($invoices_table, "{$invoices_table}.id", '=', "{$invoice_lines_table}.invoice_id")
-            ->where("{$pivot_table}.delivery_note_line_id", $delivery_note_line_id)
-            ->where("{$invoices_table}.id", '!=', $excluding_invoice_id)
+            ->where("{$pivot_table}.delivery_note_line_id", $this->modelId($delivery_note_line))
+            ->where("{$invoices_table}.id", '!=', $this->modelId($excluding_invoice))
             ->whereNotNull("{$invoices_table}.journal_entry_id")
             ->sum("{$pivot_table}.quantity");
     }

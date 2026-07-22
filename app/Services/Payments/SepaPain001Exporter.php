@@ -6,18 +6,18 @@ namespace Modules\ERP\Services\Payments;
 
 use DOMDocument;
 use DOMElement;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentRunLineStatus;
 use Modules\ERP\Casts\PaymentRunStatus;
 use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\PaymentRunLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class SepaPain001Exporter
 {
     public function export(PaymentRun $payment_run): string
     {
-        return DB::transaction(function () use ($payment_run): string {
+        return ConnectionScopedTransaction::run($payment_run, function () use ($payment_run): string {
             /** @var PaymentRun $run */
             $run = PaymentRun::query()
                 ->with(['bank_account.company', 'lines'])

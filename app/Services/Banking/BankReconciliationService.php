@@ -6,7 +6,6 @@ namespace Modules\ERP\Services\Banking;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
@@ -14,6 +13,8 @@ use Modules\ERP\Models\BankStatementLine;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Payment;
 use Modules\Core\Services\OutboxRecorder;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final class BankReconciliationService
 {
@@ -26,9 +27,9 @@ final class BankReconciliationService
     {
         $this->assertCanMatch($line, $payment);
 
-        return DB::transaction(function () use ($line, $payment): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
-            $payment = Payment::query()->lockForUpdate()->whereKey($payment->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($line, function (ConnectionScopedModels $models) use ($line, $payment): BankStatementLine {
+            $line = $models->query(BankStatementLine::class)->lockForUpdate()->whereKey($line->id)->firstOrFail();
+            $payment = $models->query(Payment::class)->lockForUpdate()->whereKey($payment->id)->firstOrFail();
 
             $this->assertCanMatch($line, $payment);
 
@@ -44,13 +45,13 @@ final class BankReconciliationService
             $this->recordPaymentMatched($line, $payment);
 
             return $line;
-        });
+        }, $payment);
     }
 
     public function unmatch(BankStatementLine $line): BankStatementLine
     {
-        return DB::transaction(function () use ($line): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($line, function (ConnectionScopedModels $models) use ($line): BankStatementLine {
+            $line = $models->query(BankStatementLine::class)->lockForUpdate()->whereKey($line->id)->firstOrFail();
 
             if ($line->difference_journal_entry_id !== null) {
                 throw ValidationException::withMessages([
@@ -68,8 +69,8 @@ final class BankReconciliationService
 
     public function ignore(BankStatementLine $line): BankStatementLine
     {
-        return DB::transaction(function () use ($line): BankStatementLine {
-            $line = BankStatementLine::query()->lockForUpdate()->whereKey($line->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($line, function (ConnectionScopedModels $models) use ($line): BankStatementLine {
+            $line = $models->query(BankStatementLine::class)->lockForUpdate()->whereKey($line->id)->firstOrFail();
             $line->matched_payment_id = null;
             $line->status = BankStatementLineStatus::Ignored;
             $line->save();
@@ -83,13 +84,13 @@ final class BankReconciliationService
         Payment $payment,
         int $expense_account_id,
     ): BankStatementLine {
-        return DB::transaction(function () use ($line, $payment, $expense_account_id): BankStatementLine {
-            $line = BankStatementLine::query()
+        return ConnectionScopedTransaction::run($line, function (ConnectionScopedModels $models) use ($line, $payment, $expense_account_id): BankStatementLine {
+            $line = $models->query(BankStatementLine::class)
                 ->with('bank_statement')
                 ->lockForUpdate()
                 ->whereKey($line->id)
                 ->firstOrFail();
-            $payment = Payment::query()->lockForUpdate()->whereKey($payment->id)->firstOrFail();
+            $payment = $models->query(Payment::class)->lockForUpdate()->whereKey($payment->id)->firstOrFail();
 
             $this->assertCanMatchContext($line, $payment);
 
@@ -101,7 +102,7 @@ final class BankReconciliationService
                 ]);
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail($line->company_id);
+            $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($line->company_id);
             $bank_account_id = $line->bank_statement?->bank_account_id;
 
             if ($bank_account_id === null) {
@@ -132,7 +133,7 @@ final class BankReconciliationService
             $this->recordPaymentMatched($line, $payment);
 
             return $line;
-        });
+        }, $payment);
     }
 
     private function recordPaymentMatched(BankStatementLine $line, Payment $payment): void
@@ -160,7 +161,7 @@ final class BankReconciliationService
         $bank_account_id = $bank_statement?->bank_account_id;
         $booked_at = $line->booked_at;
 
-        $query = Payment::query()
+        $query = ConnectionScopedModels::for($line)->query(Payment::class)
             ->with('party')
             ->where('company_id', $line->company_id)
             ->where('currency_doc', $line->currency_doc)

@@ -6,7 +6,6 @@ namespace Modules\ERP\Services\Payments;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -19,6 +18,7 @@ use Modules\ERP\Models\PartyBankAccount;
 use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\PaymentRunLine;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class PaymentRunBuilderService
 {
@@ -37,7 +37,12 @@ final class PaymentRunBuilderService
             ]);
         }
 
-        return DB::transaction(function () use ($company_id, $bank_account_id, $payment_schedule_line_ids, $execution_date): PaymentRun {
+        $bank_account = BankAccount::query()
+            ->whereKey($bank_account_id)
+            ->where('company_id', $company_id)
+            ->firstOrFail();
+
+        return ConnectionScopedTransaction::run($bank_account, function () use ($company_id, $bank_account_id, $payment_schedule_line_ids, $execution_date): PaymentRun {
             $bank_account = BankAccount::query()
                 ->whereKey($bank_account_id)
                 ->where('company_id', $company_id)

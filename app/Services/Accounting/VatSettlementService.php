@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\VatRegisterType;
 use Modules\ERP\Casts\VatSettlementStatus;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Models\VatSettlement;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\Decimal;
 
 final class VatSettlementService
@@ -23,16 +24,17 @@ final class VatSettlementService
     {
         $fiscal_period = $this->fiscalPeriod($company_id, $fiscal_period_id);
 
-        return $this->calculate($company_id, $fiscal_period);
+        return $this->calculate(ConnectionScopedModels::for($fiscal_period), $company_id, $fiscal_period);
     }
 
     public function compute(int $company_id, int $fiscal_period_id): VatSettlement
     {
-        return DB::transaction(function () use ($company_id, $fiscal_period_id): VatSettlement {
-            $fiscal_period = $this->fiscalPeriod($company_id, $fiscal_period_id);
-            $amounts = $this->calculate($company_id, $fiscal_period);
+        $fiscal_period = $this->fiscalPeriod($company_id, $fiscal_period_id);
 
-            $existing = VatSettlement::query()
+        return ConnectionScopedTransaction::run($fiscal_period, function (ConnectionScopedModels $models) use ($company_id, $fiscal_period_id, $fiscal_period): VatSettlement {
+            $amounts = $this->calculate($models, $company_id, $fiscal_period);
+
+            $existing = $models->query(VatSettlement::class)
                 ->withoutGlobalScopes()
                 ->where('company_id', $company_id)
                 ->where('fiscal_period_id', $fiscal_period_id)
@@ -45,7 +47,7 @@ final class VatSettlementService
                 ]);
             }
 
-            return VatSettlement::query()->updateOrCreate(
+            return $models->query(VatSettlement::class)->updateOrCreate(
                 ['company_id' => $company_id, 'fiscal_period_id' => $fiscal_period_id],
                 [
                     ...$amounts,
@@ -63,11 +65,13 @@ final class VatSettlementService
             ]);
         }
 
-        $settlement->update([
-            'status' => VatSettlementStatus::Confirmed->value,
-            'confirmed_at' => CarbonImmutable::now(),
-            'confirmed_by' => $user_id,
-        ]);
+        ConnectionScopedTransaction::run($settlement, function (ConnectionScopedModels $models) use ($settlement, $user_id): void {
+            $models->query(VatSettlement::class)->whereKey($settlement->getKey())->update([
+                'status' => VatSettlementStatus::Confirmed->value,
+                'confirmed_at' => CarbonImmutable::now(),
+                'confirmed_by' => $user_id,
+            ]);
+        });
     }
 
     private function fiscalPeriod(int $company_id, int $fiscal_period_id): FiscalPeriod
@@ -81,30 +85,30 @@ final class VatSettlementService
     /**
      * @return array{vat_sales: string, vat_purchases: string, previous_credit: string, settlement_amount: string}
      */
-    private function calculate(int $company_id, FiscalPeriod $fiscal_period): array
+    private function calculate(ConnectionScopedModels $models, int $company_id, FiscalPeriod $fiscal_period): array
     {
         $fiscal_year_id = (int) $fiscal_period->fiscal_year_id;
-        $vat_sales = (string) (VatRegisterEntry::query()
+        $vat_sales = (string) ($models->query(VatRegisterEntry::class)
             ->where('company_id', $company_id)
             ->where('fiscal_year_id', $fiscal_year_id)
             ->where('register_type', VatRegisterType::Sales->value)
             ->whereBetween('registration_date', [$fiscal_period->start_date, $fiscal_period->end_date])
             ->sum('tax_amount') ?? 0);
-        $vat_purchases = (string) (VatRegisterEntry::query()
+        $vat_purchases = (string) ($models->query(VatRegisterEntry::class)
             ->where('company_id', $company_id)
             ->where('fiscal_year_id', $fiscal_year_id)
             ->where('register_type', VatRegisterType::Purchases->value)
             ->whereBetween('registration_date', [$fiscal_period->start_date, $fiscal_period->end_date])
             ->sum('tax_amount') ?? 0);
         $previous_credit = '0.0000';
-        $previous_period = FiscalPeriod::query()
+        $previous_period = $models->query(FiscalPeriod::class)
             ->where('fiscal_year_id', $fiscal_year_id)
             ->where('start_date', '<', $fiscal_period->start_date)
             ->latest('start_date')
             ->first();
 
         if ($previous_period !== null) {
-            $previous_settlement = VatSettlement::query()
+            $previous_settlement = $models->query(VatSettlement::class)
                 ->withoutGlobalScopes()
                 ->where('company_id', $company_id)
                 ->where('fiscal_period_id', $previous_period->id)

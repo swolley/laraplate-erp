@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Cash;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\MovementType;
@@ -18,6 +17,7 @@ use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Support\Decimal;
 use Modules\ERP\ValueObjects\Money;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class MovementPostingService
 {
@@ -28,7 +28,7 @@ final readonly class MovementPostingService
 
     public function post(Movement $movement): JournalEntry
     {
-        return DB::transaction(function () use ($movement): JournalEntry {
+        return ConnectionScopedTransaction::run($movement, function () use ($movement): JournalEntry {
             $locked = Movement::query()->withoutGlobalScopes()->lockForUpdate()->findOrFail($movement->id);
 
             if ($locked->posted_journal_entry_id !== null) {

@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Inventory;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrder;
@@ -39,9 +40,9 @@ final readonly class DeliveryNoteInventoryService
      */
     public function postInventory(DeliveryNote $note): void
     {
-        DB::transaction(function () use ($note): void {
+        ConnectionScopedTransaction::run($note, function (ConnectionScopedModels $models) use ($note): void {
             /** @var DeliveryNote $locked */
-            $locked = DeliveryNote::query()->whereKey($note->id)->lockForUpdate()->firstOrFail();
+            $locked = $models->query(DeliveryNote::class)->whereKey($note->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->inventory_posted_at !== null) {
                 return;
@@ -53,7 +54,7 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $lines = DeliveryNoteLine::query()
+            $lines = $models->query(DeliveryNoteLine::class)
                 ->where('delivery_note_id', $note->id)
                 ->orderBy('id')
                 ->get();
@@ -64,10 +65,10 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $this->validateLines($locked, $lines);
+            $this->validateLines($models, $locked, $lines);
 
             if ($locked->direction === DeliveryNoteDirection::Inbound) {
-                $this->postInboundMovements($locked, $lines);
+                $this->postInboundMovements($models, $locked, $lines);
                 $note->inventory_posted_at = now();
 
                 return;
@@ -83,7 +84,7 @@ final readonly class DeliveryNoteInventoryService
                 );
             }
 
-            if (! $this->isSupplierReturnDeliveryNote($lines)) {
+            if (! $this->isSupplierReturnDeliveryNote($models, $lines)) {
                 $this->delivery_note_cogs_journal_service->postForDeliveryNoteIfNeeded($note, $lines);
             }
 
@@ -101,7 +102,7 @@ final readonly class DeliveryNoteInventoryService
                 }
 
                 if ($quantities !== []) {
-                    $sales_order = SalesOrder::query()
+                    $sales_order = $models->query(SalesOrder::class)
                         ->whereKey($locked->sales_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
@@ -121,15 +122,15 @@ final readonly class DeliveryNoteInventoryService
      */
     public function unpostInventory(DeliveryNote $note): void
     {
-        DB::transaction(function () use ($note): void {
+        ConnectionScopedTransaction::run($note, function (ConnectionScopedModels $models) use ($note): void {
             /** @var DeliveryNote $locked */
-            $locked = DeliveryNote::query()->whereKey($note->id)->lockForUpdate()->firstOrFail();
+            $locked = $models->query(DeliveryNote::class)->whereKey($note->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->inventory_posted_at === null) {
                 return;
             }
 
-            $lines = DeliveryNoteLine::query()
+            $lines = $models->query(DeliveryNoteLine::class)
                 ->where('delivery_note_id', $note->id)
                 ->orderBy('id')
                 ->get();
@@ -141,13 +142,13 @@ final readonly class DeliveryNoteInventoryService
             }
 
             if ($locked->direction === DeliveryNoteDirection::Inbound) {
-                $this->revertInboundMovements($locked, $lines);
+                $this->revertInboundMovements($models, $locked, $lines);
                 $note->inventory_posted_at = null;
 
                 return;
             }
 
-            $this->revertOutboundMovements($locked, $lines);
+            $this->revertOutboundMovements($models, $locked, $lines);
             $this->delivery_note_cogs_journal_service->reverseForDeliveryNoteIfNeeded($note);
 
             if ($locked->sales_order_id !== null) {
@@ -164,7 +165,7 @@ final readonly class DeliveryNoteInventoryService
                 }
 
                 if ($quantities !== []) {
-                    $sales_order = SalesOrder::query()
+                    $sales_order = $models->query(SalesOrder::class)
                         ->whereKey($locked->sales_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
@@ -180,7 +181,7 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function validateLines(DeliveryNote $header, Collection $lines): void
+    private function validateLines(ConnectionScopedModels $models, DeliveryNote $header, Collection $lines): void
     {
         $company_id = $header->company_id;
 
@@ -191,7 +192,7 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $item_matches_company = Item::query()
+            $item_matches_company = $models->query(Item::class)
                 ->whereKey($line->item_id)
                 ->where('company_id', $company_id)
                 ->exists();
@@ -202,7 +203,7 @@ final readonly class DeliveryNoteInventoryService
                 ]);
             }
 
-            $warehouse_matches_company = Warehouse::query()
+            $warehouse_matches_company = $models->query(Warehouse::class)
                 ->whereKey($line->warehouse_id)
                 ->where('company_id', $company_id)
                 ->exists();
@@ -230,7 +231,7 @@ final readonly class DeliveryNoteInventoryService
             }
 
             /** @var SalesOrderLine|null $so_line */
-            $so_line = SalesOrderLine::query()->find($line->sales_order_line_id);
+            $so_line = $models->query(SalesOrderLine::class)->find($line->sales_order_line_id);
 
             if ($so_line === null) {
                 throw ValidationException::withMessages([
@@ -257,7 +258,7 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function postInboundMovements(DeliveryNote $header, Collection $lines): void
+    private function postInboundMovements(ConnectionScopedModels $models, DeliveryNote $header, Collection $lines): void
     {
         foreach ($lines as $line) {
             $this->stock_movement_service->recordInbound(
@@ -265,7 +266,7 @@ final readonly class DeliveryNoteInventoryService
                 $line->item_id,
                 $line->warehouse_id,
                 $line->quantity,
-                $this->resolveReturnedUnitCost($header, $line),
+                $this->resolveReturnedUnitCost($models, $header, $line),
                 $line,
             );
         }
@@ -274,10 +275,10 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function revertOutboundMovements(DeliveryNote $header, Collection $lines): void
+    private function revertOutboundMovements(ConnectionScopedModels $models, DeliveryNote $header, Collection $lines): void
     {
         $line_ids = $lines->pluck('id')->all();
-        $outbound_movements = StockMovement::query()
+        $outbound_movements = $models->query(StockMovement::class)
             ->where('company_id', $header->company_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
@@ -309,10 +310,10 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function revertInboundMovements(DeliveryNote $header, Collection $lines): void
+    private function revertInboundMovements(ConnectionScopedModels $models, DeliveryNote $header, Collection $lines): void
     {
         $line_ids = $lines->pluck('id')->all();
-        $inbound_movements = StockMovement::query()
+        $inbound_movements = $models->query(StockMovement::class)
             ->where('company_id', $header->company_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
@@ -343,17 +344,17 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @return numeric-string
      */
-    private function resolveReturnedUnitCost(DeliveryNote $header, DeliveryNoteLine $line): string
+    private function resolveReturnedUnitCost(ConnectionScopedModels $models, DeliveryNote $header, DeliveryNoteLine $line): string
     {
         if ($line->sales_order_line_id !== null) {
-            return $this->resolveReturnedUnitCostFromOutboundMovement($header, $line);
+            return $this->resolveReturnedUnitCostFromOutboundMovement($models, $header, $line);
         }
 
-        if (ReturnOrderLine::query()
+        if ($models->query(ReturnOrderLine::class)
             ->where('delivery_note_line_id', $line->getKey())
             ->where('company_id', $header->company_id)
             ->exists()) {
-            return $this->resolveReturnedUnitCostFromReturnLine($header, $line);
+            return $this->resolveReturnedUnitCostFromReturnLine($models, $header, $line);
         }
 
         throw ValidationException::withMessages([
@@ -364,9 +365,9 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @return numeric-string
      */
-    private function resolveReturnedUnitCostFromOutboundMovement(DeliveryNote $header, DeliveryNoteLine $line): string
+    private function resolveReturnedUnitCostFromOutboundMovement(ConnectionScopedModels $models, DeliveryNote $header, DeliveryNoteLine $line): string
     {
-        $source_line_ids = DeliveryNoteLine::query()
+        $source_line_ids = $models->query(DeliveryNoteLine::class)
             ->where('company_id', $header->company_id)
             ->where('sales_order_line_id', $line->sales_order_line_id)
             ->where('item_id', $line->item_id)
@@ -374,7 +375,7 @@ final readonly class DeliveryNoteInventoryService
             ->all();
 
         /** @var StockMovement|null $movement */
-        $movement = StockMovement::query()
+        $movement = $models->query(StockMovement::class)
             ->where('company_id', $header->company_id)
             ->where('item_id', $line->item_id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
@@ -396,10 +397,10 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @return numeric-string
      */
-    private function resolveReturnedUnitCostFromReturnLine(DeliveryNote $header, DeliveryNoteLine $line): string
+    private function resolveReturnedUnitCostFromReturnLine(ConnectionScopedModels $models, DeliveryNote $header, DeliveryNoteLine $line): string
     {
         /** @var ReturnOrderLine|null $return_line */
-        $return_line = ReturnOrderLine::query()
+        $return_line = $models->query(ReturnOrderLine::class)
             ->where('delivery_note_line_id', $line->getKey())
             ->where('company_id', $header->company_id)
             ->first();
@@ -416,9 +417,9 @@ final readonly class DeliveryNoteInventoryService
     /**
      * @param  Collection<int, DeliveryNoteLine>  $lines
      */
-    private function isSupplierReturnDeliveryNote(Collection $lines): bool
+    private function isSupplierReturnDeliveryNote(ConnectionScopedModels $models, Collection $lines): bool
     {
-        return SupplierReturnLine::query()
+        return $models->query(SupplierReturnLine::class)
             ->whereIn('delivery_note_line_id', $lines->pluck('id')->all())
             ->exists();
     }

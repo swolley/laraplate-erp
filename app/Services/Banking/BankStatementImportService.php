@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Banking;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Contracts\BankStatementParser;
 use Modules\ERP\Models\BankStatement;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final readonly class BankStatementImportService
 {
@@ -55,7 +56,7 @@ final readonly class BankStatementImportService
     {
         $created = 0;
 
-        DB::transaction(function () use ($statement, $lines, &$created): void {
+        ConnectionScopedTransaction::run($statement, function (ConnectionScopedModels $models) use ($statement, $lines, &$created): void {
             $statement->loadMissing('bank_account');
             $default_currency = $statement->bank_account?->currency ?? 'EUR';
 

@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Exceptions\DocumentNumberAllocationRetryException;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Issues the next document number for a company stream, using a pessimistic row lock.
@@ -29,7 +30,7 @@ final class DocumentNumberAllocator
     {
         for ($attempt = 1; $attempt <= self::MAX_RETRY_ATTEMPTS; $attempt++) {
             try {
-                return DB::transaction(fn (): string => $this->allocate($company, $document_type, $fiscal_year));
+                return ConnectionScopedTransaction::run($company, fn (ConnectionScopedModels $models): string => $this->allocate($models, $company, $document_type, $fiscal_year));
             } catch (QueryException $exception) {
                 throw_unless(
                     $attempt < self::MAX_RETRY_ATTEMPTS && $this->isRetryableConcurrencyException($exception),
@@ -47,9 +48,9 @@ final class DocumentNumberAllocator
         throw new DocumentNumberAllocationRetryException('Unable to allocate the next document number after retrying.');
     }
 
-    private function allocate(Company $company, DocumentType $document_type, int $fiscal_year): string
+    private function allocate(ConnectionScopedModels $models, Company $company, DocumentType $document_type, int $fiscal_year): string
     {
-        $existing = DocumentSequence::query()
+        $existing = $models->query(DocumentSequence::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('document_type', $document_type->value)
@@ -58,11 +59,11 @@ final class DocumentNumberAllocator
             ->first();
 
         if ($existing !== null) {
-            return $this->incrementAndFormat($existing, $fiscal_year);
+            return $this->incrementAndFormat($models, $existing, $fiscal_year);
         }
 
         try {
-            DocumentSequence::query()->withoutGlobalScopes()->create([
+            $models->query(DocumentSequence::class)->withoutGlobalScopes()->create([
                 'company_id' => $company->id,
                 'document_type' => $document_type,
                 'fiscal_year' => $fiscal_year,
@@ -76,7 +77,7 @@ final class DocumentNumberAllocator
         } catch (QueryException $exception) {
             throw_unless($this->isUniqueConstraintViolation($exception), $exception);
 
-            $row = DocumentSequence::query()
+            $row = $models->query(DocumentSequence::class)
                 ->withoutGlobalScopes()
                 ->where('company_id', $company->id)
                 ->where('document_type', $document_type->value)
@@ -84,10 +85,10 @@ final class DocumentNumberAllocator
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            return $this->incrementAndFormat($row, $fiscal_year);
+            return $this->incrementAndFormat($models, $row, $fiscal_year);
         }
 
-        $inserted = DocumentSequence::query()
+        $inserted = $models->query(DocumentSequence::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('document_type', $document_type->value)
@@ -97,11 +98,11 @@ final class DocumentNumberAllocator
         return DocumentNumberFormatter::format($inserted, $fiscal_year, $inserted->last_number);
     }
 
-    private function incrementAndFormat(DocumentSequence $row, int $fiscal_year): string
+    private function incrementAndFormat(ConnectionScopedModels $models, DocumentSequence $row, int $fiscal_year): string
     {
         $current_number = $row->last_number;
         $next_number = $current_number + 1;
-        $updated = DocumentSequence::query()
+        $updated = $models->query(DocumentSequence::class)
             ->withoutGlobalScopes()
             ->whereKey($row->id)
             ->where('last_number', $current_number)

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class DocumentSequenceResetService
 {
@@ -18,8 +19,8 @@ final class DocumentSequenceResetService
             ]);
         }
 
-        DB::transaction(static function () use ($sequence, $last_number): void {
-            $locked = DocumentSequence::query()
+        ConnectionScopedTransaction::run($sequence, static function (ConnectionScopedModels $models) use ($sequence, $last_number): void {
+            $locked = $models->query(DocumentSequence::class)
                 ->withoutGlobalScopes()
                 ->lockForUpdate()
                 ->whereKey($sequence->id)

@@ -11,6 +11,10 @@ use Modules\ERP\Models\AnalyticDimensionValue;
 use Modules\ERP\Models\JournalEntryLine;
 use Override;
 
+/**
+ * @mixin \Eloquent
+ * @mixin IdeHelperJournalEntryLineHasAnalyticDimensionValue
+ */
 final class JournalEntryLineHasAnalyticDimensionValue extends Pivot
 {
     #[Override]

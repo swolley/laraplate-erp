@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Currency;
 
 use DateTimeInterface;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class FxRevaluationService
 {
@@ -26,8 +26,9 @@ final readonly class FxRevaluationService
         int $gain_account_id,
         int $loss_account_id,
     ): ?JournalEntry {
-        return DB::transaction(function () use ($company_id, $as_of, $balance_account_id, $gain_account_id, $loss_account_id): ?JournalEntry {
-            $company = Company::query()->findOrFail($company_id);
+        $company = Company::query()->findOrFail($company_id);
+
+        return ConnectionScopedTransaction::run($company, function () use ($company, $company_id, $as_of, $balance_account_id, $gain_account_id, $loss_account_id): ?JournalEntry {
             $local_currency = strtoupper((string) $company->default_currency);
             $lines = PaymentScheduleLine::query()
                 ->with('invoice')

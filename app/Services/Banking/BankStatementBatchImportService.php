@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Banking;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Models\BankStatement;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Throwable;
 
 final readonly class BankStatementBatchImportService
@@ -75,7 +76,8 @@ final readonly class BankStatementBatchImportService
             throw ValidationException::withMessages(['path' => [sprintf('Checksum could not be calculated for [%s].', $path)]]);
         }
 
-        $duplicate = BankStatement::query()->withoutGlobalScopes()
+        $models = ConnectionScopedModels::for($bank_account);
+        $duplicate = $models->query(BankStatement::class)->withoutGlobalScopes()
             ->where('bank_account_id', $bank_account->getKey())
             ->where('source_checksum', $checksum)
             ->exists();
@@ -106,8 +108,8 @@ final readonly class BankStatementBatchImportService
             ];
         }
 
-        $statement = DB::transaction(function () use ($bank_account, $path, $checksum, $lines): BankStatement {
-            $existing = BankStatement::query()->withoutGlobalScopes()
+        $statement = ConnectionScopedTransaction::run($bank_account, function (ConnectionScopedModels $models) use ($bank_account, $path, $checksum, $lines): BankStatement {
+            $existing = $models->query(BankStatement::class)->withoutGlobalScopes()
                 ->where('bank_account_id', $bank_account->getKey())
                 ->where('source_checksum', $checksum)
                 ->lockForUpdate()
@@ -117,7 +119,7 @@ final readonly class BankStatementBatchImportService
                 return $existing;
             }
 
-            $statement = BankStatement::query()->withoutGlobalScopes()->create([
+            $statement = $models->query(BankStatement::class)->withoutGlobalScopes()->create([
                 'company_id' => $bank_account->company_id,
                 'bank_account_id' => $bank_account->getKey(),
                 'source_filename' => basename($path),

@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Inventory;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
@@ -33,8 +34,8 @@ final readonly class GoodsReceiptInventoryService
      */
     public function postInventory(GoodsReceipt $receipt): void
     {
-        DB::transaction(function () use ($receipt): void {
-            $locked = GoodsReceipt::query()->whereKey($receipt->id)->lockForUpdate()->firstOrFail();
+        ConnectionScopedTransaction::run($receipt, function (ConnectionScopedModels $models) use ($receipt): void {
+            $locked = $models->query(GoodsReceipt::class)->whereKey($receipt->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->inventory_posted_at !== null) {
                 return;
@@ -46,7 +47,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            $lines = GoodsReceiptLine::query()
+            $lines = $models->query(GoodsReceiptLine::class)
                 ->where('goods_receipt_id', $receipt->id)
                 ->orderBy('id')
                 ->get();
@@ -57,7 +58,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            $this->validatePurchaseOrderLines($locked, $lines);
+            $this->validatePurchaseOrderLines($models, $locked, $lines);
 
             foreach ($lines as $line) {
                 $this->stock_movement_service->recordInbound(
@@ -83,7 +84,7 @@ final readonly class GoodsReceiptInventoryService
                 }
 
                 if ($quantities !== []) {
-                    $purchase_order = PurchaseOrder::query()
+                    $purchase_order = $models->query(PurchaseOrder::class)
                         ->whereKey($locked->purchase_order_id)
                         ->lockForUpdate()
                         ->firstOrFail();
@@ -105,7 +106,7 @@ final readonly class GoodsReceiptInventoryService
     /**
      * @param  Collection<int, GoodsReceiptLine>  $lines
      */
-    private function validatePurchaseOrderLines(GoodsReceipt $header, Collection $lines): void
+    private function validatePurchaseOrderLines(ConnectionScopedModels $models, GoodsReceipt $header, Collection $lines): void
     {
         $company_id = $header->company_id;
 
@@ -116,7 +117,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            $item_matches_company = Item::query()
+            $item_matches_company = $models->query(Item::class)
                 ->whereKey($line->item_id)
                 ->where('company_id', $company_id)
                 ->exists();
@@ -127,7 +128,7 @@ final readonly class GoodsReceiptInventoryService
                 ]);
             }
 
-            $warehouse_matches_company = Warehouse::query()
+            $warehouse_matches_company = $models->query(Warehouse::class)
                 ->whereKey($line->warehouse_id)
                 ->where('company_id', $company_id)
                 ->exists();
@@ -145,7 +146,7 @@ final readonly class GoodsReceiptInventoryService
 
         $purchase_order_id = $header->purchase_order_id;
 
-        $po = PurchaseOrder::query()->find($purchase_order_id);
+        $po = $models->query(PurchaseOrder::class)->find($purchase_order_id);
 
         if ($po === null) {
             throw ValidationException::withMessages([
@@ -164,7 +165,7 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            $po_line = PurchaseOrderLine::query()->find($line->purchase_order_line_id);
+            $po_line = $models->query(PurchaseOrderLine::class)->find($line->purchase_order_line_id);
 
             if ($po_line === null) {
                 throw ValidationException::withMessages([

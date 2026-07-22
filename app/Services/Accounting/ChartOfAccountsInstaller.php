@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Idempotent loader that materialises a {@see ChartOfAccountsProvider} definition set
@@ -25,13 +26,15 @@ final readonly class ChartOfAccountsInstaller
     {
         $company_id = is_int($company->id) ? $company->id : (int) $company->id;
 
-        if (Account::query()->withoutGlobalScopes()->where('company_id', $company_id)->exists()) {
+        $models = ConnectionScopedModels::for($company);
+
+        if ($models->query(Account::class)->withoutGlobalScopes()->where('company_id', $company_id)->exists()) {
             return;
         }
 
         $definitions = $this->topologicallySortedDefinitions($this->provider->definitions());
 
-        DB::transaction(function () use ($company_id, $definitions): void {
+        ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company_id, $definitions): void {
             /** @var array<string, int> $id_by_code */
             $id_by_code = [];
 
@@ -48,7 +51,7 @@ final readonly class ChartOfAccountsInstaller
                     }
                 }
 
-                $account = new Account([
+                $account = $models->model(Account::class)->fill([
                     'company_id' => $company_id,
                     'code' => $row['code'],
                     'name' => $row['name'],

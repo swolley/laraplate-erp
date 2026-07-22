@@ -6,7 +6,6 @@ namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Exceptions\CannotReverseUnpostedJournalException;
 use Modules\ERP\Exceptions\FiscalPeriodCompanyMismatchException;
 use Modules\ERP\Exceptions\JournalAccountNotInCompanyException;
@@ -18,6 +17,8 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\JournalEntryLine;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 /**
  * Persists balanced double-entry journal entries in the company functional currency.
@@ -48,11 +49,14 @@ final class JournalPostingService
         ?Model $reference = null,
         ?CarbonImmutable $posted_at = null,
     ): JournalEntry {
-        $this->validateLinesForPosting($company, $lines, $fiscal_period);
+        $models = ConnectionScopedModels::for($company, ...array_filter([$fiscal_period, $reference]));
+        $this->validateLinesForPosting($models, $company, $lines, $fiscal_period);
+        ConnectionScopedTransaction::connection($company, ...array_filter([$fiscal_period, $reference]));
 
         $posted_at ??= CarbonImmutable::now();
 
-        return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
+        return ConnectionScopedTransaction::run($company, fn (ConnectionScopedModels $models): JournalEntry => $this->persistPostedEntry(
+            $models,
             $company,
             $lines,
             $fiscal_period,
@@ -74,7 +78,9 @@ final class JournalPostingService
         string $reversal_reason,
         ?int $posted_by_user_id = null,
     ): JournalEntry {
-        $posted_entry = JournalEntry::query()->withoutGlobalScopes()
+        ConnectionScopedTransaction::connection($company, $posted_entry);
+        $models = ConnectionScopedModels::for($company, $posted_entry);
+        $posted_entry = $models->query(JournalEntry::class)->withoutGlobalScopes()
             ->whereKey($posted_entry->id)
             ->with('lines')
             ->firstOrFail();
@@ -90,7 +96,7 @@ final class JournalPostingService
             );
         }
 
-        $reversal_exists = JournalEntry::query()->withoutGlobalScopes()
+        $reversal_exists = $models->query(JournalEntry::class)->withoutGlobalScopes()
             ->where('reverses_journal_entry_id', $posted_entry->id)
             ->exists();
 
@@ -115,11 +121,12 @@ final class JournalPostingService
             ];
         }
 
-        $this->validateLinesForPosting($company, $storno_lines, $posted_entry->fiscal_period);
+        $this->validateLinesForPosting($models, $company, $storno_lines, $posted_entry->fiscal_period);
         $posted_at = CarbonImmutable::now();
         $description = 'Reversal of journal #' . (string) $posted_entry->id . ': ' . $reversal_reason;
 
-        return DB::transaction(fn (): JournalEntry => $this->persistPostedEntry(
+        return ConnectionScopedTransaction::run($company, fn (ConnectionScopedModels $models): JournalEntry => $this->persistPostedEntry(
+            $models,
             $company,
             $storno_lines,
             $posted_entry->fiscal_period,
@@ -146,6 +153,7 @@ final class JournalPostingService
      * }>  $lines
      */
     private function persistPostedEntry(
+        ConnectionScopedModels $models,
         Company $company,
         array $lines,
         ?FiscalPeriod $fiscal_period,
@@ -156,7 +164,7 @@ final class JournalPostingService
         ?string $reversal_reason,
         ?Model $reference = null,
     ): JournalEntry {
-        $entry = JournalEntry::query()->withoutGlobalScopes()->create([
+        $entry = $models->query(JournalEntry::class)->withoutGlobalScopes()->create([
             'company_id' => $company->id,
             'fiscal_period_id' => $fiscal_period?->getKey(),
             'posted_at' => $posted_at,
@@ -171,7 +179,7 @@ final class JournalPostingService
         $line_no = 1;
 
         foreach ($lines as $line) {
-            JournalEntryLine::query()->create([
+            $models->query(JournalEntryLine::class)->create([
                 'journal_entry_id' => $entry->getKey(),
                 'line_no' => $line_no,
                 'account_id' => $line['account_id'],
@@ -188,7 +196,7 @@ final class JournalPostingService
             $line_no++;
         }
 
-        $this->assertPersistedLinesBalance($entry);
+        $this->assertPersistedLinesBalance($models, $entry);
 
         return $entry->load('lines');
     }
@@ -207,7 +215,7 @@ final class JournalPostingService
      *     tax_label?: string|null,
      * }>  $lines
      */
-    private function validateLinesForPosting(Company $company, array $lines, ?FiscalPeriod $fiscal_period): void
+    private function validateLinesForPosting(ConnectionScopedModels $models, Company $company, array $lines, ?FiscalPeriod $fiscal_period): void
     {
         $amount_locals = array_map(
             static fn (array $line): string|float => $line['amount_local'],
@@ -232,25 +240,25 @@ final class JournalPostingService
         }
 
         foreach ($lines as $line) {
-            $this->assertAccountBelongsToCompany($line['account_id'], $company);
+            $this->assertAccountBelongsToCompany($models, $line['account_id'], $company);
         }
     }
 
-    private function assertPersistedLinesBalance(JournalEntry $entry): void
+    private function assertPersistedLinesBalance(ConnectionScopedModels $models, JournalEntry $entry): void
     {
         /** @var list<string|float> $amount_locals */
         $amount_locals = [];
 
-        foreach (JournalEntryLine::query()->where('journal_entry_id', $entry->id)->cursor() as $line) {
+        foreach ($models->query(JournalEntryLine::class)->where('journal_entry_id', $entry->id)->cursor() as $line) {
             $amount_locals[] = $line->amount_local;
         }
 
         JournalLineBalance::assertBalanced($amount_locals);
     }
 
-    private function assertAccountBelongsToCompany(int $account_id, Company $company): void
+    private function assertAccountBelongsToCompany(ConnectionScopedModels $models, int $account_id, Company $company): void
     {
-        $exists = Account::query()
+        $exists = $models->query(Account::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->whereKey($account_id)

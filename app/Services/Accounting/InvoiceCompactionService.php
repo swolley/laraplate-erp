@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\InvoiceLine;
 
 /**
@@ -24,8 +25,8 @@ final class InvoiceCompactionService
      */
     public function compact(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
-            $lines = InvoiceLine::query()
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
+            $lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', $invoice->id)
                 ->with('delivery_note_lines')
                 ->orderBy('line_no')
@@ -91,8 +92,8 @@ final class InvoiceCompactionService
      */
     public function expand(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
-            $lines = InvoiceLine::query()
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
+            $lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', $invoice->id)
                 ->with('delivery_note_lines')
                 ->orderBy('line_no')

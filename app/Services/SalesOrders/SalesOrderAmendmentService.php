@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\SalesOrders;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 
 /**
@@ -24,7 +24,7 @@ final readonly class SalesOrderAmendmentService
 
     public function amend(SalesOrder $source_order): SalesOrder
     {
-        return DB::transaction(function () use ($source_order): SalesOrder {
+        return ConnectionScopedTransaction::run($source_order, function () use ($source_order): SalesOrder {
             $locked_source = SalesOrder::query()
                 ->whereKey($source_order->id)
                 ->with('lines')

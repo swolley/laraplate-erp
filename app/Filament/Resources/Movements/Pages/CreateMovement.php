@@ -6,10 +6,10 @@ namespace Modules\ERP\Filament\Resources\Movements\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Filament\Resources\Movements\MovementResource;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Cash\MovementPostingService;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Override;
 
 final class CreateMovement extends CreateRecord
@@ -20,8 +20,11 @@ final class CreateMovement extends CreateRecord
     #[Override]
     protected function handleRecordCreation(array $data): Model
     {
-        return DB::transaction(function () use ($data): Movement {
-            $movement = Movement::query()->create($data);
+        $movement = new Movement;
+        $movement->fill($data);
+
+        return ConnectionScopedTransaction::run($movement, function () use ($movement): Movement {
+            $movement->save();
             app(MovementPostingService::class)->post($movement);
 
             return $movement->fresh() ?? $movement;

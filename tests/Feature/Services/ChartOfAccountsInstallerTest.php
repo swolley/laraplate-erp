@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
@@ -111,4 +113,69 @@ it('rejects cyclic parent references in chart definitions', function (): void {
 
     expect(fn () => $installer->installWhenEmpty($company))
         ->toThrow(\InvalidArgumentException::class, 'cycle or a missing parent_code');
+});
+
+it('writes chart accounts on the company affinity connection', function (): void {
+    config()->set('database.connections.erp-secondary', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]);
+    $connection = Schema::connection('erp-secondary');
+    $connection->create((new Account)->getTable(), function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('company_id');
+        $table->string('code');
+        $table->string('name');
+        $table->string('kind');
+        $table->unsignedInteger('parent_id')->nullable();
+        $table->json('meta')->nullable();
+        $table->boolean('is_active');
+        $table->timestamps();
+    });
+
+    $company = (new Company)->setConnection('erp-secondary');
+    $company->id = 9876;
+    $default_company = new Company([
+        'slug' => 'default-affinity-company',
+        'name' => 'Default affinity company',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $default_company->id = 9876;
+    $default_company->setSkipValidation(true);
+    $default_company->save();
+    $seed_company = new Company([
+        'slug' => 'primary-seed-company',
+        'name' => 'Primary seed company',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+    $seed_company->id = 1;
+    $seed_company->setSkipValidation(true);
+    $seed_company->save();
+    Account::query()->getQuery()->insert([
+        'id' => 1,
+        'company_id' => 1,
+        'code' => 'PRIMARY-SEED',
+        'name' => 'Primary seed',
+        'kind' => AccountKind::Asset->value,
+        'is_active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $events = [];
+    $company->getConnection()->listen(function () use (&$events): void {
+        $events[] = 'query';
+    });
+    $installer = bindChartProvider(new ArrayChartOfAccountsProviderStub([
+        ['code' => '1000', 'name' => 'Secondary cash', 'kind' => AccountKind::Asset, 'parent_code' => null],
+    ]));
+
+    $installer->installWhenEmpty($company);
+
+    expect($company->getConnection()->table((new Account)->getTable())->where('company_id', 9876)->exists())->toBeTrue()
+        ->and(Account::query()->where('company_id', 9876)->count())->toBe(0)
+        ->and($events)->not->toBeEmpty();
 });

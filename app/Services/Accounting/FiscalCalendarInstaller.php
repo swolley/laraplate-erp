@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Ensures a calendar-year fiscal cycle (Jan–Dec) with twelve monthly periods exists.
@@ -22,7 +23,8 @@ final class FiscalCalendarInstaller
     {
         $company_id = is_int($company->id) ? $company->id : (int) $company->id;
 
-        $existing = FiscalYear::query()->withoutGlobalScopes()
+        $models = ConnectionScopedModels::for($company);
+        $existing = $models->query(FiscalYear::class)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->where('year', $year)
             ->first();
@@ -34,8 +36,8 @@ final class FiscalCalendarInstaller
         $start = CarbonImmutable::createFromDate($year, 1, 1)->startOfDay();
         $end = CarbonImmutable::createFromDate($year, 12, 31)->endOfDay();
 
-        return DB::transaction(function () use ($company_id, $year, $start, $end): FiscalYear {
-            $fiscal_year = new FiscalYear([
+        return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company_id, $year, $start, $end): FiscalYear {
+            $fiscal_year = $models->model(FiscalYear::class)->fill([
                 'company_id' => $company_id,
                 'year' => $year,
                 'start_date' => $start->toDateString(),
@@ -49,7 +51,7 @@ final class FiscalCalendarInstaller
                 $p_start = CarbonImmutable::createFromDate($year, $m, 1)->startOfDay();
                 $p_end = $p_start->endOfMonth();
 
-                $period = new FiscalPeriod([
+                $period = $models->model(FiscalPeriod::class)->fill([
                     'fiscal_year_id' => is_int($fiscal_year->id) ? $fiscal_year->id : (int) $fiscal_year->id,
                     'period_no' => $m,
                     'start_date' => $p_start->toDateString(),

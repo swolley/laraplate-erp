@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Returns;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\ReturnStatus;
@@ -13,6 +12,7 @@ use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\SupplierReturnLine;
 
 final readonly class SupplierReturnShipmentService
@@ -25,7 +25,7 @@ final readonly class SupplierReturnShipmentService
             ]);
         }
 
-        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
             $supplier_return = SupplierReturn::query()->with('lines')->lockForUpdate()->whereKey($supplier_return->id)->firstOrFail();
 
             if ($supplier_return->status !== ReturnStatus::Approved) {

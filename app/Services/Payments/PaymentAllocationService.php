@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Payments;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Models\PaymentAllocation;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\PaymentScheduleLine;
 
 final class PaymentAllocationService
@@ -19,7 +19,7 @@ final class PaymentAllocationService
      */
     public function allocate(Payment $payment, array $allocations): void
     {
-        DB::transaction(function () use ($payment, $allocations): void {
+        ConnectionScopedTransaction::run($payment, function () use ($payment, $allocations): void {
             foreach ($allocations as $schedule_line_id => $amount_doc) {
                 $amount_doc_float = (float) $amount_doc;
 
@@ -69,7 +69,7 @@ final class PaymentAllocationService
 
     public function deallocate(PaymentAllocation $allocation): void
     {
-        DB::transaction(function () use ($allocation): void {
+        ConnectionScopedTransaction::run($allocation, function () use ($allocation): void {
             $schedule_line = PaymentScheduleLine::query()
                 ->whereKey($allocation->payment_schedule_line_id)
                 ->lockForUpdate()

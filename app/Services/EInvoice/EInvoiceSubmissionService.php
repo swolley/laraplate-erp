@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\EInvoice;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Casts\InvoiceDirection;
@@ -12,6 +11,7 @@ use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Data\EInvoice\EInvoiceRemoteStatus;
 use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class EInvoiceSubmissionService
 {
@@ -21,7 +21,7 @@ final readonly class EInvoiceSubmissionService
 
     public function submit(Invoice $invoice): EInvoiceSubmission
     {
-        return DB::transaction(function () use ($invoice): EInvoiceSubmission {
+        return ConnectionScopedTransaction::run($invoice, function () use ($invoice): EInvoiceSubmission {
             $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->posted_at === null) {
@@ -124,13 +124,17 @@ final readonly class EInvoiceSubmissionService
             ]);
         }
 
-        return DB::transaction(function () use ($provider_code, $callback, $external_id): EInvoiceSubmission {
-            /** @var EInvoiceSubmission $submission */
-            $submission = EInvoiceSubmission::query()
-                ->where('provider_code', $provider_code)
-                ->where('external_id', $external_id)
+        /** @var EInvoiceSubmission $submission */
+        $submission = EInvoiceSubmission::query()
+            ->where('provider_code', $provider_code)
+            ->where('external_id', $external_id)
+            ->latest('id')
+            ->firstOrFail();
+
+        return ConnectionScopedTransaction::run($submission, function () use ($submission, $provider_code, $callback): EInvoiceSubmission {
+            $submission = $submission->newQuery()
+                ->whereKey($submission->getKey())
                 ->lockForUpdate()
-                ->latest('id')
                 ->firstOrFail();
 
             $remote_status = $this->remoteStatusFromCallback($callback);

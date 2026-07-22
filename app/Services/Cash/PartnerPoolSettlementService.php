@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Cash;
 
 use Brick\Math\BigDecimal;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\MovementAllocation;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\PoolTransaction;
 use Modules\ERP\Support\Decimal;
@@ -21,7 +21,7 @@ final class PartnerPoolSettlementService
      */
     public function allocate(Movement $movement, PartnerPool $pool, array $shares): void
     {
-        DB::transaction(function () use ($movement, $pool, $shares): void {
+        ConnectionScopedTransaction::run($movement, function () use ($movement, $pool, $shares): void {
             $pool = PartnerPool::query()->lockForUpdate()->findOrFail($pool->getKey());
             $movement = Movement::query()->lockForUpdate()->findOrFail($movement->getKey());
 
@@ -70,7 +70,7 @@ final class PartnerPoolSettlementService
                     'paid_amount' => Decimal::format((string) $share['paid']),
                 ]);
             }
-        });
+        }, $pool);
     }
 
     /** @return array<int, string> user_id => signed balance */
@@ -138,7 +138,7 @@ final class PartnerPoolSettlementService
 
     public function settle(PartnerPool $pool, int $from_user_id, int $to_user_id, string $amount, ?string $description = null): PoolTransaction
     {
-        return DB::transaction(function () use ($pool, $from_user_id, $to_user_id, $amount, $description): PoolTransaction {
+        return ConnectionScopedTransaction::run($pool, function () use ($pool, $from_user_id, $to_user_id, $amount, $description): PoolTransaction {
             $pool = PartnerPool::query()->lockForUpdate()->findOrFail($pool->getKey());
             if ($from_user_id === $to_user_id) {
                 $this->fail('to_user_id', 'Settlement participants must be different.');

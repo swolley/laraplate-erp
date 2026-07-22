@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Taxation;
 
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Deactivates a superseded row and points it to the replacement {@see TaxCode}.
@@ -22,8 +22,9 @@ final class TaxCodeSupersessionService
 
         throw_if($obsolete->id === $replacement->id, InvalidArgumentException::class, 'Cannot link a tax code as replacement of itself.');
 
-        $tax_codes_table = ERPTables::TaxCodes->value;
-        DB::table($tax_codes_table)
+        ConnectionScopedTransaction::connection($obsolete, $replacement);
+
+        $obsolete->getConnection()->table($obsolete->getTable())
             ->where('id', $obsolete->id)
             ->update([
                 'is_active' => false,

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Accounting;
 
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Exceptions\FiscalPeriodAlreadyClosedException;
 use Modules\ERP\Exceptions\FiscalYearAlreadyClosedException;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Closes fiscal periods and whole fiscal years (administrative lock).
@@ -23,7 +23,7 @@ final class FiscalPeriodCloser
             throw FiscalPeriodAlreadyClosedException::forPeriod($this->modelId($period));
         }
 
-        DB::transaction(function () use ($period): void {
+        ConnectionScopedTransaction::run($period, function () use ($period): void {
             $period->is_closed = true;
             $period->setSkipValidation(true);
             $period->save();
@@ -36,7 +36,7 @@ final class FiscalPeriodCloser
             return;
         }
 
-        DB::transaction(function () use ($period): void {
+        ConnectionScopedTransaction::run($period, function () use ($period): void {
             $period->is_closed = false;
             $period->setSkipValidation(true);
             $period->save();
@@ -49,7 +49,7 @@ final class FiscalPeriodCloser
             throw FiscalYearAlreadyClosedException::forYear($this->modelId($year));
         }
 
-        DB::transaction(function () use ($year): void {
+        ConnectionScopedTransaction::run($year, function () use ($year): void {
             $year->loadMissing('fiscal_periods');
 
             foreach ($year->fiscal_periods as $period) {

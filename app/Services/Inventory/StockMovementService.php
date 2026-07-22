@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Inventory;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\Warehouse;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final class StockMovementService
 {
@@ -40,12 +42,19 @@ final class StockMovementService
         }
 
         $unit_cost_string = $this->normalizeMoneyString($unit_cost);
+        $company = $source instanceof Model
+            ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
+            : Company::query()->findOrFail($company_id);
 
-        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity_string, $unit_cost_string, $source): StockMovement {
-            $item = $this->resolveItem($company_id, $item_id);
-            $this->assertWarehouseBelongsToCompany($company_id, $warehouse_id);
+        if ($source instanceof Model) {
+            ConnectionScopedTransaction::connection($company, $source);
+        }
 
-            $movement = new StockMovement([
+        return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company_id, $item_id, $warehouse_id, $quantity_string, $unit_cost_string, $source): StockMovement {
+            $item = $this->resolveItem($models, $company_id, $item_id);
+            $this->assertWarehouseBelongsToCompany($models, $company_id, $warehouse_id);
+
+            $movement = $models->model(StockMovement::class)->fill([
                 'company_id' => $company_id,
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
@@ -60,10 +69,10 @@ final class StockMovementService
 
             $movement->save();
 
-            $stock_level = $this->lockStockLevel($company_id, $item_id, $warehouse_id);
+            $stock_level = $this->lockStockLevel($models, $company_id, $item_id, $warehouse_id);
 
             if ($item->costing_method === 'fifo') {
-                StockCostLayer::query()->create([
+                $models->query(StockCostLayer::class)->create([
                     'company_id' => $company_id,
                     'item_id' => $item_id,
                     'warehouse_id' => $warehouse_id,
@@ -73,7 +82,7 @@ final class StockMovementService
                 ]);
 
                 $stock_level->quantity = $this->addDecimal($stock_level->quantity, $quantity_string);
-                $this->syncFifoDisplayAverage($stock_level);
+                $this->syncFifoDisplayAverage($models, $stock_level);
                 $stock_level->save();
 
                 return $movement;
@@ -120,12 +129,19 @@ final class StockMovementService
                 'quantity' => ['Outbound quantity must be greater than zero.'],
             ]);
         }
+        $company = $source instanceof Model
+            ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
+            : Company::query()->findOrFail($company_id);
 
-        return DB::transaction(function () use ($company_id, $item_id, $warehouse_id, $quantity_string, $source): StockMovement {
-            $item = $this->resolveItem($company_id, $item_id);
-            $this->assertWarehouseBelongsToCompany($company_id, $warehouse_id);
+        if ($source instanceof Model) {
+            ConnectionScopedTransaction::connection($company, $source);
+        }
 
-            $stock_level = $this->lockStockLevel($company_id, $item_id, $warehouse_id);
+        return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company_id, $item_id, $warehouse_id, $quantity_string, $source): StockMovement {
+            $item = $this->resolveItem($models, $company_id, $item_id);
+            $this->assertWarehouseBelongsToCompany($models, $company_id, $warehouse_id);
+
+            $stock_level = $this->lockStockLevel($models, $company_id, $item_id, $warehouse_id);
 
             if ((float) $stock_level->quantity < (float) $quantity_string) {
                 throw ValidationException::withMessages([
@@ -133,7 +149,7 @@ final class StockMovementService
                 ]);
             }
 
-            $movement = new StockMovement([
+            $movement = $models->model(StockMovement::class)->fill([
                 'company_id' => $company_id,
                 'item_id' => $item_id,
                 'warehouse_id' => $warehouse_id,
@@ -148,6 +164,7 @@ final class StockMovementService
 
             if ($item->costing_method === 'fifo') {
                 $movement_unit_cost = $this->consumeFifoLayersAndComputeUnitCost(
+                    $models,
                     $company_id,
                     $item_id,
                     $warehouse_id,
@@ -157,7 +174,7 @@ final class StockMovementService
                 $movement->save();
 
                 $stock_level->quantity = $this->subtractDecimal($stock_level->quantity, $quantity_string);
-                $this->syncFifoDisplayAverage($stock_level);
+                $this->syncFifoDisplayAverage($models, $stock_level);
                 $stock_level->save();
 
                 return $movement;
@@ -180,10 +197,10 @@ final class StockMovementService
         });
     }
 
-    private function resolveItem(int $company_id, int $item_id): Item
+    private function resolveItem(ConnectionScopedModels $models, int $company_id, int $item_id): Item
     {
         /** @var Item|null $item */
-        $item = Item::query()
+        $item = $models->query(Item::class)
             ->whereKey($item_id)
             ->where('company_id', $company_id)
             ->first();
@@ -197,9 +214,9 @@ final class StockMovementService
         return $item;
     }
 
-    private function assertWarehouseBelongsToCompany(int $company_id, int $warehouse_id): void
+    private function assertWarehouseBelongsToCompany(ConnectionScopedModels $models, int $company_id, int $warehouse_id): void
     {
-        $exists = Warehouse::query()
+        $exists = $models->query(Warehouse::class)
             ->whereKey($warehouse_id)
             ->where('company_id', $company_id)
             ->exists();
@@ -211,10 +228,10 @@ final class StockMovementService
         }
     }
 
-    private function lockStockLevel(int $company_id, int $item_id, int $warehouse_id): StockLevel
+    private function lockStockLevel(ConnectionScopedModels $models, int $company_id, int $item_id, int $warehouse_id): StockLevel
     {
         /** @var StockLevel|null $row */
-        $row = StockLevel::query()
+        $row = $models->query(StockLevel::class)
             ->where('company_id', $company_id)
             ->where('item_id', $item_id)
             ->where('warehouse_id', $warehouse_id)
@@ -225,7 +242,7 @@ final class StockMovementService
             return $row;
         }
 
-        return StockLevel::query()->create([
+        return $models->query(StockLevel::class)->create([
             'company_id' => $company_id,
             'item_id' => $item_id,
             'warehouse_id' => $warehouse_id,
@@ -241,12 +258,13 @@ final class StockMovementService
      * @return numeric-string
      */
     private function consumeFifoLayersAndComputeUnitCost(
+        ConnectionScopedModels $models,
         int $company_id,
         int $item_id,
         int $warehouse_id,
         string $quantity_out,
     ): string {
-        $available = (string) StockCostLayer::query()
+        $available = (string) $models->query(StockCostLayer::class)
             ->where('company_id', $company_id)
             ->where('item_id', $item_id)
             ->where('warehouse_id', $warehouse_id)
@@ -262,7 +280,7 @@ final class StockMovementService
         $remaining_to_take = $quantity_out;
         $total_cost = '0.0000';
 
-        $layers = StockCostLayer::query()
+        $layers = $models->query(StockCostLayer::class)
             ->where('company_id', $company_id)
             ->where('item_id', $item_id)
             ->where('warehouse_id', $warehouse_id)
@@ -296,9 +314,9 @@ final class StockMovementService
         return $this->divideDecimal($total_cost, $quantity_out);
     }
 
-    private function syncFifoDisplayAverage(StockLevel $stock_level): void
+    private function syncFifoDisplayAverage(ConnectionScopedModels $models, StockLevel $stock_level): void
     {
-        $aggregate = StockCostLayer::query()
+        $aggregate = $models->query(StockCostLayer::class)
             ->where('company_id', $stock_level->company_id)
             ->where('item_id', $stock_level->item_id)
             ->where('warehouse_id', $stock_level->warehouse_id)

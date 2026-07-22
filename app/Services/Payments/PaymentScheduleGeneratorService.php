@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Payments;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\PaymentScheduleLine;
 use Modules\ERP\Models\PaymentTerm;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class PaymentScheduleGeneratorService
 {
@@ -22,7 +22,7 @@ final class PaymentScheduleGeneratorService
             $gross_total = $this->round4(abs($gross_total_float));
         }
 
-        DB::transaction(function () use ($invoice, $gross_total): void {
+        ConnectionScopedTransaction::run($invoice, function () use ($invoice, $gross_total): void {
             $posted_at = $invoice->posted_at instanceof CarbonImmutable
                 ? $invoice->posted_at
                 : CarbonImmutable::parse($invoice->posted_at);
@@ -78,7 +78,7 @@ final class PaymentScheduleGeneratorService
 
     public function removeAll(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
+        ConnectionScopedTransaction::run($invoice, function () use ($invoice): void {
             $has_allocations = PaymentScheduleLine::query()
                 ->where('invoice_id', $this->invoiceId($invoice))
                 ->where('paid_amount_doc', '>', 0)

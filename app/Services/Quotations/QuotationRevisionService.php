@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Quotations;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Models\Quotation;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class QuotationRevisionService
 {
     public function createRevision(Quotation $quotation): Quotation
     {
-        return DB::transaction(function () use ($quotation): Quotation {
+        return ConnectionScopedTransaction::run($quotation, function () use ($quotation): Quotation {
             $source = Quotation::query()
                 ->with('quotation_items')
                 ->lockForUpdate()

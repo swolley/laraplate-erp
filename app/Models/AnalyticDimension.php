@@ -10,6 +10,10 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin \Eloquent
+ * @mixin IdeHelperAnalyticDimension
+ */
 final class AnalyticDimension extends Model
 {
     use BelongsToCompany;

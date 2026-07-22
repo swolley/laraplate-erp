@@ -6,7 +6,6 @@ namespace Modules\ERP\Services\Accounting;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
@@ -15,6 +14,8 @@ use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
@@ -45,17 +46,17 @@ final readonly class InvoicePostingService
 
     public function post(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
-            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
+            $locked = $models->query(Invoice::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->journal_entry_id !== null) {
                 return;
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail($locked->company_id);
+            $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($locked->company_id);
             $this->chart_of_accounts_installer->installWhenEmpty($company);
 
-            $lines = InvoiceLine::query()
+            $lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', $locked->id)
                 ->orderBy('line_no')
                 ->get();
@@ -89,17 +90,17 @@ final readonly class InvoicePostingService
             $reference = $this->document_number_allocator->next($company, $document_type, $fiscal_year);
             $invoice->reference = $reference;
 
-            [$net_total, $tax_total, $gross_total] = $this->resolveAndSnapshotTaxes($lines);
+            [$net_total, $tax_total, $gross_total] = $this->resolveAndSnapshotTaxes($models, $lines);
 
             if ($locked->invoice_type === InvoiceType::CreditNote) {
-                $this->credit_note_service->validateCreditNoteTotal($locked);
+                $this->credit_note_service->validateCreditNoteTotal($locked, $models);
                 $net_total = Decimal::negate($net_total);
                 $tax_total = Decimal::negate($tax_total);
                 $gross_total = Decimal::negate($gross_total);
             }
 
-            $journal_lines = $this->buildJournalLines($company, $locked->direction, $locked->currency, $net_total, $tax_total, $gross_total);
-            $fiscal_period = $this->resolveFiscalPeriod($company, $posted_at);
+            $journal_lines = $this->buildJournalLines($models, $company, $locked->direction, $locked->currency, $net_total, $tax_total, $gross_total);
+            $fiscal_period = $this->resolveFiscalPeriod($models, $company, $posted_at);
             $entry = $this->journal_posting_service->post(
                 $company,
                 $journal_lines,
@@ -114,7 +115,7 @@ final readonly class InvoicePostingService
 
             $this->payment_schedule_generator_service->generate($locked, $gross_total);
 
-            $this->applySalesOrderInvoicingProgress($locked, $lines, true);
+            $this->applySalesOrderInvoicingProgress($models, $locked, $lines, true);
             $invoice->journal_entry_id = $this->modelId($entry);
 
             $this->outbox_recorder->record('erp.invoice.posted', $locked, [
@@ -127,19 +128,19 @@ final readonly class InvoicePostingService
 
     public function unpost(Invoice $invoice): void
     {
-        DB::transaction(function () use ($invoice): void {
-            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
+            $locked = $models->query(Invoice::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
-            $lines = InvoiceLine::query()
+            $lines = $models->query(InvoiceLine::class)
                 ->where('invoice_id', $locked->id)
                 ->orderBy('line_no')
                 ->get();
 
             if ($locked->journal_entry_id !== null) {
-                $entry = JournalEntry::query()->withoutGlobalScopes()->find($locked->journal_entry_id);
+                $entry = $models->query(JournalEntry::class)->withoutGlobalScopes()->find($locked->journal_entry_id);
 
                 if ($entry !== null) {
-                    $company = Company::query()->withoutGlobalScopes()->findOrFail($locked->company_id);
+                    $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($locked->company_id);
                     $reason = $locked->reference !== null && $locked->reference !== ''
                         ? 'Invoice unposted ' . $locked->reference
                         : 'Invoice unposted #' . (string) $locked->id;
@@ -151,7 +152,7 @@ final readonly class InvoicePostingService
 
             $this->payment_schedule_generator_service->removeAll($locked);
 
-            $this->applySalesOrderInvoicingProgress($locked, $lines, false);
+            $this->applySalesOrderInvoicingProgress($models, $locked, $lines, false);
 
             $invoice->reference = null;
             $invoice->journal_entry_id = null;
@@ -162,14 +163,14 @@ final readonly class InvoicePostingService
      * @param  Collection<int, InvoiceLine>  $lines
      * @return array{0: string, 1: string, 2: string}
      */
-    private function resolveAndSnapshotTaxes(Collection $lines): array
+    private function resolveAndSnapshotTaxes(ConnectionScopedModels $models, Collection $lines): array
     {
         $net_total = '0.0000';
         $tax_total = '0.0000';
         $tax_code_ids = $lines->pluck('tax_code_id')->filter()->unique()->values();
         $tax_codes = $tax_code_ids->isEmpty()
             ? collect()
-            : TaxCode::query()
+            : $models->query(TaxCode::class)
                 ->withoutGlobalScopes()
                 ->whereIn('id', $tax_code_ids)
                 ->get()
@@ -194,7 +195,7 @@ final readonly class InvoicePostingService
                 $line->tax_rate = $tax_code->rate;
                 $line->tax_label = $tax_code->label;
 
-                InvoiceLine::query()
+                $models->query(InvoiceLine::class)
                     ->whereKey($line->id)
                     ->update([
                         'tax_code' => $tax_code->code,
@@ -224,6 +225,7 @@ final readonly class InvoicePostingService
      * }>
      */
     private function buildJournalLines(
+        ConnectionScopedModels $models,
         Company $company,
         InvoiceDirection $direction,
         string $currency,
@@ -234,9 +236,9 @@ final readonly class InvoicePostingService
         $fx_rate = '1';
 
         if ($direction === InvoiceDirection::Sale) {
-            $receivable = $this->findAccountByRole($company, 'trade_receivable');
-            $revenue = $this->findAccountByRole($company, 'sales_revenue');
-            $vat_output = $this->findAccountByRole($company, 'vat_output');
+            $receivable = $this->findAccountByRole($models, $company, 'trade_receivable');
+            $revenue = $this->findAccountByRole($models, $company, 'sales_revenue');
+            $vat_output = $this->findAccountByRole($models, $company, 'vat_output');
 
             $lines = [
                 $this->line($this->modelId($receivable), $gross_total, $currency, $fx_rate, 'Trade receivable'),
@@ -250,9 +252,9 @@ final readonly class InvoicePostingService
             return $lines;
         }
 
-        $expense = $this->findAccountByRole($company, 'purchase_expense');
-        $vat_input = $this->findAccountByRole($company, 'vat_input');
-        $payable = $this->findAccountByRole($company, 'trade_payable');
+        $expense = $this->findAccountByRole($models, $company, 'purchase_expense');
+        $vat_input = $this->findAccountByRole($models, $company, 'vat_input');
+        $payable = $this->findAccountByRole($models, $company, 'trade_payable');
 
         $lines = [
             $this->line($this->modelId($expense), $net_total, $currency, $fx_rate, 'Purchase expense'),
@@ -297,7 +299,7 @@ final readonly class InvoicePostingService
     /**
      * @param  Collection<int, InvoiceLine>  $lines
      */
-    private function applySalesOrderInvoicingProgress(Invoice $invoice, Collection $lines, bool $forward): void
+    private function applySalesOrderInvoicingProgress(ConnectionScopedModels $models, Invoice $invoice, Collection $lines, bool $forward): void
     {
         if ($invoice->direction !== InvoiceDirection::Sale) {
             return;
@@ -337,7 +339,7 @@ final readonly class InvoicePostingService
         }
 
         foreach ($quantities_by_order as $order_id => $line_quantities) {
-            $sales_order = \Modules\ERP\Models\SalesOrder::query()->whereKey($order_id)->lockForUpdate()->first();
+            $sales_order = $models->query(\Modules\ERP\Models\SalesOrder::class)->whereKey($order_id)->lockForUpdate()->first();
 
             if ($sales_order === null) {
                 continue;
@@ -351,9 +353,9 @@ final readonly class InvoicePostingService
         }
     }
 
-    private function findAccountByRole(Company $company, string $role): Account
+    private function findAccountByRole(ConnectionScopedModels $models, Company $company, string $role): Account
     {
-        $account = Account::query()
+        $account = $models->query(Account::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('meta->erp_role', $role)
@@ -383,9 +385,9 @@ final readonly class InvoicePostingService
         return CarbonImmutable::now();
     }
 
-    private function resolveFiscalPeriod(Company $company, CarbonImmutable $posted_at): ?FiscalPeriod
+    private function resolveFiscalPeriod(ConnectionScopedModels $models, Company $company, CarbonImmutable $posted_at): ?FiscalPeriod
     {
-        return FiscalPeriod::query()
+        return $models->query(FiscalPeriod::class)
             ->withoutGlobalScopes()
             ->whereHas('fiscal_year', static function (\Illuminate\Database\Eloquent\Builder $query) use ($company): void {
                 $query->withoutGlobalScopes()

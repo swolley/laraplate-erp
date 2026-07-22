@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Returns;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Data\Returns\ReturnLineCreditOverride;
@@ -13,6 +12,7 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\ReturnOrder;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
@@ -32,7 +32,7 @@ final readonly class ReturnOrderService
 
     public function approve(ReturnOrder $return_order): ReturnOrder
     {
-        return DB::transaction(function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
             $locked = ReturnOrder::query()->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if ($locked->status !== ReturnStatus::Draft) {
@@ -52,7 +52,7 @@ final readonly class ReturnOrderService
 
     public function complete(ReturnOrder $return_order): ReturnOrder
     {
-        return DB::transaction(function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
             $processed = $this->receipt_service->receive($return_order);
 
             if ($this->shouldAutoCreateCreditNote($processed)) {
@@ -74,7 +74,7 @@ final readonly class ReturnOrderService
 
     public function reverseProcessed(ReturnOrder $return_order): ReturnOrder
     {
-        return DB::transaction(function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
             /** @var ReturnOrder $locked */
             $locked = ReturnOrder::query()
                 ->with('lines')
@@ -132,7 +132,7 @@ final readonly class ReturnOrderService
 
     public function createCreditNote(ReturnOrder $return_order): Invoice
     {
-        return DB::transaction(function () use ($return_order): Invoice {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): Invoice {
             $locked = ReturnOrder::query()
                 ->with('lines')
                 ->lockForUpdate()
@@ -182,7 +182,7 @@ final readonly class ReturnOrderService
 
     public function cancel(ReturnOrder $return_order): ReturnOrder
     {
-        return DB::transaction(function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
             $locked = ReturnOrder::query()->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if (! in_array($locked->status, [ReturnStatus::Draft, ReturnStatus::Approved], true)) {

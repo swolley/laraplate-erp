@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Returns;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -18,6 +17,7 @@ use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
@@ -34,7 +34,7 @@ final readonly class SupplierReturnService
 
     public function approve(SupplierReturn $supplier_return): SupplierReturn
     {
-        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
             /** @var SupplierReturn $locked */
             $locked = SupplierReturn::query()->lockForUpdate()->findOrFail((int) $supplier_return->id);
 
@@ -55,7 +55,7 @@ final readonly class SupplierReturnService
 
     public function complete(SupplierReturn $supplier_return): SupplierReturn
     {
-        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
             $processed = $this->shipment_service->ship($supplier_return);
 
             if ($this->shouldAutoCreateDebitNote($processed)) {
@@ -77,7 +77,7 @@ final readonly class SupplierReturnService
 
     public function reverseProcessed(SupplierReturn $supplier_return): SupplierReturn
     {
-        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
             /** @var SupplierReturn $locked */
             $locked = SupplierReturn::query()
                 ->with('lines')
@@ -134,7 +134,7 @@ final readonly class SupplierReturnService
 
     public function createDebitNote(SupplierReturn $supplier_return): Invoice
     {
-        return DB::transaction(function () use ($supplier_return): Invoice {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): Invoice {
             /** @var SupplierReturn $locked */
             $locked = SupplierReturn::query()
                 ->with('lines')
@@ -275,7 +275,7 @@ final readonly class SupplierReturnService
 
     public function cancel(SupplierReturn $supplier_return): SupplierReturn
     {
-        return DB::transaction(function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
             /** @var SupplierReturn $locked */
             $locked = SupplierReturn::query()->lockForUpdate()->findOrFail((int) $supplier_return->id);
 
