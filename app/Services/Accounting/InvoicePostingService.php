@@ -7,6 +7,7 @@ namespace Modules\ERP\Services\Accounting;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Services\OutboxRecorder;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -14,8 +15,6 @@ use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\Invoice;
-use Modules\ERP\Support\ConnectionScopedTransaction;
-use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\TaxCode;
@@ -24,8 +23,9 @@ use Modules\ERP\Services\Payments\PaymentScheduleGeneratorService;
 use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\Decimal;
-use Modules\Core\Services\OutboxRecorder;
 
 final readonly class InvoicePostingService
 {
@@ -118,7 +118,7 @@ final readonly class InvoicePostingService
             $this->applySalesOrderInvoicingProgress($models, $locked, $lines, true);
             $invoice->journal_entry_id = $this->modelId($entry);
 
-            $this->outbox_recorder->record('erp.invoice.posted', $locked, [
+            $this->outbox_recorder->record($locked, 'erp.invoice.posted', [
                 'company_id' => (int) $locked->company_id,
                 'reference' => $reference,
                 'journal_entry_id' => $this->modelId($entry),

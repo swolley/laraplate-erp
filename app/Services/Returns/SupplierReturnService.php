@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Returns;
 
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Services\OutboxRecorder;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\ReturnStatus;
@@ -17,11 +18,11 @@ use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
-use Modules\Core\Services\OutboxRecorder;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class SupplierReturnService
 {
@@ -34,9 +35,11 @@ final readonly class SupplierReturnService
 
     public function approve(SupplierReturn $supplier_return): SupplierReturn
     {
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
+            $models->model(Party::class);
+
             /** @var SupplierReturn $locked */
-            $locked = SupplierReturn::query()->lockForUpdate()->findOrFail((int) $supplier_return->id);
+            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->findOrFail((int) $supplier_return->id);
 
             if ($locked->status !== ReturnStatus::Draft) {
                 throw ValidationException::withMessages([
@@ -44,7 +47,7 @@ final readonly class SupplierReturnService
                 ]);
             }
 
-            $this->assertSupplierParty($locked);
+            $this->assertSupplierParty($models, $locked);
 
             $locked->status = ReturnStatus::Approved;
             $locked->save();
@@ -55,7 +58,7 @@ final readonly class SupplierReturnService
 
     public function complete(SupplierReturn $supplier_return): SupplierReturn
     {
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
             $processed = $this->shipment_service->ship($supplier_return);
 
             if ($this->shouldAutoCreateDebitNote($processed)) {
@@ -63,7 +66,7 @@ final readonly class SupplierReturnService
                 $processed = $processed->fresh() ?? $processed;
             }
 
-            $this->outbox_recorder->record('erp.supplier-return.completed', $processed, [
+            $this->outbox_recorder->record($processed, 'erp.supplier-return.completed', [
                 'company_id' => (int) $processed->company_id,
                 'delivery_note_id' => (int) $processed->delivery_note_id,
                 'debit_note_invoice_id' => $processed->debit_note_invoice_id === null
@@ -77,9 +80,14 @@ final readonly class SupplierReturnService
 
     public function reverseProcessed(SupplierReturn $supplier_return): SupplierReturn
     {
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
+            $models->model(DeliveryNote::class);
+            $models->model(GoodsReceiptLine::class);
+            $models->model(PurchaseOrderLine::class);
+            $models->model(SupplierReturnLine::class);
+
             /** @var SupplierReturn $locked */
-            $locked = SupplierReturn::query()
+            $locked = $models->query(SupplierReturn::class)
                 ->with('lines')
                 ->lockForUpdate()
                 ->findOrFail((int) $supplier_return->id);
@@ -103,7 +111,7 @@ final readonly class SupplierReturnService
             }
 
             /** @var DeliveryNote $delivery_note */
-            $delivery_note = DeliveryNote::query()
+            $delivery_note = $models->query(DeliveryNote::class)
                 ->whereKey($locked->delivery_note_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -122,7 +130,7 @@ final readonly class SupplierReturnService
                 $delivery_note->save();
             }
 
-            $this->unregisterSourceReturnedQuantities($locked);
+            $this->unregisterSourceReturnedQuantities($models, $locked);
 
             $locked->status = ReturnStatus::Approved;
             $locked->processed_at = null;
@@ -134,9 +142,15 @@ final readonly class SupplierReturnService
 
     public function createDebitNote(SupplierReturn $supplier_return): Invoice
     {
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): Invoice {
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): Invoice {
+            $models->model(PurchaseOrder::class);
+            $models->model(Invoice::class);
+            $models->model(InvoiceLine::class);
+            $models->model(PurchaseOrderLine::class);
+            $models->model(SupplierReturnLine::class);
+
             /** @var SupplierReturn $locked */
-            $locked = SupplierReturn::query()
+            $locked = $models->query(SupplierReturn::class)
                 ->with('lines')
                 ->lockForUpdate()
                 ->findOrFail((int) $supplier_return->id);
@@ -160,7 +174,7 @@ final readonly class SupplierReturnService
             }
 
             /** @var PurchaseOrder $purchase_order */
-            $purchase_order = PurchaseOrder::query()
+            $purchase_order = $models->query(PurchaseOrder::class)
                 ->whereKey((int) $locked->purchase_order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -172,10 +186,10 @@ final readonly class SupplierReturnService
                 ]);
             }
 
-            $line_overrides = $this->buildDebitOverrides($locked);
-            $source_invoice = $this->sourceInvoiceFromDebitOverrides($line_overrides);
+            $line_overrides = $this->buildDebitOverridesOn($models, $locked);
+            $source_invoice = $this->sourceInvoiceFromDebitOverrides($models, $line_overrides);
 
-            $debit_note = Invoice::query()->create([
+            $debit_note = $models->query(Invoice::class)->create([
                 'company_id' => $locked->company_id,
                 'party_id' => $locked->party_id,
                 'direction' => InvoiceDirection::Purchase->value,
@@ -189,7 +203,7 @@ final readonly class SupplierReturnService
 
             foreach ($locked->lines as $line) {
                 /** @var SupplierReturnLine $line */
-                $invoice_line = $this->invoiceLineForDebitNote($line, $locked, $purchase_order);
+                $invoice_line = $this->invoiceLineForDebitNote($models, $line, $locked, $purchase_order);
 
                 $debit_note->lines()->create([
                     'line_no' => $line_no++,
@@ -219,6 +233,35 @@ final readonly class SupplierReturnService
      */
     public function buildDebitOverrides(SupplierReturn $supplier_return): array
     {
+        return $this->buildDebitOverridesOn(ConnectionScopedModels::for($supplier_return), $supplier_return);
+    }
+
+    public function cancel(SupplierReturn $supplier_return): SupplierReturn
+    {
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
+            /** @var SupplierReturn $locked */
+            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->findOrFail((int) $supplier_return->id);
+
+            if (! in_array($locked->status, [ReturnStatus::Draft, ReturnStatus::Approved], true)) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only draft or approved supplier returns can be cancelled.'],
+                ]);
+            }
+
+            $locked->status = ReturnStatus::Cancelled;
+            $locked->save();
+
+            return $locked;
+        });
+    }
+
+    /**
+     * @return array<int, ReturnLineCreditOverride>
+     */
+    private function buildDebitOverridesOn(
+        ConnectionScopedModels $models,
+        SupplierReturn $supplier_return,
+    ): array {
         if ($supplier_return->purchase_order_id === null) {
             throw ValidationException::withMessages([
                 'purchase_order_id' => ['Supplier return requires a source purchase order before creating debit overrides.'],
@@ -228,7 +271,9 @@ final readonly class SupplierReturnService
         $supplier_return->loadMissing('lines');
 
         /** @var PurchaseOrder $purchase_order */
-        $purchase_order = PurchaseOrder::query()->whereKey((int) $supplier_return->purchase_order_id)->firstOrFail();
+        $purchase_order = $models->query(PurchaseOrder::class)
+            ->whereKey((int) $supplier_return->purchase_order_id)
+            ->firstOrFail();
 
         if ((int) $purchase_order->company_id !== (int) $supplier_return->company_id
             || (int) $purchase_order->party_id !== (int) $supplier_return->party_id) {
@@ -242,7 +287,8 @@ final readonly class SupplierReturnService
         $source_invoice_id = null;
 
         foreach ($supplier_return->lines as $line) {
-            $invoice_line = $this->invoiceLineForDebitNote($line, $supplier_return, $purchase_order);
+            $invoice_line = $this->invoiceLineForDebitNote($models, $line, $supplier_return, $purchase_order);
+
             /** @var Invoice $invoice */
             $invoice = $invoice_line->invoice;
 
@@ -273,34 +319,17 @@ final readonly class SupplierReturnService
         return $line_overrides;
     }
 
-    public function cancel(SupplierReturn $supplier_return): SupplierReturn
-    {
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
-            /** @var SupplierReturn $locked */
-            $locked = SupplierReturn::query()->lockForUpdate()->findOrFail((int) $supplier_return->id);
-
-            if (! in_array($locked->status, [ReturnStatus::Draft, ReturnStatus::Approved], true)) {
-                throw ValidationException::withMessages([
-                    'status' => ['Only draft or approved supplier returns can be cancelled.'],
-                ]);
-            }
-
-            $locked->status = ReturnStatus::Cancelled;
-            $locked->save();
-
-            return $locked;
-        });
-    }
-
-    private function unregisterSourceReturnedQuantities(SupplierReturn $supplier_return): void
-    {
+    private function unregisterSourceReturnedQuantities(
+        ConnectionScopedModels $models,
+        SupplierReturn $supplier_return,
+    ): void {
         foreach ($supplier_return->lines as $line) {
             $quantity = (float) $line->quantity;
             $purchase_order_line_id = $line->purchase_order_line_id;
 
             if ($line->goods_receipt_line_id !== null) {
                 /** @var GoodsReceiptLine $goods_receipt_line */
-                $goods_receipt_line = GoodsReceiptLine::query()
+                $goods_receipt_line = $models->query(GoodsReceiptLine::class)
                     ->whereKey($line->goods_receipt_line_id)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -326,7 +355,7 @@ final readonly class SupplierReturnService
             }
 
             /** @var PurchaseOrderLine $purchase_order_line */
-            $purchase_order_line = PurchaseOrderLine::query()
+            $purchase_order_line = $models->query(PurchaseOrderLine::class)
                 ->whereKey($purchase_order_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -344,9 +373,9 @@ final readonly class SupplierReturnService
         }
     }
 
-    private function assertSupplierParty(SupplierReturn $supplier_return): void
+    private function assertSupplierParty(ConnectionScopedModels $models, SupplierReturn $supplier_return): void
     {
-        $is_supplier = Party::query()
+        $is_supplier = $models->query(Party::class)
             ->whereKey((int) $supplier_return->party_id)
             ->where('company_id', (int) $supplier_return->company_id)
             ->where('is_supplier', true)
@@ -371,6 +400,7 @@ final readonly class SupplierReturnService
     }
 
     private function invoiceLineForDebitNote(
+        ConnectionScopedModels $models,
         SupplierReturnLine $line,
         SupplierReturn $supplier_return,
         PurchaseOrder $purchase_order,
@@ -382,7 +412,7 @@ final readonly class SupplierReturnService
         }
 
         /** @var InvoiceLine $invoice_line */
-        $invoice_line = InvoiceLine::query()
+        $invoice_line = $models->query(InvoiceLine::class)
             ->with('invoice')
             ->whereKey((int) $line->invoice_line_id)
             ->lockForUpdate()
@@ -408,7 +438,7 @@ final readonly class SupplierReturnService
         }
 
         /** @var PurchaseOrderLine $purchase_order_line */
-        $purchase_order_line = PurchaseOrderLine::query()
+        $purchase_order_line = $models->query(PurchaseOrderLine::class)
             ->whereKey((int) $line->purchase_order_line_id)
             ->where('purchase_order_id', (int) $purchase_order->id)
             ->lockForUpdate()
@@ -427,8 +457,10 @@ final readonly class SupplierReturnService
     /**
      * @param  array<int, ReturnLineCreditOverride>  $line_overrides
      */
-    private function sourceInvoiceFromDebitOverrides(array $line_overrides): Invoice
-    {
+    private function sourceInvoiceFromDebitOverrides(
+        ConnectionScopedModels $models,
+        array $line_overrides,
+    ): Invoice {
         $source_line_id = array_key_first($line_overrides);
 
         if ($source_line_id === null) {
@@ -438,12 +470,10 @@ final readonly class SupplierReturnService
         }
 
         /** @var InvoiceLine $invoice_line */
-        $invoice_line = InvoiceLine::query()->with('invoice')->findOrFail($source_line_id);
+        $invoice_line = $models->query(InvoiceLine::class)->with('invoice')->findOrFail($source_line_id);
 
         /** @var Invoice $invoice */
-        $invoice = $invoice_line->invoice;
-
-        return $invoice;
+        return $invoice_line->invoice;
     }
 
     /**

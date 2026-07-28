@@ -9,17 +9,24 @@ use DOMElement;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentRunLineStatus;
 use Modules\ERP\Casts\PaymentRunStatus;
+use Modules\ERP\Models\BankAccount;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\PaymentRunLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class SepaPain001Exporter
 {
     public function export(PaymentRun $payment_run): string
     {
-        return ConnectionScopedTransaction::run($payment_run, function () use ($payment_run): string {
+        return ConnectionScopedTransaction::run($payment_run, function (ConnectionScopedModels $models) use ($payment_run): string {
+            $models->model(BankAccount::class);
+            $models->model(Company::class);
+            $models->model(PaymentRunLine::class);
+
             /** @var PaymentRun $run */
-            $run = PaymentRun::query()
+            $run = $models->query(PaymentRun::class)
                 ->with(['bank_account.company', 'lines'])
                 ->whereKey($payment_run->id)
                 ->lockForUpdate()
@@ -45,7 +52,7 @@ final class SepaPain001Exporter
             $run->export_checksum = hash('sha256', $xml);
             $run->save();
 
-            PaymentRunLine::query()
+            $models->query(PaymentRunLine::class)
                 ->where('payment_run_id', $run->id)
                 ->where('status', PaymentRunLineStatus::Included)
                 ->update(['status' => PaymentRunLineStatus::Exported->value]);
@@ -107,7 +114,7 @@ final class SepaPain001Exporter
         $instructed_amount = $this->append($document, $amount, 'InstdAmt', $this->amount2((float) $line->amount_doc));
         $instructed_amount->setAttribute('Ccy', $line->currency_doc);
 
-        if ($line->beneficiary_bic !== null && trim($line->beneficiary_bic) !== '') {
+        if ($line->beneficiary_bic !== null && mb_trim($line->beneficiary_bic) !== '') {
             $creditor_agent = $this->append($document, $transaction, 'CdtrAgt');
             $creditor_financial_institution = $this->append($document, $creditor_agent, 'FinInstnId');
             $this->append($document, $creditor_financial_institution, 'BIC', $line->beneficiary_bic);
@@ -119,7 +126,7 @@ final class SepaPain001Exporter
         $creditor_account_id = $this->append($document, $creditor_account, 'Id');
         $this->append($document, $creditor_account_id, 'IBAN', $line->beneficiary_iban);
 
-        if ($line->remittance_information !== null && trim($line->remittance_information) !== '') {
+        if ($line->remittance_information !== null && mb_trim($line->remittance_information) !== '') {
             $remittance = $this->append($document, $transaction, 'RmtInf');
             $this->append($document, $remittance, 'Ustrd', $line->remittance_information);
         }

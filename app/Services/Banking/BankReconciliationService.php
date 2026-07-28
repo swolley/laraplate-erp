@@ -7,14 +7,14 @@ namespace Modules\ERP\Services\Banking;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Services\OutboxRecorder;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
 use Modules\ERP\Models\BankStatementLine;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Payment;
-use Modules\Core\Services\OutboxRecorder;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class BankReconciliationService
 {
@@ -136,17 +136,6 @@ final class BankReconciliationService
         }, $payment);
     }
 
-    private function recordPaymentMatched(BankStatementLine $line, Payment $payment): void
-    {
-        $this->outbox_recorder->record('erp.payment.matched', $line, [
-            'company_id' => (int) $line->company_id,
-            'payment_id' => $this->paymentId($payment),
-            'difference_journal_entry_id' => $line->difference_journal_entry_id === null
-                ? null
-                : (int) $line->difference_journal_entry_id,
-        ]);
-    }
-
     /**
      * @return Collection<int, Payment>
      */
@@ -190,6 +179,17 @@ final class BankReconciliationService
             ->get()
             ->sortByDesc(fn (Payment $payment): int => $this->suggestionScore($line, $payment))
             ->values();
+    }
+
+    private function recordPaymentMatched(BankStatementLine $line, Payment $payment): void
+    {
+        $this->outbox_recorder->record($line, 'erp.payment.matched', [
+            'company_id' => (int) $line->company_id,
+            'payment_id' => $this->paymentId($payment),
+            'difference_journal_entry_id' => $line->difference_journal_entry_id === null
+                ? null
+                : (int) $line->difference_journal_entry_id,
+        ]);
     }
 
     private function assertCanMatch(BankStatementLine $line, Payment $payment): void

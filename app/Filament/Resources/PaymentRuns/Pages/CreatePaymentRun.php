@@ -7,7 +7,9 @@ namespace Modules\ERP\Filament\Resources\PaymentRuns\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
+use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Services\Payments\PaymentRunBuilderService;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 
 final class CreatePaymentRun extends CreateRecord
@@ -26,6 +28,12 @@ final class CreatePaymentRun extends CreateRecord
             (int) $data['bank_account_id'],
             array_map('intval', $data['payment_schedule_line_ids'] ?? []),
             (string) $data['execution_date'],
+            $this->bankAccountSource(),
         );
+    }
+
+    private function bankAccountSource(): BankAccount
+    {
+        return app(ErpConnectionContext::class)->model(BankAccount::class);
     }
 }

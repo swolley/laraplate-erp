@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Providers;
 
 use Illuminate\Support\Facades\Gate;
+use Modules\Core\Overrides\ModuleServiceProvider;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
@@ -32,23 +33,23 @@ use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Services\Banking\BankReconciliationService;
 use Modules\ERP\Services\Banking\BankStatementCsvImporter;
 use Modules\ERP\Services\Banking\BankStatementImportService;
-use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Cash\CashBalanceService;
 use Modules\ERP\Services\Cash\MovementPostingService;
+use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Currency\DatabaseCurrencyConverter;
 use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\StubEInvoiceProvider;
-use Modules\ERP\Services\Payments\PaymentRequestService;
-use Modules\ERP\Services\Payments\StubPaymentRequestProvider;
 use Modules\ERP\Services\Inventory\DeliveryNoteCogsJournalService;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
 use Modules\ERP\Services\Inventory\StockMovementService;
+use Modules\ERP\Services\Payments\PaymentRequestService;
+use Modules\ERP\Services\Payments\StubPaymentRequestProvider;
 use Modules\ERP\Services\Pricing\PriceResolverService;
-use Modules\ERP\Services\Quotations\QuotationRevisionService;
 use Modules\ERP\Services\Purchasing\ThreeWayMatchService;
+use Modules\ERP\Services\Quotations\QuotationRevisionService;
 use Modules\ERP\Services\Returns\CustomerReturnReceiptService;
 use Modules\ERP\Services\Returns\ReturnOrderService;
 use Modules\ERP\Services\Returns\SupplierReturnService;
@@ -56,7 +57,7 @@ use Modules\ERP\Services\Returns\SupplierReturnShipmentService;
 use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 use Modules\ERP\Services\Taxation\TaxCodeSupersessionService;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
-use Modules\Core\Overrides\ModuleServiceProvider;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 
 class ERPServiceProvider extends ModuleServiceProvider
@@ -131,6 +132,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(CashBalanceService::class);
         $this->app->singleton(QuotationRevisionService::class);
         $this->app->singleton(PaymentRequestService::class);
+        $this->app->singleton(ErpConnectionContext::class);
     }
 
     /**

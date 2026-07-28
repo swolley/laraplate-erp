@@ -14,10 +14,13 @@ use Modules\ERP\Casts\PaymentRunLineStatus;
 use Modules\ERP\Casts\PaymentRunStatus;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\BankAccount;
+use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Models\PartyBankAccount;
 use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\PaymentRunLine;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class PaymentRunBuilderService
@@ -30,6 +33,7 @@ final class PaymentRunBuilderService
         int $bank_account_id,
         array $payment_schedule_line_ids,
         CarbonInterface|string $execution_date,
+        BankAccount $source,
     ): PaymentRun {
         if ($payment_schedule_line_ids === []) {
             throw ValidationException::withMessages([
@@ -37,25 +41,33 @@ final class PaymentRunBuilderService
             ]);
         }
 
-        $bank_account = BankAccount::query()
+        $source_models = ConnectionScopedModels::for($source);
+        $bank_account = $source_models->query(BankAccount::class)
             ->whereKey($bank_account_id)
             ->where('company_id', $company_id)
             ->firstOrFail();
 
-        return ConnectionScopedTransaction::run($bank_account, function () use ($company_id, $bank_account_id, $payment_schedule_line_ids, $execution_date): PaymentRun {
-            $bank_account = BankAccount::query()
+        return ConnectionScopedTransaction::run($bank_account, function (ConnectionScopedModels $models) use ($company_id, $bank_account_id, $payment_schedule_line_ids, $execution_date): PaymentRun {
+            $models->model(PaymentScheduleLine::class);
+            $models->model(Invoice::class);
+            $models->model(Party::class);
+            $models->model(PaymentRun::class);
+            $models->model(PaymentRunLine::class);
+            $models->model(PartyBankAccount::class);
+
+            $bank_account = $models->query(BankAccount::class)
                 ->whereKey($bank_account_id)
                 ->where('company_id', $company_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($bank_account->iban === null || trim((string) $bank_account->iban) === '') {
+            if ($bank_account->iban === null || mb_trim((string) $bank_account->iban) === '') {
                 throw ValidationException::withMessages([
                     'bank_account_id' => ['The company bank account must have an IBAN before SEPA export.'],
                 ]);
             }
 
-            $schedule_lines = PaymentScheduleLine::query()
+            $schedule_lines = $models->query(PaymentScheduleLine::class)
                 ->with(['invoice.party'])
                 ->whereIn('id', $payment_schedule_line_ids)
                 ->where('company_id', $company_id)
@@ -72,11 +84,11 @@ final class PaymentRunBuilderService
                 ? CarbonImmutable::instance($execution_date)
                 : CarbonImmutable::parse($execution_date);
 
-            $run = PaymentRun::query()->create([
+            $run = $models->query(PaymentRun::class)->create([
                 'company_id' => $company_id,
                 'bank_account_id' => $bank_account_id,
                 'execution_date' => $execution->toDateString(),
-                'currency' => strtoupper((string) $bank_account->currency),
+                'currency' => mb_strtoupper((string) $bank_account->currency),
                 'total_amount_doc' => '0.0000',
                 'total_amount_local' => '0.0000',
                 'status' => PaymentRunStatus::Draft,
@@ -103,6 +115,7 @@ final class PaymentRunBuilderService
                 }
 
                 $invoice = $schedule_line->invoice;
+
                 if ($invoice === null
                     || $invoice->direction !== InvoiceDirection::Purchase
                     || $invoice->invoice_type !== InvoiceType::Invoice) {
@@ -112,15 +125,16 @@ final class PaymentRunBuilderService
                 }
 
                 $party = $invoice->party;
+
                 if ($party === null || ! $party->is_supplier) {
                     throw ValidationException::withMessages([
                         'party_id' => ['The schedule line must belong to a supplier.'],
                     ]);
                 }
 
-                $party_bank_account = $this->defaultPartyBankAccount((int) $company_id, (int) $party->id);
+                $party_bank_account = $this->defaultPartyBankAccount($models, (int) $company_id, (int) $party->id);
 
-                PaymentRunLine::query()->create([
+                $models->query(PaymentRunLine::class)->create([
                     'company_id' => $company_id,
                     'payment_run_id' => $run->id,
                     'payment_schedule_line_id' => $schedule_line->id,
@@ -150,9 +164,12 @@ final class PaymentRunBuilderService
         });
     }
 
-    private function defaultPartyBankAccount(int $company_id, int $party_id): PartyBankAccount
-    {
-        $accounts = PartyBankAccount::query()
+    private function defaultPartyBankAccount(
+        ConnectionScopedModels $models,
+        int $company_id,
+        int $party_id,
+    ): PartyBankAccount {
+        $accounts = $models->query(PartyBankAccount::class)
             ->where('company_id', $company_id)
             ->where('party_id', $party_id)
             ->where('is_active', true)

@@ -104,6 +104,7 @@ it('creates a draft supplier payment run from open purchase schedule lines', fun
         (int) $bank_account->id,
         [(int) $schedule_line->id],
         '2026-08-01',
+        $bank_account,
     );
 
     expect($run->status)->toBe(PaymentRunStatus::Draft)
@@ -131,6 +132,7 @@ it('rejects receivable schedule lines for supplier payment runs', function (): v
         (int) $bank_account->id,
         [(int) $schedule_line->id],
         '2026-08-01',
+        $bank_account,
     ))->toThrow(ValidationException::class);
 });
 
@@ -145,6 +147,7 @@ it('rejects suppliers without an active default bank account', function (): void
         (int) $bank_account->id,
         [(int) $schedule_line->id],
         '2026-08-01',
+        $bank_account,
     ))->toThrow(ValidationException::class);
 });
 
@@ -173,5 +176,6 @@ it('does not include fully paid schedule lines', function (): void {
         (int) $bank_account->id,
         [(int) $schedule_line->id],
         '2026-08-01',
+        $bank_account,
     ))->toThrow(ValidationException::class);
 });

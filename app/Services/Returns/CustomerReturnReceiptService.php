@@ -11,9 +11,10 @@ use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\ReturnOrder;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrderLine;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class CustomerReturnReceiptService
 {
@@ -25,8 +26,14 @@ final readonly class CustomerReturnReceiptService
             ]);
         }
 
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
-            $return_order = ReturnOrder::query()->with('lines')->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): ReturnOrder {
+            $models->model(DeliveryNote::class);
+            $models->model(DeliveryNoteLine::class);
+            $models->model(InvoiceLine::class);
+            $models->model(ReturnOrderLine::class);
+            $models->model(SalesOrderLine::class);
+
+            $return_order = $models->query(ReturnOrder::class)->with('lines')->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if ($return_order->status !== ReturnStatus::Approved) {
                 throw ValidationException::withMessages([
@@ -40,14 +47,14 @@ final readonly class CustomerReturnReceiptService
                 ]);
             }
 
-            $delivery_note = $this->deliveryNoteFor($return_order);
+            $delivery_note = $this->deliveryNoteFor($models, $return_order);
 
             if ($delivery_note->posted_at === null) {
                 $delivery_note->posted_at = now();
                 $delivery_note->save();
             }
 
-            $this->registerSourceReturnedQuantities($return_order);
+            $this->registerSourceReturnedQuantities($models, $return_order);
 
             $return_order->status = ReturnStatus::Processed;
             $return_order->processed_at = now();
@@ -58,16 +65,16 @@ final readonly class CustomerReturnReceiptService
         });
     }
 
-    private function deliveryNoteFor(ReturnOrder $return_order): DeliveryNote
+    private function deliveryNoteFor(ConnectionScopedModels $models, ReturnOrder $return_order): DeliveryNote
     {
         if ($return_order->delivery_note_id !== null) {
-            return DeliveryNote::query()
+            return $models->query(DeliveryNote::class)
                 ->whereKey($return_order->delivery_note_id)
                 ->lockForUpdate()
                 ->firstOrFail();
         }
 
-        $delivery_note = DeliveryNote::query()->create([
+        $delivery_note = $models->query(DeliveryNote::class)->create([
             'company_id' => $return_order->company_id,
             'direction' => DeliveryNoteDirection::Inbound,
             'reference' => $this->deliveryNoteReference($return_order),
@@ -81,7 +88,7 @@ final readonly class CustomerReturnReceiptService
                 'item_id' => $line->item_id,
                 'warehouse_id' => $line->warehouse_id,
                 'quantity' => $line->quantity,
-                'sales_order_line_id' => $this->sourceSalesOrderLineId($line),
+                'sales_order_line_id' => $this->sourceSalesOrderLineId($models, $line),
             ]);
 
             $line->delivery_note_line_id = $this->modelId($delivery_note_line);
@@ -100,13 +107,13 @@ final readonly class CustomerReturnReceiptService
         return 'RET-' . (string) $return_order->id;
     }
 
-    private function sourceSalesOrderLineId(ReturnOrderLine $line): ?int
+    private function sourceSalesOrderLineId(ConnectionScopedModels $models, ReturnOrderLine $line): ?int
     {
         if ($line->invoice_line_id === null) {
             return null;
         }
 
-        $sales_order_line_id = InvoiceLine::query()
+        $sales_order_line_id = $models->query(InvoiceLine::class)
             ->whereKey($line->invoice_line_id)
             ->value('sales_order_line_id');
 
@@ -117,14 +124,14 @@ final readonly class CustomerReturnReceiptService
         return (int) $sales_order_line_id;
     }
 
-    private function registerSourceReturnedQuantities(ReturnOrder $return_order): void
+    private function registerSourceReturnedQuantities(ConnectionScopedModels $models, ReturnOrder $return_order): void
     {
         foreach ($return_order->lines as $line) {
             if ($line->invoice_line_id === null) {
                 continue;
             }
 
-            $invoice_line = InvoiceLine::query()
+            $invoice_line = $models->query(InvoiceLine::class)
                 ->whereKey($line->invoice_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -145,7 +152,7 @@ final readonly class CustomerReturnReceiptService
                 continue;
             }
 
-            $sales_order_line = SalesOrderLine::query()
+            $sales_order_line = $models->query(SalesOrderLine::class)
                 ->whereKey($invoice_line->sales_order_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();

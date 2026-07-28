@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Returns;
 
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Services\OutboxRecorder;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Data\Returns\ReturnLineCreditOverride;
 use Modules\ERP\Models\DeliveryNote;
@@ -12,13 +13,13 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Models\ReturnOrder;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\CreditNoteService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
-use Modules\Core\Services\OutboxRecorder;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class ReturnOrderService
 {
@@ -32,8 +33,10 @@ final readonly class ReturnOrderService
 
     public function approve(ReturnOrder $return_order): ReturnOrder
     {
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
-            $locked = ReturnOrder::query()->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): ReturnOrder {
+            $models->model(Party::class);
+
+            $locked = $models->query(ReturnOrder::class)->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if ($locked->status !== ReturnStatus::Draft) {
                 throw ValidationException::withMessages([
@@ -41,7 +44,7 @@ final readonly class ReturnOrderService
                 ]);
             }
 
-            $this->assertCustomerParty($locked);
+            $this->assertCustomerParty($models, $locked);
 
             $locked->status = ReturnStatus::Approved;
             $locked->save();
@@ -52,7 +55,7 @@ final readonly class ReturnOrderService
 
     public function complete(ReturnOrder $return_order): ReturnOrder
     {
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): ReturnOrder {
             $processed = $this->receipt_service->receive($return_order);
 
             if ($this->shouldAutoCreateCreditNote($processed)) {
@@ -60,7 +63,7 @@ final readonly class ReturnOrderService
                 $processed = $processed->fresh() ?? $processed;
             }
 
-            $this->outbox_recorder->record('erp.customer-return.completed', $processed, [
+            $this->outbox_recorder->record($processed, 'erp.customer-return.completed', [
                 'company_id' => (int) $processed->company_id,
                 'delivery_note_id' => (int) $processed->delivery_note_id,
                 'credit_note_invoice_id' => $processed->credit_note_invoice_id === null
@@ -74,9 +77,14 @@ final readonly class ReturnOrderService
 
     public function reverseProcessed(ReturnOrder $return_order): ReturnOrder
     {
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): ReturnOrder {
+            $models->model(DeliveryNote::class);
+            $models->model(InvoiceLine::class);
+            $models->model(ReturnOrderLine::class);
+            $models->model(SalesOrderLine::class);
+
             /** @var ReturnOrder $locked */
-            $locked = ReturnOrder::query()
+            $locked = $models->query(ReturnOrder::class)
                 ->with('lines')
                 ->lockForUpdate()
                 ->whereKey($return_order->id)
@@ -101,7 +109,7 @@ final readonly class ReturnOrderService
             }
 
             /** @var DeliveryNote $delivery_note */
-            $delivery_note = DeliveryNote::query()
+            $delivery_note = $models->query(DeliveryNote::class)
                 ->whereKey($locked->delivery_note_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -120,7 +128,7 @@ final readonly class ReturnOrderService
                 $delivery_note->save();
             }
 
-            $this->unregisterSourceReturnedQuantities($locked);
+            $this->unregisterSourceReturnedQuantities($models, $locked);
 
             $locked->status = ReturnStatus::Approved;
             $locked->processed_at = null;
@@ -132,8 +140,12 @@ final readonly class ReturnOrderService
 
     public function createCreditNote(ReturnOrder $return_order): Invoice
     {
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): Invoice {
-            $locked = ReturnOrder::query()
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): Invoice {
+            $models->model(Invoice::class);
+            $models->model(InvoiceLine::class);
+            $models->model(ReturnOrderLine::class);
+
+            $locked = $models->query(ReturnOrder::class)
                 ->with('lines')
                 ->lockForUpdate()
                 ->whereKey($return_order->id)
@@ -157,7 +169,7 @@ final readonly class ReturnOrderService
                 ]);
             }
 
-            $invoice = Invoice::query()
+            $invoice = $models->query(Invoice::class)
                 ->whereKey($locked->invoice_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -169,7 +181,7 @@ final readonly class ReturnOrderService
             }
 
             $line_overrides = $this->creditNoteLineOverridePayload(
-                $this->buildCreditOverrides($locked),
+                $this->buildCreditOverridesOn($models, $locked),
             );
             $credit_note = $this->credit_note_service->createFromInvoice($invoice, $line_overrides);
 
@@ -182,8 +194,8 @@ final readonly class ReturnOrderService
 
     public function cancel(ReturnOrder $return_order): ReturnOrder
     {
-        return ConnectionScopedTransaction::run($return_order, function () use ($return_order): ReturnOrder {
-            $locked = ReturnOrder::query()->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($return_order, function (ConnectionScopedModels $models) use ($return_order): ReturnOrder {
+            $locked = $models->query(ReturnOrder::class)->lockForUpdate()->whereKey($return_order->id)->firstOrFail();
 
             if (! in_array($locked->status, [ReturnStatus::Draft, ReturnStatus::Approved], true)) {
                 throw ValidationException::withMessages([
@@ -198,15 +210,25 @@ final readonly class ReturnOrderService
         });
     }
 
-    private function unregisterSourceReturnedQuantities(ReturnOrder $return_order): void
+    /**
+     * @return array<int, ReturnLineCreditOverride>
+     */
+    public function buildCreditOverrides(ReturnOrder $return_order): array
     {
+        return $this->buildCreditOverridesOn(ConnectionScopedModels::for($return_order), $return_order);
+    }
+
+    private function unregisterSourceReturnedQuantities(
+        ConnectionScopedModels $models,
+        ReturnOrder $return_order,
+    ): void {
         foreach ($return_order->lines as $line) {
             if ($line->invoice_line_id === null) {
                 continue;
             }
 
             /** @var InvoiceLine $invoice_line */
-            $invoice_line = InvoiceLine::query()
+            $invoice_line = $models->query(InvoiceLine::class)
                 ->whereKey($line->invoice_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -228,7 +250,7 @@ final readonly class ReturnOrderService
             }
 
             /** @var SalesOrderLine $sales_order_line */
-            $sales_order_line = SalesOrderLine::query()
+            $sales_order_line = $models->query(SalesOrderLine::class)
                 ->whereKey($invoice_line->sales_order_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -246,9 +268,9 @@ final readonly class ReturnOrderService
         }
     }
 
-    private function assertCustomerParty(ReturnOrder $return_order): void
+    private function assertCustomerParty(ConnectionScopedModels $models, ReturnOrder $return_order): void
     {
-        $is_customer = Party::query()
+        $is_customer = $models->query(Party::class)
             ->whereKey($return_order->party_id)
             ->where('company_id', $return_order->company_id)
             ->where('is_customer', true)
@@ -275,8 +297,10 @@ final readonly class ReturnOrderService
     /**
      * @return array<int, ReturnLineCreditOverride>
      */
-    public function buildCreditOverrides(ReturnOrder $return_order): array
-    {
+    private function buildCreditOverridesOn(
+        ConnectionScopedModels $models,
+        ReturnOrder $return_order,
+    ): array {
         if ($return_order->invoice_id === null) {
             throw ValidationException::withMessages([
                 'invoice_id' => ['Customer return requires a source invoice before creating credit overrides.'],
@@ -286,7 +310,7 @@ final readonly class ReturnOrderService
         $return_order->loadMissing('lines');
 
         /** @var Invoice $invoice */
-        $invoice = Invoice::query()->whereKey($return_order->invoice_id)->firstOrFail();
+        $invoice = $models->query(Invoice::class)->whereKey($return_order->invoice_id)->firstOrFail();
 
         if ((int) $invoice->company_id !== (int) $return_order->company_id) {
             throw ValidationException::withMessages([
@@ -294,7 +318,7 @@ final readonly class ReturnOrderService
             ]);
         }
 
-        $invoice_lines = InvoiceLine::query()
+        $invoice_lines = $models->query(InvoiceLine::class)
             ->where('invoice_id', $invoice->id)
             ->orderBy('line_no')
             ->get()

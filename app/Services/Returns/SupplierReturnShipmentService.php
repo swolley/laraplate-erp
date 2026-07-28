@@ -12,8 +12,9 @@ use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\SupplierReturn;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\SupplierReturnLine;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class SupplierReturnShipmentService
 {
@@ -25,8 +26,14 @@ final readonly class SupplierReturnShipmentService
             ]);
         }
 
-        return ConnectionScopedTransaction::run($supplier_return, function () use ($supplier_return): SupplierReturn {
-            $supplier_return = SupplierReturn::query()->with('lines')->lockForUpdate()->whereKey($supplier_return->id)->firstOrFail();
+        return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
+            $models->model(DeliveryNote::class);
+            $models->model(DeliveryNoteLine::class);
+            $models->model(GoodsReceiptLine::class);
+            $models->model(PurchaseOrderLine::class);
+            $models->model(SupplierReturnLine::class);
+
+            $supplier_return = $models->query(SupplierReturn::class)->with('lines')->lockForUpdate()->whereKey($supplier_return->id)->firstOrFail();
 
             if ($supplier_return->status !== ReturnStatus::Approved) {
                 throw ValidationException::withMessages([
@@ -40,14 +47,14 @@ final readonly class SupplierReturnShipmentService
                 ]);
             }
 
-            $delivery_note = $this->deliveryNoteFor($supplier_return);
+            $delivery_note = $this->deliveryNoteFor($models, $supplier_return);
 
             if ($delivery_note->posted_at === null) {
                 $delivery_note->posted_at = now();
                 $delivery_note->save();
             }
 
-            $this->registerSourceReturnedQuantities($supplier_return);
+            $this->registerSourceReturnedQuantities($models, $supplier_return);
 
             $supplier_return->status = ReturnStatus::Processed;
             $supplier_return->processed_at = now();
@@ -58,16 +65,16 @@ final readonly class SupplierReturnShipmentService
         });
     }
 
-    private function deliveryNoteFor(SupplierReturn $supplier_return): DeliveryNote
+    private function deliveryNoteFor(ConnectionScopedModels $models, SupplierReturn $supplier_return): DeliveryNote
     {
         if ($supplier_return->delivery_note_id !== null) {
-            return DeliveryNote::query()
+            return $models->query(DeliveryNote::class)
                 ->whereKey($supplier_return->delivery_note_id)
                 ->lockForUpdate()
                 ->firstOrFail();
         }
 
-        $delivery_note = DeliveryNote::query()->create([
+        $delivery_note = $models->query(DeliveryNote::class)->create([
             'company_id' => $supplier_return->company_id,
             'direction' => DeliveryNoteDirection::Outbound,
             'reference' => $this->deliveryNoteReference($supplier_return),
@@ -99,14 +106,14 @@ final readonly class SupplierReturnShipmentService
         return 'SRET-' . (string) $supplier_return->id;
     }
 
-    private function registerSourceReturnedQuantities(SupplierReturn $supplier_return): void
+    private function registerSourceReturnedQuantities(ConnectionScopedModels $models, SupplierReturn $supplier_return): void
     {
         foreach ($supplier_return->lines as $line) {
             $quantity = (float) $line->quantity;
             $purchase_order_line_id = $line->purchase_order_line_id;
 
             if ($line->goods_receipt_line_id !== null) {
-                $goods_receipt_line = GoodsReceiptLine::query()
+                $goods_receipt_line = $models->query(GoodsReceiptLine::class)
                     ->whereKey($line->goods_receipt_line_id)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -131,7 +138,7 @@ final readonly class SupplierReturnShipmentService
                 continue;
             }
 
-            $purchase_order_line = PurchaseOrderLine::query()
+            $purchase_order_line = $models->query(PurchaseOrderLine::class)
                 ->whereKey($purchase_order_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();

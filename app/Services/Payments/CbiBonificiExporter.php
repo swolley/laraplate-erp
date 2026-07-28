@@ -7,17 +7,24 @@ namespace Modules\ERP\Services\Payments;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentRunLineStatus;
 use Modules\ERP\Casts\PaymentRunStatus;
+use Modules\ERP\Models\BankAccount;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\PaymentRunLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class CbiBonificiExporter
 {
     public function export(PaymentRun $payment_run): string
     {
-        return ConnectionScopedTransaction::run($payment_run, function () use ($payment_run): string {
+        return ConnectionScopedTransaction::run($payment_run, function (ConnectionScopedModels $models) use ($payment_run): string {
+            $models->model(BankAccount::class);
+            $models->model(Company::class);
+            $models->model(PaymentRunLine::class);
+
             /** @var PaymentRun $run */
-            $run = PaymentRun::query()
+            $run = $models->query(PaymentRun::class)
                 ->with(['bank_account.company', 'lines'])
                 ->whereKey($payment_run->id)
                 ->lockForUpdate()
@@ -43,7 +50,7 @@ final class CbiBonificiExporter
             $run->export_checksum = hash('sha256', $content);
             $run->save();
 
-            PaymentRunLine::query()
+            $models->query(PaymentRunLine::class)
                 ->where('payment_run_id', $run->id)
                 ->where('status', PaymentRunLineStatus::Included)
                 ->update(['status' => PaymentRunLineStatus::Exported->value]);
@@ -97,18 +104,18 @@ final class CbiBonificiExporter
     {
         $clean = preg_replace('/[^A-Za-z0-9 .,_\/-]/', '', $value) ?? '';
 
-        return substr(str_pad(strtoupper($clean), $length, $pad, $direction), 0, $length);
+        return mb_substr(mb_str_pad(mb_strtoupper($clean), $length, $pad, $direction), 0, $length);
     }
 
     private function amountCents(string $amount, int $length): string
     {
         $cents = (int) round(((float) $amount) * 100);
 
-        return str_pad((string) $cents, $length, '0', STR_PAD_LEFT);
+        return mb_str_pad((string) $cents, $length, '0', STR_PAD_LEFT);
     }
 
     private function cleanIban(string $iban): string
     {
-        return strtoupper(str_replace(' ', '', $iban));
+        return mb_strtoupper(str_replace(' ', '', $iban));
     }
 }

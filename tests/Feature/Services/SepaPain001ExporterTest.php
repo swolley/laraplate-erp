@@ -100,6 +100,7 @@ function createSepaExporterRun(PaymentRunStatus $status = PaymentRunStatus::Appr
         (int) $bank_account->id,
         [(int) $schedule_line->id],
         '2026-08-01',
+        $bank_account,
     );
     $run->status = $status;
     $run->approved_at = $status === PaymentRunStatus::Approved ? now() : null;
@@ -142,7 +143,6 @@ it('marks the payment run exported with checksum metadata', function (): void {
         ->and($fresh->export_checksum)->not->toBeNull()
         ->and($fresh->lines->pluck('status')->unique()->first())->toBe(Modules\ERP\Casts\PaymentRunLineStatus::Exported);
 });
-
 
 it('exports a payment run as CBI bonifici text', function (): void {
     $run = createSepaExporterRun();

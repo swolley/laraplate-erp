@@ -9,8 +9,9 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Models\PaymentAllocation;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class PaymentAllocationService
 {
@@ -19,7 +20,10 @@ final class PaymentAllocationService
      */
     public function allocate(Payment $payment, array $allocations): void
     {
-        ConnectionScopedTransaction::run($payment, function () use ($payment, $allocations): void {
+        ConnectionScopedTransaction::run($payment, function (ConnectionScopedModels $models) use ($payment, $allocations): void {
+            $models->model(PaymentScheduleLine::class);
+            $models->model(PaymentAllocation::class);
+
             foreach ($allocations as $schedule_line_id => $amount_doc) {
                 $amount_doc_float = (float) $amount_doc;
 
@@ -29,7 +33,7 @@ final class PaymentAllocationService
                     ]);
                 }
 
-                $schedule_line = PaymentScheduleLine::query()
+                $schedule_line = $models->query(PaymentScheduleLine::class)
                     ->whereKey($schedule_line_id)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -44,7 +48,7 @@ final class PaymentAllocationService
 
                 $amount_local = $this->round4($amount_doc_float * (float) $schedule_line->fx_rate);
 
-                PaymentAllocation::query()->create([
+                $models->query(PaymentAllocation::class)->create([
                     'payment_id' => $this->paymentId($payment),
                     'payment_schedule_line_id' => $schedule_line_id,
                     'allocated_amount_doc' => $this->round4($amount_doc_float),
@@ -69,8 +73,10 @@ final class PaymentAllocationService
 
     public function deallocate(PaymentAllocation $allocation): void
     {
-        ConnectionScopedTransaction::run($allocation, function () use ($allocation): void {
-            $schedule_line = PaymentScheduleLine::query()
+        ConnectionScopedTransaction::run($allocation, function (ConnectionScopedModels $models) use ($allocation): void {
+            $models->model(PaymentScheduleLine::class);
+
+            $schedule_line = $models->query(PaymentScheduleLine::class)
                 ->whereKey($allocation->payment_schedule_line_id)
                 ->lockForUpdate()
                 ->firstOrFail();

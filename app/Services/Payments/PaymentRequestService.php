@@ -8,6 +8,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PaymentRequestStatus;
 use Modules\ERP\Contracts\PaymentRequestProvider;
 use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class PaymentRequestService
@@ -16,11 +17,13 @@ final readonly class PaymentRequestService
 
     public function send(PaymentRequest $request): PaymentRequest
     {
-        return ConnectionScopedTransaction::run($request, function () use ($request): PaymentRequest {
-            $request = PaymentRequest::query()->lockForUpdate()->findOrFail($request->getKey());
+        return ConnectionScopedTransaction::run($request, function (ConnectionScopedModels $models) use ($request): PaymentRequest {
+            $request = $models->query(PaymentRequest::class)->lockForUpdate()->findOrFail($request->getKey());
+
             if ($request->status !== PaymentRequestStatus::Draft) {
                 throw ValidationException::withMessages(['status' => ['Only draft payment requests can be sent.']]);
             }
+
             if ($request->provider_code !== $this->provider->code()) {
                 throw ValidationException::withMessages(['provider_code' => ['The configured provider does not match this request.']]);
             }
@@ -37,18 +40,21 @@ final readonly class PaymentRequestService
         });
     }
 
-    public function applyCallback(string $provider, array $payload): PaymentRequest
+    public function applyCallback(string $provider, array $payload, PaymentRequest $source): PaymentRequest
     {
         $external_id = $payload['external_id'] ?? null;
+
         if (! is_string($external_id) || $external_id === '') {
             throw ValidationException::withMessages(['external_id' => ['A provider external ID is required.']]);
         }
 
-        $request = PaymentRequest::query()->where('provider_code', $provider)
+        $models = ConnectionScopedModels::for($source);
+        $request = $models->query(PaymentRequest::class)->where('provider_code', $provider)
             ->where('external_id', $external_id)->firstOrFail();
 
-        return ConnectionScopedTransaction::run($request, function () use ($request, $payload): PaymentRequest {
-            $request = $request->newQuery()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
+        return ConnectionScopedTransaction::run($request, function (ConnectionScopedModels $models) use ($request, $payload): PaymentRequest {
+            $request = $models->query(PaymentRequest::class)->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
+
             if (in_array($request->status, [PaymentRequestStatus::Paid, PaymentRequestStatus::Cancelled], true)) {
                 return $request;
             }

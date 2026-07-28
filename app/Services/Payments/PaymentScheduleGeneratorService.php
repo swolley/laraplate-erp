@@ -10,6 +10,7 @@ use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\PaymentScheduleLine;
 use Modules\ERP\Models\PaymentTerm;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final class PaymentScheduleGeneratorService
@@ -22,7 +23,10 @@ final class PaymentScheduleGeneratorService
             $gross_total = $this->round4(abs($gross_total_float));
         }
 
-        ConnectionScopedTransaction::run($invoice, function () use ($invoice, $gross_total): void {
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice, $gross_total): void {
+            $models->model(PaymentScheduleLine::class);
+            $models->model(PaymentTerm::class);
+
             $posted_at = $invoice->posted_at instanceof CarbonImmutable
                 ? $invoice->posted_at
                 : CarbonImmutable::parse($invoice->posted_at);
@@ -31,7 +35,7 @@ final class PaymentScheduleGeneratorService
             $fx_rate = '1.0000';
 
             if ($invoice->payment_term_id === null) {
-                PaymentScheduleLine::query()->create([
+                $models->query(PaymentScheduleLine::class)->create([
                     'company_id' => $invoice->company_id,
                     'invoice_id' => $this->invoiceId($invoice),
                     'due_date' => $posted_at->toDateString(),
@@ -48,7 +52,7 @@ final class PaymentScheduleGeneratorService
                 return;
             }
 
-            $payment_term = PaymentTerm::query()
+            $payment_term = $models->query(PaymentTerm::class)
                 ->withoutGlobalScopes()
                 ->findOrFail($invoice->payment_term_id);
 
@@ -59,7 +63,7 @@ final class PaymentScheduleGeneratorService
                 $amount_doc = $this->round4((float) $gross_total * $percent / 100);
                 $due_date = $posted_at->addDays($days)->toDateString();
 
-                PaymentScheduleLine::query()->create([
+                $models->query(PaymentScheduleLine::class)->create([
                     'company_id' => $invoice->company_id,
                     'invoice_id' => $this->invoiceId($invoice),
                     'due_date' => $due_date,
@@ -78,8 +82,10 @@ final class PaymentScheduleGeneratorService
 
     public function removeAll(Invoice $invoice): void
     {
-        ConnectionScopedTransaction::run($invoice, function () use ($invoice): void {
-            $has_allocations = PaymentScheduleLine::query()
+        ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): void {
+            $models->model(PaymentScheduleLine::class);
+
+            $has_allocations = $models->query(PaymentScheduleLine::class)
                 ->where('invoice_id', $this->invoiceId($invoice))
                 ->where('paid_amount_doc', '>', 0)
                 ->exists();
@@ -90,7 +96,7 @@ final class PaymentScheduleGeneratorService
                 ]);
             }
 
-            PaymentScheduleLine::query()
+            $models->query(PaymentScheduleLine::class)
                 ->where('invoice_id', $this->invoiceId($invoice))
                 ->delete();
         });
