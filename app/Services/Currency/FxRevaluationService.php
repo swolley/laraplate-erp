@@ -54,7 +54,7 @@ final readonly class FxRevaluationService
             foreach ($lines as $line) {
                 $open_doc = max(0.0, (float) $line->amount_doc - (float) $line->paid_amount_doc);
                 $open_local = max(0.0, (float) $line->amount_local - (float) $line->paid_amount_local);
-                $converted = $this->converter->convert($line->currency_doc, $local_currency, $open_doc, $as_of);
+                $converted = $this->converter->convert($company, $line->currency_doc, $local_currency, $open_doc, $as_of);
                 $line_delta = round($converted['amount'] - $open_local, 4);
 
                 if ($line->invoice?->direction === InvoiceDirection::Purchase) {

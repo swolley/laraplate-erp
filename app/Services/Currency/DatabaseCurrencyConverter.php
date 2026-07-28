@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Currency;
 
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Exceptions\UnsupportedCurrencyConversionException;
 use Modules\ERP\Models\ExchangeRate;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 final class DatabaseCurrencyConverter implements CurrencyConverter
 {
     #[Override]
-    public function convert(string $fromCurrency, string $toCurrency, float|string|int $amount, ?DateTimeInterface $at = null): array
+    public function convert(Model $owner, string $fromCurrency, string $toCurrency, float|string|int $amount, ?DateTimeInterface $at = null): array
     {
-        $rate = $this->getRate($fromCurrency, $toCurrency, $at);
+        $rate = $this->getRate($owner, $fromCurrency, $toCurrency, $at);
 
         return [
             'rate' => $rate,
@@ -24,23 +26,24 @@ final class DatabaseCurrencyConverter implements CurrencyConverter
     }
 
     #[Override]
-    public function getRate(string $fromCurrency, string $toCurrency, ?DateTimeInterface $at = null): float
+    public function getRate(Model $owner, string $fromCurrency, string $toCurrency, ?DateTimeInterface $at = null): float
     {
-        $from = strtoupper(trim($fromCurrency));
-        $to = strtoupper(trim($toCurrency));
+        $from = mb_strtoupper(mb_trim($fromCurrency));
+        $to = mb_strtoupper(mb_trim($toCurrency));
 
         if ($from === $to) {
             return 1.0;
         }
 
         $date = $at?->format('Y-m-d') ?? now()->toDateString();
-        $direct = $this->latestRate($from, $to, $date);
+        $models = ConnectionScopedModels::for($owner);
+        $direct = $this->latestRate($models, $from, $to, $date);
 
         if ($direct !== null) {
             return $direct;
         }
 
-        $inverse = $this->latestRate($to, $from, $date);
+        $inverse = $this->latestRate($models, $to, $from, $date);
 
         if ($inverse !== null && $inverse > 0.0) {
             return round(1 / $inverse, 8);
@@ -49,9 +52,9 @@ final class DatabaseCurrencyConverter implements CurrencyConverter
         throw UnsupportedCurrencyConversionException::between($from, $to);
     }
 
-    private function latestRate(string $from, string $to, string $date): ?float
+    private function latestRate(ConnectionScopedModels $models, string $from, string $to, string $date): ?float
     {
-        $rate = ExchangeRate::query()
+        $rate = $models->query(ExchangeRate::class)
             ->where('from_currency', $from)
             ->where('to_currency', $to)
             ->whereDate('rate_date', '<=', $date)

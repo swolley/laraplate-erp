@@ -47,6 +47,7 @@ final readonly class MovementPostingService
             $bank_cash = $this->bankCashAccount($models, $company);
             $occurred_on = CarbonImmutable::parse($locked->occurred_on);
             $conversion = $this->currency_converter->convert(
+                $locked,
                 mb_strtoupper((string) $locked->currency_doc),
                 mb_strtoupper((string) $company->default_currency),
                 (string) $locked->amount_doc,

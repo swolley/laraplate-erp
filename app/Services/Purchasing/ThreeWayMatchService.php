@@ -9,6 +9,7 @@ use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Models\GoodsReceiptLine;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\PurchaseOrderLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 /**
  * Validates purchase invoice lines against PO and GR lines using configurable tolerances.
@@ -30,13 +31,14 @@ final class ThreeWayMatchService
     ): array {
         $discrepancies = [];
         $has_breach = false;
+        $models = ConnectionScopedModels::for($invoice_line);
 
         $po_line = $invoice_line->purchase_order_line_id !== null
-            ? PurchaseOrderLine::query()->find($invoice_line->purchase_order_line_id)
+            ? $models->query(PurchaseOrderLine::class)->find($invoice_line->purchase_order_line_id)
             : null;
 
         $gr_line = $invoice_line->goods_receipt_line_id !== null
-            ? GoodsReceiptLine::query()->find($invoice_line->goods_receipt_line_id)
+            ? $models->query(GoodsReceiptLine::class)->find($invoice_line->goods_receipt_line_id)
             : null;
 
         if ($po_line === null && $gr_line === null) {

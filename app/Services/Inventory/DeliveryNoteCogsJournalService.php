@@ -16,6 +16,8 @@ use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\JournalPostingService;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Posts a balanced COGS / inventory relief journal when a {@see DeliveryNote}
@@ -40,6 +42,10 @@ final readonly class DeliveryNoteCogsJournalService
      */
     public function postForDeliveryNoteIfNeeded(DeliveryNote $delivery_note, Collection $delivery_note_lines): void
     {
+        ConnectionScopedTransaction::connection($delivery_note, ...$delivery_note_lines->all());
+        $models = ConnectionScopedModels::for($delivery_note, ...$delivery_note_lines->all());
+        $models->model(DeliveryNoteLine::class);
+
         if ($delivery_note->cogs_journal_entry_id !== null) {
             return;
         }
@@ -48,16 +54,16 @@ final readonly class DeliveryNoteCogsJournalService
             return;
         }
 
-        $company = Company::query()->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
+        $company = $models->query(Company::class)->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
 
         $this->chart_of_accounts_installer->installWhenEmpty($company);
 
-        $cogs_account = $this->findAccountByMetaRole($company, self::META_ROLE_COST_OF_GOODS_SOLD);
-        $inventory_account = $this->findAccountByMetaRole($company, self::META_ROLE_INVENTORY_MERCHANDISE);
+        $cogs_account = $this->findAccountByMetaRole($models, $company, self::META_ROLE_COST_OF_GOODS_SOLD);
+        $inventory_account = $this->findAccountByMetaRole($models, $company, self::META_ROLE_INVENTORY_MERCHANDISE);
 
         $line_ids = $delivery_note_lines->pluck('id')->all();
 
-        $movements = StockMovement::query()
+        $movements = $models->query(StockMovement::class)
             ->where('company_id', $company->id)
             ->where('source_type', (new DeliveryNoteLine)->getMorphClass())
             ->whereIn('source_id', $line_ids)
@@ -131,12 +137,14 @@ final readonly class DeliveryNoteCogsJournalService
 
     public function reverseForDeliveryNoteIfNeeded(DeliveryNote $delivery_note): void
     {
+        $models = ConnectionScopedModels::for($delivery_note);
+
         if ($delivery_note->cogs_journal_entry_id === null) {
             return;
         }
 
-        $company = Company::query()->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
-        $entry = JournalEntry::query()
+        $company = $models->query(Company::class)->withoutGlobalScopes()->whereKey($delivery_note->company_id)->firstOrFail();
+        $entry = $models->query(JournalEntry::class)
             ->withoutGlobalScopes()
             ->whereKey($delivery_note->cogs_journal_entry_id)
             ->first();
@@ -156,10 +164,10 @@ final readonly class DeliveryNoteCogsJournalService
         $delivery_note->cogs_journal_entry_id = null;
     }
 
-    private function findAccountByMetaRole(Company $company, string $role): Account
+    private function findAccountByMetaRole(ConnectionScopedModels $models, Company $company, string $role): Account
     {
         /** @var Account|null $account */
-        $account = Account::query()
+        $account = $models->query(Account::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('meta->erp_role', $role)

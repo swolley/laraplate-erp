@@ -8,6 +8,7 @@ use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Models\Opportunity;
 use Modules\ERP\Models\Quotation;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final class OpportunityLifecycleService
 {
@@ -22,7 +23,9 @@ final class OpportunityLifecycleService
         }
 
         /** @var Opportunity|null $opportunity */
-        $opportunity = Opportunity::query()->find($quotation->opportunity_id);
+        $opportunity = ConnectionScopedModels::for($quotation)
+            ->query(Opportunity::class)
+            ->find($quotation->opportunity_id);
 
         if ($opportunity === null) {
             return;

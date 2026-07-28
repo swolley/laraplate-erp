@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Currency;
 
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Model;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Exceptions\UnsupportedCurrencyConversionException;
 use Override;
@@ -22,12 +23,13 @@ final class NoopCurrencyConverter implements CurrencyConverter
 {
     #[Override]
     public function convert(
+        Model $owner,
         string $fromCurrency,
         string $toCurrency,
         float|string|int $amount,
         ?DateTimeInterface $at = null,
     ): array {
-        $rate = $this->getRate($fromCurrency, $toCurrency, $at);
+        $rate = $this->getRate($owner, $fromCurrency, $toCurrency, $at);
 
         return [
             'rate' => $rate,
@@ -37,6 +39,7 @@ final class NoopCurrencyConverter implements CurrencyConverter
 
     #[Override]
     public function getRate(
+        Model $owner,
         string $fromCurrency,
         string $toCurrency,
         ?DateTimeInterface $at = null,

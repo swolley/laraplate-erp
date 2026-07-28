@@ -94,11 +94,11 @@ it('converts currencies using latest historical database rate and inverse rates'
     $converter = app(CurrencyConverter::class);
 
     expect($converter)->toBeInstanceOf(DatabaseCurrencyConverter::class)
-        ->and($converter->convert('USD', 'EUR', '100.00', CarbonImmutable::parse('2026-07-20')))->toBe([
+        ->and($converter->convert(new Company, 'USD', 'EUR', '100.00', CarbonImmutable::parse('2026-07-20')))->toBe([
             'rate' => 0.92,
             'amount' => 92.0,
         ])
-        ->and(round($converter->getRate('EUR', 'USD', CarbonImmutable::parse('2026-07-20')), 8))->toBe(1.08695652);
+        ->and(round($converter->getRate(new Company, 'EUR', 'USD', CarbonImmutable::parse('2026-07-20')), 8))->toBe(1.08695652);
 });
 
 it('posts unrealized FX revaluation journals for open foreign receivables', function (): void {
@@ -131,7 +131,7 @@ it('posts unrealized FX revaluation journals for open foreign receivables', func
         ->firstOrFail();
 
     expect((string) $schedule->amount_local)->toBe('900.0000')
-        ->and(app(CurrencyConverter::class)->getRate('USD', 'EUR', CarbonImmutable::parse('2026-07-31 23:59:59')))->toBe(0.95);
+        ->and(app(CurrencyConverter::class)->getRate($company, 'USD', 'EUR', CarbonImmutable::parse('2026-07-31 23:59:59')))->toBe(0.95);
 
     $entry = app(FxRevaluationService::class)->revalueOpenSchedules(
         (int) $company->id,

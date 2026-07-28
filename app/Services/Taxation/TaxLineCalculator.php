@@ -12,6 +12,7 @@ use Modules\ERP\Exceptions\TaxCodeNotActiveException;
 use Modules\ERP\Exceptions\TaxKindMismatchException;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 /**
  * VAT / withholding math and resolution of active {@see TaxCode} rows at a posting date.
@@ -20,7 +21,7 @@ final class TaxLineCalculator
 {
     public function resolveActiveAt(Company $company, string $code, DateTimeInterface $on_date): TaxCode
     {
-        $row = TaxCode::query()
+        $row = ConnectionScopedModels::for($company)->query(TaxCode::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('code', $code)

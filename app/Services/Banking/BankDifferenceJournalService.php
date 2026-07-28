@@ -15,6 +15,8 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Services\Accounting\JournalPostingService;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class BankDifferenceJournalService
 {
@@ -30,14 +32,19 @@ final readonly class BankDifferenceJournalService
         int $expense_account_id,
         int $bank_account_id,
     ): JournalEntry {
+        ConnectionScopedTransaction::connection($company, $line, $payment);
+        $models = ConnectionScopedModels::for($company, $line, $payment);
+        $models->model(BankStatementLine::class);
+        $models->model(Payment::class);
+
         if ($bank_account_id !== (int) $line->bank_statement?->bank_account_id) {
             throw ValidationException::withMessages([
                 'bank_account_id' => ['The bank statement line does not belong to the selected bank account.'],
             ]);
         }
 
-        $bank_cash = $this->findAccountByRole($company, 'bank_cash');
-        $expense = $this->expenseAccount($company, $expense_account_id);
+        $bank_cash = $this->findAccountByRole($models, $company, 'bank_cash');
+        $expense = $this->expenseAccount($models, $company, $expense_account_id);
         $amount_doc = $this->round4((float) $difference_amount_doc);
 
         if (abs((float) $amount_doc) <= 0.00005) {
@@ -58,7 +65,7 @@ final readonly class BankDifferenceJournalService
                 $this->journalLine((int) $bank_cash->id, $amount_doc, $line->currency_doc, (string) $line->fx_rate, 'Bank cash difference'),
                 $this->journalLine((int) $expense->id, $this->negate($amount_doc), $line->currency_doc, (string) $line->fx_rate, 'Bank reconciliation difference'),
             ],
-            $this->resolveFiscalPeriod($company, CarbonImmutable::parse($line->booked_at)),
+            $this->resolveFiscalPeriod($models, $company, CarbonImmutable::parse($line->booked_at)),
             $description,
             null,
             $line,
@@ -66,9 +73,9 @@ final readonly class BankDifferenceJournalService
         );
     }
 
-    private function findAccountByRole(Company $company, string $role): Account
+    private function findAccountByRole(ConnectionScopedModels $models, Company $company, string $role): Account
     {
-        $account = Account::query()
+        $account = $models->query(Account::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('meta->erp_role', $role)
@@ -83,9 +90,9 @@ final readonly class BankDifferenceJournalService
         ]);
     }
 
-    private function expenseAccount(Company $company, int $expense_account_id): Account
+    private function expenseAccount(ConnectionScopedModels $models, Company $company, int $expense_account_id): Account
     {
-        $account = Account::query()
+        $account = $models->query(Account::class)
             ->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->whereKey($expense_account_id)
@@ -102,9 +109,9 @@ final readonly class BankDifferenceJournalService
         ]);
     }
 
-    private function resolveFiscalPeriod(Company $company, CarbonImmutable $posted_at): ?FiscalPeriod
+    private function resolveFiscalPeriod(ConnectionScopedModels $models, Company $company, CarbonImmutable $posted_at): ?FiscalPeriod
     {
-        return FiscalPeriod::query()
+        return $models->query(FiscalPeriod::class)
             ->withoutGlobalScopes()
             ->whereHas('fiscal_year', static function (Builder $query) use ($company): void {
                 $query->withoutGlobalScopes()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Contracts;
 
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Currency conversion port for the Business / ERP domain.
@@ -22,6 +23,7 @@ interface CurrencyConverter
     /**
      * Convert `$amount` expressed in `$fromCurrency` into `$toCurrency`.
      *
+     * @param  Model  $owner  Trusted aggregate model whose connection owns the exchange-rate data
      * @param  string  $fromCurrency  ISO 4217 source currency code
      * @param  string  $toCurrency  ISO 4217 target currency code
      * @param  float|string|int  $amount  Amount in the source currency
@@ -29,6 +31,7 @@ interface CurrencyConverter
      * @return array{rate: float, amount: float}
      */
     public function convert(
+        Model $owner,
         string $fromCurrency,
         string $toCurrency,
         float|string|int $amount,
@@ -38,9 +41,11 @@ interface CurrencyConverter
     /**
      * Resolve the exchange rate from `$fromCurrency` to `$toCurrency`.
      *
+     * @param  Model  $owner  Trusted aggregate model whose connection owns the exchange-rate data
      * @param  DateTimeInterface|null  $at  Reference date (defaults to "now")
      */
     public function getRate(
+        Model $owner,
         string $fromCurrency,
         string $toCurrency,
         ?DateTimeInterface $at = null,
