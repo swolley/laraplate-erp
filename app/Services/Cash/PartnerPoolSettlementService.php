@@ -9,31 +9,38 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\MovementAllocation;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\PoolTransaction;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\Decimal;
 
 final class PartnerPoolSettlementService
 {
     /**
-     * @param array<int, array{owed: string|int|float, paid: string|int|float}> $shares
+     * @param  array<int, array{owed: string|int|float, paid: string|int|float}>  $shares
      */
     public function allocate(Movement $movement, PartnerPool $pool, array $shares): void
     {
-        ConnectionScopedTransaction::run($movement, function () use ($movement, $pool, $shares): void {
-            $pool = PartnerPool::query()->lockForUpdate()->findOrFail($pool->getKey());
-            $movement = Movement::query()->lockForUpdate()->findOrFail($movement->getKey());
+        ConnectionScopedTransaction::run($movement, function (ConnectionScopedModels $models) use ($movement, $pool, $shares): void {
+            $movement_query = $models->query(Movement::class);
+            $pool_query = $models->query(PartnerPool::class);
+            $allocation_query = $models->query(MovementAllocation::class);
+            $pool = $pool_query->lockForUpdate()->findOrFail($pool->getKey());
+            $movement = $movement_query->lockForUpdate()->findOrFail($movement->getKey());
 
             if ($movement->type !== MovementType::Expense) {
                 $this->fail('movement', 'Only expense movements can be split between pool members.');
             }
+
             if ((int) $movement->company_id !== (int) $pool->company_id) {
                 $this->fail('partner_pool_id', 'Movement and partner pool must belong to the same company.');
             }
-            if (strtoupper($movement->currency_doc) !== strtoupper($pool->currency)) {
+
+            if (mb_strtoupper($movement->currency_doc) !== mb_strtoupper($pool->currency)) {
                 $this->fail('currency', 'Movement and partner pool currencies must match.');
             }
+
             if ($shares === []) {
                 $this->fail('shares', 'At least one pool member must participate in the split.');
             }
@@ -48,6 +55,7 @@ final class PartnerPoolSettlementService
                 }
                 $owed = Decimal::format((string) $share['owed']);
                 $paid = Decimal::format((string) $share['paid']);
+
                 if (Decimal::isNegative($owed) || Decimal::isNegative($paid)) {
                     $this->fail('shares', 'Split amounts cannot be negative.');
                 }
@@ -56,13 +64,15 @@ final class PartnerPoolSettlementService
             }
 
             $amount = Decimal::format((string) $movement->amount_doc);
+
             if ($owed_total !== $amount || $paid_total !== $amount) {
                 $this->fail('shares', 'Both owed and paid split totals must equal the movement amount.');
             }
 
-            MovementAllocation::query()->where('movement_id', $movement->getKey())->delete();
+            $allocation_query->where('movement_id', $movement->getKey())->delete();
+
             foreach ($shares as $user_id => $share) {
-                MovementAllocation::query()->create([
+                $models->query(MovementAllocation::class)->create([
                     'partner_pool_id' => $pool->getKey(),
                     'movement_id' => $movement->getKey(),
                     'user_id' => $user_id,
@@ -73,7 +83,9 @@ final class PartnerPoolSettlementService
         }, $pool);
     }
 
-    /** @return array<int, string> user_id => signed balance */
+    /**
+     * @return array<int, string> user_id => signed balance
+     */
     public function balances(PartnerPool $pool): array
     {
         $balances = $pool->members()->pluck('users.id')->mapWithKeys(
@@ -101,11 +113,14 @@ final class PartnerPoolSettlementService
         return $balances;
     }
 
-    /** @return list<array{from_user_id: int, to_user_id: int, amount: string, currency: string}> */
+    /**
+     * @return list<array{from_user_id: int, to_user_id: int, amount: string, currency: string}>
+     */
     public function suggestSettleUp(PartnerPool $pool): array
     {
         $debtors = [];
         $creditors = [];
+
         foreach ($this->balances($pool) as $user_id => $balance) {
             if (Decimal::isNegative($balance)) {
                 $debtors[] = ['id' => $user_id, 'amount' => Decimal::abs($balance)];
@@ -117,6 +132,7 @@ final class PartnerPoolSettlementService
         $suggestions = [];
         $debtor_index = 0;
         $creditor_index = 0;
+
         while (isset($debtors[$debtor_index], $creditors[$creditor_index])) {
             $debt = $debtors[$debtor_index]['amount'];
             $credit = $creditors[$creditor_index]['amount'];
@@ -125,12 +141,18 @@ final class PartnerPoolSettlementService
                 'from_user_id' => $debtors[$debtor_index]['id'],
                 'to_user_id' => $creditors[$creditor_index]['id'],
                 'amount' => Decimal::format($amount),
-                'currency' => strtoupper($pool->currency),
+                'currency' => mb_strtoupper($pool->currency),
             ];
             $debtors[$debtor_index]['amount'] = Decimal::sub($debt, $amount);
             $creditors[$creditor_index]['amount'] = Decimal::sub($credit, $amount);
-            if (Decimal::isZero($debtors[$debtor_index]['amount'])) { $debtor_index++; }
-            if (Decimal::isZero($creditors[$creditor_index]['amount'])) { $creditor_index++; }
+
+            if (Decimal::isZero($debtors[$debtor_index]['amount'])) {
+                $debtor_index++;
+            }
+
+            if (Decimal::isZero($creditors[$creditor_index]['amount'])) {
+                $creditor_index++;
+            }
         }
 
         return $suggestions;
@@ -138,30 +160,36 @@ final class PartnerPoolSettlementService
 
     public function settle(PartnerPool $pool, int $from_user_id, int $to_user_id, string $amount, ?string $description = null): PoolTransaction
     {
-        return ConnectionScopedTransaction::run($pool, function () use ($pool, $from_user_id, $to_user_id, $amount, $description): PoolTransaction {
-            $pool = PartnerPool::query()->lockForUpdate()->findOrFail($pool->getKey());
+        return ConnectionScopedTransaction::run($pool, function (ConnectionScopedModels $models) use ($pool, $from_user_id, $to_user_id, $amount, $description): PoolTransaction {
+            $pool_query = $models->query(PartnerPool::class);
+            $transaction_query = $models->query(PoolTransaction::class);
+            $models->model(MovementAllocation::class);
+            $pool = $pool_query->lockForUpdate()->findOrFail($pool->getKey());
+
             if ($from_user_id === $to_user_id) {
                 $this->fail('to_user_id', 'Settlement participants must be different.');
             }
             $amount = Decimal::format($amount);
+
             if (Decimal::isZero($amount) || Decimal::isNegative($amount)) {
                 $this->fail('amount', 'Settlement amount must be greater than zero.');
             }
             $balances = $this->balances($pool);
             $debt = Decimal::abs($balances[$from_user_id] ?? '0.0000');
             $credit = $balances[$to_user_id] ?? '0.0000';
+
             if (! Decimal::isNegative($balances[$from_user_id] ?? '0.0000') || Decimal::isNegative($credit)
                 || BigDecimal::of($amount)->isGreaterThan(BigDecimal::of($debt))
                 || BigDecimal::of($amount)->isGreaterThan(BigDecimal::of($credit))) {
                 $this->fail('amount', 'Settlement exceeds the current debtor/creditor balances.');
             }
 
-            return PoolTransaction::query()->create([
+            return $transaction_query->create([
                 'partner_pool_id' => $pool->getKey(),
                 'from_user_id' => $from_user_id,
                 'to_user_id' => $to_user_id,
                 'amount' => $amount,
-                'currency' => strtoupper($pool->currency),
+                'currency' => mb_strtoupper($pool->currency),
                 'occurred_on' => now()->toDateString(),
                 'confirmed_at' => now(),
                 'description' => $description,

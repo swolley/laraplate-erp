@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Currency;
 
 use DateTimeInterface;
-use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\PaymentScheduleStatus;
+use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\JournalEntryLine;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ErpConnectionContext;
 
 final readonly class FxRevaluationService
 {
     public function __construct(
         private CurrencyConverter $converter,
+        private ErpConnectionContext $connection_context,
     ) {}
 
     public function revalueOpenSchedules(
@@ -26,11 +31,17 @@ final readonly class FxRevaluationService
         int $gain_account_id,
         int $loss_account_id,
     ): ?JournalEntry {
-        $company = Company::query()->findOrFail($company_id);
+        $company = $this->connection_context->model(Company::class)
+            ->newQuery()
+            ->findOrFail($company_id);
 
-        return ConnectionScopedTransaction::run($company, function () use ($company, $company_id, $as_of, $balance_account_id, $gain_account_id, $loss_account_id): ?JournalEntry {
-            $local_currency = strtoupper((string) $company->default_currency);
-            $lines = PaymentScheduleLine::query()
+        return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company, $company_id, $as_of, $balance_account_id, $gain_account_id, $loss_account_id): ?JournalEntry {
+            $schedule_query = $models->query(PaymentScheduleLine::class);
+            $journal_entry_query = $models->query(JournalEntry::class);
+            $models->model(Invoice::class);
+            $models->model(JournalEntryLine::class);
+            $local_currency = mb_strtoupper((string) $company->default_currency);
+            $lines = $schedule_query
                 ->with('invoice')
                 ->where('company_id', $company_id)
                 ->whereIn('status', [PaymentScheduleStatus::Open->value, PaymentScheduleStatus::Partial->value])
@@ -59,7 +70,7 @@ final readonly class FxRevaluationService
                 return null;
             }
 
-            $entry = JournalEntry::query()->create([
+            $entry = $journal_entry_query->create([
                 'company_id' => $company_id,
                 'posted_at' => $as_of,
                 'reference_type' => 'fx_revaluation',

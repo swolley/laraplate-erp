@@ -9,20 +9,29 @@ use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Data\EInvoice\EInvoiceRemoteStatus;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\EInvoiceSubmission;
 use Modules\ERP\Models\Invoice;
+use Modules\ERP\Models\Party;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ErpConnectionContext;
 
 final readonly class EInvoiceSubmissionService
 {
     public function __construct(
         private EInvoiceProvider $provider,
+        private ErpConnectionContext $connection_context,
     ) {}
 
     public function submit(Invoice $invoice): EInvoiceSubmission
     {
-        return ConnectionScopedTransaction::run($invoice, function () use ($invoice): EInvoiceSubmission {
-            $locked = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+        return ConnectionScopedTransaction::run($invoice, function (ConnectionScopedModels $models) use ($invoice): EInvoiceSubmission {
+            $invoice_query = $models->query(Invoice::class);
+            $submission_query = $models->query(EInvoiceSubmission::class);
+            $models->model(Company::class);
+            $models->model(Party::class);
+            $locked = $invoice_query->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->posted_at === null) {
                 throw ValidationException::withMessages([
@@ -54,7 +63,7 @@ final readonly class EInvoiceSubmissionService
             $payload = $this->provider->prepare($locked);
             $result = $this->provider->submit($payload);
 
-            return EInvoiceSubmission::query()->create([
+            return $submission_query->create([
                 'company_id' => $locked->company_id,
                 'invoice_id' => $locked->id,
                 'provider_code' => $this->provider->code(),
@@ -124,15 +133,17 @@ final readonly class EInvoiceSubmissionService
             ]);
         }
 
+        $submission_prototype = $this->connection_context->model(EInvoiceSubmission::class);
+
         /** @var EInvoiceSubmission $submission */
-        $submission = EInvoiceSubmission::query()
+        $submission = $submission_prototype->newQuery()
             ->where('provider_code', $provider_code)
             ->where('external_id', $external_id)
             ->latest('id')
             ->firstOrFail();
 
-        return ConnectionScopedTransaction::run($submission, function () use ($submission, $provider_code, $callback): EInvoiceSubmission {
-            $submission = $submission->newQuery()
+        return ConnectionScopedTransaction::run($submission, function (ConnectionScopedModels $models) use ($submission, $provider_code, $callback): EInvoiceSubmission {
+            $submission = $models->query(EInvoiceSubmission::class)
                 ->whereKey($submission->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();

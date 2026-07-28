@@ -15,9 +15,10 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Accounting\JournalPostingService;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\Decimal;
 use Modules\ERP\ValueObjects\Money;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class MovementPostingService
 {
@@ -28,26 +29,31 @@ final readonly class MovementPostingService
 
     public function post(Movement $movement): JournalEntry
     {
-        return ConnectionScopedTransaction::run($movement, function () use ($movement): JournalEntry {
-            $locked = Movement::query()->withoutGlobalScopes()->lockForUpdate()->findOrFail($movement->id);
+        return ConnectionScopedTransaction::run($movement, function (ConnectionScopedModels $models) use ($movement): JournalEntry {
+            $movement_query = $models->query(Movement::class);
+            $journal_entry_query = $models->query(JournalEntry::class);
+            $company_query = $models->query(Company::class);
+            $account_query = $models->query(Account::class);
+            $models->model(FiscalPeriod::class);
+            $locked = $movement_query->withoutGlobalScopes()->lockForUpdate()->findOrFail($movement->id);
 
             if ($locked->posted_journal_entry_id !== null) {
-                return JournalEntry::query()->withoutGlobalScopes()->findOrFail($locked->posted_journal_entry_id);
+                return $journal_entry_query->withoutGlobalScopes()->findOrFail($locked->posted_journal_entry_id);
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail($locked->company_id);
-            $counterparty = Account::query()->withoutGlobalScopes()->findOrFail($locked->counterparty_account_id);
+            $company = $company_query->withoutGlobalScopes()->findOrFail($locked->company_id);
+            $counterparty = $account_query->withoutGlobalScopes()->findOrFail($locked->counterparty_account_id);
             $this->assertCounterparty($locked, $counterparty);
-            $bank_cash = $this->bankCashAccount($company);
+            $bank_cash = $this->bankCashAccount($models, $company);
             $occurred_on = CarbonImmutable::parse($locked->occurred_on);
             $conversion = $this->currency_converter->convert(
-                strtoupper((string) $locked->currency_doc),
-                strtoupper((string) $company->default_currency),
+                mb_strtoupper((string) $locked->currency_doc),
+                mb_strtoupper((string) $company->default_currency),
                 (string) $locked->amount_doc,
                 $occurred_on,
             );
-            $currency_doc = strtoupper((string) $locked->currency_doc);
-            $currency_local = strtoupper((string) $company->default_currency);
+            $currency_doc = mb_strtoupper((string) $locked->currency_doc);
+            $currency_local = mb_strtoupper((string) $company->default_currency);
             $amount_doc = Money::of((string) $locked->amount_doc, $currency_doc)->amount;
             $amount_local = Money::of((string) $conversion['amount'], $currency_local)->amount;
             $fx_rate = number_format($conversion['rate'], 8, '.', '');
@@ -56,7 +62,7 @@ final readonly class MovementPostingService
             $entry = $this->journal_posting_service->post(
                 $company,
                 $lines,
-                $this->fiscalPeriod($company, $occurred_on),
+                $this->fiscalPeriod($models, $company, $occurred_on),
                 $description,
                 null,
                 $locked,
@@ -88,9 +94,9 @@ final readonly class MovementPostingService
         }
     }
 
-    private function bankCashAccount(Company $company): Account
+    private function bankCashAccount(ConnectionScopedModels $models, Company $company): Account
     {
-        $account = Account::query()->withoutGlobalScopes()
+        $account = $models->query(Account::class)->withoutGlobalScopes()
             ->where('company_id', $company->id)
             ->where('meta->erp_role', 'bank_cash')
             ->where('is_active', true)
@@ -103,13 +109,15 @@ final readonly class MovementPostingService
         return $account;
     }
 
-    /** @return list<array<string, int|string>> */
+    /**
+     * @return list<array<string, int|string>>
+     */
     private function journalLines(Movement $movement, Account $counterparty, Account $bank_cash, string $amount_doc, string $amount_local, string $currency_local, string $fx_rate, string $description): array
     {
         $base = fn (Account $account, string $doc, string $local): array => [
             'account_id' => (int) $account->id,
             'amount_doc' => $doc,
-            'currency_doc' => strtoupper((string) $movement->currency_doc),
+            'currency_doc' => mb_strtoupper((string) $movement->currency_doc),
             'amount_local' => $local,
             'currency_local' => $currency_local,
             'fx_rate' => $fx_rate,
@@ -123,9 +131,9 @@ final readonly class MovementPostingService
         return [$base($counterparty, $amount_doc, $amount_local), $base($bank_cash, Decimal::negate($amount_doc), Decimal::negate($amount_local))];
     }
 
-    private function fiscalPeriod(Company $company, CarbonImmutable $date): ?FiscalPeriod
+    private function fiscalPeriod(ConnectionScopedModels $models, Company $company, CarbonImmutable $date): ?FiscalPeriod
     {
-        return FiscalPeriod::query()->withoutGlobalScopes()
+        return $models->query(FiscalPeriod::class)->withoutGlobalScopes()
             ->whereHas('fiscal_year', static fn ($query) => $query->withoutGlobalScopes()->where('company_id', $company->id))
             ->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date)

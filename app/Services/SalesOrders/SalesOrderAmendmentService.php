@@ -9,9 +9,16 @@ use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Party;
+use Modules\ERP\Models\Project;
+use Modules\ERP\Models\Quotation;
+use Modules\ERP\Models\QuotationItem;
 use Modules\ERP\Models\SalesOrder;
-use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Creates a new draft amendment order from an existing sales order.
@@ -24,8 +31,16 @@ final readonly class SalesOrderAmendmentService
 
     public function amend(SalesOrder $source_order): SalesOrder
     {
-        return ConnectionScopedTransaction::run($source_order, function () use ($source_order): SalesOrder {
-            $locked_source = SalesOrder::query()
+        return ConnectionScopedTransaction::run($source_order, function (ConnectionScopedModels $models) use ($source_order): SalesOrder {
+            $sales_order_query = $models->query(SalesOrder::class);
+            $company_query = $models->query(Company::class);
+            $models->model(SalesOrderLine::class);
+            $models->model(Party::class);
+            $models->model(Quotation::class);
+            $models->model(Project::class);
+            $models->model(QuotationItem::class);
+            $models->model(Item::class);
+            $locked_source = $sales_order_query
                 ->whereKey($source_order->id)
                 ->with('lines')
                 ->lockForUpdate()
@@ -46,10 +61,10 @@ final readonly class SalesOrderAmendmentService
                 ]);
             }
 
-            $company = Company::query()->withoutGlobalScopes()->findOrFail($locked_source->company_id);
+            $company = $company_query->withoutGlobalScopes()->findOrFail($locked_source->company_id);
             $new_reference = $this->document_number_allocator->next($company, DocumentType::SalesOrder, 0);
 
-            $amendment = SalesOrder::query()->create([
+            $amendment = $models->query(SalesOrder::class)->create([
                 'company_id' => $locked_source->company_id,
                 'party_id' => $locked_source->party_id,
                 'quotation_id' => $locked_source->quotation_id,
