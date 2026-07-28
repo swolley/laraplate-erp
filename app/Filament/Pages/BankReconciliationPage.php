@@ -19,6 +19,8 @@ use Modules\ERP\Models\Account;
 use Modules\ERP\Models\BankStatementLine;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Services\Banking\BankReconciliationService;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 use UnitEnum;
 
@@ -80,8 +82,10 @@ final class BankReconciliationPage extends Page
     public function matchSelected(): void
     {
         $state = $this->form->getState();
-        $line = BankStatementLine::query()->findOrFail((int) $state['bank_statement_line_id']);
-        $payment = Payment::query()->findOrFail((int) $state['payment_id']);
+        $line = $this->lineSource((int) $state['bank_statement_line_id']);
+        $payment = ConnectionScopedModels::for($line)
+            ->query(Payment::class)
+            ->findOrFail((int) $state['payment_id']);
 
         app(BankReconciliationService::class)->matchPayment($line, $payment);
 
@@ -96,7 +100,7 @@ final class BankReconciliationPage extends Page
     public function ignoreSelected(): void
     {
         $state = $this->form->getState();
-        $line = BankStatementLine::query()->findOrFail((int) $state['bank_statement_line_id']);
+        $line = $this->lineSource((int) $state['bank_statement_line_id']);
 
         app(BankReconciliationService::class)->ignore($line);
 
@@ -111,8 +115,10 @@ final class BankReconciliationPage extends Page
     public function matchWithDifference(): void
     {
         $state = $this->form->getState();
-        $line = BankStatementLine::query()->findOrFail((int) $state['bank_statement_line_id']);
-        $payment = Payment::query()->findOrFail((int) $state['payment_id']);
+        $line = $this->lineSource((int) $state['bank_statement_line_id']);
+        $payment = ConnectionScopedModels::for($line)
+            ->query(Payment::class)
+            ->findOrFail((int) $state['payment_id']);
         $expense_account_id = (int) $state['expense_account_id'];
 
         app(BankReconciliationService::class)->matchPaymentWithDifference($line, $payment, $expense_account_id);
@@ -134,10 +140,15 @@ final class BankReconciliationPage extends Page
             return '0.0000';
         }
 
-        $line = BankStatementLine::query()->find($line_id);
-        $payment = Payment::query()->find($payment_id);
+        $line = $this->lineQuery()->find($line_id);
 
-        if ($line === null || $payment === null) {
+        if (! $line instanceof BankStatementLine) {
+            return '0.0000';
+        }
+
+        $payment = ConnectionScopedModels::for($line)->query(Payment::class)->find($payment_id);
+
+        if (! $payment instanceof Payment) {
             return '0.0000';
         }
 
@@ -162,7 +173,7 @@ final class BankReconciliationPage extends Page
      */
     public function unmatchedLines(): array
     {
-        return BankStatementLine::query()
+        return $this->lineQuery()
             ->with('bank_statement.bank_account')
             ->where('status', BankStatementLineStatus::Imported->value)
             ->whereNull('matched_payment_id')
@@ -187,8 +198,7 @@ final class BankReconciliationPage extends Page
      */
     public function suggestedPaymentsForLine(int $bank_statement_line_id): array
     {
-        /** @var BankStatementLine $line */
-        $line = BankStatementLine::query()->findOrFail($bank_statement_line_id);
+        $line = $this->lineSource($bank_statement_line_id);
 
         return app(BankReconciliationService::class)
             ->suggestPayments($line)
@@ -219,7 +229,20 @@ final class BankReconciliationPage extends Page
      */
     private function paymentOptions(): array
     {
-        return Payment::query()
+        $line_id = (int) ($this->data['bank_statement_line_id'] ?? 0);
+
+        if ($line_id === 0) {
+            return [];
+        }
+
+        $line = $this->lineQuery()->find($line_id);
+
+        if (! $line instanceof BankStatementLine) {
+            return [];
+        }
+
+        return ConnectionScopedModels::for($line)
+            ->query(Payment::class)
             ->with('party')
             ->orderByDesc('payment_date')
             ->limit(100)
@@ -243,14 +266,20 @@ final class BankReconciliationPage extends Page
     private function expenseAccountOptions(): array
     {
         $line_id = (int) ($this->data['bank_statement_line_id'] ?? 0);
-        $company_id = null;
 
-        if ($line_id !== 0) {
-            $company_id = BankStatementLine::query()->whereKey($line_id)->value('company_id');
+        if ($line_id === 0) {
+            return [];
         }
 
-        return Account::query()
-            ->when($company_id !== null, static fn (Builder $query): Builder => $query->where('company_id', $company_id))
+        $line = $this->lineQuery()->find($line_id);
+
+        if (! $line instanceof BankStatementLine) {
+            return [];
+        }
+
+        return ConnectionScopedModels::for($line)
+            ->query(Account::class)
+            ->where('company_id', $line->company_id)
             ->where('kind', AccountKind::Expense->value)
             ->where('is_active', true)
             ->orderBy('code')
@@ -260,5 +289,21 @@ final class BankReconciliationPage extends Page
                 (int) $account->getKey() => sprintf('%s | %s', $account->code, $account->name),
             ])
             ->all();
+    }
+
+    /**
+     * @return Builder<BankStatementLine>
+     */
+    private function lineQuery(): Builder
+    {
+        return app(ErpConnectionContext::class)
+            ->model(BankStatementLine::class)
+            ->newQuery();
+    }
+
+    private function lineSource(int $line_id): BankStatementLine
+    {
+        /** @var BankStatementLine */
+        return $this->lineQuery()->findOrFail($line_id);
     }
 }

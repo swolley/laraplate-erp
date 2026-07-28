@@ -17,6 +17,7 @@ use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Cash\PartnerPoolSettlementService;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 final class EditPartnerPool extends EditRecord
@@ -34,13 +35,14 @@ final class EditPartnerPool extends EditRecord
                 ->schema([
                     Select::make('movement_id')
                         ->label('Expense movement')
-                        ->options(fn (): array => Movement::query()
+                        ->options(fn (): array => ConnectionScopedModels::for($this->record)
+                            ->query(Movement::class)
                             ->where('company_id', $this->record->company_id)
                             ->where('currency_doc', $this->record->currency)
                             ->where('type', MovementType::Expense->value)
                             ->orderByDesc('occurred_on')
                             ->get()->mapWithKeys(fn (Movement $movement): array => [
-                                (int) $movement->id => $movement->occurred_on->format('Y-m-d') . ' · ' . $movement->amount_doc . ' ' . $movement->currency_doc . ' · ' . ($movement->description ?: '#'.$movement->id),
+                                (int) $movement->id => $movement->occurred_on->format('Y-m-d') . ' · ' . $movement->amount_doc . ' ' . $movement->currency_doc . ' · ' . ($movement->description ?: '#' . $movement->id),
                             ])->all())
                         ->searchable()->required(),
                     Repeater::make('shares')->schema([
@@ -56,7 +58,9 @@ final class EditPartnerPool extends EditRecord
                         (int) $share['user_id'] => ['owed' => $share['owed'], 'paid' => $share['paid']],
                     ])->all();
                     resolve(PartnerPoolSettlementService::class)->allocate(
-                        Movement::query()->findOrFail($data['movement_id']),
+                        ConnectionScopedModels::for($this->record)
+                            ->query(Movement::class)
+                            ->findOrFail($data['movement_id']),
                         $this->record,
                         $shares,
                     );

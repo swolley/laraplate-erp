@@ -12,6 +12,8 @@ use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 
 final class CreateSalesOrder extends CreateRecord
@@ -24,15 +26,19 @@ final class CreateSalesOrder extends CreateRecord
     {
         $line_items = $data['line_items'] ?? [];
         unset($data['line_items']);
+        $company = app(ErpConnectionContext::class)
+            ->model(Company::class)
+            ->newQuery()
+            ->findOrFail((int) $data['company_id']);
+        $models = ConnectionScopedModels::for($company);
 
         if (blank($data['reference'] ?? null)) {
-            $company = Company::query()->findOrFail((int) $data['company_id']);
             $data['reference'] = resolve(DocumentNumberAllocator::class)
                 ->next($company, DocumentType::SalesOrder, 0);
         }
 
         /** @var SalesOrder $record */
-        $record = SalesOrder::query()->create($data);
+        $record = $models->query(SalesOrder::class)->create($data);
 
         foreach (array_values($line_items) as $line) {
             $payload = Arr::only($line, [

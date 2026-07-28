@@ -12,7 +12,11 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\PurchaseOrderStatus;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Item;
+use Modules\ERP\Models\Party;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ErpConnectionContext;
 
 final class PurchaseOrderForm
 {
@@ -25,26 +29,24 @@ final class PurchaseOrderForm
         return $schema
             ->components([
                 Select::make('company_id')
-                    ->relationship('company', 'name')
+                    ->options(static fn (): array => self::companyOptions())
+                    ->getSearchResultsUsing(static fn (string $search): array => self::companyOptions($search))
+                    ->getOptionLabelUsing(static fn (?int $value): ?string => self::companyLabel($value))
                     ->searchable()
                     ->preload()
                     ->required()
                     ->live()
                     ->disabledOn('edit'),
                 Select::make('party_id')
-                    ->relationship(
-                        'party',
-                        'name',
-                        modifyQueryUsing: static function (Builder $query, ?string $search, Get $get): Builder {
-                            $company_id = (int) ($get('company_id') ?? 0);
-
-                            if ($company_id === 0) {
-                                return $query->whereRaw('0 = 1');
-                            }
-
-                            return $query->where('parties.company_id', $company_id)->suppliers();
-                        },
-                    )
+                    ->options(static fn (Get $get): array => self::partyOptions((int) ($get('company_id') ?? 0)))
+                    ->getSearchResultsUsing(static fn (string $search, Get $get): array => self::partyOptions(
+                        (int) ($get('company_id') ?? 0),
+                        $search,
+                    ))
+                    ->getOptionLabelUsing(static fn (?int $value, Get $get): ?string => self::partyLabel(
+                        (int) ($get('company_id') ?? 0),
+                        $value,
+                    ))
                     ->searchable()
                     ->preload()
                     ->required(),
@@ -74,29 +76,12 @@ final class PurchaseOrderForm
                                     return [];
                                 }
 
-                                return Item::query()
-                                    ->where('company_id', $company_id)
-                                    ->where(static function (Builder $query) use ($search): void {
-                                        $query->where('name', 'like', '%' . $search . '%')
-                                            ->orWhere('sku', 'like', '%' . $search . '%');
-                                    })
-                                    ->orderBy('name')
-                                    ->limit(50)
-                                    ->get()
-                                    ->mapWithKeys(static fn (Item $item): array => [
-                                        $item->id => $item->name . ' (' . $item->sku . ')',
-                                    ])
-                                    ->all();
+                                return self::itemOptions($company_id, $search);
                             })
-                            ->getOptionLabelUsing(static function (?int $value): ?string {
-                                if ($value === null) {
-                                    return null;
-                                }
-
-                                $item = Item::query()->find($value);
-
-                                return $item instanceof Item ? $item->name . ' (' . $item->sku . ')' : null;
-                            }),
+                            ->getOptionLabelUsing(static fn (?int $value, Get $get): ?string => self::itemLabel(
+                                (int) ($get('../../company_id') ?? 0),
+                                $value,
+                            )),
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255),
@@ -119,5 +104,143 @@ final class PurchaseOrderForm
                     ->addActionLabel('Add line')
                     ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function companyOptions(?string $search = null): array
+    {
+        return self::applySearch(self::companyQuery(), $search, ['name'])
+            ->orderBy('name')
+            ->limit(50)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    private static function companyLabel(?int $company_id): ?string
+    {
+        if ($company_id === null) {
+            return null;
+        }
+
+        return self::companyQuery()->whereKey($company_id)->value('name');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function partyOptions(int $company_id, ?string $search = null): array
+    {
+        $models = self::modelsForCompany($company_id);
+
+        if (! $models instanceof ConnectionScopedModels) {
+            return [];
+        }
+
+        return self::applySearch(
+            $models->query(Party::class)
+                ->where('company_id', $company_id)
+                ->suppliers(),
+            $search,
+            ['name'],
+        )
+            ->orderBy('name')
+            ->limit(50)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    private static function partyLabel(int $company_id, ?int $party_id): ?string
+    {
+        if ($party_id === null) {
+            return null;
+        }
+
+        $models = self::modelsForCompany($company_id);
+
+        return $models?->query(Party::class)
+            ->where('company_id', $company_id)
+            ->whereKey($party_id)
+            ->value('name');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function itemOptions(int $company_id, ?string $search = null): array
+    {
+        $models = self::modelsForCompany($company_id);
+
+        if (! $models instanceof ConnectionScopedModels) {
+            return [];
+        }
+
+        return self::applySearch(
+            $models->query(Item::class)->where('company_id', $company_id),
+            $search,
+            ['name', 'sku'],
+        )
+            ->orderBy('name')
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(static fn (Item $item): array => [
+                (int) $item->getKey() => $item->name . ' (' . $item->sku . ')',
+            ])
+            ->all();
+    }
+
+    private static function itemLabel(int $company_id, ?int $item_id): ?string
+    {
+        if ($item_id === null) {
+            return null;
+        }
+
+        $models = self::modelsForCompany($company_id);
+        $item = $models?->query(Item::class)
+            ->where('company_id', $company_id)
+            ->find($item_id);
+
+        return $item instanceof Item ? $item->name . ' (' . $item->sku . ')' : null;
+    }
+
+    /**
+     * @return Builder<Company>
+     */
+    private static function companyQuery(): Builder
+    {
+        return app(ErpConnectionContext::class)
+            ->model(Company::class)
+            ->newQuery();
+    }
+
+    private static function modelsForCompany(int $company_id): ?ConnectionScopedModels
+    {
+        if ($company_id === 0) {
+            return null;
+        }
+
+        $company = self::companyQuery()->find($company_id);
+
+        return $company instanceof Company ? ConnectionScopedModels::for($company) : null;
+    }
+
+    /**
+     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     * @param  list<string>  $columns
+     * @return Builder<\Illuminate\Database\Eloquent\Model>
+     */
+    private static function applySearch(Builder $query, ?string $search, array $columns): Builder
+    {
+        if (blank($search)) {
+            return $query;
+        }
+
+        return $query->where(static function (Builder $query) use ($columns, $search): void {
+            foreach ($columns as $index => $column) {
+                $method = $index === 0 ? 'where' : 'orWhere';
+                $query->{$method}($column, 'like', '%' . $search . '%');
+            }
+        });
     }
 }

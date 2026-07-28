@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\Diagnostics;
 
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Modules\Core\Models\Permission;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Account;
@@ -12,17 +12,24 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ErpConnectionContext;
 use Throwable;
 
 final class ErpHealthCheckService
 {
+    public function __construct(private readonly ErpConnectionContext $connection_context) {}
+
     /**
      * @return array{checks: list<array{key: string, status: 'success'|'warning'|'failure', message: string}>, summary: array{success: int, warning: int, failure: int}}
      */
-    public function run(): array
+    public function run(?Company $company = null): array
     {
         $checks = [];
-        $company = $this->defaultCompany($checks);
+        $company = $this->defaultCompany(
+            $company ?? $this->connection_context->model(Company::class),
+            $checks,
+        );
 
         if ($company instanceof Company) {
             $this->checkCompanyAccounting($company, $checks);
@@ -45,16 +52,21 @@ final class ErpHealthCheckService
     /**
      * @param  list<array{key: string, status: 'success'|'warning'|'failure', message: string}>  $checks
      */
-    private function defaultCompany(array &$checks): ?Company
+    private function defaultCompany(Company $prototype, array &$checks): ?Company
     {
-        if (! Schema::hasTable(ERPTables::Companies->value)) {
+        if (! $prototype->getConnection()->getSchemaBuilder()->hasTable($prototype->getTable())) {
             $this->add($checks, 'default_company', 'failure', 'ERP companies table is missing. Run ERP migrations.');
 
             return null;
         }
 
-        return $this->guarded($checks, 'default_company', function () use (&$checks): ?Company {
-            $company = Company::getDefault();
+        return $this->guarded($checks, 'default_company', function () use ($prototype, &$checks): ?Company {
+            $company = $prototype->exists
+                ? $prototype
+                : $prototype->newQueryWithoutScopes()
+                    ->where('is_default', true)
+                    ->orderBy('id')
+                    ->first();
 
             if (! $company instanceof Company) {
                 $this->add($checks, 'default_company', 'failure', 'No default ERP company is configured.');
@@ -74,25 +86,28 @@ final class ErpHealthCheckService
     private function checkCompanyAccounting(Company $company, array &$checks): void
     {
         $company_id = (int) $company->getKey();
+        $models = ConnectionScopedModels::for($company);
+        $schema = $company->getConnection()->getSchemaBuilder();
 
         $this->checkTableCount(
             $checks,
             'chart_of_accounts',
+            $schema,
             ERPTables::Accounts,
-            fn (): int => Account::query()->withoutGlobalScopes()->where('company_id', $company_id)->count(),
+            fn (): int => $models->query(Account::class)->withoutGlobalScopes()->where('company_id', $company_id)->count(),
             'Chart of accounts is available.',
             'The default company has no chart of accounts.',
         );
 
-        if (! Schema::hasTable(ERPTables::FiscalYears->value) || ! Schema::hasTable(ERPTables::FiscalPeriods->value)) {
+        if (! $schema->hasTable(ERPTables::FiscalYears->value) || ! $schema->hasTable(ERPTables::FiscalPeriods->value)) {
             $this->add($checks, 'fiscal_calendar', 'failure', 'Fiscal year or fiscal period table is missing.');
 
             return;
         }
 
-        $this->guarded($checks, 'fiscal_calendar', function () use ($company_id, &$checks): void {
+        $this->guarded($checks, 'fiscal_calendar', function () use ($models, $company_id, &$checks): void {
             $today = now()->toDateString();
-            $fiscal_year = FiscalYear::query()->withoutGlobalScopes()
+            $fiscal_year = $models->query(FiscalYear::class)->withoutGlobalScopes()
                 ->where('company_id', $company_id)
                 ->whereDate('start_date', '<=', $today)
                 ->whereDate('end_date', '>=', $today)
@@ -104,7 +119,7 @@ final class ErpHealthCheckService
                 return;
             }
 
-            $period_count = FiscalPeriod::query()->withoutGlobalScopes()
+            $period_count = $models->query(FiscalPeriod::class)->withoutGlobalScopes()
                 ->where('fiscal_year_id', $fiscal_year->getKey())
                 ->count();
 
@@ -123,11 +138,14 @@ final class ErpHealthCheckService
      */
     private function checkDocumentSequences(Company $company, array &$checks): void
     {
+        $models = ConnectionScopedModels::for($company);
+
         $this->checkTableCount(
             $checks,
             'document_sequences',
+            $company->getConnection()->getSchemaBuilder(),
             ERPTables::DocumentSequences,
-            fn (): int => DocumentSequence::query()->withoutGlobalScopes()
+            fn (): int => $models->query(DocumentSequence::class)->withoutGlobalScopes()
                 ->where('company_id', (int) $company->getKey())
                 ->where('fiscal_year', now()->year)
                 ->count(),
@@ -143,15 +161,15 @@ final class ErpHealthCheckService
     {
         $permission = new Permission();
 
-        if (! Schema::hasTable($permission->getTable())) {
+        if (! $permission->getConnection()->getSchemaBuilder()->hasTable($permission->getTable())) {
             $this->add($checks, 'domain_permissions', 'failure', 'Core permissions table is missing.');
 
             return;
         }
 
-        $this->guarded($checks, 'domain_permissions', function () use (&$checks): void {
+        $this->guarded($checks, 'domain_permissions', function () use ($permission, &$checks): void {
             $required = $this->requiredPermissionNames();
-            $present = Permission::query()->whereIn('name', $required)->pluck('name')->all();
+            $present = $permission->newQuery()->whereIn('name', $required)->pluck('name')->all();
             $missing = array_values(array_diff($required, $present));
 
             if ($missing !== []) {
@@ -230,9 +248,16 @@ final class ErpHealthCheckService
      * @param  list<array{key: string, status: 'success'|'warning'|'failure', message: string}>  $checks
      * @param  callable(): int  $count
      */
-    private function checkTableCount(array &$checks, string $key, ERPTables $table, callable $count, string $success, string $failure): void
-    {
-        if (! Schema::hasTable($table->value)) {
+    private function checkTableCount(
+        array &$checks,
+        string $key,
+        SchemaBuilder $schema,
+        ERPTables $table,
+        callable $count,
+        string $success,
+        string $failure,
+    ): void {
+        if (! $schema->hasTable($table->value)) {
             $this->add($checks, $key, 'failure', sprintf('Table [%s] is missing.', $table->value));
 
             return;
