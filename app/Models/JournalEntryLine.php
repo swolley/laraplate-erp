@@ -10,9 +10,9 @@ use Modules\Core\Contracts\RestrictsCrudWrites;
 use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
-use Modules\ERP\Models\AnalyticDimensionValue;
-use Modules\ERP\Models\Pivot\JournalEntryLineHasAnalyticDimensionValue;
 use Modules\ERP\Exceptions\PostedJournalImmutableException;
+use Modules\ERP\Models\Pivot\JournalEntryLineHasAnalyticDimensionValue;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
@@ -32,6 +32,7 @@ use Override;
  * @property numeric-string|null $tax_rate
  * @property string|null $tax_label
  * @property string|null $description
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntryLine
  */
@@ -88,7 +89,6 @@ final class JournalEntryLine extends Model implements RestrictsCrudWrites
     {
         return $this->belongsTo(Account::class);
     }
-
 
     /**
      * @return BelongsToMany<AnalyticDimensionValue, $this>
@@ -171,7 +171,9 @@ final class JournalEntryLine extends Model implements RestrictsCrudWrites
             return false;
         }
 
-        $posted_at = JournalEntry::query()->withoutGlobalScopes()
+        $posted_at = ConnectionScopedModels::for($line)
+            ->query(JournalEntry::class)
+            ->withoutGlobalScopes()
             ->whereKey($journal_entry_id)
             ->value('posted_at');
 

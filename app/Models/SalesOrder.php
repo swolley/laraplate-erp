@@ -7,12 +7,13 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
-use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -30,6 +31,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property SalesOrderStatus $status
  * @property string|null $notes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SalesOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrder
  */
@@ -142,8 +144,10 @@ final class SalesOrder extends Model
     protected static function booted(): void
     {
         self::saving(static function (SalesOrder $order): void {
+            $models = ConnectionScopedModels::for($order);
+
             if ($order->party_id !== null) {
-                $party = Party::query()->find($order->party_id);
+                $party = $models->query(Party::class)->find($order->party_id);
 
                 if ($party !== null && ! $party->is_customer) {
                     throw ValidationException::withMessages([
@@ -165,7 +169,7 @@ final class SalesOrder extends Model
             }
 
             if ($order->quotation_id !== null) {
-                $quotation = Quotation::query()->find($order->quotation_id);
+                $quotation = $models->query(Quotation::class)->find($order->quotation_id);
 
                 if ($quotation === null) {
                     throw ValidationException::withMessages([
@@ -187,7 +191,7 @@ final class SalesOrder extends Model
             }
 
             if ($order->project_id !== null) {
-                $project = Project::query()->find($order->project_id);
+                $project = $models->query(Project::class)->find($order->project_id);
 
                 if ($project === null) {
                     throw ValidationException::withMessages([
@@ -222,8 +226,10 @@ final class SalesOrder extends Model
                 return;
             }
 
+            $models = ConnectionScopedModels::for($order);
+
             if ($order->quotation_id !== null) {
-                $quotation = Quotation::query()->find($order->quotation_id);
+                $quotation = $models->query(Quotation::class)->find($order->quotation_id);
 
                 if ($quotation !== null && ! $quotation->isLocked()) {
                     $quotation->lock();
@@ -234,7 +240,7 @@ final class SalesOrder extends Model
                 return;
             }
 
-            $project = Project::query()->find($order->project_id);
+            $project = $models->query(Project::class)->find($order->project_id);
 
             if ($project !== null && ! $project->isLocked()) {
                 $project->lock();

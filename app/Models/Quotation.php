@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
-use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\QuotationObserver;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 #[ObservedBy([QuotationObserver::class])]
@@ -24,6 +25,7 @@ use Override;
  * @property int $company_id
  * @property int $party_id
  * @property int|null $opportunity_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperQuotation
  */
@@ -85,13 +87,17 @@ final class Quotation extends Model
         return $this->hasMany(SalesOrder::class);
     }
 
-    /** @return BelongsTo<Quotation, $this> */
+    /**
+     * @return BelongsTo<Quotation, $this>
+     */
     public function revised_from(): BelongsTo
     {
         return $this->belongsTo(self::class, 'revises_quotation_id');
     }
 
-    /** @return HasOne<Quotation, $this> */
+    /**
+     * @return HasOne<Quotation, $this>
+     */
     public function revision(): HasOne
     {
         return $this->hasOne(self::class, 'revises_quotation_id');
@@ -129,8 +135,12 @@ final class Quotation extends Model
     protected static function booted(): void
     {
         self::saving(static function (Quotation $quotation): void {
+            $models = ConnectionScopedModels::for($quotation);
+
             if ($quotation->party_id !== null) {
-                $party = Party::query()->whereKey($quotation->party_id)->first();
+                $party = $models->query(Party::class)
+                    ->whereKey($quotation->party_id)
+                    ->first();
 
                 if ($party instanceof Party && ! $party->is_customer) {
                     throw ValidationException::withMessages([
@@ -143,7 +153,9 @@ final class Quotation extends Model
                 return;
             }
 
-            $opportunity = Opportunity::query()->whereKey($quotation->opportunity_id)->first();
+            $opportunity = $models->query(Opportunity::class)
+                ->whereKey($quotation->opportunity_id)
+                ->first();
 
             if (! $opportunity instanceof Opportunity) {
                 throw ValidationException::withMessages([

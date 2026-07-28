@@ -11,6 +11,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
@@ -22,6 +23,7 @@ use Override;
  * @property string $status
  * @property \Carbon\CarbonInterface|null $ordered_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrder
  */
@@ -67,7 +69,6 @@ final class PurchaseOrder extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -98,7 +99,9 @@ final class PurchaseOrder extends Model
                 return;
             }
 
-            $party = Party::query()->find($purchase_order->party_id);
+            $party = ConnectionScopedModels::for($purchase_order)
+                ->query(Party::class)
+                ->find($purchase_order->party_id);
 
             if ($party === null) {
                 return;

@@ -21,6 +21,7 @@ use Override;
  * @property string $default_currency
  * @property bool $is_default
  * @property array<string, mixed>|null $settings
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperCompany
  */
@@ -198,7 +199,7 @@ final class Company extends Model
                 return;
             }
 
-            self::query()->withoutGlobalScopes()
+            $company->newQueryWithoutScopes()
                 ->where('id', '!=', $company->id)
                 ->where('is_default', true)
                 ->update(['is_default' => false]);

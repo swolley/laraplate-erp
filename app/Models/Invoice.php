@@ -36,6 +36,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceLine> $lines
  * @property int|null $payment_term_id
  * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoice
  */
@@ -126,7 +127,6 @@ final class Invoice extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -167,7 +167,7 @@ final class Invoice extends Model
     {
         self::saving(static function (Invoice $invoice): void {
             if ($invoice->invoice_type !== InvoiceType::Invoice && $invoice->credited_invoice_id !== null) {
-                $original = self::query()->withoutGlobalScopes()->find((int) $invoice->credited_invoice_id);
+                $original = $invoice->newQueryWithoutScopes()->find((int) $invoice->credited_invoice_id);
 
                 if ($original === null) {
                     throw ValidationException::withMessages([

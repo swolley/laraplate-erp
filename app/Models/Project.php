@@ -7,18 +7,20 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
-use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Locking\Traits\HasLocks;
+use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
  * @property int|string $id
  * @property int $company_id
  * @property int $party_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperProject
  */
@@ -90,7 +92,6 @@ final class Project extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -136,7 +137,9 @@ final class Project extends Model
                 return;
             }
 
-            $party = Party::query()->find($project->party_id);
+            $party = ConnectionScopedModels::for($project)
+                ->query(Party::class)
+                ->find($project->party_id);
 
             if ($party !== null && ! $party->is_customer) {
                 throw ValidationException::withMessages([

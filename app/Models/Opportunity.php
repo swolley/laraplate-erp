@@ -12,6 +12,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -25,6 +26,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property numeric-string|null $expected_value_local
  * @property \Carbon\CarbonInterface|null $won_at
  * @property \Carbon\CarbonInterface|null $lost_at
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperOpportunity
  */
@@ -98,7 +100,6 @@ final class Opportunity extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -149,7 +150,9 @@ final class Opportunity extends Model
                 return;
             }
 
-            $party = Party::query()->find($opportunity->party_id);
+            $party = ConnectionScopedModels::for($opportunity)
+                ->query(Party::class)
+                ->find($opportunity->party_id);
 
             if ($party !== null && ! $party->is_customer) {
                 throw ValidationException::withMessages([

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
@@ -21,6 +22,7 @@ use Override;
  * @property numeric-string $quantity
  * @property numeric-string|null $unit_cost
  * @property numeric-string|null $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrderLine
  */
@@ -82,7 +84,6 @@ final class ReturnOrderLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -108,7 +109,10 @@ final class ReturnOrderLine extends Model
                 return;
             }
 
-            $company_id = ReturnOrder::query()->whereKey($line->return_order_id)->value('company_id');
+            $company_id = ConnectionScopedModels::for($line)
+                ->query(ReturnOrder::class)
+                ->whereKey($line->return_order_id)
+                ->value('company_id');
 
             if (! is_int($company_id)) {
                 return;

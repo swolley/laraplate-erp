@@ -13,6 +13,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\LeadStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
 
@@ -121,7 +122,10 @@ final class Lead extends Model
                 return;
             }
 
-            $party = Party::query()->whereKey($lead->party_id)->first();
+            $party = ConnectionScopedModels::for($lead)
+                ->query(Party::class)
+                ->whereKey($lead->party_id)
+                ->first();
 
             if ($party instanceof Party && ! $party->is_customer) {
                 throw ValidationException::withMessages([

@@ -10,6 +10,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\InvoiceLineHasDeliveryNoteLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
@@ -24,6 +25,7 @@ use Override;
  * @property int|null $sales_order_line_id
  * @property-read DeliveryNote|null $delivery_note
  * @property-read \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNoteLine
  */
@@ -96,7 +98,6 @@ final class DeliveryNoteLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -113,14 +114,22 @@ final class DeliveryNoteLine extends Model
 
     protected static function booted(): void
     {
+        self::saving(static function (DeliveryNoteLine $line): void {
+            if ($line->sales_order_line_id === null) {
+                return;
+            }
+
+            $line->setRelation('sales_order_line', self::salesOrderLineForLifecycle($line));
+        });
+
         self::saved(static function (DeliveryNoteLine $line): void {
             if ($line->sales_order_line_id === null) {
                 return;
             }
 
-            $sales_order_line = SalesOrderLine::query()->find($line->sales_order_line_id);
+            $sales_order_line = $line->getRelation('sales_order_line');
 
-            if ($sales_order_line !== null && ! $sales_order_line->isLocked()) {
+            if ($sales_order_line instanceof SalesOrderLine && ! $sales_order_line->isLocked()) {
                 $sales_order_line->lock();
             }
         });
@@ -136,5 +145,26 @@ final class DeliveryNoteLine extends Model
         return [
             'quantity' => 'decimal:4',
         ];
+    }
+
+    private static function salesOrderLineForLifecycle(self $line): ?SalesOrderLine
+    {
+        if ($line->relationLoaded('sales_order_line')) {
+            $sales_order_line = $line->getRelation('sales_order_line');
+
+            if ($sales_order_line instanceof SalesOrderLine) {
+                ConnectionScopedModels::for($line, $sales_order_line)->model(SalesOrderLine::class);
+
+                if ((string) $sales_order_line->getKey() === (string) $line->sales_order_line_id) {
+                    $sales_order_line->setConnection($line->getConnection()->getName());
+
+                    return $sales_order_line;
+                }
+            }
+        }
+
+        return ConnectionScopedModels::for($line)
+            ->query(SalesOrderLine::class)
+            ->find($line->sales_order_line_id);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 /**
@@ -21,6 +22,7 @@ use Override;
  * @property numeric-string $qty_received
  * @property numeric-string $qty_returned
  * @property numeric-string|null $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrderLine
  */
@@ -65,7 +67,6 @@ final class PurchaseOrderLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -107,13 +108,14 @@ final class PurchaseOrderLine extends Model
                 return;
             }
 
-            $purchase_order = $line->purchase_order ?? PurchaseOrder::query()->whereKey($line->purchase_order_id)->first();
+            $models = ConnectionScopedModels::for($line);
+            $purchase_order = self::purchaseOrderForLifecycle($line, $models);
 
             if (! $purchase_order instanceof PurchaseOrder) {
                 return;
             }
 
-            $item = Item::query()->find($line->item_id);
+            $item = $models->query(Item::class)->find($line->item_id);
 
             if ($item === null) {
                 throw ValidationException::withMessages([
@@ -142,5 +144,28 @@ final class PurchaseOrderLine extends Model
             'qty_returned' => 'decimal:4',
             'unit_price' => 'decimal:4',
         ];
+    }
+
+    private static function purchaseOrderForLifecycle(
+        self $line,
+        ConnectionScopedModels $models,
+    ): ?PurchaseOrder {
+        if ($line->relationLoaded('purchase_order')) {
+            $purchase_order = $line->getRelation('purchase_order');
+
+            if ($purchase_order instanceof PurchaseOrder) {
+                ConnectionScopedModels::for($line, $purchase_order)->model(PurchaseOrder::class);
+
+                if ((string) $purchase_order->getKey() === (string) $line->purchase_order_id) {
+                    $purchase_order->setConnection($line->getConnection()->getName());
+
+                    return $purchase_order;
+                }
+            }
+        }
+
+        return $models->query(PurchaseOrder::class)
+            ->whereKey($line->purchase_order_id)
+            ->first();
     }
 }
