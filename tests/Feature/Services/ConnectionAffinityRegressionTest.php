@@ -97,8 +97,10 @@ beforeEach(function (): void {
         $table->unique(['version_set_id', 'sequence']);
     });
 
-    if (! Schema::hasTable('vend_permissions')) {
-        Schema::create('vend_permissions', function (Blueprint $table): void {
+    $default_schema = Schema::connection((string) config('database.default'));
+
+    if (! $default_schema->hasTable('vend_permissions')) {
+        $default_schema->create('vend_permissions', function (Blueprint $table): void {
             $table->increments('id');
             $table->string('name');
         });

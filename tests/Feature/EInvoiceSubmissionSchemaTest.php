@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\InvoiceDirection;
@@ -15,8 +15,10 @@ use Modules\ERP\Models\Invoice;
 uses(RefreshDatabase::class);
 
 it('creates e_invoice_submissions table with expected columns', function (): void {
-    expect(Schema::hasTable(ERPTables::EInvoiceSubmissions->value))->toBeTrue()
-        ->and(Schema::hasColumns(ERPTables::EInvoiceSubmissions->value, [
+    $schema = DB::connection((string) config('database.default'))->getSchemaBuilder();
+
+    expect($schema->hasTable(ERPTables::EInvoiceSubmissions->value))->toBeTrue()
+        ->and($schema->hasColumns(ERPTables::EInvoiceSubmissions->value, [
             'company_id',
             'invoice_id',
             'provider_code',
@@ -29,7 +31,9 @@ it('creates e_invoice_submissions table with expected columns', function (): voi
 });
 
 it('creates fatturapa readiness columns on company party and invoice records', function (): void {
-    expect(Schema::hasColumns(ERPTables::Companies->value, [
+    $schema = DB::connection((string) config('database.default'))->getSchemaBuilder();
+
+    expect($schema->hasColumns(ERPTables::Companies->value, [
         'fiscal_regime',
         'legal_address_line',
         'legal_postal_code',
@@ -41,7 +45,7 @@ it('creates fatturapa readiness columns on company party and invoice records', f
         'sole_shareholder',
         'liquidation_status',
     ]))->toBeTrue()
-        ->and(Schema::hasColumns(ERPTables::Parties->value, [
+        ->and($schema->hasColumns(ERPTables::Parties->value, [
             'tax_id',
             'vat_number',
             'fiscal_country',
@@ -52,7 +56,7 @@ it('creates fatturapa readiness columns on company party and invoice records', f
             'einvoice_recipient_code',
             'einvoice_pec_email',
         ]))->toBeTrue()
-        ->and(Schema::hasColumns(ERPTables::Invoices->value, [
+        ->and($schema->hasColumns(ERPTables::Invoices->value, [
             'einvoice_transmission_format',
             'einvoice_recipient_code',
             'einvoice_pec_email',

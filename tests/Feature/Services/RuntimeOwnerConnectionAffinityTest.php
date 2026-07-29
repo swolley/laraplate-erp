@@ -172,7 +172,7 @@ it('resolves prices exclusively through the company and item affinity connection
     $item = (new Item)->setConnection('erp-owner-secondary')->newQuery()->findOrFail(9401);
     $default_queries = [];
     $default_connection = (string) config('database.default');
-    DB::listen(static function ($query) use (&$default_queries, $default_connection): void {
+    DB::connection($default_connection)->listen(static function ($query) use (&$default_queries, $default_connection): void {
         if ($query->connectionName === $default_connection
             && (str_contains($query->sql, (new PriceList)->getTable())
                 || str_contains($query->sql, (new PriceListItem)->getTable())
@@ -202,8 +202,14 @@ it('rejects mixed pricing owners before issuing a query', function (): void {
     $item->id = 9411;
     $item->company_id = 9411;
     $queries = [];
-    DB::listen(static function ($query) use (&$queries): void {
-        $queries[] = $query->sql;
+    $observed_connections = [
+        (string) config('database.default'),
+        $company->getConnection()->getName(),
+    ];
+    DB::connection((string) config('database.default'))->listen(static function ($query) use (&$queries, $observed_connections): void {
+        if (in_array($query->connectionName, $observed_connections, true)) {
+            $queries[] = $query->sql;
+        }
     });
 
     expect(fn () => app(PriceResolverService::class)->resolve($company, $item))
@@ -305,7 +311,7 @@ it('computes VAT batches and settlements exclusively through the company affinit
     ]);
     $default_queries = [];
     $default_connection = (string) config('database.default');
-    DB::listen(static function ($query) use (&$default_queries, $default_connection): void {
+    DB::connection($default_connection)->listen(static function ($query) use (&$default_queries, $default_connection): void {
         if ($query->connectionName === $default_connection
             && (str_contains($query->sql, (new FiscalYear)->getTable())
                 || str_contains($query->sql, (new FiscalPeriod)->getTable())
@@ -382,7 +388,7 @@ it('audits document sequences exclusively through the company affinity connectio
     ]);
     $default_queries = [];
     $default_connection = (string) config('database.default');
-    DB::listen(static function ($query) use (&$default_queries, $default_connection): void {
+    DB::connection($default_connection)->listen(static function ($query) use (&$default_queries, $default_connection): void {
         if ($query->connectionName === $default_connection
             && (str_contains($query->sql, (new DocumentSequence)->getTable())
                 || str_contains($query->sql, (new SalesOrder)->getTable())

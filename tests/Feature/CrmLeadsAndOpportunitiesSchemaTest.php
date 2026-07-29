@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\LeadStatus;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\OpportunityStatus;
@@ -16,9 +16,11 @@ use Modules\ERP\Tests\Support\OpportunityStageTaxonomy;
 uses(RefreshDatabase::class);
 
 it('creates leads and opportunities tables with quotation opportunity link', function (): void {
-    expect(Schema::hasTable(ERPTables::Leads->value))->toBeTrue()
-        ->and(Schema::hasTable(ERPTables::Opportunities->value))->toBeTrue()
-        ->and(Schema::hasColumn(ERPTables::Quotations->value, 'opportunity_id'))->toBeTrue();
+    $schema = DB::connection((string) config('database.default'))->getSchemaBuilder();
+
+    expect($schema->hasTable(ERPTables::Leads->value))->toBeTrue()
+        ->and($schema->hasTable(ERPTables::Opportunities->value))->toBeTrue()
+        ->and($schema->hasColumn(ERPTables::Quotations->value, 'opportunity_id'))->toBeTrue();
 });
 
 it('persists a lead with company scope fields', function (): void {

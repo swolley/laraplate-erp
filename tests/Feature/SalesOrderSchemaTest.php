@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\QuoteStatus;
@@ -24,8 +24,10 @@ use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
 uses(RefreshDatabase::class);
 
 it('creates sales order tables', function (): void {
-    expect(Schema::hasTable(ERPTables::SalesOrders->value))->toBeTrue()
-        ->and(Schema::hasTable(ERPTables::SalesOrderLines->value))->toBeTrue();
+    $schema = DB::connection((string) config('database.default'))->getSchemaBuilder();
+
+    expect($schema->hasTable(ERPTables::SalesOrders->value))->toBeTrue()
+        ->and($schema->hasTable(ERPTables::SalesOrderLines->value))->toBeTrue();
 });
 
 it('persists a sales order with lines', function (): void {
