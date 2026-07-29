@@ -6,9 +6,11 @@ namespace Modules\ERP\Services\Accounting;
 
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\VatSettlementStatus;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\VatSettlement;
+use Modules\ERP\Support\ConnectionScopedModels;
 use Throwable;
 
 final readonly class VatSettlementBatchService
@@ -18,9 +20,11 @@ final readonly class VatSettlementBatchService
     /**
      * @return array{company_id: int, year: int, periods: list<array{fiscal_period_id: int, period: string, status: 'computed'|'preview'|'skipped'|'failed', vat_sales: string|null, vat_purchases: string|null, previous_credit: string|null, settlement_amount: string|null, message: string}>, summary: array{computed: int, previewed: int, skipped: int, failed: int}}
      */
-    public function compute(int $company_id, int $year, ?string $period = null, bool $dry_run = false): array
+    public function compute(Company $company, int $year, ?string $period = null, bool $dry_run = false): array
     {
-        $fiscal_year = FiscalYear::query()->withoutGlobalScopes()
+        $models = ConnectionScopedModels::for($company);
+        $company_id = (int) $company->getKey();
+        $fiscal_year = $models->query(FiscalYear::class)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->where('year', $year)
             ->first();
@@ -31,11 +35,11 @@ final readonly class VatSettlementBatchService
             ]);
         }
 
-        $periods = $this->periods($fiscal_year, $year, $period);
+        $periods = $this->periods($models, $fiscal_year, $year, $period);
         $results = [];
 
         foreach ($periods as $fiscal_period) {
-            $results[] = $this->processPeriod($company_id, $fiscal_period, $dry_run);
+            $results[] = $this->processPeriod($company, $models, $fiscal_year, $fiscal_period, $dry_run);
         }
 
         return [
@@ -54,9 +58,14 @@ final readonly class VatSettlementBatchService
     /**
      * @return \Illuminate\Database\Eloquent\Collection<int, FiscalPeriod>
      */
-    private function periods(FiscalYear $fiscal_year, int $year, ?string $period): \Illuminate\Database\Eloquent\Collection
+    private function periods(
+        ConnectionScopedModels $models,
+        FiscalYear $fiscal_year,
+        int $year,
+        ?string $period,
+    ): \Illuminate\Database\Eloquent\Collection
     {
-        $query = FiscalPeriod::query()
+        $query = $models->query(FiscalPeriod::class)
             ->where('fiscal_year_id', $fiscal_year->getKey())
             ->orderBy('start_date');
 
@@ -76,18 +85,25 @@ final readonly class VatSettlementBatchService
     /**
      * @return array{fiscal_period_id: int, period: string, status: 'computed'|'preview'|'skipped'|'failed', vat_sales: string|null, vat_purchases: string|null, previous_credit: string|null, settlement_amount: string|null, message: string}
      */
-    private function processPeriod(int $company_id, FiscalPeriod $period, bool $dry_run): array
+    private function processPeriod(
+        Company $company,
+        ConnectionScopedModels $models,
+        FiscalYear $fiscal_year,
+        FiscalPeriod $period,
+        bool $dry_run,
+    ): array
     {
+        $company_id = (int) $company->getKey();
         $base = [
             'fiscal_period_id' => (int) $period->getKey(),
-            'period' => sprintf('%04d-%02d', (int) $period->fiscal_year->year, $period->period_no),
+            'period' => sprintf('%04d-%02d', (int) $fiscal_year->year, $period->period_no),
         ];
 
         if ($period->is_closed) {
             return $this->result($base, 'skipped', 'Fiscal period is closed.');
         }
 
-        $existing = VatSettlement::query()->withoutGlobalScopes()
+        $existing = $models->query(VatSettlement::class)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->where('fiscal_period_id', $period->getKey())
             ->first();
@@ -98,12 +114,12 @@ final readonly class VatSettlementBatchService
 
         try {
             if ($dry_run) {
-                $amounts = $this->settlement_service->preview($company_id, (int) $period->getKey());
+                $amounts = $this->settlement_service->preview($company, $period);
 
                 return [...$base, 'status' => 'preview', ...$amounts, 'message' => 'Computed without persistence.'];
             }
 
-            $settlement = $this->settlement_service->compute($company_id, (int) $period->getKey());
+            $settlement = $this->settlement_service->compute($company, $period);
 
             return [
                 ...$base,

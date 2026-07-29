@@ -461,10 +461,21 @@ final class SalesOrderForm
             return null;
         }
 
+        $company = self::companyQuery()->find((int) $company_id);
+        $item = $company instanceof Company
+            ? ConnectionScopedModels::for($company)->query(Item::class)
+                ->where('company_id', $company->getKey())
+                ->find($item_id)
+            : null;
+
+        if (! $company instanceof Company || ! $item instanceof Item) {
+            return null;
+        }
+
         try {
             $result = app(PriceResolverService::class)->resolve(
-                company_id: (int) $company_id,
-                item_id: $item_id,
+                company: $company,
+                item: $item,
                 party_id: $get('../../party_id') !== null ? (int) $get('../../party_id') : null,
                 currency: (string) ($get('../../currency') ?? 'EUR'),
             );

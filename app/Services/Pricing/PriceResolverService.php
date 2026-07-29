@@ -10,50 +10,53 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\DiscountType;
 use Modules\ERP\Data\Pricing\PriceResolutionResult;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PartyPriceRule;
+use Modules\ERP\Models\PriceList;
 use Modules\ERP\Models\PriceListItem;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\Decimal;
 
 final class PriceResolverService
 {
     public function resolve(
-        int $company_id,
-        int $item_id,
+        Company $company,
+        Item $item,
         ?int $party_id = null,
         string $currency = 'EUR',
         ?CarbonInterface $date = null,
     ): PriceResolutionResult {
         $date ??= Date::now();
+        ConnectionScopedTransaction::connection($company, $item);
+        $models = ConnectionScopedModels::for($company, $item);
+        $company_id = (int) $company->getKey();
 
-        /** @var Item|null $item */
-        $item = Item::query()
-            ->whereKey($item_id)
-            ->where('company_id', $company_id)
-            ->first();
-
-        if ($item === null) {
+        if ((int) $item->company_id !== $company_id) {
             throw ValidationException::withMessages([
                 'item_id' => ['The item does not exist for the selected company.'],
             ]);
         }
 
-        $base_query = PriceListItem::query()
+        $price_lists = $models->query(PriceList::class)
+            ->select('id')
+            ->where('company_id', $company_id)
+            ->where('currency', $currency)
             ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
             })
             ->where(function (Builder $query) use ($date): void {
                 $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
+            });
+
+        $base_query = $models->query(PriceListItem::class)
+            ->whereIn('price_list_id', $price_lists)
+            ->where(function (Builder $query) use ($date): void {
+                $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
             })
-            ->whereHas('price_list', function (Builder $query) use ($company_id, $currency, $date): void {
-                $query->where('company_id', $company_id)
-                    ->where('currency', $currency)
-                    ->where(function (Builder $query) use ($date): void {
-                        $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date);
-                    })
-                    ->where(function (Builder $query) use ($date): void {
-                        $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
-                    });
+            ->where(function (Builder $query) use ($date): void {
+                $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date);
             });
 
         /** @var PriceListItem|null $price_list_item */
@@ -78,7 +81,7 @@ final class PriceResolverService
             ]);
         }
 
-        $rule = $this->resolveRule($company_id, $item, $party_id, $date);
+        $rule = $this->resolveRule($models, $company_id, $item, $party_id, $date);
         $base_price = $price_list_item->unit_price;
 
         return new PriceResolutionResult(
@@ -89,10 +92,16 @@ final class PriceResolverService
         );
     }
 
-    private function resolveRule(int $company_id, Item $item, ?int $party_id, CarbonInterface $date): ?PartyPriceRule
+    private function resolveRule(
+        ConnectionScopedModels $models,
+        int $company_id,
+        Item $item,
+        ?int $party_id,
+        CarbonInterface $date,
+    ): ?PartyPriceRule
     {
         /** @var PartyPriceRule|null $rule */
-        $rule = PartyPriceRule::query()
+        $rule = $models->query(PartyPriceRule::class)
             ->where('company_id', $company_id)
             ->where(function (Builder $query) use ($party_id): void {
                 $query->whereNull('party_id');

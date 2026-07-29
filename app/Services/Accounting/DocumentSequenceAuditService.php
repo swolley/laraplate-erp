@@ -8,19 +8,23 @@ use Illuminate\Support\Collection;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final class DocumentSequenceAuditService
 {
     /**
      * @return array{company_id: int, year: int, checks: list<array{sequence_id: int|null, document_type: string, status: 'success'|'warning'|'failure', code: string, message: string}>, summary: array{success: int, warning: int, failure: int}}
      */
-    public function audit(int $company_id, int $year): array
+    public function audit(Company $company, int $year): array
     {
-        $sequences = DocumentSequence::query()->withoutGlobalScopes()
+        $models = ConnectionScopedModels::for($company);
+        $company_id = (int) $company->getKey();
+        $sequences = $models->query(DocumentSequence::class)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->whereIn('fiscal_year', [$year, 0])
             ->orderBy('fiscal_year')
@@ -30,10 +34,10 @@ final class DocumentSequenceAuditService
         $checks = [];
 
         foreach ($sequences as $sequence) {
-            $this->auditSequence($sequence, $checks);
+            $this->auditSequence($models, $sequence, $checks);
         }
 
-        $this->auditMissingSequences($company_id, $year, $sequences, $checks);
+        $this->auditMissingSequences($models, $company_id, $year, $sequences, $checks);
 
         return [
             'company_id' => $company_id,
@@ -50,7 +54,11 @@ final class DocumentSequenceAuditService
     /**
      * @param  list<array{sequence_id: int|null, document_type: string, status: 'success'|'warning'|'failure', code: string, message: string}>  $checks
      */
-    private function auditSequence(DocumentSequence $sequence, array &$checks): void
+    private function auditSequence(
+        ConnectionScopedModels $models,
+        DocumentSequence $sequence,
+        array &$checks,
+    ): void
     {
         $document_type = $sequence->document_type;
 
@@ -69,7 +77,7 @@ final class DocumentSequenceAuditService
             return;
         }
 
-        $references = $this->referencesFor($document_type, (int) $sequence->company_id, (int) $sequence->fiscal_year);
+        $references = $this->referencesFor($models, $document_type, (int) $sequence->company_id, (int) $sequence->fiscal_year);
         $issues_before = count($checks);
         $duplicates = $references->countBy()->filter(static fn (int $count): bool => $count > 1);
 
@@ -147,7 +155,13 @@ final class DocumentSequenceAuditService
      * @param  Collection<int, DocumentSequence>  $sequences
      * @param  list<array{sequence_id: int|null, document_type: string, status: 'success'|'warning'|'failure', code: string, message: string}>  $checks
      */
-    private function auditMissingSequences(int $company_id, int $year, Collection $sequences, array &$checks): void
+    private function auditMissingSequences(
+        ConnectionScopedModels $models,
+        int $company_id,
+        int $year,
+        Collection $sequences,
+        array &$checks,
+    ): void
     {
         foreach ($this->auditableTypes() as $document_type) {
             $fiscal_year = $this->isFiscal($document_type) ? $year : 0;
@@ -158,7 +172,7 @@ final class DocumentSequenceAuditService
                 continue;
             }
 
-            $references = $this->referencesFor($document_type, $company_id, $fiscal_year);
+            $references = $this->referencesFor($models, $document_type, $company_id, $fiscal_year);
 
             if ($references->isNotEmpty()) {
                 $checks[] = [
@@ -175,14 +189,19 @@ final class DocumentSequenceAuditService
     /**
      * @return Collection<int, string>
      */
-    private function referencesFor(DocumentType $document_type, int $company_id, int $fiscal_year): Collection
+    private function referencesFor(
+        ConnectionScopedModels $models,
+        DocumentType $document_type,
+        int $company_id,
+        int $fiscal_year,
+    ): Collection
     {
         if ($document_type === DocumentType::SalesOrder) {
-            return $this->referencesFromModel(SalesOrder::class, $company_id);
+            return $this->referencesFromModel($models, SalesOrder::class, $company_id);
         }
 
         if ($document_type === DocumentType::PurchaseOrder) {
-            return $this->referencesFromModel(PurchaseOrder::class, $company_id);
+            return $this->referencesFromModel($models, PurchaseOrder::class, $company_id);
         }
 
         [$direction, $invoice_type] = match ($document_type) {
@@ -199,7 +218,7 @@ final class DocumentSequenceAuditService
             return collect();
         }
 
-        return Invoice::query()->withoutGlobalScopes()
+        return $models->query(Invoice::class)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->where('direction', $direction->value)
             ->where('invoice_type', $invoice_type->value)
@@ -215,9 +234,13 @@ final class DocumentSequenceAuditService
      * @param  class-string<SalesOrder|PurchaseOrder>  $model
      * @return Collection<int, string>
      */
-    private function referencesFromModel(string $model, int $company_id): Collection
+    private function referencesFromModel(
+        ConnectionScopedModels $models,
+        string $model,
+        int $company_id,
+    ): Collection
     {
-        return $model::query()->withoutGlobalScopes()
+        return $models->query($model)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->whereNotNull('reference')
             ->pluck('reference')

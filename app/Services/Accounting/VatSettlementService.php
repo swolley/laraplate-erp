@@ -8,6 +8,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\VatRegisterType;
 use Modules\ERP\Casts\VatSettlementStatus;
+use Modules\ERP\Models\Company;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Models\VatSettlement;
@@ -20,18 +22,22 @@ final class VatSettlementService
     /**
      * @return array{vat_sales: string, vat_purchases: string, previous_credit: string, settlement_amount: string}
      */
-    public function preview(int $company_id, int $fiscal_period_id): array
+    public function preview(Company $company, FiscalPeriod $fiscal_period): array
     {
-        $fiscal_period = $this->fiscalPeriod($company_id, $fiscal_period_id);
+        $models = ConnectionScopedModels::for($company, $fiscal_period);
+        $this->assertFiscalPeriodBelongsToCompany($models, $company, $fiscal_period);
 
-        return $this->calculate(ConnectionScopedModels::for($fiscal_period), $company_id, $fiscal_period);
+        return $this->calculate($models, (int) $company->getKey(), $fiscal_period);
     }
 
-    public function compute(int $company_id, int $fiscal_period_id): VatSettlement
+    public function compute(Company $company, FiscalPeriod $fiscal_period): VatSettlement
     {
-        $fiscal_period = $this->fiscalPeriod($company_id, $fiscal_period_id);
+        $models = ConnectionScopedModels::for($company, $fiscal_period);
+        $this->assertFiscalPeriodBelongsToCompany($models, $company, $fiscal_period);
+        $company_id = (int) $company->getKey();
+        $fiscal_period_id = (int) $fiscal_period->getKey();
 
-        return ConnectionScopedTransaction::run($fiscal_period, function (ConnectionScopedModels $models) use ($company_id, $fiscal_period_id, $fiscal_period): VatSettlement {
+        return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company_id, $fiscal_period_id, $fiscal_period): VatSettlement {
             $amounts = $this->calculate($models, $company_id, $fiscal_period);
 
             $existing = $models->query(VatSettlement::class)
@@ -54,7 +60,7 @@ final class VatSettlementService
                     'status' => VatSettlementStatus::Draft->value,
                 ],
             );
-        });
+        }, $fiscal_period);
     }
 
     public function confirm(VatSettlement $settlement, int $user_id): void
@@ -74,12 +80,22 @@ final class VatSettlementService
         });
     }
 
-    private function fiscalPeriod(int $company_id, int $fiscal_period_id): FiscalPeriod
+    private function assertFiscalPeriodBelongsToCompany(
+        ConnectionScopedModels $models,
+        Company $company,
+        FiscalPeriod $fiscal_period,
+    ): void
     {
-        return FiscalPeriod::query()
-            ->whereKey($fiscal_period_id)
-            ->whereHas('fiscal_year', static fn ($query) => $query->where('company_id', $company_id))
-            ->firstOrFail();
+        $belongs_to_company = $models->query(FiscalYear::class)
+            ->whereKey($fiscal_period->fiscal_year_id)
+            ->where('company_id', $company->getKey())
+            ->exists();
+
+        if (! $belongs_to_company) {
+            throw ValidationException::withMessages([
+                'fiscal_period_id' => ['The fiscal period does not belong to the selected company.'],
+            ]);
+        }
     }
 
     /**

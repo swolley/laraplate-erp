@@ -61,7 +61,7 @@ it('accepts a sequence aligned with persisted invoice references', function (): 
     sequenceAuditInvoice($company, DocumentNumberFormatter::format($sequence, now()->year, 1));
     sequenceAuditInvoice($company, DocumentNumberFormatter::format($sequence, now()->year, 2));
 
-    $result = app(DocumentSequenceAuditService::class)->audit((int) $company->getKey(), now()->year);
+    $result = app(DocumentSequenceAuditService::class)->audit($company, now()->year);
 
     expect($result['summary']['failure'])->toBe(0)
         ->and(collect($result['checks'])->pluck('code'))->toContain('sequence_consistent');
@@ -72,7 +72,7 @@ it('fails when persisted documents exceed the sequence counter', function (): vo
     $sequence = sequenceAuditSequence($company, 1);
     sequenceAuditInvoice($company, DocumentNumberFormatter::format($sequence, now()->year, 2));
 
-    $result = app(DocumentSequenceAuditService::class)->audit((int) $company->getKey(), now()->year);
+    $result = app(DocumentSequenceAuditService::class)->audit($company, now()->year);
 
     expect(collect($result['checks'])->pluck('code'))->toContain('counter_behind_documents')
         ->and($result['summary']['failure'])->toBeGreaterThan(0);
@@ -87,7 +87,7 @@ it('detects duplicate references and gaps without mutating data', function (): v
     sequenceAuditInvoice($company, DocumentNumberFormatter::format($sequence, now()->year, 3));
     $sequence_before = $sequence->fresh()->getAttributes();
 
-    $result = app(DocumentSequenceAuditService::class)->audit((int) $company->getKey(), now()->year);
+    $result = app(DocumentSequenceAuditService::class)->audit($company, now()->year);
     $codes = collect($result['checks'])->pluck('code');
 
     expect($codes)->toContain('duplicate_references', 'sequence_gaps')

@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Services\Pricing\InvoiceLinePricingService;
+use Modules\ERP\Support\ErpConnectionContext;
 
 final class InvoiceForm
 {
@@ -199,9 +201,18 @@ final class InvoiceForm
             return null;
         }
 
+        $company = app(ErpConnectionContext::class)
+            ->model(Company::class)
+            ->newQuery()
+            ->find((int) $company_id);
+
+        if (! $company instanceof Company) {
+            return null;
+        }
+
         try {
             $defaults = app(InvoiceLinePricingService::class)->defaultsFromSalesOrderLine(
-                company_id: (int) $company_id,
+                company: $company,
                 sales_order_line_id: $sales_order_line_id,
                 party_id: $get('../../party_id') !== null ? (int) $get('../../party_id') : null,
                 currency: (string) ($get('../../currency') ?? 'EUR'),

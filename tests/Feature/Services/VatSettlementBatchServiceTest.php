@@ -48,7 +48,7 @@ function vatBatchFixture(): array
 it('previews open periods without persisting settlements', function (): void {
     [$company] = vatBatchFixture();
 
-    $result = app(VatSettlementBatchService::class)->compute((int) $company->getKey(), 2026, dry_run: true);
+    $result = app(VatSettlementBatchService::class)->compute($company, 2026, dry_run: true);
 
     expect($result['summary'])->toMatchArray(['previewed' => 2, 'computed' => 0, 'failed' => 0])
         ->and(VatSettlement::query()->withoutGlobalScopes()->where('company_id', $company->getKey())->count())->toBe(0);
@@ -64,7 +64,7 @@ it('persists drafts and skips confirmed settlements', function (): void {
         'confirmed_by' => 1,
     ]);
 
-    $result = app(VatSettlementBatchService::class)->compute((int) $company->getKey(), 2026);
+    $result = app(VatSettlementBatchService::class)->compute($company, 2026);
 
     expect($result['summary'])->toMatchArray(['computed' => 1, 'skipped' => 1, 'failed' => 0])
         ->and(VatSettlement::query()->withoutGlobalScopes()->where('fiscal_period_id', $period_one->getKey())->firstOrFail()->status)->toBe(VatSettlementStatus::Confirmed)
@@ -74,8 +74,8 @@ it('persists drafts and skips confirmed settlements', function (): void {
 it('shares the same calculation between preview and persisted compute', function (): void {
     [$company, $period_one] = vatBatchFixture();
     $service = app(VatSettlementService::class);
-    $preview = $service->preview((int) $company->getKey(), (int) $period_one->getKey());
-    $settlement = $service->compute((int) $company->getKey(), (int) $period_one->getKey());
+    $preview = $service->preview($company, $period_one);
+    $settlement = $service->compute($company, $period_one);
 
     expect($preview)->toMatchArray([
         'vat_sales' => (string) $settlement->vat_sales,

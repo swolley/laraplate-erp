@@ -8,6 +8,7 @@ use JsonException;
 use Modules\Core\Overrides\Command;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Accounting\DocumentSequenceAuditService;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 use Symfony\Component\Console\Command\Command as BaseCommand;
 use Throwable;
@@ -64,7 +65,7 @@ final class DocumentSequencesAuditCommand extends Command
         }
 
         try {
-            $result = $this->audit_service->audit((int) $company->getKey(), $year);
+            $result = $this->audit_service->audit($company, $year);
         } catch (Throwable $exception) {
             $this->error('Unable to audit ERP document sequences: ' . $exception->getMessage());
 
@@ -105,9 +106,18 @@ final class DocumentSequencesAuditCommand extends Command
                 return null;
             }
 
-            return Company::query()->withoutGlobalScopes()->find((int) $company_id);
+            return $this->companySource()->newQuery()->withoutGlobalScopes()->find((int) $company_id);
         }
 
-        return Company::getDefault();
+        return $this->companySource()
+            ->newQuery()
+            ->withoutGlobalScopes()
+            ->where('is_default', true)
+            ->first();
+    }
+
+    private function companySource(): Company
+    {
+        return app(ErpConnectionContext::class)->model(Company::class);
     }
 }

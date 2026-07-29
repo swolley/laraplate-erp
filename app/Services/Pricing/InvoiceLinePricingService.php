@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\ERP\Services\Pricing;
 
 use Illuminate\Validation\ValidationException;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\SalesOrderLine;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 final readonly class InvoiceLinePricingService
 {
@@ -17,13 +19,16 @@ final readonly class InvoiceLinePricingService
      * @return array{description: string, quantity: string, unit_price: string|null}
      */
     public function defaultsFromSalesOrderLine(
-        int $company_id,
+        Company $company,
         int $sales_order_line_id,
         ?int $party_id = null,
         string $currency = 'EUR',
     ): array {
+        $models = ConnectionScopedModels::for($company);
+        $company_id = (int) $company->getKey();
+
         /** @var SalesOrderLine|null $line */
-        $line = SalesOrderLine::query()
+        $line = $models->query(SalesOrderLine::class)
             ->with(['sales_order', 'item'])
             ->find($sales_order_line_id);
 
@@ -42,7 +47,7 @@ final readonly class InvoiceLinePricingService
         }
 
         $unit_price = $this->resolveUnitPrice(
-            company_id: $company_id,
+            company: $company,
             line: $line,
             party_id: $party_id ?? $sales_order->party_id,
             currency: $currency,
@@ -56,7 +61,7 @@ final readonly class InvoiceLinePricingService
     }
 
     private function resolveUnitPrice(
-        int $company_id,
+        Company $company,
         SalesOrderLine $line,
         ?int $party_id,
         string $currency,
@@ -67,8 +72,8 @@ final readonly class InvoiceLinePricingService
 
         try {
             return $this->priceResolver->resolve(
-                company_id: $company_id,
-                item_id: $line->item_id,
+                company: $company,
+                item: $line->item,
                 party_id: $party_id,
                 currency: $currency,
             )->resolvedUnitPrice;

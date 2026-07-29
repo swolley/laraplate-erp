@@ -223,7 +223,7 @@ it('computes VAT settlement correctly', function (): void {
         'tax_amount' => '110.0000',
     ]);
 
-    $settlement = app(VatSettlementService::class)->compute((int) $company->id, (int) $period->id);
+    $settlement = app(VatSettlementService::class)->compute($company, $period);
 
     expect((float) $settlement->vat_sales)->toBe(220.0)
         ->and((float) $settlement->vat_purchases)->toBe(110.0)
@@ -273,7 +273,7 @@ it('carries forward previous credit', function (): void {
         'tax_amount' => '220.0000',
     ]);
 
-    $settlement = app(VatSettlementService::class)->compute((int) $company->id, (int) $period_m2->id);
+    $settlement = app(VatSettlementService::class)->compute($company, $period_m2);
 
     expect((float) $settlement->previous_credit)->toBe(200.0)
         ->and((float) $settlement->settlement_amount)->toBe(20.0);
@@ -302,7 +302,7 @@ it('locks confirmed VAT settlements against recompute update and delete', functi
     ]);
 
     $service = app(VatSettlementService::class);
-    $settlement = $service->compute((int) $company->id, (int) $period->id);
+    $settlement = $service->compute($company, $period);
     $service->confirm($settlement, 123);
     $settlement->refresh();
 
@@ -310,7 +310,7 @@ it('locks confirmed VAT settlements against recompute update and delete', functi
         ->and($settlement->confirmed_at)->not->toBeNull()
         ->and((int) $settlement->confirmed_by)->toBe(123);
 
-    expect(fn () => $service->compute((int) $company->id, (int) $period->id))
+    expect(fn () => $service->compute($company, $period))
         ->toThrow(ValidationException::class);
 
     expect(fn () => $settlement->update(['settlement_amount' => '999.0000']))
@@ -361,7 +361,7 @@ it('carries forward only confirmed previous VAT credits', function (): void {
         'tax_amount' => '220.0000',
     ]);
 
-    $settlement = app(VatSettlementService::class)->compute((int) $company->id, (int) $period_m2->id);
+    $settlement = app(VatSettlementService::class)->compute($company, $period_m2);
 
     expect((string) $settlement->previous_credit)->toBe('0.0000')
         ->and((string) $settlement->settlement_amount)->toBe('220.0000');

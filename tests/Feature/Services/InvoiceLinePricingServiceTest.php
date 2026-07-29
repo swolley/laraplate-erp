@@ -122,7 +122,7 @@ it('builds invoice line defaults from a sales order line and current party prici
     ]);
 
     $defaults = app(InvoiceLinePricingService::class)->defaultsFromSalesOrderLine(
-        company_id: $company->id,
+        company: $company,
         sales_order_line_id: $sales_order_line->id,
         party_id: $party->id,
         currency: 'EUR',

@@ -270,7 +270,7 @@ it('computes period VAT settlement from posted sale purchase and credit note reg
     ]);
     $credit_note->update(['posted_at' => CarbonImmutable::parse('2026-01-12 10:00:00')]);
 
-    $settlement = app(VatSettlementService::class)->compute((int) $company->id, (int) $period->id);
+    $settlement = app(VatSettlementService::class)->compute($company, $period);
 
     expect($settlement->status)->toBe(VatSettlementStatus::Draft)
         ->and((string) $settlement->vat_sales)->toBe('198.0000')

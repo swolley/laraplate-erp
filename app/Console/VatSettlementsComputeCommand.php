@@ -8,6 +8,7 @@ use JsonException;
 use Modules\Core\Overrides\Command;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Accounting\VatSettlementBatchService;
+use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 use Symfony\Component\Console\Command\Command as BaseCommand;
 use Throwable;
@@ -61,7 +62,7 @@ final class VatSettlementsComputeCommand extends Command
             }
 
             $result = $this->batch_service->compute(
-                (int) $company->getKey(),
+                $company,
                 $year,
                 $this->periodOption(),
                 (bool) $this->option('dry-run'),
@@ -107,11 +108,20 @@ final class VatSettlementsComputeCommand extends Command
 
         if ($company_id !== null && $company_id !== '') {
             return is_numeric($company_id) && (int) $company_id > 0
-                ? Company::query()->withoutGlobalScopes()->find((int) $company_id)
+                ? $this->companySource()->newQuery()->withoutGlobalScopes()->find((int) $company_id)
                 : null;
         }
 
-        return Company::getDefault();
+        return $this->companySource()
+            ->newQuery()
+            ->withoutGlobalScopes()
+            ->where('is_default', true)
+            ->first();
+    }
+
+    private function companySource(): Company
+    {
+        return app(ErpConnectionContext::class)->model(Company::class);
     }
 
     private function periodOption(): ?string

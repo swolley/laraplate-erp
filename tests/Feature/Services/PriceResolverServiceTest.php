@@ -57,7 +57,7 @@ function createPricingFixture(): array
 it('resolves the base unit price from the active price list item', function (): void {
     [$company, $item] = createPricingFixture();
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item);
 
     expect($result->baseUnitPrice)->toBe('100.0000')
         ->and($result->resolvedUnitPrice)->toBe('100.0000')
@@ -74,7 +74,7 @@ it('prefers an item-specific list price over its taxonomy price', function (): v
         'unit_price' => '75.0000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item);
 
     expect($result->baseUnitPrice)->toBe('75.0000')
         ->and($result->priceListItem->item_id)->toBe($item->id);
@@ -106,7 +106,7 @@ it('resolves a direct price for an item without taxonomy', function (): void {
         'unit_price' => '33.0000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item);
 
     expect($result->resolvedUnitPrice)->toBe('33.0000');
 });
@@ -146,7 +146,7 @@ it('applies party percent discount rules to the resolved unit price', function (
         'discount_value' => '10.0000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item, (int) $party->id);
 
     expect($result->resolvedUnitPrice)->toBe('90.0000');
 });
@@ -168,7 +168,7 @@ it('applies party fixed-amount discounts without going below zero', function ():
         'discount_value' => '15.0000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item, (int) $party->id);
 
     expect($result->resolvedUnitPrice)->toBe('85.0000');
 });
@@ -190,7 +190,7 @@ it('floors fixed discounts that would make the unit price negative', function ()
         'discount_value' => '150.0000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item, (int) $party->id);
 
     expect($result->resolvedUnitPrice)->toBe('0.0000');
 });
@@ -212,7 +212,7 @@ it('replaces the list price when a party override rule is configured', function 
         'discount_value' => '42.5000',
     ]);
 
-    $result = app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id, (int) $party->id);
+    $result = app(PriceResolverService::class)->resolve($company, $item, (int) $party->id);
 
     expect($result->baseUnitPrice)->toBe('100.0000')
         ->and($result->resolvedUnitPrice)->toBe('42.5000');
@@ -233,7 +233,7 @@ it('rejects items without either a direct price or pricing taxonomy', function (
         'costing_method' => 'weighted_avg',
     ]);
 
-    expect(fn () => app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id))
+    expect(fn () => app(PriceResolverService::class)->resolve($company, $item))
         ->toThrow(ValidationException::class, 'No active direct or taxonomy price list item');
 });
 
@@ -241,6 +241,6 @@ it('rejects items when no active price list item matches', function (): void {
     [$company, $item] = createPricingFixture();
     PriceListItem::query()->delete();
 
-    expect(fn () => app(PriceResolverService::class)->resolve((int) $company->id, (int) $item->id))
+    expect(fn () => app(PriceResolverService::class)->resolve($company, $item))
         ->toThrow(ValidationException::class, 'No active direct or taxonomy price list item');
 });
