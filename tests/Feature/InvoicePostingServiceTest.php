@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\OutboxEvent;
 use Modules\ERP\Casts\DocumentType;
@@ -102,11 +101,19 @@ it('preloads tax codes while posting invoices with repeated tax codes', function
         ]);
     }
 
-    DB::enableQueryLog();
+    $connection = $invoice->getConnection();
+    $connection->flushQueryLog();
+    $connection->enableQueryLog();
 
-    app(InvoicePostingService::class)->post($invoice);
+    try {
+        app(InvoicePostingService::class)->post($invoice);
+        $query_log = $connection->getQueryLog();
+    } finally {
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+    }
 
-    $tax_code_queries = collect(DB::getQueryLog())
+    $tax_code_queries = collect($query_log)
         ->pluck('query')
         ->filter(static fn (string $query): bool => str_contains($query, 'erp_tax_codes'))
         ->count();

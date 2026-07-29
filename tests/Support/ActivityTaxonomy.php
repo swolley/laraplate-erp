@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Modules\ERP\Tests\Support;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Modules\Core\Enums\CoreTables;
+use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
+use Modules\ERP\Models\Activity;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Pivot\Presettable;
 
@@ -34,7 +34,9 @@ final class ActivityTaxonomy
 
         $now = now();
 
-        $activity_id = DB::table(CoreTables::Taxonomies->value)->insertGetId([
+        $activity = (new Activity)->setConnection($entity->getConnection()->getName());
+        $translation = (new TaxonomyTranslation)->setConnection($entity->getConnection()->getName());
+        $activity_id = $activity->getConnection()->table($activity->getTable())->insertGetId([
             'entity_id' => $entity->id,
             'presettable_id' => $presettable->id,
             'shared_components' => null,
@@ -52,7 +54,7 @@ final class ActivityTaxonomy
             'valid_to' => null,
         ]);
 
-        DB::table(CoreTables::TaxonomiesTranslations->value)->insert([
+        $translation->getConnection()->table($translation->getTable())->insert([
             'taxonomy_id' => $activity_id,
             'locale' => 'en',
             'name' => 'Development',

@@ -217,7 +217,7 @@ it('installs fiscal calendars only on the company affinity connection', function
 });
 
 it('rejects a VAT fiscal period from another connection before issuing service queries', function (): void {
-    $connection = DB::connection();
+    $connection = DB::connection((string) config('database.default'));
     $company_id = $connection->table((new Company)->getTable())->insertGetId([
         'slug' => 'default-vat-company',
         'name' => 'Default VAT company',

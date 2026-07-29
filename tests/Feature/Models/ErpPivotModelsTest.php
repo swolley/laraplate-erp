@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Enums\ERPTables;
@@ -96,7 +95,9 @@ it('hydrates party contact links with the ERP contactable pivot model', function
 
     $linked_contact = $party->contacts()->firstOrFail();
 
-    expect(DB::table(ERPTables::Contactables->value)->count())->toBe(1)
+    $contactable = (new Contactable)->setConnection($party->getConnection()->getName());
+
+    expect($contactable->getConnection()->table($contactable->getTable())->count())->toBe(1)
         ->and($linked_contact->pivot)->toBeInstanceOf(Contactable::class)
         ->and($linked_contact->pivot->getTable())->toBe(ERPTables::Contactables->value);
 });

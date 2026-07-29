@@ -30,8 +30,9 @@ function documentNumberConcurrencyUseDatabase(string $database_path): void
 
     DB::purge('sqlite');
     DB::reconnect('sqlite');
-    DB::statement('PRAGMA journal_mode = WAL');
-    DB::statement('PRAGMA busy_timeout = 30000');
+    $connection = DB::connection('sqlite');
+    $connection->statement('PRAGMA journal_mode = WAL');
+    $connection->statement('PRAGMA busy_timeout = 30000');
 }
 
 function documentNumberConcurrencyCreateSchema(): int
@@ -92,7 +93,9 @@ function documentNumberConcurrencyCreateSchema(): int
         $table->unique(['company_id', 'document_type', 'fiscal_year']);
     });
 
-    return (int) DB::table(ERPTables::Companies->value)->insertGetId([
+    $company = new Company;
+
+    return (int) $company->getConnection()->table($company->getTable())->insertGetId([
         'slug' => 'concurrency',
         'name' => 'Concurrency',
         'fiscal_country' => 'IT',
@@ -122,7 +125,8 @@ it('allocates one contiguous fiscal sequence under concurrent requests', functio
         documentNumberConcurrencyUseDatabase($database_path);
         $company_id = documentNumberConcurrencyCreateSchema();
 
-        DB::table(ERPTables::DocumentSequences->value)->insert([
+        $sequence_model = new DocumentSequence;
+        $sequence_model->getConnection()->table($sequence_model->getTable())->insert([
             'company_id' => $company_id,
             'document_type' => DocumentType::SalesInvoice->value,
             'fiscal_year' => 2026,
@@ -157,6 +161,7 @@ it('allocates one contiguous fiscal sequence under concurrent requests', functio
                     documentNumberConcurrencyUseDatabase($database_path);
 
                     $number = null;
+
                     for ($attempt = 1; $attempt <= 12; $attempt++) {
                         try {
                             $number = app(DocumentNumberAllocator::class)->next(
@@ -199,6 +204,7 @@ it('allocates one contiguous fiscal sequence under concurrent requests', functio
         touch($start_path);
 
         $failed_children = [];
+
         foreach ($children as $pid) {
             pcntl_waitpid($pid, $status);
 
@@ -255,7 +261,7 @@ it('allocates one contiguous fiscal sequence under concurrent requests', functio
             'database.connections.sqlite.database' => $original_sqlite_database,
         ]);
         DB::purge('sqlite');
-        DB::reconnect();
+        DB::reconnect((string) $original_default);
 
         foreach (glob($result_dir . '/*.json') ?: [] as $path) {
             @unlink($path);

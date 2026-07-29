@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Database\Seeders;
 
-use Illuminate\Support\Facades\Schema;
 use Modules\Core\Overrides\Seeder;
 use Modules\ERP\Casts\TaxKind;
-use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Support\ConnectionScopedModels;
 
 /**
  * Dev / default Italian VAT and sample withholding rows for a {@see Company}.
@@ -31,15 +30,15 @@ final class ItalianTaxCodesSeeder extends Seeder
 
     public function run(): void
     {
-        $tax_codes_table = ERPTables::TaxCodes->value;
+        $tax_code_model = new TaxCode;
 
-        if (! Schema::hasTable($tax_codes_table)) {
+        if (! $tax_code_model->getConnection()->getSchemaBuilder()->hasTable($tax_code_model->getTable())) {
             $this->command?->warn('ItalianTaxCodesSeeder skipped: tax_codes table is missing.');
 
             return;
         }
 
-        $company = Company::query()->withoutGlobalScopes()->where('is_default', true)->orderBy('id')->first();
+        $company = (new Company)->newQuery()->withoutGlobalScopes()->where('is_default', true)->orderBy('id')->first();
 
         if (! $company instanceof Company) {
             $this->command?->warn('ItalianTaxCodesSeeder skipped: no default company.');
@@ -53,9 +52,10 @@ final class ItalianTaxCodesSeeder extends Seeder
     public function seedForCompany(Company $company): void
     {
         $effective = '2000-01-01';
+        $tax_codes = ConnectionScopedModels::for($company)->query(TaxCode::class)->withoutGlobalScopes();
 
         foreach (self::ROWS as $row) {
-            TaxCode::query()->withoutGlobalScopes()->firstOrCreate(
+            (clone $tax_codes)->firstOrCreate(
                 [
                     'company_id' => $company->id,
                     'code' => $row['code'],

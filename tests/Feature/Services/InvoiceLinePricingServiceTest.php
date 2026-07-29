@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Modules\Core\Enums\CoreTables;
+use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\ERP\Casts\DiscountType;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
+use Modules\ERP\Models\Activity;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Item;
@@ -36,7 +36,9 @@ function insertInvoicePricingActivityTaxonomy(string $slug): int
         ->firstOrFail();
     $now = now();
 
-    $taxonomy_id = DB::table(CoreTables::Taxonomies->value)->insertGetId([
+    $activity = (new Activity)->setConnection($entity->getConnection()->getName());
+    $translation = (new TaxonomyTranslation)->setConnection($entity->getConnection()->getName());
+    $taxonomy_id = $activity->getConnection()->table($activity->getTable())->insertGetId([
         'entity_id' => $entity->id,
         'presettable_id' => $presettable->id,
         'shared_components' => null,
@@ -54,7 +56,7 @@ function insertInvoicePricingActivityTaxonomy(string $slug): int
         'valid_to' => null,
     ]);
 
-    DB::table(CoreTables::TaxonomiesTranslations->value)->insert([
+    $translation->getConnection()->table($translation->getTable())->insert([
         'taxonomy_id' => $taxonomy_id,
         'locale' => 'en',
         'name' => 'Implementation',

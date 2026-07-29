@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\Core\Overrides\Seeder;
 use Modules\ERP\Casts\EntityType;
@@ -16,6 +13,7 @@ use Modules\ERP\Models\Activity;
 use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\OpportunityStage;
 use Modules\ERP\Models\Pivot\Presettable;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Dev fixture: default CRM pipeline stages ({@see EntityType::OpportunityStages}).
@@ -24,8 +22,21 @@ final class DevERPDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        Model::unguarded(function (): void {
-            DB::transaction(function (): void {
+        $entity_model = new Entity;
+        $presettable_model = new Presettable;
+        $stage_model = new OpportunityStage;
+        $activity_model = new Activity;
+        $translation_model = new TaxonomyTranslation;
+        ConnectionScopedTransaction::connection(
+            $entity_model,
+            $presettable_model,
+            $stage_model,
+            $activity_model,
+            $translation_model,
+        );
+
+        Model::unguarded(function () use ($entity_model): void {
+            $entity_model->getConnection()->transaction(function (): void {
                 $this->seedOpportunityStages();
                 $this->seedActivities();
             });
@@ -106,10 +117,11 @@ final class DevERPDatabaseSeeder extends Seeder
 
     private function seedActivities(): void
     {
-        $taxonomies_table = CoreTables::Taxonomies->value;
-        $taxonomies_translations_table = CoreTables::TaxonomiesTranslations->value;
+        $activity_model = new Activity;
+        $translation_model = new TaxonomyTranslation;
 
-        if (! Schema::hasTable($taxonomies_table) || ! Schema::hasTable($taxonomies_translations_table)) {
+        if (! $activity_model->getConnection()->getSchemaBuilder()->hasTable($activity_model->getTable())
+            || ! $translation_model->getConnection()->getSchemaBuilder()->hasTable($translation_model->getTable())) {
             $this->command?->warn('Skipping activities: taxonomies tables are missing.');
 
             return;

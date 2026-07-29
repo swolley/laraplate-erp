@@ -12,6 +12,7 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
+use RuntimeException;
 use Throwable;
 
 final class DocumentNumberConcurrencyHarness
@@ -24,9 +25,9 @@ final class DocumentNumberConcurrencyHarness
         $original_default = config('database.default');
         $original_sqlite_database = config('database.connections.sqlite.database');
         $database_path = tempnam(sys_get_temp_dir(), 'erp-seq-stress-')
-            ?: sys_get_temp_dir().'/erp-seq-stress-'.uniqid().'.sqlite';
-        $start_path = $database_path.'.start';
-        $result_dir = $database_path.'.results';
+            ?: sys_get_temp_dir() . '/erp-seq-stress-' . uniqid() . '.sqlite';
+        $start_path = $database_path . '.start';
+        $result_dir = $database_path . '.results';
         $children = [];
 
         mkdir($result_dir);
@@ -35,7 +36,8 @@ final class DocumentNumberConcurrencyHarness
             self::useDatabase($database_path);
             $company_id = self::createSchema();
 
-            DB::table(ERPTables::DocumentSequences->value)->insert([
+            $sequence_model = new DocumentSequence;
+            $sequence_model->getConnection()->table($sequence_model->getTable())->insert([
                 'company_id' => $company_id,
                 'document_type' => DocumentType::SalesInvoice->value,
                 'fiscal_year' => 2026,
@@ -56,7 +58,7 @@ final class DocumentNumberConcurrencyHarness
                 $pid = pcntl_fork();
 
                 if ($pid === -1) {
-                    throw new \RuntimeException('Unable to fork document-number stress worker.');
+                    throw new RuntimeException('Unable to fork document-number stress worker.');
                 }
 
                 if ($pid === 0) {
@@ -69,6 +71,7 @@ final class DocumentNumberConcurrencyHarness
             touch($start_path);
 
             $failed_children = [];
+
             foreach ($children as $pid) {
                 pcntl_waitpid($pid, $status);
 
@@ -79,7 +82,7 @@ final class DocumentNumberConcurrencyHarness
 
             self::useDatabase($database_path);
 
-            $payloads = collect(glob($result_dir.'/*.json') ?: [])
+            $payloads = collect(glob($result_dir . '/*.json') ?: [])
                 ->map(static fn (string $path): array => json_decode(
                     (string) file_get_contents($path),
                     true,
@@ -113,9 +116,9 @@ final class DocumentNumberConcurrencyHarness
                 'database.connections.sqlite.database' => $original_sqlite_database,
             ]);
             DB::purge('sqlite');
-            DB::reconnect();
+            DB::reconnect((string) $original_default);
 
-            foreach (glob($result_dir.'/*.json') ?: [] as $path) {
+            foreach (glob($result_dir . '/*.json') ?: [] as $path) {
                 @unlink($path);
             }
 
@@ -149,18 +152,20 @@ final class DocumentNumberConcurrencyHarness
         } catch (Throwable $throwable) {
             self::writeResult($result_dir, [
                 'ok' => false,
-                'error' => $throwable::class.': '.$throwable->getMessage(),
+                'error' => $throwable::class . ': ' . $throwable->getMessage(),
             ]);
 
             exit(1);
         }
     }
 
-    /** @param array<string, bool|string> $payload */
+    /**
+     * @param  array<string, bool|string>  $payload
+     */
     private static function writeResult(string $result_dir, array $payload): void
     {
         file_put_contents(
-            $result_dir.'/'.getmypid().'.json',
+            $result_dir . '/' . getmypid() . '.json',
             json_encode($payload, JSON_THROW_ON_ERROR),
         );
     }
@@ -184,8 +189,9 @@ final class DocumentNumberConcurrencyHarness
 
         DB::purge('sqlite');
         DB::reconnect('sqlite');
-        DB::statement('PRAGMA journal_mode = WAL');
-        DB::statement('PRAGMA busy_timeout = 30000');
+        $connection = DB::connection('sqlite');
+        $connection->statement('PRAGMA journal_mode = WAL');
+        $connection->statement('PRAGMA busy_timeout = 30000');
     }
 
     private static function createSchema(): int
@@ -240,7 +246,9 @@ final class DocumentNumberConcurrencyHarness
             $table->unique(['company_id', 'document_type', 'fiscal_year']);
         });
 
-        return (int) DB::table(ERPTables::Companies->value)->insertGetId([
+        $company = new Company;
+
+        return (int) $company->getConnection()->table($company->getTable())->insertGetId([
             'slug' => 'concurrency-stress',
             'name' => 'Concurrency Stress',
             'fiscal_country' => 'IT',

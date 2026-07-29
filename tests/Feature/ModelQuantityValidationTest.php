@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Casts\CrudExecutor;
 use Modules\Core\Overrides\Model;
@@ -79,7 +78,7 @@ it('rejects non-positive stock movement quantities through model rules', functio
 });
 
 it('enforces positive stock movement quantities at database level when supported', function (): void {
-    if (DB::connection()->getDriverName() === 'sqlite') {
+    if ((new StockMovement)->getConnection()->getDriverName() === 'sqlite') {
         $this->markTestSkipped('SQLite cannot add table check constraints after Schema::create in these migrations.');
     }
 

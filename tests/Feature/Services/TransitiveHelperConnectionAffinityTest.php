@@ -186,7 +186,7 @@ it('rejects mixed bank difference participants before issuing queries', function
     $payment->id = 9405;
     $payment->exists = true;
 
-    $primary = DB::connection();
+    $primary = DB::connection((string) config('database.default'));
     $secondary = DB::connection('erp-helper-secondary');
     $primary->flushQueryLog();
     $secondary->flushQueryLog();

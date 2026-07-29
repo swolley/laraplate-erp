@@ -6,15 +6,12 @@ namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
 use Modules\ERP\Casts\EntityType;
-use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
@@ -23,6 +20,7 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\Pivot\Presettable;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
@@ -30,6 +28,7 @@ use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\ERP\Services\Company\ErpCompanySettings;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use ReflectionClass;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -51,21 +50,25 @@ final class ERPDatabaseSeeder extends Seeder
         /** @var Company|null $company */
         $company = null;
 
-        $companies_table = ERPTables::Companies->value;
-        $entities_table = CoreTables::Entities->value;
-        $presets_table = CoreTables::Presets->value;
-        $presettables_table = CoreTables::Presettables->value;
-        $accounts_table = ERPTables::Accounts->value;
-        $fiscal_years_table = ERPTables::FiscalYears->value;
-        $tax_codes_table = ERPTables::TaxCodes->value;
+        $company_model = new Company;
+        $entity_model = new Entity;
+        $preset_model = new Preset;
+        $presettable_model = new Presettable;
+        $account_model = new Account;
+        $fiscal_year_model = new FiscalYear;
+        $tax_code_model = new TaxCode;
+        $setting_model = new Setting;
+        $permission_model = new Permission;
 
-        if (Schema::hasTable($companies_table)) {
+        if ($company_model->getConnection()->getSchemaBuilder()->hasTable($company_model->getTable())) {
             Model::unguarded(function () use (&$company): void {
                 $company = $this->ensureDefaultCompany();
             });
         }
 
-        if (! Schema::hasTable($entities_table) || ! Schema::hasTable($presets_table) || ! Schema::hasTable($presettables_table)) {
+        if (! $entity_model->getConnection()->getSchemaBuilder()->hasTable($entity_model->getTable())
+            || ! $preset_model->getConnection()->getSchemaBuilder()->hasTable($preset_model->getTable())
+            || ! $presettable_model->getConnection()->getSchemaBuilder()->hasTable($presettable_model->getTable())) {
             $this->command?->warn('Skipping ERP entity bootstrap: prerequisite Core tables (entities/presets/presettables) are missing.');
         } else {
             Model::unguarded(function (): void {
@@ -73,31 +76,31 @@ final class ERPDatabaseSeeder extends Seeder
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable($accounts_table)) {
+        if ($company instanceof Company && $account_model->getConnection()->getSchemaBuilder()->hasTable($account_model->getTable())) {
             Model::unguarded(function () use ($company): void {
                 resolve(ChartOfAccountsInstaller::class)->installWhenEmpty($company);
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable($fiscal_years_table)) {
+        if ($company instanceof Company && $fiscal_year_model->getConnection()->getSchemaBuilder()->hasTable($fiscal_year_model->getTable())) {
             Model::unguarded(function () use ($company): void {
                 resolve(FiscalCalendarInstaller::class)->ensureCalendarYear($company, (int) now()->year);
             });
         }
 
-        if ($company instanceof Company && Schema::hasTable($tax_codes_table)) {
+        if ($company instanceof Company && $tax_code_model->getConnection()->getSchemaBuilder()->hasTable($tax_code_model->getTable())) {
             Model::unguarded(function () use ($company): void {
                 resolve(ItalianTaxCodesSeeder::class)->seedForCompany($company);
             });
         }
 
-        if (Schema::hasTable(CoreTables::Settings->value)) {
+        if ($setting_model->getConnection()->getSchemaBuilder()->hasTable($setting_model->getTable())) {
             Model::unguarded(function (): void {
                 $this->ensureGlobalErpSettings();
             });
         }
 
-        if (Schema::hasTable(CoreTables::Permissions->value)) {
+        if ($permission_model->getConnection()->getSchemaBuilder()->hasTable($permission_model->getTable())) {
             Model::unguarded(function (): void {
                 $this->ensureDomainPermissions();
             });
@@ -108,7 +111,7 @@ final class ERPDatabaseSeeder extends Seeder
     {
         $this->logOperation(Company::class);
 
-        $existing = Company::query()->withoutGlobalScopes()->where('is_default', true)->orderBy('id')->first();
+        $existing = (new Company)->newQuery()->withoutGlobalScopes()->where('is_default', true)->orderBy('id')->first();
 
         if ($existing instanceof Company) {
             $this->command?->line('    - default company already exists');
@@ -137,8 +140,10 @@ final class ERPDatabaseSeeder extends Seeder
 
     private function ensureGlobalErpSettings(): void
     {
+        $setting_model = new Setting;
+
         foreach (ErpCompanySettings::globalSettingDefinitions() as $definition) {
-            if (Setting::query()->withoutGlobalScopes()->where('name', $definition['name'])->exists()) {
+            if ($setting_model->newQuery()->withoutGlobalScopes()->where('name', $definition['name'])->exists()) {
                 continue;
             }
 
@@ -166,9 +171,12 @@ final class ERPDatabaseSeeder extends Seeder
     {
         $this->logOperation(Entity::class);
 
-        $this->entities = Entity::query()->withoutGlobalScopes()->get()->keyBy('name');
+        $entity_model = new Entity;
+        $preset_model = new Preset;
+        ConnectionScopedTransaction::connection($entity_model, $preset_model);
+        $this->entities = $entity_model->newQuery()->withoutGlobalScopes()->get()->keyBy('name');
 
-        DB::transaction(function (): void {
+        $entity_model->getConnection()->transaction(function (): void {
             $entities = [
                 [
                     'name' => 'activity',
@@ -212,9 +220,10 @@ final class ERPDatabaseSeeder extends Seeder
     private function ensureDomainPermissions(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $permission_model = new Permission;
 
         foreach ($this->domainPermissions() as $permission_name) {
-            Permission::query()->firstOrCreate(['name' => $permission_name]);
+            $permission_model->newQuery()->firstOrCreate(['name' => $permission_name]);
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

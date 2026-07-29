@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\ERP\Tests\Support;
 
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Modules\Core\Enums\CoreTables;
+use Modules\Core\Models\Translations\TaxonomyTranslation;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
 use Modules\ERP\Models\Entity;
+use Modules\ERP\Models\OpportunityStage;
 use Modules\ERP\Models\Pivot\Presettable;
 
 /**
@@ -38,7 +38,9 @@ final class OpportunityStageTaxonomy
 
         $now = now();
 
-        $stage_id = DB::table(CoreTables::Taxonomies->value)->insertGetId([
+        $stage = (new OpportunityStage)->setConnection($entity->getConnection()->getName());
+        $translation = (new TaxonomyTranslation)->setConnection($entity->getConnection()->getName());
+        $stage_id = $stage->getConnection()->table($stage->getTable())->insertGetId([
             'entity_id' => $entity->id,
             'presettable_id' => $presettable->id,
             'shared_components' => null,
@@ -56,7 +58,7 @@ final class OpportunityStageTaxonomy
             'valid_to' => null,
         ]);
 
-        DB::table(CoreTables::TaxonomiesTranslations->value)->insert([
+        $translation->getConnection()->table($translation->getTable())->insert([
             'taxonomy_id' => $stage_id,
             'locale' => 'en',
             'name' => 'New',
