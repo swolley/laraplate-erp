@@ -51,9 +51,6 @@ parameters:
     # Avoid noise when ignore patterns drift after refactors
     reportUnmatchedIgnoredErrors: false
 
-    stubFiles:
-        - ../../_ide_helper_traits.php
-
     # Standalone package: Eloquent dynamic attrs; enable when @property blocks are complete
     checkModelProperties: false
     # Reduce false positives on dynamic Eloquent attributes and relations

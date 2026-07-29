@@ -15,7 +15,7 @@ use Override;
 
 /**
  * @mixin \Eloquent
-     * @mixin IdeHelperPaymentRequest
+ * @mixin IdeHelperPaymentRequest
  */
 final class PaymentRequest extends Model
 {
