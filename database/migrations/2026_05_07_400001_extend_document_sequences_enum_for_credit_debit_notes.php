@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Enums\ERPTables;
 
@@ -16,7 +14,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::getConnection()->getDriverName() !== 'mysql') {
+        $connection = app('db')->connection();
+
+        if ($connection->getDriverName() !== 'mysql') {
             return;
         }
 
@@ -26,7 +26,7 @@ return new class extends Migration
         ));
 
         $document_sequences_table = ERPTables::DocumentSequences->value;
-        DB::statement(
+        $connection->statement(
             "ALTER TABLE {$document_sequences_table} MODIFY document_type ENUM({$values}) NOT NULL COMMENT 'Which document stream this row advances'",
         );
     }

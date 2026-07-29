@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Helpers;
 
+use Illuminate\Database\Connection;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Modules\ERP\Enums\ERPTables;
 
 /**
@@ -90,24 +92,38 @@ final class ERPMigrateUtils
         }
     }
 
-    public static function positiveCheck(string $table, string $constraint, string $column): void
-    {
-        self::columnCheck($table, $constraint, $column, '>', '0');
+    public static function positiveCheck(
+        string $table,
+        string $constraint,
+        string $column,
+        ?ConnectionInterface $connection = null,
+    ): void {
+        self::columnCheck($table, $constraint, $column, '>', '0', self::connection($connection));
     }
 
-    public static function nonNegativeCheck(string $table, string $constraint, string $column): void
-    {
-        self::columnCheck($table, $constraint, $column, '>=', '0');
+    public static function nonNegativeCheck(
+        string $table,
+        string $constraint,
+        string $column,
+        ?ConnectionInterface $connection = null,
+    ): void {
+        self::columnCheck($table, $constraint, $column, '>=', '0', self::connection($connection));
     }
 
-    public static function nullableNonNegativeCheck(string $table, string $constraint, string $column): void
-    {
-        $wrapped_column = DB::connection()->getQueryGrammar()->wrap($column);
+    public static function nullableNonNegativeCheck(
+        string $table,
+        string $constraint,
+        string $column,
+        ?ConnectionInterface $connection = null,
+    ): void {
+        $connection = self::connection($connection);
+        $wrapped_column = $connection->getQueryGrammar()->wrap($column);
 
         self::addCheckConstraint(
             $table,
             $constraint,
             "{$wrapped_column} IS NULL OR {$wrapped_column} >= 0",
+            $connection,
         );
     }
 
@@ -117,15 +133,19 @@ final class ERPMigrateUtils
         string $column,
         string $operator,
         string $value,
+        Connection $connection,
     ): void {
-        $wrapped_column = DB::connection()->getQueryGrammar()->wrap($column);
+        $wrapped_column = $connection->getQueryGrammar()->wrap($column);
 
-        self::addCheckConstraint($table, $constraint, "{$wrapped_column} {$operator} {$value}");
+        self::addCheckConstraint($table, $constraint, "{$wrapped_column} {$operator} {$value}", $connection);
     }
 
-    private static function addCheckConstraint(string $table, string $constraint, string $expression): void
-    {
-        $connection = DB::connection();
+    private static function addCheckConstraint(
+        string $table,
+        string $constraint,
+        string $expression,
+        Connection $connection,
+    ): void {
         $driver = $connection->getDriverName();
 
         if ($driver === 'sqlite') {
@@ -139,6 +159,19 @@ final class ERPMigrateUtils
         $wrapped_table = $connection->getSchemaGrammar()->wrapTable($table);
         $wrapped_constraint = $connection->getQueryGrammar()->wrap($constraint);
 
-        DB::statement("ALTER TABLE {$wrapped_table} ADD CONSTRAINT {$wrapped_constraint} CHECK ({$expression})");
+        $connection->statement("ALTER TABLE {$wrapped_table} ADD CONSTRAINT {$wrapped_constraint} CHECK ({$expression})");
+    }
+
+    private static function connection(?ConnectionInterface $connection): Connection
+    {
+        $connection ??= app('db')->connection();
+
+        throw_unless(
+            $connection instanceof Connection,
+            InvalidArgumentException::class,
+            'ERP migration helpers require a Laravel database connection.',
+        );
+
+        return $connection;
     }
 }
