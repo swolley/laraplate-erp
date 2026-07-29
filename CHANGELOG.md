@@ -2,11 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🐛 Bug Fixes
+
+- *(console)* Give ERP artisan commands a distinct yellow badge
+
 ## [1.15.0] - 2026-07-10
 
 ### 🚀 Features
 
 - *(erp)* Add document sequence reset functionality and price rules management
+
+## [1.14.8] - 2026-07-10
 
 ### 🐛 Bug Fixes
 

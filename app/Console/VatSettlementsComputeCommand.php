@@ -23,7 +23,7 @@ final class VatSettlementsComputeCommand extends Command
         {--format=table : Output format: table or json}';
 
     #[Override]
-    protected $description = 'Compute draft VAT settlements for open fiscal periods <fg=green>(Modules\ERP)</fg=green>';
+    protected $description = 'Compute draft VAT settlements for open fiscal periods <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
 
     public function __construct(private readonly VatSettlementBatchService $batch_service)
     {
