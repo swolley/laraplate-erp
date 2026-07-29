@@ -46,15 +46,18 @@ return new class extends Migration
     private function installMysqlTriggers(): void
     {
         foreach (self::LOCKABLE_TABLES as $table) {
-            $this->connection()->unprepared("CREATE TRIGGER {$table}_lock_guard_update
-                BEFORE UPDATE ON {$table} FOR EACH ROW
+            $wrapped_table = $this->table($table);
+            $update_trigger = $this->identifier($table . '_lock_guard_update');
+            $delete_trigger = $this->identifier($table . '_lock_guard_delete');
+            $this->connection()->unprepared("CREATE TRIGGER {$update_trigger}
+                BEFORE UPDATE ON {$wrapped_table} FOR EACH ROW
                 BEGIN
                     IF OLD.locked_at IS NOT NULL AND NEW.locked_at IS NOT NULL THEN
                         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify a locked record.';
                     END IF;
                 END");
-            $this->connection()->unprepared("CREATE TRIGGER {$table}_lock_guard_delete
-                BEFORE DELETE ON {$table} FOR EACH ROW
+            $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger}
+                BEFORE DELETE ON {$wrapped_table} FOR EACH ROW
                 BEGIN
                     IF OLD.locked_at IS NOT NULL THEN
                         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete a locked record.';
@@ -67,8 +70,10 @@ return new class extends Migration
         $this->connection()->unprepared($this->mysqlDeliveryLineChainTrigger('insert'));
         $this->connection()->unprepared($this->mysqlDeliveryLineChainTrigger('update'));
 
-        $lines = ERPTables::SalesOrderLines->value;
-        $this->connection()->unprepared("CREATE TRIGGER {$lines}_commercial_lock_guard_update
+        $lines = $this->table(ERPTables::SalesOrderLines->value);
+        $commercial_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_commercial_lock_guard_update');
+        $delete_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_lock_guard_delete');
+        $this->connection()->unprepared("CREATE TRIGGER {$commercial_trigger}
             BEFORE UPDATE ON {$lines} FOR EACH ROW
             BEGIN
                 IF OLD.locked_at IS NOT NULL AND (
@@ -82,7 +87,7 @@ return new class extends Migration
                     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify commercial fields on a locked sales order line.';
                 END IF;
             END");
-        $this->connection()->unprepared("CREATE TRIGGER {$lines}_lock_guard_delete
+        $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger}
             BEFORE DELETE ON {$lines} FOR EACH ROW
             BEGIN
                 IF OLD.locked_at IS NOT NULL THEN
@@ -93,7 +98,8 @@ return new class extends Migration
 
     private function installPostgresTriggers(): void
     {
-        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION erp_locked_record_guard() RETURNS trigger AS $$
+        $record_guard = $this->identifier('erp_locked_record_guard');
+        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$record_guard}() RETURNS trigger AS $$
             BEGIN
                 IF OLD.locked_at IS NOT NULL AND (TG_OP = 'DELETE' OR NEW.locked_at IS NOT NULL) THEN
                     RAISE EXCEPTION 'Cannot modify or delete a locked record.';
@@ -103,15 +109,19 @@ return new class extends Migration
         $$ LANGUAGE plpgsql");
 
         foreach (self::LOCKABLE_TABLES as $table) {
-            $this->connection()->unprepared("CREATE TRIGGER {$table}_lock_guard_update BEFORE UPDATE ON {$table}
-                FOR EACH ROW EXECUTE FUNCTION erp_locked_record_guard()");
-            $this->connection()->unprepared("CREATE TRIGGER {$table}_lock_guard_delete BEFORE DELETE ON {$table}
-                FOR EACH ROW EXECUTE FUNCTION erp_locked_record_guard()");
+            $wrapped_table = $this->table($table);
+            $update_trigger = $this->identifier($table . '_lock_guard_update');
+            $delete_trigger = $this->identifier($table . '_lock_guard_delete');
+            $this->connection()->unprepared("CREATE TRIGGER {$update_trigger} BEFORE UPDATE ON {$wrapped_table}
+                FOR EACH ROW EXECUTE FUNCTION {$record_guard}()");
+            $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger} BEFORE DELETE ON {$wrapped_table}
+                FOR EACH ROW EXECUTE FUNCTION {$record_guard}()");
         }
 
-        $quotations = ERPTables::Quotations->value;
-        $projects = ERPTables::Projects->value;
-        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION erp_lock_sales_order_chain() RETURNS trigger AS $$
+        $quotations = $this->table(ERPTables::Quotations->value);
+        $projects = $this->table(ERPTables::Projects->value);
+        $order_chain = $this->identifier('erp_lock_sales_order_chain');
+        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$order_chain}() RETURNS trigger AS $$
             BEGIN
                 IF NEW.status IN ('confirmed', 'partially_evased', 'fully_evased') THEN
                     UPDATE {$quotations} SET locked_at = COALESCE(locked_at, CURRENT_TIMESTAMP)
@@ -123,15 +133,18 @@ return new class extends Migration
             END;
         $$ LANGUAGE plpgsql");
 
-        $orders = ERPTables::SalesOrders->value;
-        $this->connection()->unprepared("CREATE TRIGGER {$orders}_lock_chain_insert AFTER INSERT ON {$orders}
-            FOR EACH ROW EXECUTE FUNCTION erp_lock_sales_order_chain()");
-        $this->connection()->unprepared("CREATE TRIGGER {$orders}_lock_chain_update AFTER UPDATE ON {$orders}
-            FOR EACH ROW EXECUTE FUNCTION erp_lock_sales_order_chain()");
+        $orders = $this->table(ERPTables::SalesOrders->value);
+        $order_insert_trigger = $this->identifier(ERPTables::SalesOrders->value . '_lock_chain_insert');
+        $order_update_trigger = $this->identifier(ERPTables::SalesOrders->value . '_lock_chain_update');
+        $this->connection()->unprepared("CREATE TRIGGER {$order_insert_trigger} AFTER INSERT ON {$orders}
+            FOR EACH ROW EXECUTE FUNCTION {$order_chain}()");
+        $this->connection()->unprepared("CREATE TRIGGER {$order_update_trigger} AFTER UPDATE ON {$orders}
+            FOR EACH ROW EXECUTE FUNCTION {$order_chain}()");
 
-        $delivery_lines = ERPTables::DeliveryNoteLines->value;
-        $order_lines = ERPTables::SalesOrderLines->value;
-        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION erp_lock_sales_order_line_chain() RETURNS trigger AS $$
+        $delivery_lines = $this->table(ERPTables::DeliveryNoteLines->value);
+        $order_lines = $this->table(ERPTables::SalesOrderLines->value);
+        $line_chain = $this->identifier('erp_lock_sales_order_line_chain');
+        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$line_chain}() RETURNS trigger AS $$
             BEGIN
                 IF NEW.sales_order_line_id IS NOT NULL THEN
                     UPDATE {$order_lines} SET locked_at = COALESCE(locked_at, CURRENT_TIMESTAMP)
@@ -140,12 +153,15 @@ return new class extends Migration
                 RETURN NEW;
             END;
         $$ LANGUAGE plpgsql");
-        $this->connection()->unprepared("CREATE TRIGGER {$delivery_lines}_lock_chain_insert AFTER INSERT ON {$delivery_lines}
-            FOR EACH ROW EXECUTE FUNCTION erp_lock_sales_order_line_chain()");
-        $this->connection()->unprepared("CREATE TRIGGER {$delivery_lines}_lock_chain_update AFTER UPDATE ON {$delivery_lines}
-            FOR EACH ROW EXECUTE FUNCTION erp_lock_sales_order_line_chain()");
+        $delivery_insert_trigger = $this->identifier(ERPTables::DeliveryNoteLines->value . '_lock_chain_insert');
+        $delivery_update_trigger = $this->identifier(ERPTables::DeliveryNoteLines->value . '_lock_chain_update');
+        $this->connection()->unprepared("CREATE TRIGGER {$delivery_insert_trigger} AFTER INSERT ON {$delivery_lines}
+            FOR EACH ROW EXECUTE FUNCTION {$line_chain}()");
+        $this->connection()->unprepared("CREATE TRIGGER {$delivery_update_trigger} AFTER UPDATE ON {$delivery_lines}
+            FOR EACH ROW EXECUTE FUNCTION {$line_chain}()");
 
-        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION erp_sales_order_line_guard() RETURNS trigger AS $$
+        $line_guard = $this->identifier('erp_sales_order_line_guard');
+        $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$line_guard}() RETURNS trigger AS $$
             BEGIN
                 IF TG_OP = 'DELETE' AND OLD.locked_at IS NOT NULL THEN
                     RAISE EXCEPTION 'Cannot delete a locked sales order line.';
@@ -163,29 +179,34 @@ return new class extends Migration
                 RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
             END;
         $$ LANGUAGE plpgsql");
-        $this->connection()->unprepared("CREATE TRIGGER {$order_lines}_commercial_lock_guard_update BEFORE UPDATE ON {$order_lines}
-            FOR EACH ROW EXECUTE FUNCTION erp_sales_order_line_guard()");
-        $this->connection()->unprepared("CREATE TRIGGER {$order_lines}_lock_guard_delete BEFORE DELETE ON {$order_lines}
-            FOR EACH ROW EXECUTE FUNCTION erp_sales_order_line_guard()");
+        $commercial_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_commercial_lock_guard_update');
+        $delete_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_lock_guard_delete');
+        $this->connection()->unprepared("CREATE TRIGGER {$commercial_trigger} BEFORE UPDATE ON {$order_lines}
+            FOR EACH ROW EXECUTE FUNCTION {$line_guard}()");
+        $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger} BEFORE DELETE ON {$order_lines}
+            FOR EACH ROW EXECUTE FUNCTION {$line_guard}()");
     }
 
     private function dropMysqlTriggers(): void
     {
         foreach (self::LOCKABLE_TABLES as $table) {
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$table}_lock_guard_update");
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$table}_lock_guard_delete");
+            $this->connection()->unprepared('DROP TRIGGER IF EXISTS ' . $this->identifier($table . '_lock_guard_update'));
+            $this->connection()->unprepared('DROP TRIGGER IF EXISTS ' . $this->identifier($table . '_lock_guard_delete'));
         }
 
         foreach ($this->chainTriggerNames() as $trigger) {
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$trigger}");
+            $this->connection()->unprepared('DROP TRIGGER IF EXISTS ' . $this->identifier($trigger));
         }
     }
 
     private function dropPostgresTriggers(): void
     {
         foreach (self::LOCKABLE_TABLES as $table) {
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$table}_lock_guard_update ON {$table}");
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$table}_lock_guard_delete ON {$table}");
+            $wrapped_table = $this->table($table);
+            $update_trigger = $this->identifier($table . '_lock_guard_update');
+            $delete_trigger = $this->identifier($table . '_lock_guard_delete');
+            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$update_trigger} ON {$wrapped_table}");
+            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$delete_trigger} ON {$wrapped_table}");
         }
 
         $tables = [
@@ -198,13 +219,17 @@ return new class extends Migration
         ];
 
         foreach (array_combine($this->chainTriggerNames(), $tables) as $trigger => $table) {
-            $this->connection()->unprepared("DROP TRIGGER IF EXISTS {$trigger} ON {$table}");
+            $this->connection()->unprepared(sprintf(
+                'DROP TRIGGER IF EXISTS %s ON %s',
+                $this->identifier($trigger),
+                $this->table($table),
+            ));
         }
 
-        $this->connection()->unprepared('DROP FUNCTION IF EXISTS erp_locked_record_guard()');
-        $this->connection()->unprepared('DROP FUNCTION IF EXISTS erp_lock_sales_order_chain()');
-        $this->connection()->unprepared('DROP FUNCTION IF EXISTS erp_lock_sales_order_line_chain()');
-        $this->connection()->unprepared('DROP FUNCTION IF EXISTS erp_sales_order_line_guard()');
+        $this->connection()->unprepared('DROP FUNCTION IF EXISTS ' . $this->identifier('erp_locked_record_guard') . '()');
+        $this->connection()->unprepared('DROP FUNCTION IF EXISTS ' . $this->identifier('erp_lock_sales_order_chain') . '()');
+        $this->connection()->unprepared('DROP FUNCTION IF EXISTS ' . $this->identifier('erp_lock_sales_order_line_chain') . '()');
+        $this->connection()->unprepared('DROP FUNCTION IF EXISTS ' . $this->identifier('erp_sales_order_line_guard') . '()');
     }
 
     /**
@@ -224,11 +249,12 @@ return new class extends Migration
 
     private function mysqlSalesOrderChainTrigger(string $operation): string
     {
-        $orders = ERPTables::SalesOrders->value;
-        $quotations = ERPTables::Quotations->value;
-        $projects = ERPTables::Projects->value;
+        $orders = $this->table(ERPTables::SalesOrders->value);
+        $quotations = $this->table(ERPTables::Quotations->value);
+        $projects = $this->table(ERPTables::Projects->value);
+        $trigger = $this->identifier(ERPTables::SalesOrders->value . '_lock_chain_' . $operation);
 
-        return "CREATE TRIGGER {$orders}_lock_chain_{$operation} AFTER {$operation} ON {$orders} FOR EACH ROW
+        return "CREATE TRIGGER {$trigger} AFTER {$operation} ON {$orders} FOR EACH ROW
             BEGIN
                 IF NEW.status IN ('confirmed', 'partially_evased', 'fully_evased') THEN
                     UPDATE {$quotations} SET locked_at = COALESCE(locked_at, CURRENT_TIMESTAMP)
@@ -241,10 +267,11 @@ return new class extends Migration
 
     private function mysqlDeliveryLineChainTrigger(string $operation): string
     {
-        $delivery_lines = ERPTables::DeliveryNoteLines->value;
-        $order_lines = ERPTables::SalesOrderLines->value;
+        $delivery_lines = $this->table(ERPTables::DeliveryNoteLines->value);
+        $order_lines = $this->table(ERPTables::SalesOrderLines->value);
+        $trigger = $this->identifier(ERPTables::DeliveryNoteLines->value . '_lock_chain_' . $operation);
 
-        return "CREATE TRIGGER {$delivery_lines}_lock_chain_{$operation} AFTER {$operation} ON {$delivery_lines} FOR EACH ROW
+        return "CREATE TRIGGER {$trigger} AFTER {$operation} ON {$delivery_lines} FOR EACH ROW
             BEGIN
                 IF NEW.sales_order_line_id IS NOT NULL THEN
                     UPDATE {$order_lines} SET locked_at = COALESCE(locked_at, CURRENT_TIMESTAMP)
@@ -256,5 +283,15 @@ return new class extends Migration
     private function connection(): Connection
     {
         return $this->activeConnection ??= app('db')->connection();
+    }
+
+    private function table(string $table): string
+    {
+        return $this->connection()->getQueryGrammar()->wrapTable($table);
+    }
+
+    private function identifier(string $identifier): string
+    {
+        return $this->connection()->getQueryGrammar()->wrap($identifier);
     }
 };

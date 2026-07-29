@@ -46,8 +46,14 @@ return new class extends Migration
         $schema->table($return_order_lines_table, static function (Blueprint $table): void {
             $table->dropColumn('unit_price');
         });
-        $schema->table($supplier_return_lines_table, static function (Blueprint $table) use ($supplier_return_lines_table): void {
-            $table->dropForeign("{$supplier_return_lines_table}_invoice_line_id_FK");
+        $driver = $this->connection()->getDriverName();
+        $schema->table($supplier_return_lines_table, static function (Blueprint $table) use ($driver, $supplier_return_lines_table): void {
+            if ($driver === 'sqlite') {
+                $table->dropForeign(['invoice_line_id']);
+            } else {
+                $table->dropForeign("{$supplier_return_lines_table}_invoice_line_id_FK");
+            }
+
             $table->dropColumn('invoice_line_id');
             $table->dropColumn('unit_price');
         });

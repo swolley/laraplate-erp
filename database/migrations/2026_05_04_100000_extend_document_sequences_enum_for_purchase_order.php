@@ -26,8 +26,11 @@ return new class extends Migration
         ));
 
         $document_sequences_table = ERPTables::DocumentSequences->value;
+        $grammar = $connection->getQueryGrammar();
+        $wrapped_table = $grammar->wrapTable($document_sequences_table);
+        $wrapped_column = $grammar->wrap('document_type');
         $connection->statement(
-            "ALTER TABLE {$document_sequences_table} MODIFY document_type ENUM({$values}) NOT NULL COMMENT 'Which document stream this row advances'",
+            "ALTER TABLE {$wrapped_table} MODIFY {$wrapped_column} ENUM({$values}) NOT NULL COMMENT 'Which document stream this row advances'",
         );
     }
 
