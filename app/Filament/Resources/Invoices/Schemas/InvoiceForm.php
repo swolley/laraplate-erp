@@ -19,11 +19,16 @@ use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Services\Pricing\InvoiceLinePricingService;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class InvoiceForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $direction_options = collect(InvoiceDirection::cases())
             ->mapWithKeys(static fn (InvoiceDirection $direction): array => [$direction->value => $direction->value])
             ->all();

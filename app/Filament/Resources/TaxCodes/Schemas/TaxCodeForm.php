@@ -11,11 +11,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\TaxKind;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class TaxCodeForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $kind_options = collect(TaxKind::cases())
             ->mapWithKeys(static fn (TaxKind $kind): array => [$kind->value => $kind->value])
             ->all();

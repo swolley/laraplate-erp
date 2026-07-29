@@ -17,11 +17,16 @@ use Modules\ERP\Models\Item;
 use Modules\ERP\Models\Party;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ErpConnectionContext;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class PurchaseOrderForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $status_options = collect(PurchaseOrderStatus::cases())
             ->mapWithKeys(static fn (PurchaseOrderStatus $status): array => [$status->value => $status->value])
             ->all();

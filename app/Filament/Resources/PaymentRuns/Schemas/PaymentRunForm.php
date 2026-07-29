@@ -16,11 +16,16 @@ use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\PaymentScheduleLine;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class PaymentRunForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 Select::make('company_id')

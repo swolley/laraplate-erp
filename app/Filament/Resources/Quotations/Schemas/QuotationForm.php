@@ -17,11 +17,16 @@ use Illuminate\Database\Query\Builder;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Models\PriceListItem;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class QuotationForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $status_options = collect(QuoteStatus::cases())
             ->mapWithKeys(static fn (QuoteStatus $status): array => [$status->value => $status->value])
             ->all();

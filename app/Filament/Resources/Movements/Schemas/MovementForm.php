@@ -13,11 +13,16 @@ use Filament\Schemas\Components\Utilities\Get;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Models\Account;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class MovementForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema->components([
             Select::make('company_id')
                 ->relationship('company', 'name')

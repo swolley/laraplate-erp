@@ -11,11 +11,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\LeadStatus;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class LeadForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $status_options = collect(LeadStatus::cases())
             ->mapWithKeys(static fn (LeadStatus $s): array => [$s->value => $s->value])
             ->all();

@@ -24,11 +24,16 @@ use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Services\Pricing\PriceResolverService;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ErpConnectionContext;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class SalesOrderForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $order_status_options = collect(SalesOrderStatus::cases())
             ->mapWithKeys(static fn (SalesOrderStatus $s): array => [$s->value => $s->value])
             ->all();

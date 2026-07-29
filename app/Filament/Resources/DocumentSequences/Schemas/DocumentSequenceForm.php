@@ -9,11 +9,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\DocumentType;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class DocumentSequenceForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $document_type_options = collect(DocumentType::cases())
             ->mapWithKeys(static fn (DocumentType $type): array => [$type->value => $type->value])
             ->all();

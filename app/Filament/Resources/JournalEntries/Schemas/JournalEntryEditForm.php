@@ -6,11 +6,16 @@ namespace Modules\ERP\Filament\Resources\JournalEntries\Schemas;
 
 use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Schema;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class JournalEntryEditForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 ...JournalEntryHeaderFields::components(company_locked: true),

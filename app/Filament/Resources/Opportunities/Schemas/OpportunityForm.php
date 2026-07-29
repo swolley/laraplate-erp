@@ -12,11 +12,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\OpportunityStatus;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class OpportunityForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $status_options = collect(OpportunityStatus::cases())
             ->mapWithKeys(static fn (OpportunityStatus $s): array => [$s->value => $s->value])
             ->all();

@@ -14,11 +14,16 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Models\InvoiceLine;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class ReturnOrderForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 Select::make('company_id')
