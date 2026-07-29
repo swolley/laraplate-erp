@@ -31,7 +31,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property SalesOrderStatus $status
  * @property string|null $notes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SalesOrderLine> $lines
- *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrder
  */

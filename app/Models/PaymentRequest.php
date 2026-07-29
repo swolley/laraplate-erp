@@ -14,7 +14,8 @@ use Modules\ERP\Enums\ERPTables;
 use Override;
 
 /**
- * @mixin IdeHelperPaymentRequest
+ * @mixin \Eloquent
+     * @mixin IdeHelperPaymentRequest
  */
 final class PaymentRequest extends Model
 {

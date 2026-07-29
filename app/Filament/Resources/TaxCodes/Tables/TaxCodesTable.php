@@ -36,7 +36,8 @@ final class TaxCodesTable
                         ->suffix('%')
                         ->sortable(),
                     TextColumn::make('country')
-                        ->sortable(),
+                        ->sortable()
+                        ->alignCenter(),
                     TextColumn::make('label')
                         ->searchable()
                         ->toggleable(isToggledHiddenByDefault: true),
