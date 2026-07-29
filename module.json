@@ -1,7 +1,8 @@
 {
     "name": "ERP",
+    "laraplate_owned": true,
     "alias": "erp",
-    "description": "ERP module — accounting and operations domain for Laraplate.",
+    "description": "ERP module \u2014 accounting and operations domain for Laraplate.",
     "keywords": [
         "erp",
         "laraplate"

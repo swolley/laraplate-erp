@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚜 Refactor
+
+- *(filament)* Wire Core HasForm into ERP form schemas
+
+### ⚙️ Miscellaneous Tasks
+
+- *(erp)* Mark module as laraplate_owned
+
+## [1.20.6] - 2026-07-29
+
 ### 🐛 Bug Fixes
 
 - *(console)* Give ERP artisan commands a distinct yellow badge
