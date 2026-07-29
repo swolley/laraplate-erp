@@ -25,7 +25,7 @@ final class ReportSnapshotCommand extends Command
         {--dry-run : Generate report but do not archive}';
 
     #[Override]
-    protected $description = 'Archive immutable ERP report snapshots with CSV and PDF content <fg=green>(Modules\ERP)</fg=green>';
+    protected $description = 'Archive immutable ERP report snapshots with CSV and PDF content <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
 
     public function __construct(
         private readonly TrialBalanceService $trial_balance_service,

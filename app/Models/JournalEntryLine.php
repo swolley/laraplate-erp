@@ -32,7 +32,6 @@ use Override;
  * @property numeric-string|null $tax_rate
  * @property string|null $tax_label
  * @property string|null $description
- *
  * @mixin \Eloquent
  * @mixin IdeHelperJournalEntryLine
  */

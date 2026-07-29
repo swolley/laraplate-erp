@@ -9,11 +9,16 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class PaymentRequestForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema->components([
             Select::make('company_id')->relationship('company', 'name')->searchable()->preload()->required()->disabledOn('edit'),
             Select::make('party_id')->relationship('party', 'name')->searchable()->preload()

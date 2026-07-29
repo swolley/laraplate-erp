@@ -34,12 +34,15 @@ final class CompaniesTable
                         ->searchable()
                         ->toggleable(),
                     TextColumn::make('fiscal_country')
-                        ->sortable(),
+                        ->sortable()
+                        ->alignCenter(),
                     TextColumn::make('default_currency')
-                        ->sortable(),
+                        ->sortable()
+                        ->alignCenter(),
                     IconColumn::make('is_default')
                         ->boolean()
-                        ->label('Default'),
+                        ->label('Default')
+                        ->alignCenter(),
                 ]);
             },
         );

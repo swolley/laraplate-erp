@@ -13,11 +13,16 @@ use Filament\Schemas\Schema;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\Warehouse;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class GoodsReceiptForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 Select::make('company_id')

@@ -10,11 +10,16 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Modules\ERP\Casts\PaymentDirection;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class PaymentForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $direction_options = collect(PaymentDirection::cases())
             ->mapWithKeys(static fn (PaymentDirection $direction): array => [$direction->value => $direction->value])
             ->all();

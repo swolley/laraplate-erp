@@ -17,11 +17,16 @@ use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\PurchaseOrderLine;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class SupplierReturnForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 Select::make('company_id')

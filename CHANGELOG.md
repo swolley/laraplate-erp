@@ -2,11 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚜 Refactor
+
+- *(filament)* Wire Core HasForm into ERP form schemas
+
+### ⚙️ Miscellaneous Tasks
+
+- *(erp)* Mark module as laraplate_owned
+
+## [1.20.6] - 2026-07-29
+
+### 🐛 Bug Fixes
+
+- *(console)* Give ERP artisan commands a distinct yellow badge
+
 ## [1.15.0] - 2026-07-10
 
 ### 🚀 Features
 
 - *(erp)* Add document sequence reset functionality and price rules management
+
+## [1.14.8] - 2026-07-10
 
 ### 🐛 Bug Fixes
 

@@ -12,11 +12,16 @@ use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ERP\Casts\ProjectStatus;
 use Modules\ERP\Models\Quotation;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class ProjectForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $status_options = collect(ProjectStatus::cases())
             ->mapWithKeys(static fn (ProjectStatus $status): array => [$status->value => $status->value])
             ->all();

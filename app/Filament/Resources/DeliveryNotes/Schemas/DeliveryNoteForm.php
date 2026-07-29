@@ -14,11 +14,16 @@ use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\Warehouse;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class DeliveryNoteForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $direction_options = collect(DeliveryNoteDirection::cases())
             ->mapWithKeys(static fn (DeliveryNoteDirection $direction): array => [$direction->value => $direction->value])
             ->all();

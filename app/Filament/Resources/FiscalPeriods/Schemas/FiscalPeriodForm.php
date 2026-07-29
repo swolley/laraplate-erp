@@ -11,11 +11,16 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Query\Builder;
 use Modules\ERP\Models\FiscalYear;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class FiscalPeriodForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         return $schema
             ->components([
                 Select::make('fiscal_year_id')

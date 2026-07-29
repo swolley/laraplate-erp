@@ -22,7 +22,7 @@ final class DocumentSequencesAuditCommand extends Command
         {--format=table : Output format: table or json}';
 
     #[Override]
-    protected $description = 'Audit ERP document sequence counters against persisted references without changing data <fg=green>(Modules\ERP)</fg=green>';
+    protected $description = 'Audit ERP document sequence counters against persisted references without changing data <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
 
     public function __construct(private readonly DocumentSequenceAuditService $audit_service)
     {

@@ -20,7 +20,6 @@ use Override;
  * @property int|string $id
  * @property int $company_id
  * @property int $party_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperProject
  */

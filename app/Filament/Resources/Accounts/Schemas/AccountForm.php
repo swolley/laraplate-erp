@@ -11,11 +11,16 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Query\Builder;
 use Modules\ERP\Casts\AccountKind;
+use Modules\Core\Filament\Utils\HasForm;
 
 final class AccountForm
 {
+    use HasForm;
+
     public static function configure(Schema $schema): Schema
     {
+        self::configureForm($schema);
+
         $kind_options = collect(AccountKind::cases())
             ->mapWithKeys(static fn (AccountKind $kind): array => [$kind->value => $kind->value])
             ->all();

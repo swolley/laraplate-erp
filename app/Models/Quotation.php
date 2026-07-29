@@ -25,7 +25,6 @@ use Override;
  * @property int $company_id
  * @property int $party_id
  * @property int|null $opportunity_id
- *
  * @mixin \Eloquent
  * @mixin IdeHelperQuotation
  */
