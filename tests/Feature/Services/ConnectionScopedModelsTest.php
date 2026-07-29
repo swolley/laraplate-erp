@@ -35,8 +35,35 @@ it('binds participant queries to the aggregate connection without changing the d
 it('rejects an explicitly different participant connection before a query can write', function (): void {
     $root = (new Company)->setConnection('erp-secondary');
     $invoice = (new Invoice)->setConnection(config('database.default'));
-    $models = ConnectionScopedModels::for($root, $invoice);
 
-    expect(fn (): mixed => $models->query(Invoice::class))
+    expect(fn (): ConnectionScopedModels => ConnectionScopedModels::for($root, $invoice))
         ->toThrow(LogicException::class);
+});
+
+it('rejects an existing default participant with an inherited connection before creating the scope', function (): void {
+    $default_participant = Invoice::withoutEvents(
+        fn (): Invoice => (new Invoice)->newFromBuilder([
+            'id' => 991,
+            'reference' => 'default-participant',
+        ]),
+    );
+    $secondary_participant = (new Invoice)->setConnection('erp-secondary');
+    $root = (new Company)->setConnection('erp-secondary');
+
+    expect($default_participant->getConnectionName())->toBeNull()
+        ->and($default_participant->exists)->toBeTrue()
+        ->and($default_participant->getConnection()->getName())->toBe(config('database.default'))
+        ->and(fn (): ConnectionScopedModels => ConnectionScopedModels::for(
+            $root,
+            $secondary_participant,
+            $default_participant,
+        ))
+        ->toThrow(LogicException::class);
+});
+
+it('allows an unsaved participant prototype to inherit the aggregate connection', function (): void {
+    $root = (new Company)->setConnection('erp-secondary');
+    $models = ConnectionScopedModels::for($root, new Invoice);
+
+    expect($models->model(Invoice::class)->getConnectionName())->toBe('erp-secondary');
 });

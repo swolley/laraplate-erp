@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Jobs\PublishOutboxEventJob;
@@ -36,6 +37,7 @@ use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
+use Modules\ERP\Services\Accounting\VatSettlementService;
 use Modules\ERP\Services\Banking\BankReconciliationService;
 use Modules\ERP\Services\Inventory\StockMovementService;
 use Modules\ERP\Services\Payments\PaymentRequestService;
@@ -212,6 +214,50 @@ it('installs fiscal calendars only on the company affinity connection', function
         ->and($company->getConnection()->table((new FiscalPeriod)->getTable())->where('fiscal_year_id', $fiscalYear->getKey())->count())->toBe(12)
         ->and(FiscalYear::query()->where('company_id', 982)->count())->toBe(0)
         ->and($company->getConnection()->transactionLevel())->toBe(0);
+});
+
+it('rejects a VAT fiscal period from another connection before issuing service queries', function (): void {
+    $connection = DB::connection();
+    $company_id = $connection->table((new Company)->getTable())->insertGetId([
+        'slug' => 'default-vat-company',
+        'name' => 'Default VAT company',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $fiscal_year_id = $connection->table((new FiscalYear)->getTable())->insertGetId([
+        'company_id' => $company_id,
+        'year' => 2032,
+        'start_date' => '2032-01-01',
+        'end_date' => '2032-12-31',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $fiscal_period_id = $connection->table((new FiscalPeriod)->getTable())->insertGetId([
+        'fiscal_year_id' => $fiscal_year_id,
+        'period_no' => 1,
+        'start_date' => '2032-01-01',
+        'end_date' => '2032-01-31',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $fiscal_period = FiscalPeriod::query()->whereKey($fiscal_period_id)->firstOrFail();
+    $company = (new Company)->setConnection('erp-secondary');
+    $company->id = 990;
+    $company->exists = true;
+    $default_queries = [];
+    $secondary_queries = [];
+    $connection->listen(static function ($query) use (&$default_queries): void {
+        $default_queries[] = $query->sql;
+    });
+    DB::connection('erp-secondary')->listen(static function ($query) use (&$secondary_queries): void {
+        $secondary_queries[] = $query->sql;
+    });
+
+    expect($fiscal_period->getConnection()->getName())->toBe(config('database.default'))
+        ->and(fn (): array => app(VatSettlementService::class)->preview($company, $fiscal_period))
+        ->toThrow(LogicException::class)
+        ->and($default_queries)->toBeEmpty()
+        ->and($secondary_queries)->toBeEmpty();
 });
 
 it('ignores bank statement lines only on their affinity connection', function (): void {

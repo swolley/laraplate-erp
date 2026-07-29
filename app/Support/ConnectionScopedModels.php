@@ -10,11 +10,6 @@ use LogicException;
 
 final class ConnectionScopedModels
 {
-    /**
-     * @var array<class-string<Model>, string>
-     */
-    private array $explicit_connections = [];
-
     private function __construct(private readonly string $connection_name) {}
 
     public static function for(Model $root, Model ...$participants): self
@@ -43,11 +38,6 @@ final class ConnectionScopedModels
             throw new LogicException('ERP participants must use the aggregate database connection.');
         }
 
-        if (isset($this->explicit_connections[$model_class])
-            && $this->explicit_connections[$model_class] !== $this->connection_name) {
-            throw new LogicException('ERP participants must use the aggregate database connection.');
-        }
-
         return $model->setConnection($this->connection_name);
     }
 
@@ -66,8 +56,12 @@ final class ConnectionScopedModels
     {
         $connection_name = $participant->getConnectionName();
 
-        if ($connection_name !== null) {
-            $this->explicit_connections[$participant::class] = $connection_name;
+        if ($connection_name === null && $participant->exists) {
+            $connection_name = (string) $participant->getConnection()->getName();
+        }
+
+        if ($connection_name !== null && $connection_name !== $this->connection_name) {
+            throw new LogicException('ERP participants must use the aggregate database connection.');
         }
     }
 }
