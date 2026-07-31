@@ -19,7 +19,9 @@ use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Quotation;
+use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Policies\ERPModelPolicy;
 use Modules\ERP\Services\DomainActions\ErpDomainActionRegistrar;
@@ -153,7 +155,9 @@ class ERPServiceProvider extends ModuleServiceProvider
             Invoice::class,
             JournalEntry::class,
             Quotation::class,
+            ReturnOrder::class,
             SalesOrder::class,
+            SupplierReturn::class,
             TaxCode::class,
         ];
     }

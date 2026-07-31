@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\OverridesGenericCrudActions;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -27,8 +28,22 @@ use Override;
  * @mixin \Eloquent
  * @mixin IdeHelperSupplierReturn
  */
-final class SupplierReturn extends Model
+final class SupplierReturn extends Model implements OverridesGenericCrudActions
 {
+    /**
+     * Core's `approve` votes on a pending Modification; here it advances the
+     * return from Draft to Approved. Because this model claims the verb, it must
+     * never take HasApprovals: DomainActionRegistry refuses that combination at
+     * boot rather than letting `approve` mean two things at once.
+     *
+     * @return list<string>
+     */
+    #[Override]
+    public static function overriddenCrudActions(): array
+    {
+        return ['approve'];
+    }
+
     use BelongsToCompany;
 
     /**

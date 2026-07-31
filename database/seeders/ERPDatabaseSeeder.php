@@ -24,7 +24,9 @@ use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Pivot\Presettable;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Models\Quotation;
+use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
@@ -271,6 +273,15 @@ final class ERPDatabaseSeeder extends Seeder
                 $permissions[] = PermissionName::forClass($model, 'reserve');
             }
         }
+
+        foreach ([ReturnOrder::class, SupplierReturn::class] as $return_model) {
+            foreach (['approve', 'complete', 'cancel', 'reverse_processed'] as $operation) {
+                $permissions[] = PermissionName::forClass($return_model, $operation);
+            }
+        }
+
+        $permissions[] = PermissionName::forClass(ReturnOrder::class, 'create_credit_note');
+        $permissions[] = PermissionName::forClass(SupplierReturn::class, 'create_debit_note');
 
         $permissions[] = PermissionName::forClass(FiscalYear::class, 'close');
         $permissions[] = PermissionName::forClass(Company::class, 'switch_context');

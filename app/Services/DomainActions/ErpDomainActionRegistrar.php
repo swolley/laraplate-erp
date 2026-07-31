@@ -15,10 +15,14 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
 use Modules\ERP\Services\Accounting\JournalPostingService;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
+use Modules\ERP\Services\Returns\ReturnOrderService;
+use Modules\ERP\Services\Returns\SupplierReturnService;
 use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
 
 /**
@@ -35,6 +39,26 @@ final class ErpDomainActionRegistrar
     {
         $this->registerInvoices($registry);
         $this->registerAccounting($registry);
+        $this->registerReturns($registry);
+    }
+
+    /**
+     * `approve` here redefines Core's generic verb. Both models declare it via
+     * OverridesGenericCrudActions, which is what lets the registry accept it.
+     */
+    private function registerReturns(DomainActionRegistry $registry): void
+    {
+        $registry->register(ReturnOrder::class, 'approve', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->approve($record));
+        $registry->register(ReturnOrder::class, 'complete', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->complete($record));
+        $registry->register(ReturnOrder::class, 'cancel', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->cancel($record));
+        $registry->register(ReturnOrder::class, 'reverse_processed', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->reverseProcessed($record));
+        $registry->register(ReturnOrder::class, 'create_credit_note', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->createCreditNote($record));
+
+        $registry->register(SupplierReturn::class, 'approve', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->approve($record));
+        $registry->register(SupplierReturn::class, 'complete', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->complete($record));
+        $registry->register(SupplierReturn::class, 'cancel', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->cancel($record));
+        $registry->register(SupplierReturn::class, 'reverse_processed', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->reverseProcessed($record));
+        $registry->register(SupplierReturn::class, 'create_debit_note', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->createDebitNote($record));
     }
 
     private function registerInvoices(DomainActionRegistry $registry): void

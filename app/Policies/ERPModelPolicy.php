@@ -9,6 +9,7 @@ use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
 use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
@@ -18,7 +19,9 @@ use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\Quotation;
+use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
+use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\TaxCode;
 
 final class ERPModelPolicy
@@ -134,6 +137,93 @@ final class ERPModelPolicy
             }
 
             return $record->isLocked();
+        });
+    }
+
+    /**
+     * Redefines Core's generic `approve`, which votes on a pending Modification.
+     * Here it advances a return from Draft to Approved; the two never coexist on
+     * one entity, and {@see \Modules\Core\Services\Crud\DomainActionRegistry}
+     * enforces that at boot.
+     */
+    public function approve(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'approve', static function (Model $record): bool {
+            if (! $record instanceof ReturnOrder && ! $record instanceof SupplierReturn) {
+                return false;
+            }
+
+            return $record->status === ReturnStatus::Draft;
+        });
+    }
+
+    public function complete(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'complete', static function (Model $record): bool {
+            if (! $record instanceof ReturnOrder && ! $record instanceof SupplierReturn) {
+                return false;
+            }
+
+            return $record->status === ReturnStatus::Approved;
+        });
+    }
+
+    public function cancel(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'cancel', static function (Model $record): bool {
+            if (! $record instanceof ReturnOrder && ! $record instanceof SupplierReturn) {
+                return false;
+            }
+
+            return in_array($record->status, [ReturnStatus::Draft, ReturnStatus::Approved], true);
+        });
+    }
+
+    /**
+     * A processed return can be reversed only while no fiscal note references it:
+     * the note is the auditable document, and unlinking it silently is not an
+     * option.
+     */
+    public function reverseProcessed(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'reverse_processed', static function (Model $record): bool {
+            if ($record instanceof ReturnOrder) {
+                return $record->status === ReturnStatus::Processed
+                    && $record->credit_note_invoice_id === null;
+            }
+
+            if ($record instanceof SupplierReturn) {
+                return $record->status === ReturnStatus::Processed
+                    && $record->debit_note_invoice_id === null;
+            }
+
+            return false;
+        });
+    }
+
+    public function createCreditNote(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'create_credit_note', static function (Model $record): bool {
+            if (! $record instanceof ReturnOrder) {
+                return false;
+            }
+
+            return $record->status === ReturnStatus::Processed
+                && $record->invoice_id !== null
+                && $record->credit_note_invoice_id === null;
+        });
+    }
+
+    public function createDebitNote(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'create_debit_note', static function (Model $record): bool {
+            if (! $record instanceof SupplierReturn) {
+                return false;
+            }
+
+            return $record->status === ReturnStatus::Processed
+                && $record->purchase_order_id !== null
+                && $record->debit_note_invoice_id === null;
         });
     }
 
