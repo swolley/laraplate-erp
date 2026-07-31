@@ -368,6 +368,53 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
 | Phase 4 commercial depth | Implemented through 4-07/4-10 | Partner pools, Payment Requests, canonical Site/Place linkage, Task UI, and RFC 5545 ICS export are present. |
 
+### Domain actions over HTTP
+
+Filament is the administration and verification surface for developers and superadmins, not
+the application UI. Real user interfaces consume the session-based `/app` surface, and the
+operations that were previously reachable only as Filament actions are now registered as
+domain actions on Core's generic route:
+
+```
+POST /app/crud/{action}/{module}/{entity}      id and action payload in the body
+```
+
+`ErpDomainActionRegistrar` maps each action onto the service that already implements it, at
+boot. Handlers stay thin: the transactional rules, locks and state guards stay in the
+services and in `ERPModelPolicy`.
+
+| Entity | Actions |
+|--------|---------|
+| `Invoice` | `post`, `unpost`, `submitEInvoice`, `refreshEInvoice` |
+| `DeliveryNote` | `post`, `unpost` |
+| `JournalEntry` | `reverse` — requires a `reversal_reason` in the payload |
+| `FiscalPeriod` | `close`, `reopen` |
+| `FiscalYear` | `close` |
+| `SalesOrder` | `amend` |
+| `Quotation` | `create_revision` |
+| `DocumentSequence` | `reset` |
+| `ReturnOrder` | `approve`\*, `complete`, `cancel`, `reverse_processed`, `create_credit_note` |
+| `SupplierReturn` | `approve`\*, `complete`, `cancel`, `reverse_processed`, `create_debit_note` |
+| `PaymentRequest` | `send` |
+| `PaymentRun` | `export_sepa`, `export_cbi_bonifici` — stream a file |
+| `Task` | `export_ics` — streams a file |
+| `BankStatement` | `import_file` — consumes a `multipart/form-data` upload |
+
+\* `approve` overrides Core's generic verb, which votes on a pending `Modification`. Here it
+advances the return from Draft to Approved. Both models declare the override, and neither may
+ever take `HasApprovals`: the registry refuses that combination at boot.
+
+**Forcing the three-way match is not a separate action.** It is a `force_three_way_match`
+flag on `post`, carrying its own `forcePost` permission, mirroring the Filament form. A second
+route would be a way to post that bypasses the normal path.
+
+**Not exposed:** `supersede`, `switch_context` and `reserve` each have a seeded permission and
+a policy method but no service behind them. A handler is not the place to invent the
+behaviour, so they stay unregistered until the operation itself exists.
+
+Every model listed above is governed by `ERPModelPolicy`. That is a precondition, not a side
+effect: without a registered policy the Gate has nothing to consult and denies the action.
+
 ### Known Limitations After Phase 2C
 
 -   E-invoice defaults to the deterministic `stub` workflow. The optional `fatturapa` driver generates and XSD-validates ordinary FPR12 XML locally, but it does not deliver to SDI.
@@ -379,7 +426,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Financial report snapshots store immutable payload, CSV, PDF content, hash, and parameters through `erp_report_snapshots`; the built-in PDF renderer is intentionally simple and dependency-free.
 -   Multi-currency now has `ExchangeRate`, `DatabaseCurrencyConverter`, and `FxRevaluationService` for historical/inverse FX rates and unrealized revaluation journals on open foreign-currency schedules. External FX feed imports and realized FX settlement automation remain later enhancements.
 -   Money math now has a `Money` value object built on `Decimal`; analytic accounting has company dimensions, dimension values, and a journal-line pivot with allocation percentage.
--   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
+-   Domain actions are exposed on the internal `/app` surface through Core's generic `POST /app/crud/{action}/{module}/{entity}` route; opt-in external APIs on `/api/v1` and their exposure governance remain Phase 3 work.
 -   Processed returns can be safely reversed before any linked credit/debit note exists: the generated DDT is unposted, returned quantities are restored, and the return goes back to approved. Linked fiscal notes must be handled explicitly first.
 -   DDT/bolle lines intentionally do not carry prices or costs. Fiscal corrections price from source invoice lines, not from DDTs, orders, goods receipts, or current price lists.
 -   Reports remain live-query in Filament, but financial report snapshots now archive immutable payload/CSV/simple-PDF rows. Rich paginated PDF design and operational report snapshot scheduling remain enhancements.
@@ -391,7 +438,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 ### Roadmap
 
 -   Phase 2C: FatturaPA / SDI production-readiness and extended admin permissions are implemented.
--   Phase 3+: domain HTTP actions, API exposure governance, and later accounting architecture improvements. Safe processed-return reverse is implemented in ERP services/UI before API exposure.
+-   Phase 3 is split by surface: the internal `/app` half is implemented; the external `/api/v1` half — Sanctum tokens, version negotiation, per-model exposure governance — remains deferred. Safe processed-return reverse is implemented in ERP services/UI and exposed as a domain action.
 
 ## Scripts
 

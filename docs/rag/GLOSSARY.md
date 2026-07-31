@@ -255,6 +255,19 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **Quotation revision** | New draft commercial snapshot linked to its immediate predecessor by unique `revises_quotation_id`; lines are copied and branching is prohibited. |
 | **Project bind lock** | Automatic project lock when a linked sales order becomes operational; ORM and Filament prevent business updates/deletion. |
 
+## Domain actions over HTTP
+
+
+| Term                             | Meaning                                                                                                                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain action**                | A business operation on one record — post, close, reverse — invoked as `POST /app/crud/{action}/{module}/{entity}`. Distinct from generic CRUD, which writes the record's own fields. |
+| **`/app` surface**               | Session-based, internal. What real user interfaces consume. Filament is administration and verification for developers and superadmins, not the application UI.               |
+| **`ErpDomainActionRegistrar`**   | Registers ERP actions at boot, mapping each onto the service that already implements it. Handlers stay thin; rules stay in the services and `ERPModelPolicy`.                  |
+| **Generic verb**                 | A Core verb acting on a structure attached to any record: `approve`/`disapprove` on a pending `Modification`, `lock`/`unlock`, `activate`/`inactivate`, `cache-clear`.         |
+| **`OverridesGenericCrudActions`** | Contract a model implements to redefine a generic verb for itself. `ReturnOrder::approve` advances Draft to Approved instead of voting on a modification.                     |
+| **Collision guard**              | Registration fails at boot if a model claims a generic verb without declaring the override, or claims it while also using the trait giving that verb its generic meaning.      |
+
+
 ## Known limitation terms
 
 

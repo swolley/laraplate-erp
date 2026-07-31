@@ -47,7 +47,7 @@ ERP records these event names in `core_outbox_events`:
 
 ## Deliberately separate work
 
-- External API/domain-action governance remains deferred until Core dynamic CRUD exposure and ERP stateful operations are reviewed together.
+- Domain actions are exposed on the internal `/app` surface through Core's generic action route and authorised by `ERPModelPolicy`. External `/api/v1` exposure governance remains deferred until Core dynamic CRUD exposure and ERP stateful operations are reviewed together.
 - MES production execution, Gantt, calendar/ICS, and legacy ETL are separate vertical or future scopes. Partner-pool settlement is an ERP internal subledger; external transfer execution remains separate.
 - Payment-request checkout and callbacks are transport concerns. Accounting payment creation, bank reconciliation, and pool settlement remain explicit ERP workflows.
 - Production transports require tenant contracts, credentials, operational monitoring, replay/dead-letter procedures, and certification where applicable.
