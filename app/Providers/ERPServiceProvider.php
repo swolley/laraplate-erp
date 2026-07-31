@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Providers;
 
 use Illuminate\Support\Facades\Gate;
+use Modules\Core\Services\Crud\DomainActionRegistry;
 use Modules\Core\Overrides\ModuleServiceProvider;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
@@ -21,6 +22,7 @@ use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Policies\ERPModelPolicy;
+use Modules\ERP\Services\DomainActions\ErpDomainActionRegistrar;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
@@ -82,6 +84,8 @@ class ERPServiceProvider extends ModuleServiceProvider
         foreach ($this->policyModels() as $model) {
             Gate::policy($model, ERPModelPolicy::class);
         }
+
+        resolve(ErpDomainActionRegistrar::class)->register(resolve(DomainActionRegistry::class));
     }
 
     #[Override]
