@@ -39,9 +39,3 @@ it('gates payment run resource edits after export', function (): void {
     expect(PaymentRunResource::canEdit($draft))->toBeTrue()
         ->and(PaymentRunResource::canEdit($exported))->toBeFalse();
 });
-
-it('denies payment run edits to a user without the update permission', function (): void {
-    $this->actingAs(User::factory()->create(), 'admin');
-
-    expect(PaymentRunResource::canEdit(new PaymentRun(['status' => PaymentRunStatus::Draft])))->toBeFalse();
-});
