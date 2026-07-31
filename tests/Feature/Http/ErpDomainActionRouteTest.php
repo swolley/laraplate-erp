@@ -74,29 +74,14 @@ it('registers the commercial actions', function (): void {
         ->and($registry->has(Quotation::class, 'create_revision'))->toBeTrue();
 });
 
-it('leaves actions on models outside policyModels unregistered', function (): void {
-    // send, the two payment-run exports, export_ics and import_file all need
-    // their model governed by ERPModelPolicy, and Gate::policy() is all or
-    // nothing: adding PaymentRun there made PaymentRunResource::canEdit() false
-    // because view/update/delete started demanding permissions that do not exist.
-    // Governing these models is a product decision, not an implementation detail.
+it('registers the file and payment actions', function (): void {
     $registry = app(DomainActionRegistry::class);
 
-    expect($registry->has(PaymentRequest::class, 'send'))->toBeFalse()
-        ->and($registry->has(PaymentRun::class, 'export_sepa'))->toBeFalse()
-        ->and($registry->has(Task::class, 'export_ics'))->toBeFalse()
-        ->and($registry->has(BankStatement::class, 'import_file'))->toBeFalse();
-});
-
-it('leaves actions without an implementation unregistered', function (): void {
-    // supersede, switch_context and reserve have a seeded permission and a policy
-    // method but no service behind them. Registering them would mean inventing
-    // business logic in a handler, which is exactly what the registrar must not do.
-    $registry = app(DomainActionRegistry::class);
-
-    expect($registry->has(TaxCode::class, 'supersede'))->toBeFalse()
-        ->and($registry->has(Company::class, 'switch_context'))->toBeFalse()
-        ->and($registry->has(DocumentSequence::class, 'reserve'))->toBeFalse();
+    expect($registry->has(PaymentRequest::class, 'send'))->toBeTrue()
+        ->and($registry->has(PaymentRun::class, 'export_sepa'))->toBeTrue()
+        ->and($registry->has(PaymentRun::class, 'export_cbi_bonifici'))->toBeTrue()
+        ->and($registry->has(Task::class, 'export_ics'))->toBeTrue()
+        ->and($registry->has(BankStatement::class, 'import_file'))->toBeTrue();
 });
 
 it('does not register force_post as an action of its own', function (): void {

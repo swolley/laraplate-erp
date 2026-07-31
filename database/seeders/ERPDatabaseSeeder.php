@@ -13,6 +13,7 @@ use Modules\Core\Services\PresetVersioningService;
 use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Account;
+use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
@@ -21,12 +22,15 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\Pivot\Presettable;
 use Modules\ERP\Models\Preset;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Models\Task;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
@@ -284,6 +288,12 @@ final class ERPDatabaseSeeder extends Seeder
         $permissions[] = PermissionName::forClass(SupplierReturn::class, 'create_debit_note');
 
         $permissions[] = PermissionName::forClass(Quotation::class, 'create_revision');
+
+        $permissions[] = PermissionName::forClass(PaymentRequest::class, 'send');
+        $permissions[] = PermissionName::forClass(PaymentRun::class, 'export_sepa');
+        $permissions[] = PermissionName::forClass(PaymentRun::class, 'export_cbi_bonifici');
+        $permissions[] = PermissionName::forClass(Task::class, 'export_ics');
+        $permissions[] = PermissionName::forClass(BankStatement::class, 'import_file');
 
         $permissions[] = PermissionName::forClass(FiscalYear::class, 'close');
         $permissions[] = PermissionName::forClass(Company::class, 'switch_context');

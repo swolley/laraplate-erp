@@ -12,16 +12,20 @@ use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Contracts\PaymentRequestProvider;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Models\Task;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Policies\ERPModelPolicy;
 use Modules\ERP\Services\DomainActions\ErpDomainActionRegistrar;
@@ -147,6 +151,7 @@ class ERPServiceProvider extends ModuleServiceProvider
     private function policyModels(): array
     {
         return [
+            BankStatement::class,
             Company::class,
             DeliveryNote::class,
             DocumentSequence::class,
@@ -154,10 +159,13 @@ class ERPServiceProvider extends ModuleServiceProvider
             FiscalYear::class,
             Invoice::class,
             JournalEntry::class,
+            PaymentRequest::class,
+            PaymentRun::class,
             Quotation::class,
             ReturnOrder::class,
             SalesOrder::class,
             SupplierReturn::class,
+            Task::class,
             TaxCode::class,
         ];
     }

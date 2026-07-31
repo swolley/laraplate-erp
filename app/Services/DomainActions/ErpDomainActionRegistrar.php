@@ -56,6 +56,59 @@ final class ErpDomainActionRegistrar
         $this->registerAccounting($registry);
         $this->registerReturns($registry);
         $this->registerCommercial($registry);
+        $this->registerFileActions($registry);
+    }
+
+    /**
+     * These return a Response, which CrudController passes through untouched.
+     * Authorization and the state guard run before the first byte, so a refusal
+     * is still a normal JSON error rather than a corrupt download.
+     */
+    private function registerFileActions(DomainActionRegistry $registry): void
+    {
+        $registry->register(PaymentRun::class, 'export_sepa', static function (Model $record, array $payload, User $user): StreamedResponse {
+            $xml = resolve(SepaPain001Exporter::class)->export($record);
+
+            return response()->streamDownload(
+                static fn () => print ($xml),
+                sprintf('payment-run-%d-sepa.xml', $record->getKey()),
+                ['Content-Type' => 'application/xml'],
+            );
+        });
+
+        $registry->register(PaymentRun::class, 'export_cbi_bonifici', static function (Model $record, array $payload, User $user): StreamedResponse {
+            $content = resolve(CbiBonificiExporter::class)->export($record);
+
+            return response()->streamDownload(
+                static fn () => print ($content),
+                sprintf('payment-run-%d-cbi.txt', $record->getKey()),
+                ['Content-Type' => 'text/plain'],
+            );
+        });
+
+        $registry->register(Task::class, 'export_ics', static function (Model $record, array $payload, User $user): StreamedResponse {
+            $exporter = resolve(TaskIcsExporter::class);
+            $content = $exporter->export($record);
+
+            return response()->streamDownload(
+                static fn () => print ($content),
+                $exporter->fileName($record),
+                ['Content-Type' => 'text/calendar'],
+            );
+        });
+
+        $registry->register(BankStatement::class, 'import_file', static function (Model $record, array $payload, User $user): array {
+            $file = request()->file('file');
+
+            throw_if(
+                ! $file instanceof UploadedFile,
+                ValidationException::withMessages(['file' => ['An uploaded file is required.']]),
+            );
+
+            $format = is_string($payload['format'] ?? null) ? $payload['format'] : 'auto';
+
+            return ['imported_lines' => resolve(BankStatementImportService::class)->importFile($record, $file->getRealPath(), $format)];
+        });
     }
 
     /**
@@ -89,6 +142,12 @@ final class ErpDomainActionRegistrar
             Quotation::class,
             'create_revision',
             static fn (Model $record, array $payload, User $user): Model => resolve(QuotationRevisionService::class)->createRevision($record),
+        );
+
+        $registry->register(
+            PaymentRequest::class,
+            'send',
+            static fn (Model $record, array $payload, User $user): Model => resolve(PaymentRequestService::class)->send($record),
         );
 
     }

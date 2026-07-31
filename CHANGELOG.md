@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(erp)* Register accounting domain actions
+- *(erp)* Register return lifecycle actions and declare the approve override
+- *(erp)* Register document sequence and quotation revision actions
+- *(erp)* Govern payment, task and bank statement models by policy
+
+### 🚜 Refactor
+
+- *(erp)* Build permission names through PermissionName
+
+## [1.20.7] - 2026-07-29
+
 ### 🚜 Refactor
 
 - *(filament)* Wire Core HasForm into ERP form schemas
@@ -23,8 +36,6 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - *(erp)* Add document sequence reset functionality and price rules management
-
-## [1.14.8] - 2026-07-10
 
 ### 🐛 Bug Fixes
 

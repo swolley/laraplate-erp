@@ -9,19 +9,25 @@ use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
 use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\InvoiceDirection;
+use Modules\ERP\Casts\PaymentRequestStatus;
+use Modules\ERP\Casts\PaymentRunStatus;
 use Modules\ERP\Casts\ReturnStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Models\Task;
 use Modules\ERP\Models\TaxCode;
 
 final class ERPModelPolicy
@@ -237,6 +243,39 @@ final class ERPModelPolicy
             return ($record->isLocked() || $record->status->value !== 'draft')
                 && ! $record->revision()->exists();
         });
+    }
+
+    public function send(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'send', static function (Model $record): bool {
+            if (! $record instanceof PaymentRequest) {
+                return false;
+            }
+
+            return $record->status === PaymentRequestStatus::Draft;
+        });
+    }
+
+    public function exportSepa(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'export_sepa', static fn (Model $record): bool => $record instanceof PaymentRun
+            && $record->status === PaymentRunStatus::Approved);
+    }
+
+    public function exportCbiBonifici(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'export_cbi_bonifici', static fn (Model $record): bool => $record instanceof PaymentRun
+            && $record->status === PaymentRunStatus::Approved);
+    }
+
+    public function exportIcs(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'export_ics', static fn (Model $record): bool => $record instanceof Task);
+    }
+
+    public function importFile(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'import_file', static fn (Model $record): bool => $record instanceof BankStatement);
     }
 
     public function reset(User $user, Model $record): bool
