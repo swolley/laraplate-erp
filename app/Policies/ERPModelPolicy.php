@@ -7,6 +7,7 @@ namespace Modules\ERP\Policies;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
@@ -205,12 +206,7 @@ final class ERPModelPolicy
 
     private function hasPermission(User $user, Model $record, string $operation): bool
     {
-        $permission = sprintf(
-            '%s.%s.%s',
-            $record->getConnectionName() ?? 'default',
-            $record->getTable(),
-            $operation,
-        );
+        $permission = PermissionName::forModel($record, $operation);
 
         if (! Permission::query()->where('name', $permission)->exists()) {
             return false;

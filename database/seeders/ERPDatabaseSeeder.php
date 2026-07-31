@@ -10,6 +10,7 @@ use Modules\Core\Models\Permission;
 use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Services\PresetVersioningService;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
@@ -29,7 +30,6 @@ use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Support\ConnectionScopedTransaction;
-use ReflectionClass;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -240,57 +240,41 @@ final class ERPDatabaseSeeder extends Seeder
         $permissions = [];
 
         foreach ($entities as $model) {
-            $instance = new ReflectionClass($model)->newInstanceWithoutConstructor();
-
-            $connection = $instance->getConnectionName() ?? 'default';
-            $table = $instance->getTable();
-
-            $permissions[] = "{$connection}." . $table . '.post';
-            $permissions[] = "{$connection}." . $table . '.unpost';
+            $permissions[] = PermissionName::forClass($model, 'post');
+            $permissions[] = PermissionName::forClass($model, 'unpost');
 
             if ($model === Invoice::class) {
-                $permissions[] = "{$connection}." . $table . '.submitEInvoice';
-                $permissions[] = "{$connection}." . $table . '.refreshEInvoice';
-                $permissions[] = "{$connection}." . $table . '.force_post';
+                $permissions[] = PermissionName::forClass($model, 'submitEInvoice');
+                $permissions[] = PermissionName::forClass($model, 'refreshEInvoice');
+                $permissions[] = PermissionName::forClass($model, 'force_post');
             }
 
             if ($model === FiscalPeriod::class) {
-                $permissions[] = "{$connection}." . $table . '.close';
-                $permissions[] = "{$connection}." . $table . '.reopen';
+                $permissions[] = PermissionName::forClass($model, 'close');
+                $permissions[] = PermissionName::forClass($model, 'reopen');
             }
 
             if ($model === JournalEntry::class) {
-                $permissions[] = "{$connection}." . $table . '.reverse';
+                $permissions[] = PermissionName::forClass($model, 'reverse');
             }
 
             if ($model === SalesOrder::class) {
-                $permissions[] = "{$connection}." . $table . '.amend';
+                $permissions[] = PermissionName::forClass($model, 'amend');
             }
 
             if ($model === Quotation::class) {
-                $permissions[] = "{$connection}." . $table . '.unlock';
+                $permissions[] = PermissionName::forClass($model, 'unlock');
             }
 
             if ($model === DocumentSequence::class) {
-                $permissions[] = "{$connection}." . $table . '.reset';
-                $permissions[] = "{$connection}." . $table . '.reserve';
+                $permissions[] = PermissionName::forClass($model, 'reset');
+                $permissions[] = PermissionName::forClass($model, 'reserve');
             }
         }
 
-        $fiscal_year = new ReflectionClass(FiscalYear::class)->newInstanceWithoutConstructor();
-        $fy_connection = $fiscal_year->getConnectionName() ?? 'default';
-        $fy_table = $fiscal_year->getTable();
-        $permissions[] = "{$fy_connection}.{$fy_table}.close";
-
-        $company = new ReflectionClass(Company::class)->newInstanceWithoutConstructor();
-        $company_connection = $company->getConnectionName() ?? 'default';
-        $company_table = $company->getTable();
-        $permissions[] = "{$company_connection}.{$company_table}.switch_context";
-
-        $tax_code = new ReflectionClass(TaxCode::class)->newInstanceWithoutConstructor();
-        $tax_code_connection = $tax_code->getConnectionName() ?? 'default';
-        $tax_code_table = $tax_code->getTable();
-        $permissions[] = "{$tax_code_connection}.{$tax_code_table}.supersede";
+        $permissions[] = PermissionName::forClass(FiscalYear::class, 'close');
+        $permissions[] = PermissionName::forClass(Company::class, 'switch_context');
+        $permissions[] = PermissionName::forClass(TaxCode::class, 'supersede');
 
         return $permissions;
     }
