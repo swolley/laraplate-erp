@@ -283,6 +283,8 @@ final class ERPDatabaseSeeder extends Seeder
         $permissions[] = PermissionName::forClass(ReturnOrder::class, 'create_credit_note');
         $permissions[] = PermissionName::forClass(SupplierReturn::class, 'create_debit_note');
 
+        $permissions[] = PermissionName::forClass(Quotation::class, 'create_revision');
+
         $permissions[] = PermissionName::forClass(FiscalYear::class, 'close');
         $permissions[] = PermissionName::forClass(Company::class, 'switch_context');
         $permissions[] = PermissionName::forClass(TaxCode::class, 'supersede');

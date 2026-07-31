@@ -7,13 +7,21 @@ use Modules\Core\Models\Permission;
 use Modules\Core\Services\Crud\DomainActionRegistry;
 use Modules\Core\Support\PermissionName;
 use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\BankStatement;
+use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\PaymentRun;
+use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Models\TaxCode;
+use Modules\ERP\Models\Task;
 
 uses(RefreshDatabase::class);
 
@@ -57,6 +65,38 @@ it('seeds the return domain permissions', function (): void {
 
     expect(Permission::query()->where('name', PermissionName::forClass(ReturnOrder::class, 'approve'))->exists())->toBeTrue()
         ->and(Permission::query()->where('name', PermissionName::forClass(SupplierReturn::class, 'complete'))->exists())->toBeTrue();
+});
+
+it('registers the commercial actions', function (): void {
+    $registry = app(DomainActionRegistry::class);
+
+    expect($registry->has(DocumentSequence::class, 'reset'))->toBeTrue()
+        ->and($registry->has(Quotation::class, 'create_revision'))->toBeTrue();
+});
+
+it('leaves actions on models outside policyModels unregistered', function (): void {
+    // send, the two payment-run exports, export_ics and import_file all need
+    // their model governed by ERPModelPolicy, and Gate::policy() is all or
+    // nothing: adding PaymentRun there made PaymentRunResource::canEdit() false
+    // because view/update/delete started demanding permissions that do not exist.
+    // Governing these models is a product decision, not an implementation detail.
+    $registry = app(DomainActionRegistry::class);
+
+    expect($registry->has(PaymentRequest::class, 'send'))->toBeFalse()
+        ->and($registry->has(PaymentRun::class, 'export_sepa'))->toBeFalse()
+        ->and($registry->has(Task::class, 'export_ics'))->toBeFalse()
+        ->and($registry->has(BankStatement::class, 'import_file'))->toBeFalse();
+});
+
+it('leaves actions without an implementation unregistered', function (): void {
+    // supersede, switch_context and reserve have a seeded permission and a policy
+    // method but no service behind them. Registering them would mean inventing
+    // business logic in a handler, which is exactly what the registrar must not do.
+    $registry = app(DomainActionRegistry::class);
+
+    expect($registry->has(TaxCode::class, 'supersede'))->toBeFalse()
+        ->and($registry->has(Company::class, 'switch_context'))->toBeFalse()
+        ->and($registry->has(DocumentSequence::class, 'reserve'))->toBeFalse();
 });
 
 it('does not register force_post as an action of its own', function (): void {

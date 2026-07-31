@@ -227,6 +227,18 @@ final class ERPModelPolicy
         });
     }
 
+    public function createRevision(User $user, Model $record): bool
+    {
+        return $this->allowsDomainAction($user, $record, 'create_revision', static function (Model $record): bool {
+            if (! $record instanceof Quotation) {
+                return false;
+            }
+
+            return ($record->isLocked() || $record->status->value !== 'draft')
+                && ! $record->revision()->exists();
+        });
+    }
+
     public function reset(User $user, Model $record): bool
     {
         return $this->allowsDomainAction($user, $record, 'reset', static fn (Model $record): bool => $record instanceof DocumentSequence);

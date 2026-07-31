@@ -8,6 +8,21 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\User;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Modules\ERP\Services\Quotations\QuotationRevisionService;
+use Modules\ERP\Services\Payments\SepaPain001Exporter;
+use Modules\ERP\Services\Payments\PaymentRequestService;
+use Modules\ERP\Services\Payments\CbiBonificiExporter;
+use Modules\ERP\Services\Calendar\TaskIcsExporter;
+use Modules\ERP\Services\Banking\BankStatementImportService;
+use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
+use Modules\ERP\Models\Task;
+use Modules\ERP\Models\Quotation;
+use Modules\ERP\Models\PaymentRun;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\DocumentSequence;
+use Modules\ERP\Models\BankStatement;
+use Illuminate\Http\UploadedFile;
 use Modules\Core\Services\Crud\DomainActionRegistry;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
 use Modules\ERP\Models\DeliveryNote;
@@ -40,6 +55,7 @@ final class ErpDomainActionRegistrar
         $this->registerInvoices($registry);
         $this->registerAccounting($registry);
         $this->registerReturns($registry);
+        $this->registerCommercial($registry);
     }
 
     /**
@@ -59,6 +75,22 @@ final class ErpDomainActionRegistrar
         $registry->register(SupplierReturn::class, 'cancel', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->cancel($record));
         $registry->register(SupplierReturn::class, 'reverse_processed', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->reverseProcessed($record));
         $registry->register(SupplierReturn::class, 'create_debit_note', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->createDebitNote($record));
+    }
+
+    private function registerCommercial(DomainActionRegistry $registry): void
+    {
+        $registry->register(DocumentSequence::class, 'reset', static function (Model $record, array $payload, User $user): Model {
+            resolve(DocumentSequenceResetService::class)->reset($record, (int) ($payload['last_number'] ?? 0));
+
+            return $record->fresh();
+        });
+
+        $registry->register(
+            Quotation::class,
+            'create_revision',
+            static fn (Model $record, array $payload, User $user): Model => resolve(QuotationRevisionService::class)->createRevision($record),
+        );
+
     }
 
     private function registerInvoices(DomainActionRegistry $registry): void
