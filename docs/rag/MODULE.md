@@ -288,8 +288,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Cash Movements and Journal
 
--   `Movement` is an adapter over double-entry journals with positive amount, date, document/local currency snapshots, income/expense direction, explicit economic counterparty, and unique `posted_journal_entry_id`.
--   `MovementPostingService` locks and posts idempotently. Income: debit `bank_cash`, credit Revenue. Expense: debit Expense, credit `bank_cash`. Counterparty company/kind/activity are validated.
+-   `Movement` is an adapter over double-entry journals with positive amount, date, document/local currency snapshots, `income`/`expense`/`contribution`/`withdrawal` type, explicit economic counterparty, and unique `posted_journal_entry_id`.
+-   `MovementPostingService` locks and posts idempotently. Income: debit `bank_cash`, credit Revenue. Expense: debit Expense, credit `bank_cash`. Contribution: debit `bank_cash`, credit Liability. Withdrawal: debit Liability, credit `bank_cash`. Counterparty company/kind/activity are validated.
 -   `CashBalanceService` sums posted `bank_cash` journal lines; there is no parallel mutable balance.
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` processes only unlinked movements and reports per-row failures.
 -   `MovementResource` exposes index/create/view only. `CreateMovement` wraps row creation and `MovementPostingService::post()` in one transaction; no edit route or parallel balance write exists.
@@ -300,6 +300,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `MovementAllocation` stores exact owed/paid amounts. Both aggregate totals must equal the expense movement amount.
 -   `PartnerPoolSettlementService` owns pessimistic locking, atomic split replacement, decimal balance derivation, settlement suggestions, and confirmed transfer writes.
 -   The pool is an internal memorandum subledger. It does not duplicate the general ledger or `CashBalanceService`.
+
+### External ERP imports
+
+-   `erp:import` accepts only the ERP `BulkImporterInterface`; it inherits Core's bootstrap, repeatable constructor args, limit, dry-run, and Scout controls.
+-   Runtime plugins own source parsing and explicit company/user/account/pool/currency/category maps. ERP owns typed destination inputs and accounting invariants and has no Symfony, SPLID, or Tricount schema hooks.
+-   `ExternalCashMovementImportService` and `ExternalExpenseAllocationService` use Core `RecordOriginRegistry`: stable source identity plus normalized SHA-256 fingerprint makes reruns idempotent. Changed unposted data may update; changed posted data throws `PostedImportConflict` with source and local movement evidence.
+-   Money crosses the boundary only as scale-4 decimal strings. Owed/paid expense shares are allocations; dated contributions, withdrawals, and reimbursements are separate movements.
 
 ### Payment Requests
 
