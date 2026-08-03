@@ -7,17 +7,25 @@ namespace Modules\ERP\Services\Inventory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\StockMovementDirection;
-use Modules\ERP\Models\Item;
 use Modules\ERP\Models\Company;
+use Modules\ERP\Models\Item;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\Warehouse;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\ErpConnectionContext;
 
 final class StockMovementService
 {
+    private readonly ErpConnectionContext $connection_context;
+
+    public function __construct(?ErpConnectionContext $connection_context = null)
+    {
+        $this->connection_context = $connection_context ?? new ErpConnectionContext();
+    }
+
     /**
      * Records an inbound stock movement, updates on-hand quantity, and applies
      * costing (FIFO layers or weighted average on {@see StockLevel}).
@@ -44,7 +52,7 @@ final class StockMovementService
         $unit_cost_string = $this->normalizeMoneyString($unit_cost);
         $company = $source instanceof Model
             ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
-            : Company::query()->findOrFail($company_id);
+            : $this->connection_context->model(Company::class)->newQuery()->findOrFail($company_id);
 
         if ($source instanceof Model) {
             ConnectionScopedTransaction::connection($company, $source);
@@ -131,7 +139,7 @@ final class StockMovementService
         }
         $company = $source instanceof Model
             ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
-            : Company::query()->findOrFail($company_id);
+            : $this->connection_context->model(Company::class)->newQuery()->findOrFail($company_id);
 
         if ($source instanceof Model) {
             ConnectionScopedTransaction::connection($company, $source);

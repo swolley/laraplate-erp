@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### ⚠️ Breaking Changes
+
+- *(database)* Require trusted owner models in `CurrencyConverter::convert()`
+  and `getRate()`; custom implementations, decorators, and callers must accept
+  and forward the leading `Model $owner` argument.
+- *(payments)* Require a connected `PaymentRequest $source` in
+  `PaymentRequestService::applyCallback()` and a connected
+  `BankAccount $source` in `PaymentRunBuilderService::build()`.
+- *(accounting)* Replace scalar company/period identifiers with connected
+  `Company` and `FiscalPeriod` models in `DocumentSequenceAuditService`,
+  `VatSettlementBatchService`, and the `preview()`/`compute()` methods of
+  `VatSettlementService`.
+- *(pricing)* Replace scalar owners with connected models in
+  `InvoiceLinePricingService::defaultsFromSalesOrderLine()` and
+  `PriceResolverService::resolve()`; the latter now accepts both `Company` and
+  `Item` instances.
+
+These changes preserve the database connection of the owning aggregate. See
+`docs/database-connection-affinity-audit.md` for before/after signatures and
+caller migration guidance.
+
 ### 🚀 Features
 
 - *(erp)* Register accounting domain actions

@@ -343,6 +343,70 @@ it('records stock movements only on the source affinity connection', function ()
         ->and($connection->transactionLevel())->toBe(0);
 });
 
+it('records source-free stock movements only on the configured company connection', function (): void {
+    config()->set('erp.model_connections.' . Company::class, 'erp-secondary');
+
+    $schema = Schema::connection('erp-secondary');
+    $schema->create((new Item)->getTable(), function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('company_id');
+        $table->string('costing_method');
+        $table->boolean('is_deleted')->default(false);
+    });
+    $schema->create((new Warehouse)->getTable(), function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('company_id');
+        $table->boolean('is_deleted')->default(false);
+    });
+    $schema->create((new StockMovement)->getTable(), function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('company_id');
+        $table->unsignedInteger('item_id');
+        $table->unsignedInteger('warehouse_id');
+        $table->string('direction');
+        $table->decimal('quantity', 16, 4);
+        $table->decimal('unit_cost', 16, 4)->nullable();
+        $table->string('source_type')->nullable();
+        $table->unsignedInteger('source_id')->nullable();
+        $table->timestamps();
+        $table->boolean('is_deleted')->default(false);
+    });
+    $schema->create((new StockLevel)->getTable(), function (Blueprint $table): void {
+        $table->increments('id');
+        $table->unsignedInteger('company_id');
+        $table->unsignedInteger('item_id');
+        $table->unsignedInteger('warehouse_id');
+        $table->decimal('quantity', 16, 4);
+        $table->decimal('weighted_avg_cost', 16, 4);
+        $table->timestamps();
+        $table->boolean('is_deleted')->default(false);
+        $table->unique(['company_id', 'item_id', 'warehouse_id']);
+    });
+
+    $secondary = $schema->getConnection();
+    $secondary->table((new Company)->getTable())->insert(['id' => 985, 'name' => 'Secondary owner']);
+    $secondary->table((new Item)->getTable())->insert(['id' => 2, 'company_id' => 985, 'costing_method' => 'weighted_avg']);
+    $secondary->table((new Warehouse)->getTable())->insert(['id' => 2, 'company_id' => 985]);
+
+    (new Company)->getConnection()->table((new Company)->getTable())->insert([
+        'id' => 985,
+        'slug' => 'default-sentinel',
+        'name' => 'Default sentinel',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $service = app(StockMovementService::class);
+    $service->recordInbound(985, 2, 2, 3, '4.0000');
+    $service->recordOutbound(985, 2, 2, 1);
+
+    expect($secondary->table((new StockMovement)->getTable())->where('company_id', 985)->count())->toBe(2)
+        ->and((string) $secondary->table((new StockLevel)->getTable())->where('company_id', 985)->value('quantity'))->toBe('2')
+        ->and(StockMovement::query()->where('company_id', 985)->count())->toBe(0)
+        ->and(Company::query()->whereKey(985)->value('name'))->toBe('Default sentinel')
+        ->and($secondary->transactionLevel())->toBe(0);
+});
+
 it('sends payment requests and applies callbacks only on their affinity connection', function (): void {
     $schema = Schema::connection('erp-secondary');
     $schema->create((new Party)->getTable(), function (Blueprint $table): void {
