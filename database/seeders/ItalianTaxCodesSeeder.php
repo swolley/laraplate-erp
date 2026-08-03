@@ -5,18 +5,33 @@ declare(strict_types=1);
 namespace Modules\ERP\Database\Seeders;
 
 use Modules\Core\Overrides\Seeder;
+use Modules\Core\Seeding\Contracts\DeclaresSeedDependencies;
 use Modules\ERP\Casts\TaxKind;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Override;
 
 /**
  * Dev / default Italian VAT and sample withholding rows for a {@see Company}.
  *
  * Rate changes must add **new** {@see TaxCode} rows; never mutate historical codes.
  */
-final class ItalianTaxCodesSeeder extends Seeder
+final class ItalianTaxCodesSeeder extends Seeder implements DeclaresSeedDependencies
 {
+    /**
+     * Ordering relative to {@see ERPDatabaseSeeder} used to only hold because `E` sorts before
+     * `I` in the graph's deterministic tie-break — this seeder's own `run()` looks up the default
+     * company created by `ERPDatabaseSeeder::ensureDefaultCompany()`, so the edge must be explicit.
+     *
+     * @return list<class-string>
+     */
+    #[Override]
+    public static function dependsOn(): array
+    {
+        return [ERPDatabaseSeeder::class];
+    }
+
     /**
      * @var list<array{code: string, kind: TaxKind, rate: string, label: string}>
      */

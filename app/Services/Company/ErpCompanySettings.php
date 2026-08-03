@@ -59,7 +59,11 @@ final class ErpCompanySettings
     /**
      * Global {@see Setting} rows (group {@see GLOBAL_SETTINGS_GROUP}) aligned with {@see defaultSettings()}.
      *
-     * @return array<int, array{name: string, value: mixed, type: SettingTypeEnum, group_name: string, description: string, choices?: list<string>}>
+     * Every row carries the same column set (`encrypted`, `choices` included even when null):
+     * {@see \Modules\Core\Seeding\SeedReconciler} batches these rows into a single `upsert()`,
+     * which requires a uniform column set across the whole batch.
+     *
+     * @return array<int, array{name: string, value: mixed, encrypted: bool, choices: ?list<string>, type: SettingTypeEnum, group_name: string, description: string}>
      */
     public static function globalSettingDefinitions(): array
     {
@@ -67,6 +71,8 @@ final class ErpCompanySettings
             [
                 'name' => self::PRICE_TOLERANCE_PERCENT,
                 'value' => 0,
+                'encrypted' => false,
+                'choices' => null,
                 'type' => SettingTypeEnum::Float,
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Three-way match price tolerance (percent)',
@@ -74,6 +80,8 @@ final class ErpCompanySettings
             [
                 'name' => self::QTY_TOLERANCE_PERCENT,
                 'value' => 0,
+                'encrypted' => false,
+                'choices' => null,
                 'type' => SettingTypeEnum::Float,
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Three-way match quantity tolerance (percent)',
@@ -81,14 +89,17 @@ final class ErpCompanySettings
             [
                 'name' => self::INVOICE_GENERATION_MODE,
                 'value' => self::INVOICE_GENERATION_MODE_EXPANDED,
+                'encrypted' => false,
+                'choices' => [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT],
                 'type' => SettingTypeEnum::String,
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Invoice line generation mode (expanded or compact)',
-                'choices' => [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT],
             ],
             [
                 'name' => self::AUTO_CREATE_NOTES_ON_COMPLETE,
                 'value' => false,
+                'encrypted' => false,
+                'choices' => null,
                 'type' => SettingTypeEnum::Boolean,
                 'group_name' => self::GLOBAL_SETTINGS_GROUP,
                 'description' => 'Automatically create credit/debit note drafts when returns are completed',

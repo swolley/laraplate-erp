@@ -4,26 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-### ⚠️ Breaking Changes
+### 🚜 Refactor
 
-- *(database)* Require trusted owner models in `CurrencyConverter::convert()`
-  and `getRate()`; custom implementations, decorators, and callers must accept
-  and forward the leading `Model $owner` argument.
-- *(payments)* Require a connected `PaymentRequest $source` in
-  `PaymentRequestService::applyCallback()` and a connected
-  `BankAccount $source` in `PaymentRunBuilderService::build()`.
-- *(accounting)* Replace scalar company/period identifiers with connected
-  `Company` and `FiscalPeriod` models in `DocumentSequenceAuditService`,
-  `VatSettlementBatchService`, and the `preview()`/`compute()` methods of
-  `VatSettlementService`.
-- *(pricing)* Replace scalar owners with connected models in
-  `InvoiceLinePricingService::defaultsFromSalesOrderLine()` and
-  `PriceResolverService::resolve()`; the latter now accepts both `Company` and
-  `Item` instances.
+- *(erp)* Global settings via SeedReconciler, seed dependency for tax codes
 
-These changes preserve the database connection of the owning aggregate. See
-`docs/database-connection-affinity-audit.md` for before/after signatures and
-caller migration guidance.
+### 📚 Documentation
+
+- *(erp)* Document domain actions over HTTP
+
+### 🧪 Testing
+
+- *(erp)* Drop the permission-denial case from the Filament resource test
+
+## [1.21.0] - 2026-07-31
 
 ### 🚀 Features
 
@@ -35,10 +28,6 @@ caller migration guidance.
 ### 🚜 Refactor
 
 - *(erp)* Build permission names through PermissionName
-
-### 🐛 Bug Fixes
-
-- *(inventory)* Resolve source-less stock movements through the configured ERP model connection
 
 ## [1.20.7] - 2026-07-29
 

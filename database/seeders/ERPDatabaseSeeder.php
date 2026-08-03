@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
+use Modules\Core\Seeding\SeedDefinition;
+use Modules\Core\Seeding\SeedReconciler;
 use Modules\Core\Services\PresetVersioningService;
 use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\EntityType;
@@ -146,16 +148,18 @@ final class ERPDatabaseSeeder extends Seeder
 
     private function ensureGlobalErpSettings(): void
     {
-        $setting_model = new Setting;
+        $outcome = app(SeedReconciler::class)->reconcile(
+            SeedDefinition::for(Setting::class)
+                ->identity(['name'])
+                ->structural(['type', 'group_name', 'description', 'choices'])
+                ->initial(['value'])
+                ->ownedBy('ERP')
+                ->rows(ErpCompanySettings::globalSettingDefinitions()),
+        );
 
-        foreach (ErpCompanySettings::globalSettingDefinitions() as $definition) {
-            if ($setting_model->newQuery()->withoutGlobalScopes()->where('name', $definition['name'])->exists()) {
-                continue;
-            }
-
-            Setting::factory()->persistedWithoutApprovalCapture()->create($definition);
-            $this->command?->line("    - global ERP setting <fg=green>{$definition['name']}</> created");
-        }
+        $this->command?->line(
+            '    - global ERP settings: created ' . count($outcome->created) . ', realigned ' . count($outcome->realigned) . ", unchanged {$outcome->unchanged}",
+        );
     }
 
     private function ensureCompanySettings(Company $company): void
