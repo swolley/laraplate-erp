@@ -12,6 +12,7 @@ use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Contracts\PaymentRequestProvider;
 use Modules\ERP\Import\Services\ExternalCashMovementImportService;
+use Modules\ERP\Import\Services\ExternalExpenseAllocationService;
 use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\DeliveryNote;
@@ -141,6 +142,7 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(PriceResolverService::class);
         $this->app->singleton(MovementPostingService::class);
         $this->app->singleton(ExternalCashMovementImportService::class);
+        $this->app->singleton(ExternalExpenseAllocationService::class);
         $this->app->singleton(CashBalanceService::class);
         $this->app->singleton(QuotationRevisionService::class);
         $this->app->singleton(PaymentRequestService::class);

@@ -91,6 +91,24 @@ it('rejects an unbalanced split atomically', function (): void {
         ->and(MovementAllocation::query()->count())->toBe(0);
 });
 
+it('replaces an existing split for the same movement members', function (): void {
+    [$pool, $movement, $alice, $bob, $carol] = partnerPoolFixture();
+    $service = app(PartnerPoolSettlementService::class);
+    $service->allocate($movement, $pool, [
+        (int) $alice->id => ['owed' => '45.0000', 'paid' => '90.0000'],
+        (int) $bob->id => ['owed' => '45.0000', 'paid' => '0.0000'],
+    ]);
+
+    $service->allocate($movement, $pool, [
+        (int) $alice->id => ['owed' => '30.0000', 'paid' => '0.0000'],
+        (int) $bob->id => ['owed' => '30.0000', 'paid' => '90.0000'],
+        (int) $carol->id => ['owed' => '30.0000', 'paid' => '0.0000'],
+    ]);
+
+    expect(MovementAllocation::query()->count())->toBe(3)
+        ->and((string) MovementAllocation::query()->where('user_id', $bob->id)->sole()->paid_amount)->toBe('90.0000');
+});
+
 it('rejects settlements that exceed the current balances', function (): void {
     [$pool, $movement, $alice, $bob] = partnerPoolFixture();
     $service = app(PartnerPoolSettlementService::class);
