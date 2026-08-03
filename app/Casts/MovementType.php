@@ -11,6 +11,8 @@ enum MovementType: string
 {
     case Income = 'income';
     case Expense = 'expense';
+    case Contribution = 'contribution';
+    case Withdrawal = 'withdrawal';
 
     /**
      * @return array<string>

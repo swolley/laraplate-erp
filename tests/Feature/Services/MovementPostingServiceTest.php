@@ -11,10 +11,11 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Cash\CashBalanceService;
 use Modules\ERP\Services\Cash\MovementPostingService;
+use Modules\ERP\Support\Decimal;
 
 uses(RefreshDatabase::class);
 
-/** @return array{Company, Account, Account, Account} */
+/** @return array{Company, Account, Account, Account, Account} */
 function movementPostingFixture(): array
 {
     $company = Company::query()->create([
@@ -45,9 +46,20 @@ function movementPostingFixture(): array
         'kind' => AccountKind::Expense,
         'is_active' => true,
     ]);
+    $liability = Account::query()->create([
+        'company_id' => $company->id,
+        'code' => '2103',
+        'name' => 'Partner current account',
+        'kind' => AccountKind::Liability,
+        'is_active' => true,
+    ]);
 
-    return [$company, $bank, $revenue, $expense];
+    return [$company, $bank, $revenue, $expense, $liability];
 }
+
+it('defines generic partner contribution and withdrawal movement types', function (): void {
+    expect(MovementType::values())->toContain('contribution', 'withdrawal');
+});
 
 it('posts income and expense movements as balanced journals and derives cash balance', function (): void {
     [$company, $bank, $revenue, $expense] = movementPostingFixture();
@@ -83,6 +95,97 @@ it('posts income and expense movements as balanced journals and derives cash bal
         ->and($income->fresh()->posted_journal_entry_id)->toBe($income_entry->id)
         ->and(app(CashBalanceService::class)->balance($company))->toBe('70.0000');
 });
+
+it('posts partner contributions and withdrawals through liability accounts', function (): void {
+    [$company, $bank, $revenue, $expense, $liability] = movementPostingFixture();
+    $movements = collect([
+        MovementType::Income->value => [MovementType::Income, '100.0000', $revenue, '2026-07-01'],
+        MovementType::Expense->value => [MovementType::Expense, '30.0000', $expense, '2026-07-02'],
+        MovementType::Contribution->value => [MovementType::Contribution, '40.0000', $liability, '2026-07-03'],
+        MovementType::Withdrawal->value => [MovementType::Withdrawal, '15.0000', $liability, '2026-07-04'],
+    ])->map(static fn (array $attributes): Movement => Movement::query()->create([
+        'company_id' => $company->id,
+        'type' => $attributes[0],
+        'occurred_on' => $attributes[3],
+        'amount_doc' => $attributes[1],
+        'currency_doc' => 'EUR',
+        'counterparty_account_id' => $attributes[2]->id,
+    ]));
+    $service = app(MovementPostingService::class);
+
+    $entries = $movements->map(static fn (Movement $movement) => $service->post($movement));
+    $contribution_lines = $entries[MovementType::Contribution->value]->lines->keyBy('account_id');
+    $withdrawal_lines = $entries[MovementType::Withdrawal->value]->lines->keyBy('account_id');
+
+    expect(Decimal::format((string) $contribution_lines[(int) $bank->id]->amount_local))->toBe('40.0000')
+        ->and(Decimal::format((string) $contribution_lines[(int) $liability->id]->amount_local))->toBe('-40.0000')
+        ->and(Decimal::format((string) $withdrawal_lines[(int) $bank->id]->amount_local))->toBe('-15.0000')
+        ->and(Decimal::format((string) $withdrawal_lines[(int) $liability->id]->amount_local))->toBe('15.0000')
+        ->and(app(CashBalanceService::class)->balance($company))->toBe('95.0000')
+        ->and($service->post($movements[MovementType::Contribution->value]->fresh())->id)
+        ->toBe($entries[MovementType::Contribution->value]->id)
+        ->and($service->post($movements[MovementType::Withdrawal->value]->fresh())->id)
+        ->toBe($entries[MovementType::Withdrawal->value]->id);
+});
+
+it('rejects non-liability counterparties for partner cash movements', function (MovementType $type, AccountKind $kind): void {
+    [$company] = movementPostingFixture();
+    $counterparty = Account::query()->create([
+        'company_id' => $company->id,
+        'code' => 'invalid-' . $type->value . '-' . $kind->value,
+        'name' => 'Invalid partner counterparty',
+        'kind' => $kind,
+        'is_active' => true,
+    ]);
+    $movement = Movement::query()->create([
+        'company_id' => $company->id,
+        'type' => $type,
+        'occurred_on' => '2026-07-05',
+        'amount_doc' => '10.0000',
+        'currency_doc' => 'EUR',
+        'counterparty_account_id' => $counterparty->id,
+    ]);
+
+    expect(fn () => app(MovementPostingService::class)->post($movement))
+        ->toThrow(ValidationException::class);
+})->with([
+    'contribution revenue' => [MovementType::Contribution, AccountKind::Revenue],
+    'contribution expense' => [MovementType::Contribution, AccountKind::Expense],
+    'contribution asset' => [MovementType::Contribution, AccountKind::Asset],
+    'contribution equity' => [MovementType::Contribution, AccountKind::Equity],
+    'withdrawal revenue' => [MovementType::Withdrawal, AccountKind::Revenue],
+    'withdrawal expense' => [MovementType::Withdrawal, AccountKind::Expense],
+    'withdrawal asset' => [MovementType::Withdrawal, AccountKind::Asset],
+    'withdrawal equity' => [MovementType::Withdrawal, AccountKind::Equity],
+]);
+
+it('rejects inactive and cross-company liability accounts', function (string $invalidity): void {
+    [$company, , , , $liability] = movementPostingFixture();
+
+    if ($invalidity === 'inactive') {
+        $liability->update(['is_active' => false]);
+    } else {
+        $other_company = Company::query()->create([
+            'slug' => 'other-cash-movement-' . uniqid(),
+            'name' => 'Other cash movement',
+            'fiscal_country' => 'IT',
+            'default_currency' => 'EUR',
+        ]);
+        $liability->update(['company_id' => $other_company->id]);
+    }
+
+    $movement = Movement::query()->create([
+        'company_id' => $company->id,
+        'type' => MovementType::Contribution,
+        'occurred_on' => '2026-07-05',
+        'amount_doc' => '10.0000',
+        'currency_doc' => 'EUR',
+        'counterparty_account_id' => $liability->id,
+    ]);
+
+    expect(fn () => app(MovementPostingService::class)->post($movement))
+        ->toThrow(ValidationException::class);
+})->with(['inactive', 'cross-company']);
 
 it('is idempotent and rejects a counterparty with the wrong account kind', function (): void {
     [$company, , $revenue, $expense] = movementPostingFixture();

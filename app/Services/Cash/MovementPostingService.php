@@ -82,7 +82,11 @@ final readonly class MovementPostingService
 
     private function assertCounterparty(Movement $movement, Account $account): void
     {
-        $expected_kind = $movement->type === MovementType::Income ? AccountKind::Revenue : AccountKind::Expense;
+        $expected_kind = match ($movement->type) {
+            MovementType::Income => AccountKind::Revenue,
+            MovementType::Expense => AccountKind::Expense,
+            MovementType::Contribution, MovementType::Withdrawal => AccountKind::Liability,
+        };
 
         if ((int) $account->company_id !== (int) $movement->company_id || $account->kind !== $expected_kind || ! $account->is_active) {
             throw ValidationException::withMessages([
@@ -125,11 +129,16 @@ final readonly class MovementPostingService
             'description' => $description,
         ];
 
-        if ($movement->type === MovementType::Income) {
-            return [$base($bank_cash, $amount_doc, $amount_local), $base($counterparty, Decimal::negate($amount_doc), Decimal::negate($amount_local))];
-        }
-
-        return [$base($counterparty, $amount_doc, $amount_local), $base($bank_cash, Decimal::negate($amount_doc), Decimal::negate($amount_local))];
+        return match ($movement->type) {
+            MovementType::Income, MovementType::Contribution => [
+                $base($bank_cash, $amount_doc, $amount_local),
+                $base($counterparty, Decimal::negate($amount_doc), Decimal::negate($amount_local)),
+            ],
+            MovementType::Expense, MovementType::Withdrawal => [
+                $base($counterparty, $amount_doc, $amount_local),
+                $base($bank_cash, Decimal::negate($amount_doc), Decimal::negate($amount_local)),
+            ],
+        };
     }
 
     private function fiscalPeriod(ConnectionScopedModels $models, Company $company, CarbonImmutable $date): ?FiscalPeriod
