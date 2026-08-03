@@ -19,6 +19,7 @@ use Modules\ERP\Import\ValueObjects\CashMovementImportResult;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Movement;
+use Modules\ERP\Tests\Stubs\Import\NonStrictCashInputFactory;
 
 uses(RefreshDatabase::class);
 
@@ -125,7 +126,12 @@ it('rejects malformed cash movement input', function (array $overrides): void {
 ]);
 
 it('rejects float money at the typed boundary', function (): void {
-    expect(fn () => externalCashInput(['amount' => 5.0]))->toThrow(TypeError::class);
+    expect(fn () => externalCashInput(['amount' => 5.0]))->toThrow(InvalidArgumentException::class);
+});
+
+it('rejects float money from a caller without strict types', function (): void {
+    expect(fn () => NonStrictCashInputFactory::withFloatAmount())
+        ->toThrow(InvalidArgumentException::class);
 });
 
 it('creates an unposted movement and records its external origin', function (): void {
@@ -163,6 +169,41 @@ it('rolls back the import when accounting references are invalid', function (): 
         ->and(Movement::query()->count())->toBe(0)
         ->and(RecordOrigin::query()->count())->toBe(0);
 });
+
+it('rejects unusable accounting counterparties before an unposted import is retained', function (string $scenario): void {
+    [$company, , $revenue, , $liability] = externalCashFixture();
+    $counterparty = match ($scenario) {
+        'wrong kind' => $revenue,
+        'inactive' => tap($liability, static function (Account $account): void {
+            $account->is_active = false;
+            $account->save();
+        }),
+        'other company' => (function (): Account {
+            $other_company = Company::query()->create([
+                'slug' => 'external-cash-other-' . uniqid(),
+                'name' => 'Other external cash company',
+                'fiscal_country' => 'IT',
+                'default_currency' => 'EUR',
+            ]);
+
+            return Account::query()->create([
+                'company_id' => $other_company->id,
+                'code' => '2103',
+                'name' => 'Other partner account',
+                'kind' => AccountKind::Liability,
+                'is_active' => true,
+            ]);
+        })(),
+    };
+
+    expect(fn () => app(ExternalCashMovementImportService::class)->ingest(externalCashInput([
+        'companyId' => (int) $company->id,
+        'counterpartyAccountId' => (int) $counterparty->id,
+        'post' => false,
+    ])))->toThrow(ValidationException::class)
+        ->and(Movement::query()->count())->toBe(0)
+        ->and(RecordOrigin::query()->count())->toBe(0);
+})->with(['wrong kind', 'inactive', 'other company']);
 
 it('skips an unchanged external movement without writing duplicates', function (): void {
     [$company, , , , $liability] = externalCashFixture();

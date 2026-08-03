@@ -35,7 +35,7 @@ final readonly class ExternalCashMovementInput
         int $companyId,
         MovementType $type,
         CarbonImmutable $occurredOn,
-        string $amount,
+        mixed $amount,
         string $currency,
         int $counterpartyAccountId,
         ?string $description,
@@ -47,6 +47,10 @@ final readonly class ExternalCashMovementInput
     ) {
         if ($companyId <= 0 || $counterpartyAccountId <= 0) {
             throw new InvalidArgumentException('Company and counterparty account ids must be positive integers.');
+        }
+
+        if (! is_string($amount)) {
+            throw new InvalidArgumentException('Cash movement amount must be a decimal string.');
         }
 
         try {

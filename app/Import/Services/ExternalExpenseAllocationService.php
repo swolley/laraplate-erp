@@ -8,6 +8,7 @@ use Modules\Core\Import\Enums\ExternalRecordState;
 use Modules\Core\Import\Support\RecordOriginRegistry;
 use Modules\ERP\Import\Data\ExternalExpenseAllocationInput;
 use Modules\ERP\Import\Enums\ImportMutation;
+use Modules\ERP\Import\Exceptions\ExternalIdentityConflict;
 use Modules\ERP\Import\Exceptions\PostedImportConflict;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\PartnerPool;
@@ -38,6 +39,21 @@ final readonly class ExternalExpenseAllocationService
                 ->lockForUpdate()
                 ->findOrFail($input->partnerPoolId);
             $identity = $input->identity();
+            $registered_movement_id = $this->originRegistry->referableId(
+                $movement,
+                $identity->sourceKey,
+                (string) $identity->externalId,
+            );
+
+            if ($registered_movement_id !== null && $registered_movement_id !== (int) $movement->getKey()) {
+                throw new ExternalIdentityConflict(
+                    $identity->sourceKey,
+                    (string) $identity->externalId,
+                    $registered_movement_id,
+                    (int) $movement->getKey(),
+                );
+            }
+
             $state = $this->originRegistry->inspect($movement, $identity);
 
             if ($state === ExternalRecordState::Unchanged) {

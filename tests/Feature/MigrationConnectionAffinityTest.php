@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Enums\ERPTables;
 
 it('runs return line migration up and down on a prefixed connection', function (): void {
@@ -44,4 +46,35 @@ it('runs return line migration up and down on a prefixed connection', function (
             ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'invoice_line_id'))->toBeFalse()
             ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'unit_price'))->toBeFalse();
     });
+});
+
+it('extends movement types when upgrading an existing sqlite schema', function (): void {
+    config()->set('database.connections.erp_movement_upgrade', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+
+    DB::purge('erp_movement_upgrade');
+
+    $connection = DB::connection('erp_movement_upgrade');
+    $schema = $connection->getSchemaBuilder();
+    $schema->create(ERPTables::Movements->value, static function (Blueprint $table): void {
+        $table->id();
+        $table->enum('type', [MovementType::Income->value, MovementType::Expense->value]);
+    });
+    $migration = require module_path('ERP', 'database/migrations/2026_08_03_193541_extend_movement_type_for_funding.php');
+
+    expect(fn () => $connection->table(ERPTables::Movements->value)->insert([
+        'type' => MovementType::Contribution->value,
+    ]))->toThrow(QueryException::class);
+
+    app('migrator')->usingConnection('erp_movement_upgrade', static function () use ($migration): void {
+        $migration->up();
+    });
+
+    expect($connection->table(ERPTables::Movements->value)->insert([
+        'type' => MovementType::Contribution->value,
+    ]))->toBeTrue();
 });

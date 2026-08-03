@@ -11,6 +11,7 @@ use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Import\Data\ExternalExpenseAllocationInput;
 use Modules\ERP\Import\Enums\ImportMutation;
+use Modules\ERP\Import\Exceptions\ExternalIdentityConflict;
 use Modules\ERP\Import\Exceptions\PostedImportConflict;
 use Modules\ERP\Import\Services\ExternalExpenseAllocationService;
 use Modules\ERP\Models\Account;
@@ -214,6 +215,37 @@ it('rejects changed allocations after the expense movement is posted', function 
         'fingerprint' => hash('sha256', 'changed posted allocation 42'),
     ])))->toThrow(PostedImportConflict::class)
         ->and(MovementAllocation::query()->count())->toBe(2);
+});
+
+it('rejects reusing an allocation identity for another movement', function (): void {
+    [$pool, $movement, $alice, $bob] = externalExpenseAllocationFixture();
+    $base = [
+        'movementId' => (int) $movement->id,
+        'partnerPoolId' => (int) $pool->id,
+        'shares' => [
+            (int) $alice->id => ['owed' => '45.0000', 'paid' => '90.0000'],
+            (int) $bob->id => ['owed' => '45.0000', 'paid' => '0.0000'],
+        ],
+    ];
+    $service = app(ExternalExpenseAllocationService::class);
+    $service->ingest(externalExpenseAllocationInput($base));
+    $other_movement = Movement::query()->create([
+        'company_id' => $movement->company_id,
+        'type' => MovementType::Expense,
+        'occurred_on' => '2022-12-04',
+        'amount_doc' => '90.0000',
+        'currency_doc' => 'EUR',
+        'counterparty_account_id' => $movement->counterparty_account_id,
+    ]);
+
+    expect(fn () => $service->ingest(externalExpenseAllocationInput([
+        ...$base,
+        'movementId' => (int) $other_movement->id,
+        'fingerprint' => hash('sha256', 'same identity on another movement'),
+    ])))->toThrow(ExternalIdentityConflict::class)
+        ->and(MovementAllocation::query()->where('movement_id', $movement->id)->count())->toBe(2)
+        ->and(MovementAllocation::query()->where('movement_id', $other_movement->id)->count())->toBe(0)
+        ->and(RecordOrigin::query()->sole()->referable_id)->toBe((int) $movement->id);
 });
 
 it('rejects non-members, unbalanced totals, posted expenses, and non-expense movements atomically', function (string $scenario): void {

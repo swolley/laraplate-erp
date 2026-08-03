@@ -11,6 +11,7 @@ use Modules\ERP\Import\Data\ExternalCashMovementInput;
 use Modules\ERP\Import\Enums\ImportMutation;
 use Modules\ERP\Import\Exceptions\PostedImportConflict;
 use Modules\ERP\Import\ValueObjects\CashMovementImportResult;
+use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Movement;
 use Modules\ERP\Services\Cash\MovementPostingService;
 use Modules\ERP\Support\ConnectionScopedModels;
@@ -89,6 +90,11 @@ final readonly class ExternalCashMovementImportService
             } else {
                 $movement = $models->query(Movement::class)->withoutGlobalScopes()->create($attributes);
             }
+
+            $counterparty = $models->query(Account::class)
+                ->withoutGlobalScopes()
+                ->findOrFail($movement->counterparty_account_id);
+            $this->movement_posting_service->validateCounterparty($movement, $counterparty);
 
             $journal_entry_id = null;
 

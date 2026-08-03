@@ -43,7 +43,7 @@ final readonly class MovementPostingService
 
             $company = $company_query->withoutGlobalScopes()->findOrFail($locked->company_id);
             $counterparty = $account_query->withoutGlobalScopes()->findOrFail($locked->counterparty_account_id);
-            $this->assertCounterparty($locked, $counterparty);
+            $this->validateCounterparty($locked, $counterparty);
             $bank_cash = $this->bankCashAccount($models, $company);
             $occurred_on = CarbonImmutable::parse($locked->occurred_on);
             $conversion = $this->currency_converter->convert(
@@ -80,7 +80,7 @@ final readonly class MovementPostingService
         });
     }
 
-    private function assertCounterparty(Movement $movement, Account $account): void
+    public function validateCounterparty(Movement $movement, Account $account): void
     {
         $expected_kind = match ($movement->type) {
             MovementType::Income => AccountKind::Revenue,
