@@ -206,8 +206,10 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 | Term | Meaning |
 |------|---------|
-| **MovementType** | Synthetic direction for legacy cash adapters: `income` / `expense`. Mapped to journal lines, not to a separate `EntityType` tree. |
-| **MovementPostingService** | Idempotently maps a cash `Movement` to one balanced journal. Income uses bank debit/revenue credit; expense uses expense debit/bank credit. |
+| **MovementType** | Source-neutral cash direction: `income`, `expense`, `contribution`, or `withdrawal`. It maps to journal lines, not to a separate `EntityType` tree. |
+| **MovementPostingService** | Idempotently maps a cash `Movement` to one balanced journal. Income/contribution debit bank; expense/withdrawal credit bank. Revenue, Expense, or Liability is the validated counterparty kind. |
+| **ERP external identity** | Stable `(referable_type, source_key, external_id)` plus a normalized SHA-256 fingerprint. Unchanged reruns skip; changed posted movements reject. |
+| **ExternalExpenseAllocationService** | Idempotently applies exact owed/paid shares to an unposted expense. It never creates contributions, withdrawals, or reimbursements. |
 | **CashBalanceService** | Derives company cash balance by summing posted journal lines on `bank_cash` accounts; it never updates a parallel balance table. |
 | **PartnerPool** | Company/currency-scoped group of Core users sharing expenses. It stores membership, not a mutable balance. |
 | **MovementAllocation** | One participant's `owed_amount` and `paid_amount` for an expense. Both aggregate sides must equal the movement total. |

@@ -294,8 +294,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 ### Cash Movements and Journal
 
--   `Movement` is a cash-entry adapter, not a parallel accounting ledger. It stores positive document amount, date, currency, income/expense direction, and an explicit economic counterparty account.
--   `MovementPostingService` posts exactly one balanced `JournalEntry`: income debits `bank_cash` and credits a revenue account; expense debits an expense account and credits `bank_cash`.
+-   `Movement` is a cash-entry adapter, not a parallel accounting ledger. It stores positive document amount, date, currency, one of `income`, `expense`, `contribution`, or `withdrawal`, and an explicit economic counterparty account.
+-   `MovementPostingService` posts exactly one balanced `JournalEntry`: income debits `bank_cash` and credits Revenue; expense debits Expense and credits `bank_cash`; contribution debits `bank_cash` and credits Liability; withdrawal debits Liability and credits `bank_cash`.
 -   Document/local amount and FX rate are frozen on posting. Repeated posting is idempotent through `posted_journal_entry_id`.
 -   `CashBalanceService` derives the balance from posted journal lines on accounts carrying `meta.erp_role=bank_cash`; no mutable balance table is updated.
 -   `erp:migrate-movements-to-journal [--company=ID] [--dry-run]` posts only unlinked movements and can be rerun safely.
@@ -308,6 +308,13 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `PartnerPoolSettlementService` derives each balance as paid minus owed, adjusted by confirmed `PoolTransaction` transfers. No mutable pool balance is stored.
 -   `suggestSettleUp()` proposes debtor-to-creditor transfers; `settle()` validates current balances under a transaction and records the confirmed internal transfer.
 -   The Partner Pools Filament resource manages membership, expense splits, and settle-up. Pool balances are an internal subledger and never replace journal-derived company cash.
+
+### External ERP imports
+
+-   `php artisan erp:import --importer='Vendor\\Importer'` runs only importers implementing `Modules\ERP\Import\Contracts\BulkImporterInterface`. `--bootstrap`, repeated `--arg`, `--limit`, `--dry-run`, and `--no-search` use the shared Core import contract.
+-   Source adapters remain external runtime plugins. They map source records explicitly to a company, Core users, accounts, pool, currency, and categories, then call `ExternalCashMovementImportService` and `ExternalExpenseAllocationService`; ERP contains no Symfony, SPLID, or Tricount schema knowledge.
+-   Every source record uses a stable `(source_key, external_id)` plus a lowercase SHA-256 fingerprint of normalized fields. Unchanged reruns skip, changed unposted records may be replaced, and changed posted movements throw `PostedImportConflict` instead of rewriting a journal.
+-   Import boundaries accept decimal strings normalized to scale 4 and never floats. Expense allocations preserve both owed and paid totals; dated contributions, withdrawals, and reimbursements remain separate cash events rather than allocation rows.
 
 ### Payment Requests
 

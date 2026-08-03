@@ -69,7 +69,7 @@ final class PartnerPoolSettlementService
                 $this->fail('shares', 'Both owed and paid split totals must equal the movement amount.');
             }
 
-            $allocation_query->where('movement_id', $movement->getKey())->delete();
+            $allocation_query->where('movement_id', $movement->getKey())->forceDelete();
 
             foreach ($shares as $user_id => $share) {
                 $models->query(MovementAllocation::class)->create([
