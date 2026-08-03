@@ -4,6 +4,8 @@
 
 ERP is an optional Laraplate domain module for accounting, tax, sales, purchasing, inventory, banking, returns, e-invoicing, and operational reporting. Core supplies shared framework capabilities; ERP must not require MES, AI, CMS, or another optional vertical module.
 
+The reconciled implementation baseline is maintained in [`STATUS.md`](STATUS.md). At Point 0, approved mandatory ERP work that does not require external `/api/v1` exposure is complete; external-source importers are tracked separately.
+
 ## Architectural rules
 
 - Business state changes belong to transactional services, not Filament pages, controllers, observers, or export classes.
@@ -48,7 +50,7 @@ ERP records these event names in `core_outbox_events`:
 ## Deliberately separate work
 
 - Domain actions are exposed on the internal `/app` surface through Core's generic action route and authorised by `ERPModelPolicy`. External `/api/v1` exposure governance remains deferred until Core dynamic CRUD exposure and ERP stateful operations are reviewed together.
-- MES production execution, Gantt, calendar/ICS, and legacy ETL are separate vertical or future scopes. Partner-pool settlement is an ERP internal subledger; external transfer execution remains separate.
+- MES production execution is a separate vertical. Gantt and mobile API remain optional, while calendar/ICS export is implemented. External-source importers are a separate workstream. Partner-pool settlement is an ERP internal subledger; external transfer execution remains separate.
 - Payment-request checkout and callbacks are transport concerns. Accounting payment creation, bank reconciliation, and pool settlement remain explicit ERP workflows.
 - Production transports require tenant contracts, credentials, operational monitoring, replay/dead-letter procedures, and certification where applicable.
 

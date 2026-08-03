@@ -6,6 +6,9 @@ Canonical English names for ERP entities in this module. Use these terms in code
 
 | Term | Meaning |
 |------|---------|
+| **ERP Point 0** | Reconciled 2026-08-03 baseline: approved mandatory non-external-API ERP scope is complete. External importers are tracked separately. |
+| **Internal domain action** | Stateful ERP operation registered on Core's authenticated `POST /app/crud/{action}/{module}/{entity}` dispatcher and authorized by ERP policy. |
+| **Deferred external ERP API** | External `/api/v1` actions or ERP-specific resources that require an approved consumer, scopes, idempotency, versioning, and exposure governance before implementation. |
 | **Company** | Tenant root: fiscal country, default currency (`amount_local` basis), settings. |
 | **BelongsToCompany** | Trait + global scope: transactional rows are scoped to the active company when context is set. |
 
@@ -249,7 +252,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **App-lock portability** | Application guards enforce lock chains on every supported database. MySQL/MariaDB and PostgreSQL additionally enforce them with triggers; SQLite/Oracle use the application fallback. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Forced DIFF setting** | Accounting models that pin DIFF in code do not expose a mutable `version_strategy_{table}` control in Core Settings. |
-| **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, and ETL legacy are outside the current ERP slice. External execution of pool reimbursements remains separate. |
+| **Separate or optional scopes** | MES is a separate vertical; external-source importers are a separate workstream; Gantt and mobile API are optional. Calendar/ICS export is implemented. External execution of pool reimbursements remains separate. |
 
 ## Related reading
 
@@ -260,3 +263,4 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 - `VatRegisterService` / `VatSettlementService` in `app/Services/Accounting/`
 - `PaymentScheduleGeneratorService` / `PaymentAllocationService` / `AgingReportService` in `app/Services/Payments/`
 - `TrialBalanceService` / `BalanceSheetService` / `IncomeStatementService` in `app/Services/Reporting/`
+- `docs/STATUS.md` for the canonical Point 0 baseline and deferred decisions

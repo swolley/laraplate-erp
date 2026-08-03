@@ -273,6 +273,9 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 
 | Term | Meaning |
 | ---- | ------- |
+| **ERP Point 0** | Reconciled 2026-08-03 baseline: approved mandatory non-external-API ERP scope is complete. External importers are tracked separately. |
+| **Internal domain action** | Stateful ERP operation registered on Core's authenticated `POST /app/crud/{action}/{module}/{entity}` dispatcher and authorized by ERP policy. |
+| **Deferred external ERP API** | External `/api/v1` actions or ERP-specific resources that require an approved consumer, scopes, idempotency, versioning, and exposure governance before implementation. |
 | **Stub e-invoice** | Current implemented e-invoice mode. It records submissions and statuses locally; it is not legal FatturaPA delivery. |
 | **Phase 2C e-invoice scope** | Implemented production-readiness slice: schema/readiness fields, mapper, FPR12 XML builder, XSD validation, Aruba upload/polling/callback adapter, polling command, and extended permissions. Remaining work is contracted Aruba go-live verification and full legal retention governance. |
 | **ReportSnapshot** | Immutable archive row for generated ERP financial reports. Stores parameters, payload, CSV content, base64 PDF content, content hash, and generated timestamp. |
@@ -301,7 +304,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **App-lock portability** | Application guards enforce lock chains on every supported database. MySQL/MariaDB and PostgreSQL additionally enforce them with triggers; SQLite/Oracle use the application fallback. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
 | **Forced DIFF setting** | A stale runtime setting hidden by Core because the ERP accounting model declares immutable DIFF strategy in code. |
-| **Out-of-scope verticals** | MES, Gantt planning, calendar/ICS, mobile API, and ETL legacy are outside the current ERP slice. External pool-payment execution remains separate. |
+| **Separate or optional scopes** | MES is a separate vertical; external-source importers are a separate workstream; Gantt and mobile API are optional. Calendar/ICS export is implemented. External pool-payment execution remains separate. |
 
 
 ## Related reading
@@ -313,3 +316,4 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 - `VatRegisterService` / `VatSettlementService` in `app/Services/Accounting/`
 - `PaymentScheduleGeneratorService` / `PaymentAllocationService` / `AgingReportService` in `app/Services/Payments/`
 - `TrialBalanceService` / `BalanceSheetService` / `IncomeStatementService` in `app/Services/Reporting/`
+- `docs/STATUS.md` for the canonical Point 0 baseline and deferred decisions

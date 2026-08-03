@@ -24,6 +24,10 @@ The **ERP** module provides Laraplate’s **accounting and operations** domain: 
 
 The package evolves with product requirements; treat public APIs as unstable until a stable release is declared.
 
+## Punto 0
+
+Lo stato consolidato è descritto in [`STATUS.md`](STATUS.md). Tutto lo scope ERP obbligatorio approvato che non richiede esposizione esterna `/api/v1` è implementato. Gli importer da fonti esterne sono gestiti separatamente e non fanno parte di questo punto 0.
+
 ## Architecture and Extension Points
 
 ERP can be adapted through explicit contracts for chart of accounts, currency conversion, e-invoicing, and Core outbox delivery. It does not automatically discover plugins through container tags. Developers should use [docs/VISION.md](VISION.md) as the authoritative boundary and extension guide.
@@ -356,8 +360,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Area | Status | Notes |
 | --- | --- | --- |
 | M3.6 Purchasing | Implemented / cleanup only | Purchase invoice posting and 3-way match are present; keep regression coverage focused. |
-| M4 Permissions & reporting | Implemented v1 + CSV/PDF snapshots | Domain permissions, invoice action auth, accounting/operational reports, financial/operational report CSV exports, immutable report snapshots, and read-only report pages are present; explicit DDT/fiscal-period/journal page actions remain follow-up. |
-| M5.1 Payment execution | Implemented v1 + Italian bank exports | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, CBI bonifici export, checksum metadata, and Filament resource are present. Ri.Ba/SDD generators cover customer receivable schedules; direct bank submission remains backlog. |
+| M4 Permissions & reporting | Implemented v1 + CSV/PDF snapshots | Domain permissions, accounting/operational reports, CSV exports, immutable report snapshots, read-only pages, Filament actions, and registered internal HTTP actions are present. |
+| M5.1 Payment execution | Implemented v1 + Italian bank exports | Supplier bank coordinates, payment runs, SEPA `pain.001` XML export, CBI bonifici export, checksum metadata, and Filament resource are present. Ri.Ba/SDD generators cover customer receivable schedules; direct bank submission is a separate transport concern. |
 | M6.1 Bank reconciliation | Implemented v1 + differences + bank formats | CSV, CAMT.053, and minimal MT940 import, manual match, suggestions, match-with-difference UI, and difference journal entries are present. |
 | M6.2 Returns management | Implemented v1 + fiscal override + optional auto notes | Customer/supplier returns, DDT integration, returned-quantity tracking, manual NC/ND follow-up actions, optional auto NC/ND on completion, and invoice-line-based fiscal pricing are present. |
 | M6.3 E-invoice stub | Implemented v1 + Phase 2C + Aruba operations | Provider binding, deterministic stub submission workflow, invoice actions, FatturaPA readiness fields, local XML/XSD validation, Aruba upload/polling/callback adapter, and polling command are present. |
@@ -365,9 +369,12 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 | Spec 2 Phase 2A | Implemented | Domain actions, state-aware policies, and Filament service-backed actions are present. |
 | Spec 2 Phase 2B | Implemented | 2B-01/02/03/04/05/06/07/08/09/10/11/12/13 are done. |
 | Spec 2 Phase 2C | Implemented | FatturaPA schema/readiness fields (`2C-05`), SDI/FatturaPA mapping (`2C-02`), FPR12 XML/XSD validation (`2C-01`), Aruba upload/polling/callback adapter (`2C-03`), polling command (`6-03`), and extended admin permissions (`2C-04`) are present. |
-| Phase 4 commercial depth | Implemented through 4-07/4-10 | Pool soci, richieste di pagamento, sedi con Place canonico, gestione Task ed export calendario ICS sono disponibili. |
+| Phase 3 internal actions | Implemented | Stateful actions registered by ERP use Core's authenticated `/app` dispatcher and ERP policy authorization. External `/api/v1` exposure remains deliberately deferred. |
+| Phase 4 commercial depth | Required scope implemented | Pool soci, richieste di pagamento, sedi con Place canonico, gestione Task ed export calendario ICS sono disponibili. Gantt (`4-08`) e mobile API (`4-13`) sono opzionali e non approvati. |
+| Phase 5 enterprise depth | Implemented | Return reversal, e-invoice operations, Italian bank formats, report snapshots, FX/revaluation, Money, and analytic dimensions are present. |
+| Phase 6 integration architecture | Implemented | Commands, outbox integration, extension contracts, and architecture documentation are present. |
 
-### Known Limitations After Phase 2C
+### Point 0: limiti di go-live ed evoluzioni future
 
 -   E-invoice defaults to the deterministic `stub` workflow. The optional `fatturapa` driver generates and XSD-validates ordinary FPR12 XML locally, but it does not deliver to SDI.
 -   The optional `aruba` driver now follows the Aruba v2-style upload and notifications polling shape, supports optional auth signin, exposes a signed callback route, and records polling/callback/conservation metadata in `EInvoiceSubmission.response_payload`. It still needs verification against the contracted Aruba tenant before production go-live.
@@ -378,19 +385,18 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   Financial report snapshots store immutable payload, CSV, PDF content, hash, and parameters through `erp_report_snapshots`; the built-in PDF renderer is intentionally simple and dependency-free.
 -   Multi-currency now has `ExchangeRate`, `DatabaseCurrencyConverter`, and `FxRevaluationService` for historical/inverse FX rates and unrealized revaluation journals on open foreign-currency schedules. External FX feed imports and realized FX settlement automation remain later enhancements.
 -   Money math now has a `Money` value object built on `Decimal`; analytic accounting has company dimensions, dimension values, and a journal-line pivot with allocation percentage.
--   Generic domain HTTP actions, opt-in external APIs, and API exposure governance are Phase 3 work.
+-   Le azioni HTTP di dominio registrate sono disponibili sulla superficie interna autenticata `/app`. Azioni e resource ERP esterne sotto `/api/v1` restano rinviate finché non vengono approvati un consumer e il relativo contratto di governance.
 -   Processed returns can be safely reversed before any linked credit/debit note exists: the generated DDT is unposted, returned quantities are restored, and the return goes back to approved. Linked fiscal notes must be handled explicitly first.
 -   DDT/bolle lines intentionally do not carry prices or costs. Fiscal corrections price from source invoice lines, not from DDTs, orders, goods receipts, or current price lists.
 -   Reports remain live-query in Filament, but financial report snapshots now archive immutable payload/CSV/simple-PDF rows. Rich paginated PDF design and operational report snapshot scheduling remain enhancements.
--   Multi-currency has database FX rates, direct/inverse conversion, and unrealized revaluation journals for open schedules. External FX feed imports and realized FX automation remain future work.
 -   `Money` exists for decimal-safe amount/currency arithmetic, and journal lines support analytic dimensions. Full refactoring of all legacy money helpers and analytic reporting cubes remains future work.
 -   Application lock-chain guards cover all supported databases. MySQL/MariaDB and PostgreSQL add DB triggers; SQLite and Oracle rely on application guards for this specific defense.
--   MES, ETL, calendar/ICS, Gantt planning, and mobile API are outside the current ERP slice. Pool soci e settle-up sono implementati; il trasferimento bancario esterno non è automatico.
+-   MES resta un verticale separato. Gli importer da fonti esterne sono un workstream separato. Gantt e mobile API sono opzionali; export calendar/ICS, pool soci e settle-up sono implementati. Il trasferimento bancario esterno non è automatico.
 
 ### Roadmap
 
--   Phase 2C: FatturaPA / SDI production-readiness and extended admin permissions are implemented.
--   Phase 3+: domain HTTP actions, API exposure governance, and later accounting architecture improvements. Safe processed-return reverse is implemented in ERP services/UI before API exposure.
+-   ERP Point 0: lo scope obbligatorio approvato che non richiede API esterne è implementato; vedere [`STATUS.md`](STATUS.md).
+-   Una nuova tranche parte solo dopo l'approvazione esplicita della governance API esterna, delle funzioni opzionali Gantt/mobile o di un altro requisito indipendente.
 
 ## Scripts
 
@@ -475,6 +481,8 @@ ERP module is open-sourced software licensed under the [GNU AGPL v3](https://www
 - [x] Spec 2 Phase 2A — State-aware policies and Filament domain actions
 - [x] Spec 2 Phase 2B — Party pricing UI, PriceList UI, quotation unlock, document sequence reset, return fiscal override contract, optional auto NC/ND, banking depth, financial CSV export, operational dashboard polish
 - [x] Spec 2 Phase 2C — FatturaPA / SDI schema, mapper, XML/XSD validation, configurable Aruba adapter, and extended admin permissions
-- [ ] ERP-specific API resources/form requests only where domain invariants cannot be represented safely by Core's existing dynamic CRUD/API; design deliberately deferred
+- [x] Phase 3 internal domain actions — authenticated Core `/app` dispatcher with ERP policy authorization
+- [ ] External `/api/v1` action/resources governance — deliberately deferred until a consumer contract is approved
+- [ ] Optional Gantt/mobile capabilities (`4-08`, `4-13`) — not approved for implementation
 - [x] Comprehensive accounting golden-master tests
 - [x] Export CSV for financial reports
