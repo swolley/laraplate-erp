@@ -36,6 +36,10 @@ caller migration guidance.
 
 - *(erp)* Build permission names through PermissionName
 
+### 🐛 Bug Fixes
+
+- *(inventory)* Resolve source-less stock movements through the configured ERP model connection
+
 ## [1.20.7] - 2026-07-29
 
 ### 🚜 Refactor
