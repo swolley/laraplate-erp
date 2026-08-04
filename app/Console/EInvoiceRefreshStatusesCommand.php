@@ -24,7 +24,7 @@ final class EInvoiceRefreshStatusesCommand extends Command
         {--dry-run : Show matching submissions without contacting the provider}';
 
     #[Override]
-    protected $description = 'Refresh open ERP e-invoice submissions through the configured provider <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
+    protected $description = 'Refresh open ERP e-invoice submissions through the configured provider <fg=yellow>(💼 Modules\ERP)</fg=yellow>';
 
     public function __construct(
         private readonly EInvoiceSubmissionService $submission_service,

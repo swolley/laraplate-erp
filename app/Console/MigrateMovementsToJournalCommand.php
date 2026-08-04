@@ -19,7 +19,7 @@ final class MigrateMovementsToJournalCommand extends Command
         {--dry-run : List pending movements without posting journals}';
 
     #[Override]
-    protected $description = 'Post unlinked ERP cash movements to journal entries idempotently <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
+    protected $description = 'Post unlinked ERP cash movements to journal entries idempotently <fg=yellow>(💼 Modules\ERP)</fg=yellow>';
 
     public function __construct(private readonly MovementPostingService $posting_service)
     {

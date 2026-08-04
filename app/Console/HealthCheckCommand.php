@@ -17,7 +17,7 @@ final class HealthCheckCommand extends Command
         {--format=table : Output format: table or json}';
 
     #[Override]
-    protected $description = 'Check ERP installation and operational prerequisites without changing data <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
+    protected $description = 'Check ERP installation and operational prerequisites without changing data <fg=yellow>(💼 Modules\ERP)</fg=yellow>';
 
     public function __construct(private readonly ErpHealthCheckService $health_check)
     {

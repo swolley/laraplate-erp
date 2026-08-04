@@ -25,7 +25,7 @@ final class BankStatementsImportCommand extends Command
         {--output=table : Output format: table or json}';
 
     #[Override]
-    protected $description = 'Import bank statement files in controlled idempotent batches <fg=yellow>(💰 Modules\ERP)</fg=yellow>';
+    protected $description = 'Import bank statement files in controlled idempotent batches <fg=yellow>(� Modules\ERP)</fg=yellow>';
 
     public function __construct(private readonly BankStatementBatchImportService $batch_import)
     {
