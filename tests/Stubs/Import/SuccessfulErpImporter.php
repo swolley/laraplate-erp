@@ -7,6 +7,7 @@ namespace Modules\ERP\Tests\Stubs\Import;
 use Illuminate\Database\ConnectionInterface;
 use Modules\Core\Import\Contracts\ConnectionAwareBulkImporterInterface;
 use Modules\ERP\Import\Contracts\BulkImporterInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 final class SuccessfulErpImporter implements BulkImporterInterface, ConnectionAwareBulkImporterInterface
 {
@@ -20,7 +21,7 @@ final class SuccessfulErpImporter implements BulkImporterInterface, ConnectionAw
         public readonly ?string $connectionName = null,
     ) {}
 
-    public function import(): int
+    public function import(?OutputInterface $output = null): int
     {
         self::$lastArguments = [
             'records' => $this->records,

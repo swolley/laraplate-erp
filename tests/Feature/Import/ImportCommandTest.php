@@ -139,7 +139,7 @@ it('discovers only ERP importer implementations from the sibling package', funct
 namespace Demo;
 final class SelectableErpImporter implements \Modules\ERP\Import\Contracts\BulkImporterInterface
 {
-    public function import(): int { return 0; }
+    public function import(?\Symfony\Component\Console\Output\OutputInterface $output = null): int { return 0; }
 }
 PHP);
     file_put_contents($source . '/CmsOnlyImporter.php', <<<'PHP'
@@ -147,7 +147,7 @@ PHP);
 namespace Demo;
 final class CmsOnlyImporter implements \Modules\CMS\Import\Contracts\BulkImporterInterface
 {
-    public function import(): int { return 0; }
+    public function import(?\Symfony\Component\Console\Output\OutputInterface $output = null): int { return 0; }
 }
 PHP);
     file_put_contents($vendor . '/autoload.php', <<<'PHP'
