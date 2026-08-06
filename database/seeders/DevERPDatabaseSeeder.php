@@ -62,8 +62,7 @@ final class DevERPDatabaseSeeder extends Seeder
             ->withoutGlobalScopes()
             ->where('name', 'opportunity_stage')
             ->where('type', EntityType::OpportunityStages->value)
-            ->select('id')
-            ->first()?->id;
+            ->value('id');
 
         if (! $entity_id) {
             $this->command?->warn('Skipping opportunity stages: Entity "opportunity_stage" not found. Run ERPDatabaseSeeder first.');
@@ -72,11 +71,11 @@ final class DevERPDatabaseSeeder extends Seeder
         }
 
         $presettable_id = Presettable::query()
+            ->withoutEagerLoads()
             ->where('entity_id', $entity_id)
             ->whereNull('deleted_at')
             ->latest('id')
-            ->select('id')
-            ->first()?->id;
+            ->value('id');
 
         if (! $presettable_id) {
             $this->command?->warn('Skipping opportunity stages: no active presettable for entity.');
@@ -108,6 +107,7 @@ final class DevERPDatabaseSeeder extends Seeder
                     'locale' => $locale,
                     'name' => $node[$locale],
                     'slug' => Str::slug($node['slug']),
+                    'components' => [],
                 ]);
             }
 
@@ -144,8 +144,7 @@ final class DevERPDatabaseSeeder extends Seeder
             ->withoutGlobalScopes()
             ->where('name', 'activity')
             ->where('type', EntityType::Activities->value)
-            ->select('id')
-            ->first()?->id;
+            ->value('id');
 
         if (! $entity_id) {
             $this->command?->warn('Skipping activities: Entity "activity" not found. Run ERPDatabaseSeeder first.');
@@ -154,11 +153,11 @@ final class DevERPDatabaseSeeder extends Seeder
         }
 
         $presettable_id = Presettable::query()
+            ->withoutEagerLoads()
             ->where('entity_id', $entity_id)
             ->whereNull('deleted_at')
             ->latest('id')
-            ->select('id')
-            ->first()?->id;
+            ->value('id');
 
         if (! $presettable_id) {
             $this->command?->warn('Skipping activities: no active presettable for Entity "activity".');
@@ -190,6 +189,7 @@ final class DevERPDatabaseSeeder extends Seeder
                     'locale' => $locale,
                     'name' => $node[$locale],
                     'slug' => Str::slug($node['slug']),
+                    'components' => [],
                 ]);
             }
 
