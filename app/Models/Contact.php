@@ -46,8 +46,6 @@ final class Contact extends Model
     protected $hidden = [
         'user_id',
         'user',
-        'created_at',
-        'updated_at',
     ];
 
     private ?User $tempUser = null;
