@@ -19,6 +19,7 @@ enum DocumentType: string
     case SalesDebitNote = 'sales_debit_note';
     case PurchaseDebitNote = 'purchase_debit_note';
     case InternalJournal = 'internal_journal';
+    case ProductionOrder = 'production_order';
 
     /**
      * @return array<string>
@@ -42,7 +43,7 @@ enum DocumentType: string
     public function defaultGapAllowed(): bool
     {
         return match ($this) {
-            self::Quotation, self::SalesOrder, self::PurchaseOrder => true,
+            self::Quotation, self::SalesOrder, self::PurchaseOrder, self::ProductionOrder => true,
             default => false,
         };
     }
