@@ -13,6 +13,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -31,6 +32,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property SalesOrderStatus $status
  * @property string|null $notes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SalesOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrder
  */
@@ -243,6 +245,18 @@ final class SalesOrder extends Model
 
             if ($project !== null && ! $project->isLocked()) {
                 $project->lock();
+            }
+        });
+
+        self::created(static function (SalesOrder $order): void {
+            if ($order->status === SalesOrderStatus::Confirmed) {
+                event(new SalesOrderConfirmed($order));
+            }
+        });
+
+        self::updated(static function (SalesOrder $order): void {
+            if ($order->wasChanged('status') && $order->status === SalesOrderStatus::Confirmed) {
+                event(new SalesOrderConfirmed($order));
             }
         });
     }
