@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Modules\ERP\Providers;
 
 use Illuminate\Support\Facades\Gate;
-use Modules\Core\Services\Crud\DomainActionRegistry;
+use Modules\Core\Import\Support\EntityImporterRegistry;
 use Modules\Core\Overrides\ModuleServiceProvider;
+use Modules\Core\Services\Crud\DomainActionRegistry;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
 use Modules\ERP\Contracts\PaymentRequestProvider;
+use Modules\ERP\Import\ItemImporter;
+use Modules\ERP\Import\PartyImporter;
 use Modules\ERP\Import\Services\ExternalCashMovementImportService;
 use Modules\ERP\Import\Services\ExternalExpenseAllocationService;
 use Modules\ERP\Models\BankStatement;
@@ -30,7 +33,6 @@ use Modules\ERP\Models\SupplierReturn;
 use Modules\ERP\Models\Task;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Policies\ERPModelPolicy;
-use Modules\ERP\Services\DomainActions\ErpDomainActionRegistrar;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
 use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
@@ -47,6 +49,7 @@ use Modules\ERP\Services\Cash\CashBalanceService;
 use Modules\ERP\Services\Cash\MovementPostingService;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Currency\DatabaseCurrencyConverter;
+use Modules\ERP\Services\DomainActions\ErpDomainActionRegistrar;
 use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 use Modules\ERP\Services\EInvoice\FatturaPaEInvoiceProvider;
@@ -94,6 +97,10 @@ class ERPServiceProvider extends ModuleServiceProvider
         }
 
         resolve(ErpDomainActionRegistrar::class)->register(resolve(DomainActionRegistry::class));
+
+        $importers = resolve(EntityImporterRegistry::class);
+        $importers->register(resolve(ItemImporter::class));
+        $importers->register(resolve(PartyImporter::class));
     }
 
     #[Override]
