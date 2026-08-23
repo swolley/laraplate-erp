@@ -72,7 +72,7 @@ final class PaymentScheduleLine extends Model
      */
     public function payments(): BelongsToMany
     {
-        return $this->belongsToMany(Payment::class, 'payment_allocations')
+        return $this->belongsToMany(Payment::class, ERPTables::PaymentAllocations->value)
             ->withPivot(['allocated_amount_doc', 'allocated_amount_local'])
             ->withTimestamps();
     }
