@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- *(erp)* Add ProductionOrder document type for MES numbering
+- *(erp)* Emit SalesOrderConfirmed event on confirmation
+- *(import)* Register erp.item and erp.party entities
+
+### 🐛 Bug Fixes
+
+- *(erp)* Stop hiding created_at and updated_at on Contact
+
+### 🚜 Refactor
+
+- *(erp)* Extend Core TabularPdfExporter in ReportPdfExporter
+
+### 🧪 Testing
+
+- *(import)* Accept optional OutputInterface on importer stubs
+- *(erp)* Assert ItalianTaxCodesSeeder actually seeds after ERPDatabaseSeeder
+
+## [1.22.0] - 2026-08-03
+
 ### 🚜 Refactor
 
 - *(erp)* Global settings via SeedReconciler, seed dependency for tax codes
