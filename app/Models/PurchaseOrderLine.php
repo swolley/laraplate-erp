@@ -152,14 +152,14 @@ final class PurchaseOrderLine extends Model
         if ($line->relationLoaded('purchase_order')) {
             $purchase_order = $line->getRelation('purchase_order');
 
-            if ($purchase_order instanceof PurchaseOrder) {
+            if (
+                $purchase_order instanceof PurchaseOrder
+                && (string) $purchase_order->getKey() === (string) $line->purchase_order_id
+            ) {
                 ConnectionScopedModels::for($line, $purchase_order)->model(PurchaseOrder::class);
+                $purchase_order->setConnection($line->getConnection()->getName());
 
-                if ((string) $purchase_order->getKey() === (string) $line->purchase_order_id) {
-                    $purchase_order->setConnection($line->getConnection()->getName());
-
-                    return $purchase_order;
-                }
+                return $purchase_order;
             }
         }
 

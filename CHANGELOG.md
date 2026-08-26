@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- *(erp)* Restore affinity lifecycle and test/console polish
+
+## [1.23.0] - 2026-08-25
+
 ### 🚀 Features
 
 - *(erp)* Add ProductionOrder document type for MES numbering
@@ -71,6 +77,8 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - *(erp)* Add document sequence reset functionality and price rules management
+
+## [1.14.8] - 2026-07-10
 
 ### 🐛 Bug Fixes
 

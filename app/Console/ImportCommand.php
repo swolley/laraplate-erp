@@ -16,7 +16,7 @@ final class ImportCommand extends AbstractImportCommand
     protected $name = 'erp:import';
 
     #[Override]
-    protected $description = 'Run a bulk ERP import through an external importer plugin <fg=green>(💼 Modules\\ERP)</fg=green>';
+    protected $description = 'Run a bulk ERP import through an external importer plugin <fg=yellow>(💼 Modules\ERP)</fg=yellow>';
 
     public function __construct(
         BulkImportRunner $runner,

@@ -30,7 +30,7 @@ final class PaymentRunResource extends Resource
     protected static ?string $recordTitleAttribute = 'id';
 
     #[Override]
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPathRoundedSquare;
 
     #[Override]
     protected static string|UnitEnum|null $navigationGroup = 'ERP';

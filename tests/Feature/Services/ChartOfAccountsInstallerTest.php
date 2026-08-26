@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Models\Version;
+use Modules\Core\Models\VersionSet;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Models\Account;
 use Modules\ERP\Models\Company;
@@ -133,6 +135,39 @@ it('writes chart accounts on the company affinity connection', function (): void
         $table->json('meta')->nullable();
         $table->boolean('is_active');
         $table->timestamps();
+    });
+    $connection->create((new VersionSet)->getTable(), function (Blueprint $table): void {
+        $table->id();
+        $table->uuid('uuid')->unique();
+        $table->string('root_type')->nullable();
+        $table->string('root_id')->nullable();
+        $table->string('root_connection_ref')->nullable();
+        $table->string('root_table_ref')->nullable();
+        $table->unsignedBigInteger(config('versionable.user_foreign_key', 'user_id'))->nullable();
+        $table->string('kind');
+        $table->string('reason')->nullable();
+        $table->unsignedBigInteger('reverted_from_set_id')->nullable();
+        $table->timestamps();
+    });
+    $connection->create((new Version)->getTable(), function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('version_set_id');
+        $table->unsignedInteger('sequence');
+        $table->string('change_type');
+        $table->string('relation_path')->nullable();
+        $table->json('subject_key')->nullable();
+        $table->string('connection_ref')->nullable();
+        $table->string('table_ref')->nullable();
+        $table->unsignedBigInteger(config('versionable.user_foreign_key', 'user_id'))->nullable();
+        $table->unsignedBigInteger('versionable_id');
+        $table->string('versionable_type');
+        $table->json('original_contents')->nullable();
+        $table->json('contents')->nullable();
+        $table->string('version_strategy');
+        $table->timestamps();
+        $table->softDeletes();
+        $table->boolean('is_deleted')->default(false);
+        $table->unique(['version_set_id', 'sequence']);
     });
 
     $company = (new Company)->setConnection('erp-secondary');

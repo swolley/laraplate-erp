@@ -151,14 +151,14 @@ final class DeliveryNoteLine extends Model
         if ($line->relationLoaded('sales_order_line')) {
             $sales_order_line = $line->getRelation('sales_order_line');
 
-            if ($sales_order_line instanceof SalesOrderLine) {
+            if (
+                $sales_order_line instanceof SalesOrderLine
+                && (string) $sales_order_line->getKey() === (string) $line->sales_order_line_id
+            ) {
                 ConnectionScopedModels::for($line, $sales_order_line)->model(SalesOrderLine::class);
+                $sales_order_line->setConnection($line->getConnection()->getName());
 
-                if ((string) $sales_order_line->getKey() === (string) $line->sales_order_line_id) {
-                    $sales_order_line->setConnection($line->getConnection()->getName());
-
-                    return $sales_order_line;
-                }
+                return $sales_order_line;
             }
         }
 
