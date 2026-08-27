@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(tests)* Expect yellow module badge on erp:import description
+
+## [1.23.1] - 2026-08-26
+
+### 🐛 Bug Fixes
+
 - *(erp)* Restore affinity lifecycle and test/console polish
 
 ## [1.23.0] - 2026-08-25

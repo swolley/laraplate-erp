@@ -63,7 +63,7 @@ it('inherits the shared import options under the ERP command identity', function
     $definition = $command->getDefinition();
 
     expect($command->getName())->toBe('erp:import')
-        ->and($command->getDescription())->toContain('<fg=green>(💼 Modules\\ERP)</fg=green>')
+        ->and($command->getDescription())->toContain('<fg=yellow>(💼 Modules\\ERP)</fg=yellow>')
         ->and($definition->getArguments())->toBe([])
         ->and(array_keys($definition->getOptions()))->toContain(
             'importer',
