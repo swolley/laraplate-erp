@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Config;
 use Modules\Core\Contracts\RestrictsCrudWrites;
 use Modules\Core\Models\Role;
 use Modules\Core\Models\User;
+use Modules\Core\Support\CrudApiExposure;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    Config::set('core.expose_crud_api', true);
+    CrudApiExposure::enable();
     $this->user = User::factory()->create();
     $this->user->assignRole(Role::findOrCreate(config('permission.roles.superadmin'), 'web'));
     $this->actingAs($this->user);
