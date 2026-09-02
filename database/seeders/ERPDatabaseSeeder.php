@@ -6,33 +6,20 @@ namespace Modules\ERP\Database\Seeders;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Core\Authorization\PermissionManifest;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
 use Modules\Core\Seeding\SeedDefinition;
 use Modules\Core\Seeding\SeedReconciler;
 use Modules\Core\Services\PresetVersioningService;
-use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Account;
-use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\DeliveryNote;
-use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\Entity;
-use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
-use Modules\ERP\Models\Invoice;
-use Modules\ERP\Models\JournalEntry;
-use Modules\ERP\Models\PaymentRequest;
-use Modules\ERP\Models\PaymentRun;
 use Modules\ERP\Models\Pivot\Presettable;
 use Modules\ERP\Models\Preset;
-use Modules\ERP\Models\Quotation;
-use Modules\ERP\Models\ReturnOrder;
-use Modules\ERP\Models\SalesOrder;
-use Modules\ERP\Models\SupplierReturn;
-use Modules\ERP\Models\Task;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Accounting\ChartOfAccountsInstaller;
 use Modules\ERP\Services\Accounting\FiscalCalendarInstaller;
@@ -227,82 +214,24 @@ final class ERPDatabaseSeeder extends Seeder
         });
     }
 
+    /**
+     * Materializes this module's slice of the permission manifest.
+     *
+     * `permission:refresh` creates the same names from the same declaration and
+     * runs before every module seeder in the graph; this keeps a module seeded in
+     * isolation (as the test suites do) self-sufficient.
+     */
     private function ensureDomainPermissions(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $permission_model = new Permission;
 
-        foreach ($this->domainPermissions() as $permission_name) {
+        foreach (app(PermissionManifest::class)->namesFor('ERP') as $permission_name) {
             $permission_model->newQuery()->firstOrCreate(['name' => $permission_name]);
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $this->command?->line('    - ERP domain permissions <fg=green>updated</>');
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function domainPermissions(): array
-    {
-        $entities = [DeliveryNote::class, DocumentSequence::class, FiscalPeriod::class, Invoice::class, JournalEntry::class, Quotation::class, SalesOrder::class];
-        $permissions = [];
-
-        foreach ($entities as $model) {
-            $permissions[] = PermissionName::forClass($model, 'post');
-            $permissions[] = PermissionName::forClass($model, 'unpost');
-
-            if ($model === Invoice::class) {
-                $permissions[] = PermissionName::forClass($model, 'submitEInvoice');
-                $permissions[] = PermissionName::forClass($model, 'refreshEInvoice');
-                $permissions[] = PermissionName::forClass($model, 'force_post');
-            }
-
-            if ($model === FiscalPeriod::class) {
-                $permissions[] = PermissionName::forClass($model, 'close');
-                $permissions[] = PermissionName::forClass($model, 'reopen');
-            }
-
-            if ($model === JournalEntry::class) {
-                $permissions[] = PermissionName::forClass($model, 'reverse');
-            }
-
-            if ($model === SalesOrder::class) {
-                $permissions[] = PermissionName::forClass($model, 'amend');
-            }
-
-            if ($model === Quotation::class) {
-                $permissions[] = PermissionName::forClass($model, 'unlock');
-            }
-
-            if ($model === DocumentSequence::class) {
-                $permissions[] = PermissionName::forClass($model, 'reset');
-                $permissions[] = PermissionName::forClass($model, 'reserve');
-            }
-        }
-
-        foreach ([ReturnOrder::class, SupplierReturn::class] as $return_model) {
-            foreach (['approve', 'complete', 'cancel', 'reverse_processed'] as $operation) {
-                $permissions[] = PermissionName::forClass($return_model, $operation);
-            }
-        }
-
-        $permissions[] = PermissionName::forClass(ReturnOrder::class, 'create_credit_note');
-        $permissions[] = PermissionName::forClass(SupplierReturn::class, 'create_debit_note');
-
-        $permissions[] = PermissionName::forClass(Quotation::class, 'create_revision');
-
-        $permissions[] = PermissionName::forClass(PaymentRequest::class, 'send');
-        $permissions[] = PermissionName::forClass(PaymentRun::class, 'export_sepa');
-        $permissions[] = PermissionName::forClass(PaymentRun::class, 'export_cbi_bonifici');
-        $permissions[] = PermissionName::forClass(Task::class, 'export_ics');
-        $permissions[] = PermissionName::forClass(BankStatement::class, 'import_file');
-
-        $permissions[] = PermissionName::forClass(FiscalYear::class, 'close');
-        $permissions[] = PermissionName::forClass(Company::class, 'switch_context');
-        $permissions[] = PermissionName::forClass(TaxCode::class, 'supersede');
-
-        return $permissions;
     }
 }
