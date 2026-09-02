@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Role;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Casts\TaxKind;
 use Modules\ERP\Models\Company;
@@ -36,18 +37,13 @@ function policyInvoice(): Invoice
 }
 
 /**
- * Mirror the permission string built by {@see ERPModelPolicy::allows()} so the
- * test stays correct regardless of the active connection (e.g. sqlite in tests
- * vs the default connection in production).
+ * Same builder {@see ERPModelPolicy::allows()} uses, so the test stays correct
+ * regardless of the active connection (sqlite in tests, the default connection
+ * in production — both named `default` in a permission).
  */
 function policyPermission(Model $record, string $operation): string
 {
-    return sprintf(
-        '%s.%s.%s',
-        $record->getConnectionName() ?? 'default',
-        $record->getTable(),
-        $operation,
-    );
+    return PermissionName::forModel($record, $operation);
 }
 
 function policyTaxCode(Company $company): TaxCode

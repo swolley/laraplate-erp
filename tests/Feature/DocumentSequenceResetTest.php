@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
 use Modules\ERP\Filament\Resources\DocumentSequences\Actions\DocumentSequenceActions;
@@ -45,12 +46,7 @@ function documentSequenceResetRecord(?Company $company = null): DocumentSequence
 
 function documentSequenceResetPermission(DocumentSequence $sequence): string
 {
-    return sprintf(
-        '%s.%s.%s',
-        $sequence->getConnectionName() ?? 'default',
-        $sequence->getTable(),
-        'reset',
-    );
+    return PermissionName::forModel($sequence, 'reset');
 }
 
 it('resets last number and next allocation uses the new counter', function (): void {

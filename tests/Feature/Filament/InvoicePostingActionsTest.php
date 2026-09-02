@@ -6,6 +6,7 @@ use Filament\Actions\Action;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Filament\Resources\Invoices\Actions\InvoicePostingActions;
@@ -55,12 +56,7 @@ function invoicePostingActionFormComponents(Action $action, Invoice $invoice): a
 
 function grantInvoicePostingActionPermission(User $user, Invoice $invoice, string $operation): void
 {
-    $permission = sprintf(
-        '%s.%s.%s',
-        $invoice->getConnectionName() ?? 'default',
-        $invoice->getTable(),
-        $operation,
-    );
+    $permission = PermissionName::forModel($invoice, $operation);
     Permission::findOrCreate($permission, 'web');
     $user->givePermissionTo($permission);
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\QuoteStatus;
 use Modules\ERP\Database\Seeders\ERPDatabaseSeeder;
 use Modules\ERP\Models\Company;
@@ -50,12 +51,7 @@ function quotationUnlockGuard(): string
 
 function quotationUnlockPermission(Quotation $quotation): string
 {
-    return sprintf(
-        '%s.%s.%s',
-        $quotation->getConnectionName() ?? 'default',
-        $quotation->getTable(),
-        'unlock',
-    );
+    return PermissionName::forModel($quotation, 'unlock');
 }
 
 it('seeds quotation unlock permission', function (): void {

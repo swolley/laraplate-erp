@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Role;
 use Modules\Core\Models\User;
+use Modules\Core\Support\PermissionName;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -35,12 +36,7 @@ function statePolicyCompany(): Company
 
 function grantStatePolicyPermission(User $user, object $record, string $operation): void
 {
-    $permission = sprintf(
-        '%s.%s.%s',
-        $record->getConnectionName() ?? 'default',
-        $record->getTable(),
-        $operation,
-    );
+    $permission = PermissionName::forModel($record, $operation);
     Permission::findOrCreate($permission, 'web');
     $user->givePermissionTo($permission);
 }
