@@ -5,6 +5,8 @@ declare(strict_types=1);
 return [
     'name' => 'ERP',
     // Trusted model/table => database connection mapping for entrypoints without route model binding.
+    // Frozen: native modules share one schema on one connection. Add no entries.
+    // See docs/database-connection-affinity-audit.md.
     'model_connections' => [],
     'einvoice' => [
         'driver' => env('ERP_EINVOICE_DRIVER', 'stub'),
