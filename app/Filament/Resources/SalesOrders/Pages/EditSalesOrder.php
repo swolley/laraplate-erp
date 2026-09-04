@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\SalesOrders\Pages;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasRecordLease;
 use Modules\ERP\Filament\Resources\SalesOrders\Actions\SalesOrderAmendmentActions;
 use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Models\SalesOrder;
@@ -15,6 +16,8 @@ use Override;
 
 final class EditSalesOrder extends EditRecord
 {
+    use HasRecordLease;
+
     #[Override]
     protected static string $resource = SalesOrderResource::class;
 

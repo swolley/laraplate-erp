@@ -331,7 +331,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   `QuotationRevisionService` locks the source, rejects editable drafts/branches/version overflow, creates a draft successor through unique `revises_quotation_id`, increments `version`, and snapshots all quotation items transactionally.
 -   `Quotation::revised_from()` / `revision()` expose the linear chain. Filament `create_revision` uses the service and opens the successor draft.
--   Operational sales-order states lock both linked quotation and project. `Project` uses `HasLocks`, ORM/Filament guards, and MySQL/MariaDB/PostgreSQL trigger reinforcement.
+-   Operational sales-order states lock both linked quotation and project. `Project` uses `HasLocks`, ORM/Filament guards, and MySQL/MariaDB/PostgreSQL trigger reinforcement. The chain triggers write `locked_at` and leave `locked_user_id` null, so what ERP locks by itself is a **freeze**: ownerless, immutable at the database level. The triggers block frozen rows only, never a lease, otherwise these four documents would be the only lockable models on which a user could not edit the record they had taken charge of. See Core's `RECORD_LOCKING_DEVELOPER.md`.
 -   Creating or relinking a DDT line locks its source `SalesOrderLine`. Once locked, its commercial identity, ordered quantity and price are immutable; operational counters and status remain service-writable.
 
 ### Spec 2 Phase 2A/2B — Domain Actions & Commercial UX

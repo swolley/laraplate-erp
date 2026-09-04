@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\SalesOrders;
 
+use Modules\Core\Locking\Locked;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\SalesOrder;
@@ -73,7 +74,13 @@ final class SalesOrderEvasionService
             }
 
             $line->status = $this->lineStatusFromQuantities($line);
-            $line->save();
+
+            // Confirmed documents are frozen, and fulfilment still has to move on them. The database
+            // says the same thing in finer detail: the trigger on this table blocks only the
+            // commercial fields of a locked line, leaving delivered, invoiced and returned
+            // quantities free. The Eloquent guard cannot see that distinction, so the exception is
+            // declared here.
+            Locked::withoutGuard(static fn (): bool => $line->save());
         }
 
         $this->syncHeaderStatus($sales_order->fresh(['lines']) ?? $sales_order);

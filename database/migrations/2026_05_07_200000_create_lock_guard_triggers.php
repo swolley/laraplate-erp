@@ -43,24 +43,44 @@ return new class extends Migration
         };
     }
 
+    /**
+     * Matches a row that is locked **for everyone**: a freeze.
+     *
+     * A trigger cannot know who is making the write, so it must not block on the mere presence of a
+     * lock. A lock that carries a `locked_user_id` is a lease, and its owner is entitled to edit the
+     * record, release it and move its deadline; only an ownerless lock is an immutability guarantee,
+     * which is exactly what the chain triggers below create when a document is confirmed.
+     *
+     * Expiry is checked here too. Lazy expiry frees a lock the moment it lapses everywhere else in
+     * the system, but a trigger has no way to benefit from that, so it would keep rejecting writes
+     * against a freeze that is already over until the housekeeping sweep caught up.
+     */
+    private function frozenPredicate(): string
+    {
+        return 'OLD.locked_at IS NOT NULL'
+            . ' AND OLD.locked_user_id IS NULL'
+            . ' AND (OLD.locked_until IS NULL OR OLD.locked_until > CURRENT_TIMESTAMP)';
+    }
+
     private function installMysqlTriggers(): void
     {
         foreach (self::LOCKABLE_TABLES as $table) {
             $wrapped_table = $this->table($table);
             $update_trigger = $this->identifier($table . '_lock_guard_update');
             $delete_trigger = $this->identifier($table . '_lock_guard_delete');
+            $frozen = $this->frozenPredicate();
             $this->connection()->unprepared("CREATE TRIGGER {$update_trigger}
                 BEFORE UPDATE ON {$wrapped_table} FOR EACH ROW
                 BEGIN
-                    IF OLD.locked_at IS NOT NULL AND NEW.locked_at IS NOT NULL THEN
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify a locked record.';
+                    IF {$frozen} AND NEW.locked_at IS NOT NULL THEN
+                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify a frozen record.';
                     END IF;
                 END");
             $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger}
                 BEFORE DELETE ON {$wrapped_table} FOR EACH ROW
                 BEGIN
-                    IF OLD.locked_at IS NOT NULL THEN
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete a locked record.';
+                    IF {$frozen} THEN
+                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete a frozen record.';
                     END IF;
                 END");
         }
@@ -73,10 +93,11 @@ return new class extends Migration
         $lines = $this->table(ERPTables::SalesOrderLines->value);
         $commercial_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_commercial_lock_guard_update');
         $delete_trigger = $this->identifier(ERPTables::SalesOrderLines->value . '_lock_guard_delete');
+        $frozen = $this->frozenPredicate();
         $this->connection()->unprepared("CREATE TRIGGER {$commercial_trigger}
             BEFORE UPDATE ON {$lines} FOR EACH ROW
             BEGIN
-                IF OLD.locked_at IS NOT NULL AND (
+                IF {$frozen} AND (
                     NOT (NEW.sales_order_id <=> OLD.sales_order_id)
                     OR NOT (NEW.quotation_item_id <=> OLD.quotation_item_id)
                     OR NOT (NEW.item_id <=> OLD.item_id)
@@ -84,25 +105,26 @@ return new class extends Migration
                     OR NOT (NEW.qty_ordered <=> OLD.qty_ordered)
                     OR NOT (NEW.unit_price <=> OLD.unit_price)
                 ) THEN
-                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify commercial fields on a locked sales order line.';
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot modify commercial fields on a frozen sales order line.';
                 END IF;
             END");
         $this->connection()->unprepared("CREATE TRIGGER {$delete_trigger}
             BEFORE DELETE ON {$lines} FOR EACH ROW
             BEGIN
-                IF OLD.locked_at IS NOT NULL THEN
-                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete a locked sales order line.';
+                IF {$frozen} THEN
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete a frozen sales order line.';
                 END IF;
             END");
     }
 
     private function installPostgresTriggers(): void
     {
+        $frozen = $this->frozenPredicate();
         $record_guard = $this->identifier('erp_locked_record_guard');
         $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$record_guard}() RETURNS trigger AS $$
             BEGIN
-                IF OLD.locked_at IS NOT NULL AND (TG_OP = 'DELETE' OR NEW.locked_at IS NOT NULL) THEN
-                    RAISE EXCEPTION 'Cannot modify or delete a locked record.';
+                IF {$frozen} AND (TG_OP = 'DELETE' OR NEW.locked_at IS NOT NULL) THEN
+                    RAISE EXCEPTION 'Cannot modify or delete a frozen record.';
                 END IF;
                 RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
             END;
@@ -163,10 +185,10 @@ return new class extends Migration
         $line_guard = $this->identifier('erp_sales_order_line_guard');
         $this->connection()->unprepared("CREATE OR REPLACE FUNCTION {$line_guard}() RETURNS trigger AS $$
             BEGIN
-                IF TG_OP = 'DELETE' AND OLD.locked_at IS NOT NULL THEN
-                    RAISE EXCEPTION 'Cannot delete a locked sales order line.';
+                IF TG_OP = 'DELETE' AND {$frozen} THEN
+                    RAISE EXCEPTION 'Cannot delete a frozen sales order line.';
                 END IF;
-                IF TG_OP = 'UPDATE' AND OLD.locked_at IS NOT NULL AND (
+                IF TG_OP = 'UPDATE' AND {$frozen} AND (
                     NEW.sales_order_id IS DISTINCT FROM OLD.sales_order_id
                     OR NEW.quotation_item_id IS DISTINCT FROM OLD.quotation_item_id
                     OR NEW.item_id IS DISTINCT FROM OLD.item_id
@@ -174,7 +196,7 @@ return new class extends Migration
                     OR NEW.qty_ordered IS DISTINCT FROM OLD.qty_ordered
                     OR NEW.unit_price IS DISTINCT FROM OLD.unit_price
                 ) THEN
-                    RAISE EXCEPTION 'Cannot modify commercial fields on a locked sales order line.';
+                    RAISE EXCEPTION 'Cannot modify commercial fields on a frozen sales order line.';
                 END IF;
                 RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
             END;

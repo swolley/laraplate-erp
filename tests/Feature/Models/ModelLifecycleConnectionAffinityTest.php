@@ -117,7 +117,8 @@ beforeEach(function (): void {
         $table->decimal('unit_price', 18, 4)->nullable();
         $table->string('status');
         $table->timestamp('locked_at')->nullable();
-        $table->unsignedInteger('locked_by')->nullable();
+        $table->unsignedBigInteger('locked_user_id')->nullable();
+        $table->timestamp('locked_until')->nullable();
         $table->timestamps();
         $table->softDeletes();
         $table->boolean('is_deleted')->default(false);

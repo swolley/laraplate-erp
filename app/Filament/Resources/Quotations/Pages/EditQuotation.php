@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\Quotations\Pages;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasRecordLease;
 use Modules\ERP\Filament\Resources\Quotations\Actions\QuotationActions;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Models\Quotation;
@@ -15,6 +16,8 @@ use Override;
 
 final class EditQuotation extends EditRecord
 {
+    use HasRecordLease;
+
     #[Override]
     protected static string $resource = QuotationResource::class;
 
