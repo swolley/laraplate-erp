@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\InvoiceFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\InvoiceObserver;
 use Override;
@@ -195,5 +197,14 @@ final class Invoice extends Model
     protected function shouldVersioning(): bool
     {
         return false;
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return InvoiceFactory::new();
     }
 }

@@ -7,9 +7,11 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Casts\DeliveryNoteDirection;
+use Modules\ERP\Database\Factories\DeliveryNoteFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
 use Override;
@@ -87,5 +89,14 @@ final class DeliveryNote extends Model
             'posted_at' => 'datetime',
             'inventory_posted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return DeliveryNoteFactory::new();
     }
 }

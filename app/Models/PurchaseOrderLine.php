@@ -6,7 +6,9 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Database\Factories\PurchaseOrderLineFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
@@ -166,5 +168,14 @@ final class PurchaseOrderLine extends Model
         return $models->query(PurchaseOrder::class)
             ->whereKey($line->purchase_order_id)
             ->first();
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return PurchaseOrderLineFactory::new();
     }
 }

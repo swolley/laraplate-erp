@@ -6,8 +6,10 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\MatchStatus;
+use Modules\ERP\Database\Factories\InvoiceLineFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\InvoiceLineHasDeliveryNoteLine;
 use Override;
@@ -172,5 +174,14 @@ final class InvoiceLine extends Model
     protected function shouldVersioning(): bool
     {
         return false;
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return InvoiceLineFactory::new();
     }
 }

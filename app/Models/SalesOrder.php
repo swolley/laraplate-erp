@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Models\Concerns\HasValidity;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\SalesOrderFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Support\ConnectionScopedModels;
@@ -279,5 +281,14 @@ final class SalesOrder extends Model
             SalesOrderStatus::PartiallyEvased,
             SalesOrderStatus::FullyEvased,
         ], true);
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return SalesOrderFactory::new();
     }
 }

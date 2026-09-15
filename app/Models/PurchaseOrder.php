@@ -7,9 +7,11 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\PurchaseOrderFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
@@ -125,5 +127,14 @@ final class PurchaseOrder extends Model
         return [
             'ordered_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return PurchaseOrderFactory::new();
     }
 }

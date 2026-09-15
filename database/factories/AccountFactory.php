@@ -28,7 +28,7 @@ final class AccountFactory extends Factory
             'company_id' => Company::factory(),
             'code' => (string) $this->faker->unique()->numerify('######'),
             'name' => mb_ucfirst($this->faker->unique()->words(2, true)),
-            'kind' => AccountKind::Asset,
+            'kind' => AccountKind::Asset->value,
             'parent_id' => null,
             'is_active' => true,
         ];
@@ -36,6 +36,6 @@ final class AccountFactory extends Factory
 
     public function kind(AccountKind $kind): self
     {
-        return $this->state(fn (array $attributes): array => ['kind' => $kind]);
+        return $this->state(fn (array $attributes): array => ['kind' => $kind->value]);
     }
 }

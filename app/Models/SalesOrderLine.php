@@ -7,8 +7,10 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Locking\Traits\HasLocks;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderLineStatus;
+use Modules\ERP\Database\Factories\SalesOrderLineFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
@@ -199,5 +201,14 @@ final class SalesOrderLine extends Model
             'qty_returned' => 'decimal:4',
             'unit_price' => 'decimal:4',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return SalesOrderLineFactory::new();
     }
 }

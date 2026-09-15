@@ -33,7 +33,7 @@ final class ItemFactory extends Factory
             'sku' => 'SKU-' . mb_strtoupper($this->faker->unique()->bothify('??####')),
             'uom' => 'unit',
             'costing_method' => 'fifo',
-            'tracing_type' => TracingType::None,
+            'tracing_type' => TracingType::None->value,
         ];
     }
 
@@ -47,6 +47,6 @@ final class ItemFactory extends Factory
 
     public function lotTraced(): self
     {
-        return $this->state(fn (array $attributes): array => ['tracing_type' => TracingType::Lot]);
+        return $this->state(fn (array $attributes): array => ['tracing_type' => TracingType::Lot->value]);
     }
 }
