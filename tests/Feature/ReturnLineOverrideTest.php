@@ -47,13 +47,13 @@ function createReturnLineOverrideCompany(string $slug, bool $supplier = false): 
     $warehouse = Warehouse::query()->create([
         'company_id' => $company->id,
         'name' => 'Main',
-        'code' => strtoupper(substr($slug, 0, 4)),
+        'code' => mb_strtoupper(mb_substr($slug, 0, 4)),
     ]);
 
     $item = Item::query()->create([
         'company_id' => $company->id,
         'name' => 'Returned item',
-        'sku' => strtoupper($slug),
+        'sku' => mb_strtoupper($slug),
         'uom' => 'pcs',
         'costing_method' => 'weighted_avg',
     ]);

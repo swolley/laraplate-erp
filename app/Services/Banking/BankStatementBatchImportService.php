@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Models\BankStatement;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Throwable;
 
 final readonly class BankStatementBatchImportService
@@ -164,12 +164,12 @@ final readonly class BankStatementBatchImportService
     private function archive(string $path, string $archive_path, string $checksum): void
     {
         File::ensureDirectoryExists($archive_path);
-        $destination = rtrim($archive_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($path);
+        $destination = mb_rtrim($archive_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($path);
 
         if (file_exists($destination)) {
             $extension = pathinfo($path, PATHINFO_EXTENSION);
             $stem = pathinfo($path, PATHINFO_FILENAME);
-            $destination = rtrim($archive_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR
+            $destination = mb_rtrim($archive_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR
                 . $stem . '-' . mb_substr($checksum, 0, 12)
                 . ($extension !== '' ? '.' . $extension : '');
         }

@@ -42,7 +42,7 @@ final class AnalyticDimensionValue extends Model
     protected static function booted(): void
     {
         self::saving(static function (AnalyticDimensionValue $value): void {
-            $value->code = strtoupper(trim((string) $value->code));
+            $value->code = mb_strtoupper(mb_trim((string) $value->code));
         });
     }
 

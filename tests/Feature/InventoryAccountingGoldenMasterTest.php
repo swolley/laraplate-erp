@@ -65,13 +65,13 @@ function inventoryGoldenMasterItemSetup(Company $company, string $slug, string $
     $warehouse = Warehouse::query()->create([
         'company_id' => $company->id,
         'name' => 'Main ' . $slug,
-        'code' => strtoupper(substr($slug, 0, 8)),
+        'code' => mb_strtoupper(mb_substr($slug, 0, 8)),
     ]);
 
     $item = Item::query()->create([
         'company_id' => $company->id,
         'name' => 'Inventory Item ' . $slug,
-        'sku' => 'IGM-' . strtoupper($slug) . '-' . uniqid(),
+        'sku' => 'IGM-' . mb_strtoupper($slug) . '-' . uniqid(),
         'uom' => 'pcs',
         'costing_method' => $costing_method,
     ]);

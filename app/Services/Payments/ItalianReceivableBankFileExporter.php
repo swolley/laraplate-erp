@@ -61,7 +61,7 @@ final class ItalianReceivableBankFileExporter
      */
     public function exportSddCore(iterable $schedule_lines, BankAccount $creditor_bank, string $creditor_identifier): string
     {
-        if (trim($creditor_identifier) === '') {
+        if (mb_trim($creditor_identifier) === '') {
             throw ValidationException::withMessages([
                 'creditor_identifier' => ['A creditor identifier is required for SDD export.'],
             ]);
@@ -220,7 +220,7 @@ final class ItalianReceivableBankFileExporter
     {
         $clean = preg_replace('/[^A-Za-z0-9 .,_\/-]/', '', $value) ?? '';
 
-        return substr(str_pad(strtoupper($clean), $length, $pad, $direction), 0, $length);
+        return mb_substr(mb_str_pad(mb_strtoupper($clean), $length, $pad, $direction), 0, $length);
     }
 
     private function amountCents(string $amount): int
@@ -235,11 +235,11 @@ final class ItalianReceivableBankFileExporter
 
     private function abiFromIban(string $iban): string
     {
-        return substr(strtoupper(str_replace(' ', '', $iban)), 5, 5) ?: '';
+        return mb_substr(mb_strtoupper(str_replace(' ', '', $iban)), 5, 5) ?: '';
     }
 
     private function cabFromIban(string $iban): string
     {
-        return substr(strtoupper(str_replace(' ', '', $iban)), 10, 5) ?: '';
+        return mb_substr(mb_strtoupper(str_replace(' ', '', $iban)), 10, 5) ?: '';
     }
 }

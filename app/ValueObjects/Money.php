@@ -14,9 +14,14 @@ final readonly class Money
         public string $currency,
     ) {}
 
+    public function __toString(): string
+    {
+        return $this->amount . ' ' . $this->currency;
+    }
+
     public static function of(string|float|int $amount, string $currency): self
     {
-        $currency = strtoupper(trim($currency));
+        $currency = mb_strtoupper(mb_trim($currency));
 
         if (! preg_match('/^[A-Z]{3}$/', $currency)) {
             throw new InvalidArgumentException('Money currency must be a 3-letter ISO code.');
@@ -98,11 +103,6 @@ final readonly class Money
         }
 
         return $allocations;
-    }
-
-    public function __toString(): string
-    {
-        return $this->amount . ' ' . $this->currency;
     }
 
     private function assertSameCurrency(self $other): void

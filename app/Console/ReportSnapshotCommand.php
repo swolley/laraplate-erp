@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Console;
 
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
 use Modules\Core\Overrides\Command;
 use Modules\ERP\Services\Reporting\BalanceSheetService;
 use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
@@ -50,7 +51,7 @@ final class ReportSnapshotCommand extends Command
         [$title, $payload, $csv, $parameters] = $this->generate($company_id, (string) $this->argument('report'));
 
         if ((bool) $this->option('dry-run')) {
-            $this->info(sprintf('Generated %s snapshot preview (%d CSV bytes).', $title, strlen($csv)));
+            $this->info(sprintf('Generated %s snapshot preview (%d CSV bytes).', $title, mb_strlen($csv)));
 
             return BaseCommand::SUCCESS;
         }
@@ -93,7 +94,7 @@ final class ReportSnapshotCommand extends Command
 
                 return ['Balance sheet', $report, $this->csv_exporter->balanceSheet($report), ['as_of' => $to->toDateString()]];
             })(),
-            default => throw new \InvalidArgumentException('Unsupported report snapshot key.'),
+            default => throw new InvalidArgumentException('Unsupported report snapshot key.'),
         };
     }
 }

@@ -25,6 +25,7 @@ use Override;
  * @property string|null $direct_debit_mandate_scheme
  * @property bool $is_default
  * @property bool $is_active
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPartyBankAccount
  */
@@ -99,11 +100,11 @@ final class PartyBankAccount extends Model
     protected static function booted(): void
     {
         self::saving(static function (PartyBankAccount $bank_account): void {
-            $bank_account->iban = strtoupper(str_replace(' ', '', (string) $bank_account->iban));
+            $bank_account->iban = mb_strtoupper(str_replace(' ', '', (string) $bank_account->iban));
             $bank_account->bic = $bank_account->bic !== null
-                ? strtoupper(str_replace(' ', '', (string) $bank_account->bic))
+                ? mb_strtoupper(str_replace(' ', '', (string) $bank_account->bic))
                 : null;
-            $bank_account->currency = strtoupper((string) $bank_account->currency);
+            $bank_account->currency = mb_strtoupper((string) $bank_account->currency);
         });
     }
 

@@ -44,10 +44,10 @@ it('exports a task as a folded RFC 5545 event with canonical place location', fu
     $ics = app(TaskIcsExporter::class)->export($task);
 
     expect($ics)->toContain("BEGIN:VCALENDAR\r\n")
-        ->toContain('UID:erp-task-'.$task->id.'@laraplate')
-        ->toContain('DTSTART:'.$task->valid_from->utc()->format('Ymd\THis\Z'))
-        ->toContain('DTEND:'.$task->valid_to->utc()->format('Ymd\THis\Z'))
-        ->toContain('SUMMARY:'.str_replace(["\\", ';', ','], ["\\\\", '\\;', '\\,'], $activity->name))
+        ->toContain('UID:erp-task-' . $task->id . '@laraplate')
+        ->toContain('DTSTART:' . $task->valid_from->utc()->format('Ymd\THis\Z'))
+        ->toContain('DTEND:' . $task->valid_to->utc()->format('Ymd\THis\Z'))
+        ->toContain('SUMMARY:' . str_replace(['\\', ';', ','], ['\\\\', '\\;', '\\,'], $activity->name))
         ->toContain('LOCATION:Via Roma 10\\, 20100\\, Milano\\, MI\\, IT')
-        ->and(collect(explode("\r\n", $ics))->filter()->every(static fn (string $line): bool => strlen($line) <= 75))->toBeTrue();
+        ->and(collect(explode("\r\n", $ics))->filter()->every(static fn (string $line): bool => mb_strlen($line) <= 75))->toBeTrue();
 });

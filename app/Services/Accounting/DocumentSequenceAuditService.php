@@ -58,8 +58,7 @@ final class DocumentSequenceAuditService
         ConnectionScopedModels $models,
         DocumentSequence $sequence,
         array &$checks,
-    ): void
-    {
+    ): void {
         $document_type = $sequence->document_type;
 
         if (! $document_type instanceof DocumentType || ! $this->isAuditable($document_type)) {
@@ -141,7 +140,7 @@ final class DocumentSequenceAuditService
             }
         }
 
-        if (count($checks) === $issues_before) {
+        if ($issues_before === count($checks)) {
             $this->add($checks, $sequence, 'success', 'sequence_consistent', sprintf(
                 'Sequence [%s/%d] is consistent through counter %d.',
                 $document_type->value,
@@ -161,8 +160,7 @@ final class DocumentSequenceAuditService
         int $year,
         Collection $sequences,
         array &$checks,
-    ): void
-    {
+    ): void {
         foreach ($this->auditableTypes() as $document_type) {
             $fiscal_year = $this->isFiscal($document_type) ? $year : 0;
             $exists = $sequences->contains(static fn (DocumentSequence $sequence): bool => $sequence->document_type === $document_type
@@ -194,8 +192,7 @@ final class DocumentSequenceAuditService
         DocumentType $document_type,
         int $company_id,
         int $fiscal_year,
-    ): Collection
-    {
+    ): Collection {
         if ($document_type === DocumentType::SalesOrder) {
             return $this->referencesFromModel($models, SalesOrder::class, $company_id);
         }
@@ -238,8 +235,7 @@ final class DocumentSequenceAuditService
         ConnectionScopedModels $models,
         string $model,
         int $company_id,
-    ): Collection
-    {
+    ): Collection {
         return $models->query($model)->withoutGlobalScopes()
             ->where('company_id', $company_id)
             ->whereNotNull('reference')
@@ -275,7 +271,7 @@ final class DocumentSequenceAuditService
 
         $counter = (int) $matches['counter'];
 
-        if ($counter < 1 || DocumentNumberFormatter::format($sequence, $sequence->fiscal_year, $counter) !== $reference) {
+        if ($counter < 1 || $reference !== DocumentNumberFormatter::format($sequence, $sequence->fiscal_year, $counter)) {
             return null;
         }
 
@@ -295,7 +291,7 @@ final class DocumentSequenceAuditService
 
     private function numberTokenCount(DocumentSequence $sequence): int
     {
-        return substr_count($this->formatTemplate($sequence), '{number}');
+        return mb_substr_count($this->formatTemplate($sequence), '{number}');
     }
 
     /**

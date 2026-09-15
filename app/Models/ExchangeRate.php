@@ -16,6 +16,7 @@ use Override;
  * @property numeric-string $rate
  * @property \Carbon\CarbonInterface $rate_date
  * @property string|null $source
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperExchangeRate
  */
@@ -55,8 +56,8 @@ final class ExchangeRate extends Model
     protected static function booted(): void
     {
         self::saving(static function (ExchangeRate $rate): void {
-            $rate->from_currency = strtoupper((string) $rate->from_currency);
-            $rate->to_currency = strtoupper((string) $rate->to_currency);
+            $rate->from_currency = mb_strtoupper((string) $rate->from_currency);
+            $rate->to_currency = mb_strtoupper((string) $rate->to_currency);
         });
     }
 
