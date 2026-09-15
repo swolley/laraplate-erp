@@ -501,19 +501,17 @@ composer refactor             # Rector
 composer update:requirements  # composer bump + npm-check-updates
 ```
 
-### Versioning
+### Releases
+
+This module is released from the application, not from its own repository: it carries no release scripts and no `cliff.toml`. From the `laraplate` root, `scripts/version.sh` bumps the `version` field of `Modules/ERP/composer.json`, regenerates `Modules/ERP/CHANGELOG.md` with the application's `cliff.toml`, commits `chore(release): vX.Y.Z` in the module repository, tags it and pushes both.
 
 ```bash
-composer version:major
-composer version:minor
-composer version:patch
+composer run version:dry ERP      # print the plan, write nothing
+composer run version:minor ERP    # release with a forced level (also version:major, version:patch)
+composer run version:all             # every module with pending commits, then the application
 ```
 
-### Hooks
-
-```bash
-composer setup:hooks
-```
+Without a forced level, git-cliff infers it from the conventional commits since the module's last tag. `CHANGELOG.md` lists released versions only. Releasing the module alone does not touch the application; `version:all` records the module in the application with a commit typed after the module's release level. Full reference: `docs/releasing.md` in the application.
 
 ## Repository rename (from laraplate-business)
 
