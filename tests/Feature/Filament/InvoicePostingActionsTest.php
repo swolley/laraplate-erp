@@ -7,36 +7,20 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\User;
 use Modules\Core\Support\PermissionName;
-use Modules\ERP\Casts\InvoiceDirection;
-use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Filament\Resources\Invoices\Actions\InvoicePostingActions;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Invoice;
-use Modules\ERP\Models\Party;
 
 uses(RefreshDatabase::class);
 
 function invoicePostingActionPurchaseInvoice(): Invoice
 {
-    $company = Company::query()->create([
-        'slug' => 'invoice-action-' . uniqid(),
-        'name' => 'Invoice Action Co',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
-    $party = Party::query()->create([
-        'company_id' => $company->id,
-        'name' => 'Supplier',
-        'is_supplier' => true,
-    ]);
-
-    return Invoice::query()->create([
-        'company_id' => $company->id,
-        'party_id' => $party->id,
-        'direction' => InvoiceDirection::Purchase,
-        'invoice_type' => InvoiceType::Invoice->value,
-        'currency' => 'EUR',
-    ]);
+    // `purchase()` puts a supplier in the invoice's own company, which is the rule the model
+    // enforces and the reason this used to take three hand-built records.
+    return Invoice::factory()
+        ->for(Company::factory()->create(['name' => 'Invoice Action Co']))
+        ->purchase()
+        ->create();
 }
 
 /**

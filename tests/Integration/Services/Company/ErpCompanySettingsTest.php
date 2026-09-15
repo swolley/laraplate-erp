@@ -28,12 +28,7 @@ it('exposes conservative default erp settings', function (): void {
 });
 
 it('merges defaults without overwriting existing company values', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-merge',
-        'name' => 'Settings Merge',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-merge', 'name' => 'Settings Merge']);
     $company->settings = [
         'erp' => [
             'three_way_match' => [
@@ -53,12 +48,7 @@ it('merges defaults without overwriting existing company values', function (): v
 });
 
 it('reads three-way match tolerances from company settings json', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-co',
-        'name' => 'Settings Co',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-co', 'name' => 'Settings Co']);
     $company->settings = [
         'erp' => [
             'three_way_match' => [
@@ -86,12 +76,7 @@ it('falls back to global setting rows when company json omits the key', function
 
     app(PerModelSettingResolver::class)->flush();
 
-    $company = Company::query()->create([
-        'slug' => 'settings-global',
-        'name' => 'Settings Global',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-global', 'name' => 'Settings Global']);
 
     $service = app(ErpCompanySettings::class);
 
@@ -99,12 +84,7 @@ it('falls back to global setting rows when company json omits the key', function
 });
 
 it('defaults three-way match tolerances to zero when settings are missing', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-default',
-        'name' => 'Settings Default',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-default', 'name' => 'Settings Default']);
 
     $service = app(ErpCompanySettings::class);
 
@@ -113,12 +93,7 @@ it('defaults three-way match tolerances to zero when settings are missing', func
 });
 
 it('reads invoice generation mode from company settings', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-mode',
-        'name' => 'Settings Mode',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-mode', 'name' => 'Settings Mode']);
     $company->settings = [
         'erp' => [
             'invoice_generation_mode' => ErpCompanySettings::INVOICE_GENERATION_MODE_COMPACT,
@@ -131,12 +106,7 @@ it('reads invoice generation mode from company settings', function (): void {
 });
 
 it('falls back to expanded invoice generation mode for invalid values', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-mode-invalid',
-        'name' => 'Settings Mode Invalid',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-mode-invalid', 'name' => 'Settings Mode Invalid']);
     $company->settings = [
         'erp' => [
             'invoice_generation_mode' => 'unsupported',
@@ -149,12 +119,7 @@ it('falls back to expanded invoice generation mode for invalid values', function
 });
 
 it('reads return auto note creation from company settings', function (): void {
-    $company = Company::query()->create([
-        'slug' => 'settings-return-notes',
-        'name' => 'Settings Return Notes',
-        'fiscal_country' => 'IT',
-        'default_currency' => 'EUR',
-    ]);
+    $company = Company::factory()->create(['slug' => 'settings-return-notes', 'name' => 'Settings Return Notes']);
     $company->settings = [
         'erp' => [
             'returns' => [
