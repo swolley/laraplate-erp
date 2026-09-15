@@ -63,8 +63,7 @@ final readonly class VatSettlementBatchService
         FiscalYear $fiscal_year,
         int $year,
         ?string $period,
-    ): \Illuminate\Database\Eloquent\Collection
-    {
+    ): \Illuminate\Database\Eloquent\Collection {
         $query = $models->query(FiscalPeriod::class)
             ->where('fiscal_year_id', $fiscal_year->getKey())
             ->orderBy('start_date');
@@ -73,7 +72,7 @@ final readonly class VatSettlementBatchService
             return $query->where('is_closed', false)->get();
         }
 
-        if (preg_match('/^(?<year>\d{4})-(?<period>\d{1,3})$/', $period, $matches) !== 1 || (int) $matches['year'] !== $year) {
+        if (preg_match('/^(?<year>\d{4})-(?<period>\d{1,3})$/', $period, $matches) !== 1 || $year !== (int) $matches['year']) {
             throw ValidationException::withMessages([
                 'period' => ['The period must use YYYY-N format and belong to the selected fiscal year.'],
             ]);
@@ -91,8 +90,7 @@ final readonly class VatSettlementBatchService
         FiscalYear $fiscal_year,
         FiscalPeriod $period,
         bool $dry_run,
-    ): array
-    {
+    ): array {
         $company_id = (int) $company->getKey();
         $base = [
             'fiscal_period_id' => (int) $period->getKey(),

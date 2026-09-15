@@ -33,7 +33,7 @@ final class PriceResolverService
         $models = ConnectionScopedModels::for($company, $item);
         $company_id = (int) $company->getKey();
 
-        if ((int) $item->company_id !== $company_id) {
+        if ($company_id !== (int) $item->company_id) {
             throw ValidationException::withMessages([
                 'item_id' => ['The item does not exist for the selected company.'],
             ]);
@@ -98,8 +98,7 @@ final class PriceResolverService
         Item $item,
         ?int $party_id,
         CarbonInterface $date,
-    ): ?PartyPriceRule
-    {
+    ): ?PartyPriceRule {
         /** @var PartyPriceRule|null $rule */
         $rule = $models->query(PartyPriceRule::class)
             ->where('company_id', $company_id)

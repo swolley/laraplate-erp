@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Enums\CoreTables;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Casts\TracingType;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Database\Factories\ItemFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
@@ -23,6 +23,7 @@ use Override;
  * @property string $uom
  * @property string $costing_method
  * @property int|null $taxonomy_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperItem
  */
@@ -51,19 +52,6 @@ final class Item extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'tracing_type' => TracingType::class,
-        ];
-    }
-
-    /**
      * @return BelongsTo<Company, $this>
      */
     public function company(): BelongsTo
@@ -90,7 +78,6 @@ final class Item extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -114,5 +101,18 @@ final class Item extends Model
     protected static function newFactory(): Factory
     {
         return ItemFactory::new();
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'tracing_type' => TracingType::class,
+        ];
     }
 }

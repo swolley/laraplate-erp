@@ -8,12 +8,12 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Modules\Core\Filament\Utils\HasForm;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Models\Account;
-use Modules\Core\Filament\Utils\HasForm;
 
 final class MovementForm
 {
@@ -52,7 +52,7 @@ final class MovementForm
                 ->label('Revenue / expense account')
                 ->options(fn (Get $get): array => Account::query()
                     ->when($get('company_id'), static fn ($query, mixed $company_id) => $query->where('company_id', $company_id))
-                    ->where('kind', $get('type') === MovementType::Income->value
+                    ->where('kind', MovementType::Income->value === $get('type')
                         ? AccountKind::Revenue->value
                         : AccountKind::Expense->value)
                     ->where('is_active', true)

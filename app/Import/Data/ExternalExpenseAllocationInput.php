@@ -12,7 +12,9 @@ use Modules\ERP\Support\Decimal;
 
 final readonly class ExternalExpenseAllocationInput
 {
-    /** @var array<int, array{owed: string, paid: string}> */
+    /**
+     * @var array<int, array{owed: string, paid: string}>
+     */
     public array $shares;
 
     private ExternalRecordIdentity $externalIdentity;

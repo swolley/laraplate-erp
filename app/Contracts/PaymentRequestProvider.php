@@ -10,5 +10,6 @@ use Modules\ERP\Models\PaymentRequest;
 interface PaymentRequestProvider
 {
     public function code(): string;
+
     public function createCheckout(PaymentRequest $request): PaymentCheckout;
 }

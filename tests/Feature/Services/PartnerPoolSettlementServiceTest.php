@@ -16,7 +16,9 @@ use Modules\ERP\Services\Cash\PartnerPoolSettlementService;
 
 uses(RefreshDatabase::class);
 
-/** @return array{PartnerPool, Movement, User, User, User} */
+/**
+ * @return array{PartnerPool, Movement, User, User, User}
+ */
 function partnerPoolFixture(): array
 {
     $company = Company::query()->create([

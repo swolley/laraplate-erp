@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Database\Factories\PurchaseOrderLineFactory;
 use Modules\ERP\Enums\ERPTables;
@@ -24,6 +24,7 @@ use Override;
  * @property numeric-string $qty_received
  * @property numeric-string $qty_returned
  * @property numeric-string|null $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrderLine
  */
@@ -132,6 +133,15 @@ final class PurchaseOrderLine extends Model
         });
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return PurchaseOrderLineFactory::new();
+    }
+
     protected function shouldVersioning(): bool
     {
         return false;
@@ -168,14 +178,5 @@ final class PurchaseOrderLine extends Model
         return $models->query(PurchaseOrder::class)
             ->whereKey($line->purchase_order_id)
             ->first();
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return PurchaseOrderLineFactory::new();
     }
 }

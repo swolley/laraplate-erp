@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Database\Factories\InvoiceLineFactory;
@@ -35,6 +35,7 @@ use Override;
  * @property MatchStatus|null $match_status
  * @property array<string, mixed>|null $match_discrepancy
  * @property-read \Illuminate\Database\Eloquent\Collection<int, DeliveryNoteLine> $delivery_note_lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoiceLine
  */
@@ -124,7 +125,6 @@ final class InvoiceLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -158,6 +158,15 @@ final class InvoiceLine extends Model
         return $rules;
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return InvoiceLineFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -174,14 +183,5 @@ final class InvoiceLine extends Model
     protected function shouldVersioning(): bool
     {
         return false;
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return InvoiceLineFactory::new();
     }
 }

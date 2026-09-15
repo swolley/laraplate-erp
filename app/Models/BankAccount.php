@@ -15,6 +15,7 @@ use Override;
  * @property int|string $id
  * @property int $company_id
  * @property string $currency
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperBankAccount
  */

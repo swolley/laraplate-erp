@@ -11,6 +11,12 @@ use Override;
 
 final class ListSites extends ListRecords
 {
-    #[Override] protected static string $resource = SiteResource::class;
-    #[Override] protected function getHeaderActions(): array { return [CreateAction::make()]; }
+    #[Override]
+    protected static string $resource = SiteResource::class;
+
+    #[Override]
+    protected function getHeaderActions(): array
+    {
+        return [CreateAction::make()];
+    }
 }

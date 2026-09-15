@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Models\Concerns\HasValidity;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -34,6 +34,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property SalesOrderStatus $status
  * @property string|null $notes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SalesOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrder
  */
@@ -262,6 +263,15 @@ final class SalesOrder extends Model
         });
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return SalesOrderFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -281,14 +291,5 @@ final class SalesOrder extends Model
             SalesOrderStatus::PartiallyEvased,
             SalesOrderStatus::FullyEvased,
         ], true);
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return SalesOrderFactory::new();
     }
 }

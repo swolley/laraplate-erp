@@ -47,7 +47,6 @@ final class PriceList extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

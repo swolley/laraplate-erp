@@ -15,22 +15,23 @@ use Override;
  * @property int $invoice_line_id
  * @property int $delivery_note_line_id
  * @property numeric-string $quantity
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoiceLineHasDeliveryNoteLine
  */
 final class InvoiceLineHasDeliveryNoteLine extends Pivot
 {
-    /**
-     * @var string
-     */
-    #[Override]
-    protected $table = ERPTables::InvoiceLineDeliveryNoteLine->value;
-
     #[Override]
     public $incrementing = true;
 
     #[Override]
     public $timestamps = true;
+
+    /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::InvoiceLineDeliveryNoteLine->value;
 
     #[Override]
     protected $fillable = [

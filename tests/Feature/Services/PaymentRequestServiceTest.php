@@ -17,12 +17,13 @@ uses(RefreshDatabase::class);
 
 function paymentRequestFixture(): array
 {
-    $company = Company::query()->create(['slug' => 'pay-request-'.uniqid(), 'name' => 'Pay Request', 'fiscal_country' => 'IT', 'default_currency' => 'EUR']);
+    $company = Company::query()->create(['slug' => 'pay-request-' . uniqid(), 'name' => 'Pay Request', 'fiscal_country' => 'IT', 'default_currency' => 'EUR']);
     $party = Party::query()->create(['company_id' => $company->id, 'name' => 'Customer', 'is_customer' => true]);
     $request = PaymentRequest::query()->create([
         'company_id' => $company->id, 'party_id' => $party->id, 'amount' => '42.5000', 'currency' => 'EUR',
         'status' => PaymentRequestStatus::Draft, 'provider_code' => 'stub',
     ]);
+
     return [$company, $party, $request];
 }
 
@@ -31,8 +32,8 @@ it('binds the stub provider and creates a deterministic checkout', function (): 
     expect(app(PaymentRequestProvider::class))->toBeInstanceOf(StubPaymentRequestProvider::class);
     $sent = app(PaymentRequestService::class)->send($request);
     expect($sent->status)->toBe(PaymentRequestStatus::Pending)
-        ->and($sent->external_id)->toBe('STUB-PAY-'.$request->id)
-        ->and($sent->checkout_url)->toBe('https://payments.invalid/checkout/STUB-PAY-'.$request->id)
+        ->and($sent->external_id)->toBe('STUB-PAY-' . $request->id)
+        ->and($sent->checkout_url)->toBe('https://payments.invalid/checkout/STUB-PAY-' . $request->id)
         ->and($sent->sent_at)->not->toBeNull();
 });
 

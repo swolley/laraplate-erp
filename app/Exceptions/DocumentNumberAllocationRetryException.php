@@ -6,6 +6,4 @@ namespace Modules\ERP\Exceptions;
 
 use RuntimeException;
 
-final class DocumentNumberAllocationRetryException extends RuntimeException
-{
-}
+final class DocumentNumberAllocationRetryException extends RuntimeException {}

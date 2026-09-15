@@ -223,7 +223,6 @@ it('applies Aruba callback payloads to stored submissions', function (): void {
         ->and($updated->response_payload['aruba']['sdi_identification'])->toBe('123456789');
 });
 
-
 it('accepts signed Aruba callbacks through the module api route', function (): void {
     configureArubaEInvoiceProvider();
     config()->set('erp.einvoice.aruba.callback_api_key', 'callback-secret');

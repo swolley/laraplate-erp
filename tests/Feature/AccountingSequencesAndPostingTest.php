@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\DocumentType;

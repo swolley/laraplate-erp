@@ -31,10 +31,25 @@ final class PaymentRequest extends Model
         'checkout_url', 'provider_payload', 'sent_at', 'paid_at', 'cancelled_at', 'description',
     ];
 
-    public function party(): BelongsTo { return $this->belongsTo(Party::class); }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function partner_pool(): BelongsTo { return $this->belongsTo(PartnerPool::class); }
-    public function pool_transaction(): BelongsTo { return $this->belongsTo(PoolTransaction::class); }
+    public function party(): BelongsTo
+    {
+        return $this->belongsTo(Party::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function partner_pool(): BelongsTo
+    {
+        return $this->belongsTo(PartnerPool::class);
+    }
+
+    public function pool_transaction(): BelongsTo
+    {
+        return $this->belongsTo(PoolTransaction::class);
+    }
 
     #[Override]
     public function getRules(): array

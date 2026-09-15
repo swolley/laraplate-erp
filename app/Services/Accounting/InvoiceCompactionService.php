@@ -7,9 +7,9 @@ namespace Modules\ERP\Services\Accounting;
 use Illuminate\Validation\ValidationException;
 use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
-use Modules\ERP\Support\ConnectionScopedTransaction;
-use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\InvoiceLine;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Compacts or expands invoice lines based on their delivery note line pivot linkage.

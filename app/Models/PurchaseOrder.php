@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -25,6 +25,7 @@ use Override;
  * @property string $status
  * @property \Carbon\CarbonInterface|null $ordered_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrderLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPurchaseOrder
  */
@@ -122,13 +123,6 @@ final class PurchaseOrder extends Model
         });
     }
 
-    protected function casts(): array
-    {
-        return [
-            'ordered_at' => 'datetime',
-        ];
-    }
-
     /**
      * @return Factory<self>
      */
@@ -136,5 +130,12 @@ final class PurchaseOrder extends Model
     protected static function newFactory(): Factory
     {
         return PurchaseOrderFactory::new();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'ordered_at' => 'datetime',
+        ];
     }
 }

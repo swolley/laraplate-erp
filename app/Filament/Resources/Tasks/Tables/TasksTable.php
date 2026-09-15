@@ -12,6 +12,7 @@ use Modules\Core\Filament\Utils\HasTable;
 final class TasksTable
 {
     use HasTable;
+
     public static function configure(Table $table): Table
     {
         return self::configureTable($table, static function (Collection $columns): void {

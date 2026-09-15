@@ -31,6 +31,7 @@ use Override;
  * @property string|null $export_file_name
  * @property string|null $export_checksum
  * @property-read \Illuminate\Database\Eloquent\Collection<int, PaymentRunLine> $lines
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentRun
  */
@@ -117,7 +118,7 @@ final class PaymentRun extends Model
     protected static function booted(): void
     {
         self::saving(static function (PaymentRun $payment_run): void {
-            if ($payment_run->exists && $payment_run->getOriginal('status') === PaymentRunStatus::Exported->value) {
+            if ($payment_run->exists && PaymentRunStatus::Exported->value === $payment_run->getOriginal('status')) {
                 throw ValidationException::withMessages([
                     'status' => ['An exported payment run cannot be modified.'],
                 ]);

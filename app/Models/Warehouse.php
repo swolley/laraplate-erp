@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Database\Factories\WarehouseFactory;
@@ -19,6 +19,7 @@ use Override;
  * @property string $name
  * @property string $code
  * @property int|null $site_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperWarehouse
  */

@@ -54,7 +54,6 @@ final class PaymentRunActions
             });
     }
 
-
     public static function exportCbiBonifici(): Action
     {
         return Action::make('export_cbi_bonifici')

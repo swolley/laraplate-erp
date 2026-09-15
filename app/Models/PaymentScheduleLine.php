@@ -27,6 +27,7 @@ use Override;
  * @property numeric-string $paid_amount_local
  * @property PaymentScheduleStatus $status
  * @property \Carbon\CarbonInterface|null $paid_at
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentScheduleLine
  */
@@ -88,7 +89,6 @@ final class PaymentScheduleLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

@@ -20,7 +20,9 @@ final class ExternalIdentityConflict extends RuntimeException implements Shouldn
         );
     }
 
-    /** @return array{source_key: string, external_id: string, registered_movement_id: int, received_movement_id: int} */
+    /**
+     * @return array{source_key: string, external_id: string, registered_movement_id: int, received_movement_id: int}
+     */
     public function context(): array
     {
         return [

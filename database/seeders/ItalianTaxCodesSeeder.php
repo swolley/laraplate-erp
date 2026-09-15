@@ -20,6 +20,17 @@ use Override;
 final class ItalianTaxCodesSeeder extends Seeder implements DeclaresSeedDependencies
 {
     /**
+     * @var list<array{code: string, kind: TaxKind, rate: string, label: string}>
+     */
+    private const array ROWS = [
+        ['code' => 'IT_VAT_22', 'kind' => TaxKind::Vat, 'rate' => '22.0000', 'label' => 'IVA 22%'],
+        ['code' => 'IT_VAT_10', 'kind' => TaxKind::Vat, 'rate' => '10.0000', 'label' => 'IVA 10%'],
+        ['code' => 'IT_VAT_4', 'kind' => TaxKind::Vat, 'rate' => '4.0000', 'label' => 'IVA 4%'],
+        ['code' => 'IT_VAT_0', 'kind' => TaxKind::Vat, 'rate' => '0.0000', 'label' => 'IVA 0% / esente'],
+        ['code' => 'IT_WH_SAMPLE_23', 'kind' => TaxKind::Withholding, 'rate' => '23.0000', 'label' => 'Sample withholding 23% on gross (illustrative)'],
+    ];
+
+    /**
      * Ordering relative to {@see ERPDatabaseSeeder} used to only hold because `E` sorts before
      * `I` in the graph's deterministic tie-break — this seeder's own `run()` looks up the default
      * company created by `ERPDatabaseSeeder::ensureDefaultCompany()`, so the edge must be explicit.
@@ -31,17 +42,6 @@ final class ItalianTaxCodesSeeder extends Seeder implements DeclaresSeedDependen
     {
         return [ERPDatabaseSeeder::class];
     }
-
-    /**
-     * @var list<array{code: string, kind: TaxKind, rate: string, label: string}>
-     */
-    private const array ROWS = [
-        ['code' => 'IT_VAT_22', 'kind' => TaxKind::Vat, 'rate' => '22.0000', 'label' => 'IVA 22%'],
-        ['code' => 'IT_VAT_10', 'kind' => TaxKind::Vat, 'rate' => '10.0000', 'label' => 'IVA 10%'],
-        ['code' => 'IT_VAT_4', 'kind' => TaxKind::Vat, 'rate' => '4.0000', 'label' => 'IVA 4%'],
-        ['code' => 'IT_VAT_0', 'kind' => TaxKind::Vat, 'rate' => '0.0000', 'label' => 'IVA 0% / esente'],
-        ['code' => 'IT_WH_SAMPLE_23', 'kind' => TaxKind::Withholding, 'rate' => '23.0000', 'label' => 'Sample withholding 23% on gross (illustrative)'],
-    ];
 
     public function run(): void
     {

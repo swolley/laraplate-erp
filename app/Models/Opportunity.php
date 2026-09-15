@@ -26,6 +26,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property numeric-string|null $expected_value_local
  * @property \Carbon\CarbonInterface|null $won_at
  * @property \Carbon\CarbonInterface|null $lost_at
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperOpportunity
  */

@@ -10,7 +10,10 @@ use Modules\ERP\Models\PaymentRequest;
 
 final class StubPaymentRequestProvider implements PaymentRequestProvider
 {
-    public function code(): string { return 'stub'; }
+    public function code(): string
+    {
+        return 'stub';
+    }
 
     public function createCheckout(PaymentRequest $request): PaymentCheckout
     {

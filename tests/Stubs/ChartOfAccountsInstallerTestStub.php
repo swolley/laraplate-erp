@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Tests\Stubs;
 
+use InvalidArgumentException;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Models\Account;
@@ -43,7 +44,7 @@ final class ChartOfAccountsInstallerTestStub extends ChartOfAccountsInstaller
                 $parent_id = $id_by_code[$row['parent_code']] ?? null;
 
                 if ($parent_id === null) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidArgumentException(
                         'Parent code "' . $row['parent_code'] . '" not found for account "' . $row['code'] . '".',
                     );
                 }

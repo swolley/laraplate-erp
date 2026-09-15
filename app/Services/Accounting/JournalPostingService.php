@@ -17,8 +17,8 @@ use Modules\ERP\Models\Company;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\JournalEntry;
 use Modules\ERP\Models\JournalEntryLine;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Persists balanced double-entry journal entries in the company functional currency.

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Locking\Traits\HasLocks;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Database\Factories\SalesOrderLineFactory;
@@ -29,6 +29,7 @@ use Override;
  * @property numeric-string|null $unit_price
  * @property SalesOrderLineStatus $status
  * @property-read SalesOrder|null $sales_order
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperSalesOrderLine
  */
@@ -117,7 +118,6 @@ final class SalesOrderLine extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -191,6 +191,15 @@ final class SalesOrderLine extends Model
         });
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return SalesOrderLineFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -201,14 +210,5 @@ final class SalesOrderLine extends Model
             'qty_returned' => 'decimal:4',
             'unit_price' => 'decimal:4',
         ];
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return SalesOrderLineFactory::new();
     }
 }

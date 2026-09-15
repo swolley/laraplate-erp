@@ -23,7 +23,9 @@ use Modules\ERP\Services\Cash\MovementPostingService;
 
 uses(RefreshDatabase::class);
 
-/** @return array{PartnerPool, Movement, User, User, User} */
+/**
+ * @return array{PartnerPool, Movement, User, User, User}
+ */
 function externalExpenseAllocationFixture(): array
 {
     $company = Company::query()->create([

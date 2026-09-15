@@ -15,6 +15,7 @@ use Override;
  * @property int $payment_schedule_line_id
  * @property numeric-string $allocated_amount_doc
  * @property numeric-string $allocated_amount_local
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentAllocation
  */
@@ -56,7 +57,6 @@ final class PaymentAllocation extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

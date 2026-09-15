@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Database\Factories\FiscalYearFactory;
@@ -23,6 +23,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property \Carbon\CarbonInterface $end_date
  * @property bool $is_closed
  * @property-read \Illuminate\Database\Eloquent\Collection<int, FiscalPeriod> $fiscal_periods
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperFiscalYear
  */
@@ -64,7 +65,6 @@ final class FiscalYear extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -86,6 +86,14 @@ final class FiscalYear extends Model
         return $rules;
     }
 
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return FiscalYearFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -94,13 +102,5 @@ final class FiscalYear extends Model
             'end_date' => 'immutable_date',
             'is_closed' => 'boolean',
         ];
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    protected static function newFactory(): Factory
-    {
-        return FiscalYearFactory::new();
     }
 }

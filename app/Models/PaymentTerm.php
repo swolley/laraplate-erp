@@ -17,6 +17,7 @@ use Override;
  * @property string $name
  * @property list<array{days?: int, percent?: float|int}> $rate_lines
  * @property bool $is_active
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentTerm
  */

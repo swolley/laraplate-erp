@@ -11,6 +11,12 @@ use Override;
 
 final class EditSite extends EditRecord
 {
-    #[Override] protected static string $resource = SiteResource::class;
-    #[Override] protected function getHeaderActions(): array { return [DeleteAction::make()]; }
+    #[Override]
+    protected static string $resource = SiteResource::class;
+
+    #[Override]
+    protected function getHeaderActions(): array
+    {
+        return [DeleteAction::make()];
+    }
 }

@@ -114,6 +114,7 @@ it('assigns sequential protocol numbers per register and fiscal year', function 
     $service = app(VatRegisterService::class);
 
     $protocols = [];
+
     for ($i = 0; $i < 3; $i++) {
         $invoice = createPostedInvoice($company, $vat);
         $service->register($invoice);

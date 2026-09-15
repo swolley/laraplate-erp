@@ -9,8 +9,8 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Contracts\BankStatementParser;
 use Modules\ERP\Models\BankStatement;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 final readonly class BankStatementImportService
 {

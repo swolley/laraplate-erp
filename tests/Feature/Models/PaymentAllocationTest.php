@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\ERP\Models\Payment;
 use Modules\ERP\Models\PaymentAllocation;
 use Modules\ERP\Models\PaymentScheduleLine;

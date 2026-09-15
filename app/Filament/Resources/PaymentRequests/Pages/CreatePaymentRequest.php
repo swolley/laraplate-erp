@@ -11,11 +11,15 @@ use Override;
 
 final class CreatePaymentRequest extends CreateRecord
 {
-    #[Override] protected static string $resource = PaymentRequestResource::class;
-    #[Override] protected function mutateFormDataBeforeCreate(array $data): array
+    #[Override]
+    protected static string $resource = PaymentRequestResource::class;
+
+    #[Override]
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['status'] = PaymentRequestStatus::Draft->value;
         $data['provider_code'] = 'stub';
+
         return $data;
     }
 }

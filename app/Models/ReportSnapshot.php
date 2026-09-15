@@ -24,6 +24,7 @@ use Override;
  * @property string $content_hash
  * @property \Carbon\CarbonInterface $generated_at
  * @property bool $is_immutable
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperReportSnapshot
  */

@@ -22,6 +22,7 @@ use Override;
  * @property numeric-string $quantity
  * @property numeric-string|null $unit_cost
  * @property numeric-string|null $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperReturnOrderLine
  */

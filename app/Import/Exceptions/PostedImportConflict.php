@@ -17,7 +17,9 @@ final class PostedImportConflict extends RuntimeException implements ShouldntRep
         parent::__construct("Cannot update posted movement {$movementId} from {$sourceKey}:{$externalId}.");
     }
 
-    /** @return array{source_key: string, external_id: string, movement_id: int} */
+    /**
+     * @return array{source_key: string, external_id: string, movement_id: int}
+     */
     public function context(): array
     {
         return [

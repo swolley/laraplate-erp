@@ -411,7 +411,7 @@ final class DevERPDatabaseSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, \Illuminate\Database\Eloquent\Model>  $source_lines
+     * @param  \Illuminate\Support\Collection<int, Model>  $source_lines
      */
     private function seedInvoice(Company $company, Party $party, InvoiceDirection $direction, string $notes, $source_lines): void
     {

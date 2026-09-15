@@ -17,6 +17,7 @@ use Override;
  * @property string|null $external_id
  * @property EInvoiceSubmissionStatus $status
  * @property array<string, mixed>|null $response_payload
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperEInvoiceSubmission
  */
@@ -56,7 +57,6 @@ final class EInvoiceSubmission extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

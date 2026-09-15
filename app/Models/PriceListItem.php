@@ -14,6 +14,7 @@ use Override;
 
 /**
  * @property numeric-string $unit_price
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPriceListItem
  */
@@ -67,7 +68,6 @@ final class PriceListItem extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

@@ -21,12 +21,35 @@ use UnitEnum;
 
 final class TaskResource extends Resource
 {
-    #[Override] protected static ?string $model = Task::class;
-    #[Override] protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
-    #[Override] protected static string|UnitEnum|null $navigationGroup = 'ERP';
-    #[Override] protected static ?int $navigationSort = 45;
-    public static function getSlug(?Panel $panel = null): string { return 'business/tasks'; }
-    public static function form(Schema $schema): Schema { return TaskForm::configure($schema); }
-    public static function table(Table $table): Table { return TasksTable::configure($table); }
-    public static function getPages(): array { return ['index' => ListTasks::route('/'), 'create' => CreateTask::route('/create'), 'edit' => EditTask::route('/{record}/edit')]; }
+    #[Override]
+    protected static ?string $model = Task::class;
+
+    #[Override]
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
+
+    #[Override]
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+
+    #[Override]
+    protected static ?int $navigationSort = 45;
+
+    public static function getSlug(?Panel $panel = null): string
+    {
+        return 'business/tasks';
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return TaskForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return TasksTable::configure($table);
+    }
+
+    public static function getPages(): array
+    {
+        return ['index' => ListTasks::route('/'), 'create' => CreateTask::route('/create'), 'edit' => EditTask::route('/{record}/edit')];
+    }
 }

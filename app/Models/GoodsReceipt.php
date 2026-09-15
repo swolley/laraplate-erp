@@ -22,6 +22,7 @@ use Override;
  * @property \Carbon\CarbonInterface|null $posted_at
  * @property \Carbon\CarbonInterface|null $inventory_posted_at
  * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperGoodsReceipt
  */

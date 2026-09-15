@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
@@ -38,6 +38,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceLine> $lines
  * @property int|null $payment_term_id
  * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperInvoice
  */
@@ -185,6 +186,15 @@ final class Invoice extends Model
         });
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return InvoiceFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -197,14 +207,5 @@ final class Invoice extends Model
     protected function shouldVersioning(): bool
     {
         return false;
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return InvoiceFactory::new();
     }
 }

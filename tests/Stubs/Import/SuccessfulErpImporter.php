@@ -11,7 +11,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class SuccessfulErpImporter implements BulkImporterInterface, ConnectionAwareBulkImporterInterface
 {
-    /** @var array<string, mixed> */
+    /**
+     * @var array<string, mixed>
+     */
     public static array $lastArguments = [];
 
     public function __construct(

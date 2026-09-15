@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Console;
 
 use Illuminate\Support\Facades\File;
+use InvalidArgumentException;
 use JsonException;
 use Modules\Core\Overrides\Command;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Services\Banking\BankStatementBatchImportService;
 use Override;
+use SplFileInfo;
 use Symfony\Component\Console\Command\Command as BaseCommand;
 use Throwable;
 
@@ -121,13 +123,13 @@ final class BankStatementsImportCommand extends Command
         }
 
         if (! is_dir($path)) {
-            throw new \InvalidArgumentException(sprintf('Path [%s] is neither a file nor a directory.', $path));
+            throw new InvalidArgumentException(sprintf('Path [%s] is neither a file nor a directory.', $path));
         }
 
         return collect(File::files($path))
-            ->filter(static fn (\SplFileInfo $file): bool => in_array(mb_strtolower($file->getExtension()), ['csv', 'xml', 'sta', 'mt940'], true))
-            ->sortBy(static fn (\SplFileInfo $file): string => $file->getFilename())
-            ->map(static fn (\SplFileInfo $file): string => $file->getPathname())
+            ->filter(static fn (SplFileInfo $file): bool => in_array(mb_strtolower($file->getExtension()), ['csv', 'xml', 'sta', 'mt940'], true))
+            ->sortBy(static fn (SplFileInfo $file): string => $file->getFilename())
+            ->map(static fn (SplFileInfo $file): string => $file->getPathname())
             ->values()
             ->all();
     }

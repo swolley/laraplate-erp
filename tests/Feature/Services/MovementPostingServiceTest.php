@@ -15,7 +15,9 @@ use Modules\ERP\Support\Decimal;
 
 uses(RefreshDatabase::class);
 
-/** @return array{Company, Account, Account, Account, Account} */
+/**
+ * @return array{Company, Account, Account, Account, Account}
+ */
 function movementPostingFixture(): array
 {
     $company = Company::query()->create([

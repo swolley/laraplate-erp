@@ -10,9 +10,9 @@ final class FakeImportRow extends Model
 {
     public const string TABLE = 'erp_fake_import_rows';
 
-    protected $table = self::TABLE;
-
     public $timestamps = false;
+
+    protected $table = self::TABLE;
 
     protected $guarded = [];
 }

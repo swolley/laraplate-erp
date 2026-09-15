@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Models\Version;
 use Modules\Core\Models\VersionSet;
@@ -81,7 +81,7 @@ it('rejects duplicate account codes in chart definitions', function (): void {
     ]));
 
     expect(fn () => $installer->installWhenEmpty($company))
-        ->toThrow(\InvalidArgumentException::class, 'Duplicate account code');
+        ->toThrow(InvalidArgumentException::class, 'Duplicate account code');
 });
 
 it('rejects missing parent references during installation', function (): void {
@@ -97,7 +97,7 @@ it('rejects missing parent references during installation', function (): void {
     ]);
 
     expect(fn () => $installer->installWithForcedSort($company))
-        ->toThrow(\InvalidArgumentException::class, 'Parent code "9999" not found');
+        ->toThrow(InvalidArgumentException::class, 'Parent code "9999" not found');
 });
 
 it('rejects cyclic parent references in chart definitions', function (): void {
@@ -114,7 +114,7 @@ it('rejects cyclic parent references in chart definitions', function (): void {
     ]));
 
     expect(fn () => $installer->installWhenEmpty($company))
-        ->toThrow(\InvalidArgumentException::class, 'cycle or a missing parent_code');
+        ->toThrow(InvalidArgumentException::class, 'cycle or a missing parent_code');
 });
 
 it('writes chart accounts on the company affinity connection', function (): void {

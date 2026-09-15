@@ -46,13 +46,17 @@ final class Movement extends Model
         'description',
     ];
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * @return BelongsTo<Account, $this>
+     */
     public function counterparty_account(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'counterparty_account_id');
     }
 
-    /** @return BelongsTo<JournalEntry, $this> */
+    /**
+     * @return BelongsTo<JournalEntry, $this>
+     */
     public function posted_journal_entry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'posted_journal_entry_id');

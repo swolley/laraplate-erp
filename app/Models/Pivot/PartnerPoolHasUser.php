@@ -18,13 +18,13 @@ use Override;
 final class PartnerPoolHasUser extends Pivot
 {
     #[Override]
-    protected $table = ERPTables::PartnerPoolMembers->value;
-
-    #[Override]
     public $incrementing = true;
 
     #[Override]
     public $timestamps = true;
+
+    #[Override]
+    protected $table = ERPTables::PartnerPoolMembers->value;
 
     #[Override]
     protected $fillable = ['partner_pool_id', 'user_id'];

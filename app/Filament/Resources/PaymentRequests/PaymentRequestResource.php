@@ -21,14 +21,33 @@ use UnitEnum;
 
 final class PaymentRequestResource extends Resource
 {
-    #[Override] protected static ?string $model = PaymentRequest::class;
-    #[Override] protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
-    #[Override] protected static string|UnitEnum|null $navigationGroup = 'ERP';
-    #[Override] protected static ?int $navigationSort = 64;
+    #[Override]
+    protected static ?string $model = PaymentRequest::class;
 
-    public static function getSlug(?Panel $panel = null): string { return 'business/payment-requests'; }
-    public static function form(Schema $schema): Schema { return PaymentRequestForm::configure($schema); }
-    public static function table(Table $table): Table { return PaymentRequestsTable::configure($table); }
+    #[Override]
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
+
+    #[Override]
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+
+    #[Override]
+    protected static ?int $navigationSort = 64;
+
+    public static function getSlug(?Panel $panel = null): string
+    {
+        return 'business/payment-requests';
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return PaymentRequestForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return PaymentRequestsTable::configure($table);
+    }
+
     public static function getPages(): array
     {
         return ['index' => ListPaymentRequests::route('/'), 'create' => CreatePaymentRequest::route('/create'), 'edit' => EditPaymentRequest::route('/{record}/edit')];

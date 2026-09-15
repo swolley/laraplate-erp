@@ -13,6 +13,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Core\Filament\Utils\HasForm;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\Company;
@@ -24,7 +25,6 @@ use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Services\Pricing\PriceResolverService;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ErpConnectionContext;
-use Modules\Core\Filament\Utils\HasForm;
 
 final class SalesOrderForm
 {
@@ -436,9 +436,9 @@ final class SalesOrderForm
     }
 
     /**
-     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     * @param  Builder<Model>  $query
      * @param  list<string>  $columns
-     * @return Builder<\Illuminate\Database\Eloquent\Model>
+     * @return Builder<Model>
      */
     private static function applySearch(Builder $query, ?string $search, array $columns): Builder
     {

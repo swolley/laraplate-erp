@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Filament\Utils\HasForm;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Models\Company;
@@ -21,7 +22,6 @@ use Modules\ERP\Models\DeliveryNoteLine;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Services\Pricing\InvoiceLinePricingService;
 use Modules\ERP\Support\ErpConnectionContext;
-use Modules\Core\Filament\Utils\HasForm;
 
 final class InvoiceForm
 {

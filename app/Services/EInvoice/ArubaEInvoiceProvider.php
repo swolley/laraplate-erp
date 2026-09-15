@@ -108,9 +108,9 @@ final readonly class ArubaEInvoiceProvider implements EInvoiceProvider
     }
 
     /**
-     * @return array<string, mixed>
-     *
      * @throws RequestException
+     *
+     * @return array<string, mixed>
      */
     public function remotePayload(string $externalId): array
     {

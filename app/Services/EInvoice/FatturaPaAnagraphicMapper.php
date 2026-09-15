@@ -18,6 +18,7 @@ final readonly class FatturaPaAnagraphicMapper
 
         /** @var Company $company */
         $company = $invoice->company;
+
         /** @var Party $party */
         $party = $invoice->party;
 

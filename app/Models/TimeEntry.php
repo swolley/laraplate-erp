@@ -19,6 +19,7 @@ use Override;
  * @property int $user_id
  * @property \Carbon\CarbonInterface $started_at
  * @property \Carbon\CarbonInterface|null $ended_at
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperTimeEntry
  */
@@ -192,6 +193,14 @@ final class TimeEntry extends Model
         return $query->where('taxonomy_id', $taxonomyId);
     }
 
+    protected function casts(): array
+    {
+        return [
+            'started_at' => 'immutable_datetime',
+            'ended_at' => 'immutable_datetime',
+        ];
+    }
+
     private function entryId(): int
     {
         $id = $this->getAttribute('id');
@@ -201,13 +210,5 @@ final class TimeEntry extends Model
         }
 
         return $id;
-    }
-
-    protected function casts(): array
-    {
-        return [
-            'started_at' => 'immutable_datetime',
-            'ended_at' => 'immutable_datetime',
-        ];
     }
 }

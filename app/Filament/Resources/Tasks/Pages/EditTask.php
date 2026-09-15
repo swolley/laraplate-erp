@@ -16,15 +16,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class EditTask extends EditRecord
 {
-    #[Override] protected static string $resource = TaskResource::class;
-    #[Override] protected function getHeaderActions(): array
+    #[Override]
+    protected static string $resource = TaskResource::class;
+
+    #[Override]
+    protected function getHeaderActions(): array
     {
         return [
             Action::make('export_ics')->label('Export calendar')->icon(Heroicon::OutlinedArrowDownTray)
                 ->action(static function (Task $record): StreamedResponse {
                     $exporter = resolve(TaskIcsExporter::class);
                     $ics = $exporter->export($record);
-                    return response()->streamDownload(static function () use ($ics): void { echo $ics; }, $exporter->fileName($record), ['Content-Type' => 'text/calendar; charset=UTF-8']);
+
+                    return response()->streamDownload(static function () use ($ics): void {
+                        echo $ics;
+                    }, $exporter->fileName($record), ['Content-Type' => 'text/calendar; charset=UTF-8']);
                 }),
             DeleteAction::make(),
         ];

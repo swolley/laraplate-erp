@@ -6,39 +6,39 @@ namespace Modules\ERP\Services\DomainActions;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\User;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Modules\ERP\Services\Quotations\QuotationRevisionService;
-use Modules\ERP\Services\Payments\SepaPain001Exporter;
-use Modules\ERP\Services\Payments\PaymentRequestService;
-use Modules\ERP\Services\Payments\CbiBonificiExporter;
-use Modules\ERP\Services\Calendar\TaskIcsExporter;
-use Modules\ERP\Services\Banking\BankStatementImportService;
-use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
-use Modules\ERP\Models\Task;
-use Modules\ERP\Models\Quotation;
-use Modules\ERP\Models\PaymentRun;
-use Modules\ERP\Models\PaymentRequest;
-use Modules\ERP\Models\DocumentSequence;
-use Modules\ERP\Models\BankStatement;
-use Illuminate\Http\UploadedFile;
 use Modules\Core\Services\Crud\DomainActionRegistry;
 use Modules\ERP\Casts\EInvoiceSubmissionStatus;
+use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\DocumentSequence;
 use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\PaymentRequest;
+use Modules\ERP\Models\PaymentRun;
+use Modules\ERP\Models\Quotation;
 use Modules\ERP\Models\ReturnOrder;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SupplierReturn;
+use Modules\ERP\Models\Task;
+use Modules\ERP\Services\Accounting\DocumentSequenceResetService;
 use Modules\ERP\Services\Accounting\FiscalPeriodCloser;
 use Modules\ERP\Services\Accounting\JournalPostingService;
+use Modules\ERP\Services\Banking\BankStatementImportService;
+use Modules\ERP\Services\Calendar\TaskIcsExporter;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
+use Modules\ERP\Services\Payments\CbiBonificiExporter;
+use Modules\ERP\Services\Payments\PaymentRequestService;
+use Modules\ERP\Services\Payments\SepaPain001Exporter;
+use Modules\ERP\Services\Quotations\QuotationRevisionService;
 use Modules\ERP\Services\Returns\ReturnOrderService;
 use Modules\ERP\Services\Returns\SupplierReturnService;
 use Modules\ERP\Services\SalesOrders\SalesOrderAmendmentService;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Maps ERP domain actions onto the services that already implement them.
@@ -149,7 +149,6 @@ final class ErpDomainActionRegistrar
             'send',
             static fn (Model $record, array $payload, User $user): Model => resolve(PaymentRequestService::class)->send($record),
         );
-
     }
 
     private function registerInvoices(DomainActionRegistry $registry): void

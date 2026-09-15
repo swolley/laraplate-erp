@@ -21,15 +21,36 @@ use UnitEnum;
 
 final class SiteResource extends Resource
 {
-    #[Override] protected static ?string $model = Site::class;
-    #[Override] protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
-    #[Override] protected static string|UnitEnum|null $navigationGroup = 'ERP';
-    #[Override] protected static ?int $navigationSort = 37;
-    #[Override] protected static ?string $recordTitleAttribute = 'name';
+    #[Override]
+    protected static ?string $model = Site::class;
 
-    public static function getSlug(?Panel $panel = null): string { return 'business/sites'; }
-    public static function form(Schema $schema): Schema { return SiteForm::configure($schema); }
-    public static function table(Table $table): Table { return SitesTable::configure($table); }
+    #[Override]
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
+
+    #[Override]
+    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+
+    #[Override]
+    protected static ?int $navigationSort = 37;
+
+    #[Override]
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getSlug(?Panel $panel = null): string
+    {
+        return 'business/sites';
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return SiteForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return SitesTable::configure($table);
+    }
+
     public static function getPages(): array
     {
         return ['index' => ListSites::route('/'), 'create' => CreateSite::route('/create'), 'edit' => EditSite::route('/{record}/edit')];

@@ -30,6 +30,7 @@ use Override;
  * @property string|null $beneficiary_bic
  * @property string|null $remittance_information
  * @property PaymentRunLineStatus $status
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPaymentRunLine
  */

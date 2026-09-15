@@ -9,12 +9,12 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\VatRegisterType;
 use Modules\ERP\Casts\VatSettlementStatus;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\FiscalPeriod;
+use Modules\ERP\Models\FiscalYear;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Models\VatSettlement;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\Decimal;
 
 final class VatSettlementService
@@ -84,8 +84,7 @@ final class VatSettlementService
         ConnectionScopedModels $models,
         Company $company,
         FiscalPeriod $fiscal_period,
-    ): void
-    {
+    ): void {
         $belongs_to_company = $models->query(FiscalYear::class)
             ->whereKey($fiscal_period->fiscal_year_id)
             ->where('company_id', $company->getKey())

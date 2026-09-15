@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\ERP\Models\Item;
 use Modules\ERP\Models\Activity;
+use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PriceList;
 use Modules\ERP\Models\PriceListItem;
 

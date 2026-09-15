@@ -21,6 +21,7 @@ use Override;
  * @property string|null $source_filename
  * @property string|null $source_checksum
  * @property-read BankAccount|null $bank_account
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperBankStatement
  */

@@ -13,22 +13,23 @@ use Override;
  *
  * @property int $party_id
  * @property int $contact_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperContactable
  */
 final class Contactable extends Pivot
 {
-    /**
-     * @var string
-     */
-    #[Override]
-    protected $table = ERPTables::Contactables->value;
-
     #[Override]
     public $incrementing = false;
 
     #[Override]
     public $timestamps = true;
+
+    /**
+     * @var string
+     */
+    #[Override]
+    protected $table = ERPTables::Contactables->value;
 
     #[Override]
     protected $fillable = [

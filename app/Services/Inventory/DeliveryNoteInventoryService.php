@@ -10,8 +10,6 @@ use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\StockMovementDirection;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Models\DeliveryNoteLine;
-use Modules\ERP\Support\ConnectionScopedTransaction;
-use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\SalesOrder;
@@ -20,6 +18,8 @@ use Modules\ERP\Models\StockMovement;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\SalesOrders\SalesOrderEvasionService;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Posts inventory for a {@see DeliveryNote} after `posted_at` is set: outbound

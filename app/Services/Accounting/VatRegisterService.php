@@ -14,9 +14,9 @@ use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\VatRegisterEntry;
 use Modules\ERP\Services\Taxation\TaxLineCalculator;
-use Modules\ERP\Support\Decimal;
-use Modules\ERP\Support\ConnectionScopedTransaction;
 use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
+use Modules\ERP\Support\Decimal;
 
 final class VatRegisterService
 {

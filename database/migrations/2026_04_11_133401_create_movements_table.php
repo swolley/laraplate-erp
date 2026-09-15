@@ -5,10 +5,10 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Helpers\MigrateUtils;
+use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Helpers\ERPMigrateUtils;
-use Modules\ERP\Casts\MovementType;
-use Modules\Core\Helpers\MigrateUtils;
 
 return new class extends Migration
 {

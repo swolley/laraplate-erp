@@ -17,8 +17,11 @@ use Override;
 
 final class EditPaymentRequest extends EditRecord
 {
-    #[Override] protected static string $resource = PaymentRequestResource::class;
-    #[Override] protected function getHeaderActions(): array
+    #[Override]
+    protected static string $resource = PaymentRequestResource::class;
+
+    #[Override]
+    protected function getHeaderActions(): array
     {
         return [
             Action::make('send')->icon(Heroicon::OutlinedPaperAirplane)->requiresConfirmation()

@@ -10,5 +10,6 @@ use Override;
 
 final class CreateSite extends CreateRecord
 {
-    #[Override] protected static string $resource = SiteResource::class;
+    #[Override]
+    protected static string $resource = SiteResource::class;
 }

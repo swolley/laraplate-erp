@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Modules\ERP\Tests\Support\DocumentNumberConcurrencyHarness;
 
-require_once dirname(__DIR__).'/Support/DocumentNumberConcurrencyHarness.php';
+require_once dirname(__DIR__) . '/Support/DocumentNumberConcurrencyHarness.php';
 
 it('allocates fifty unique document numbers under concurrent load', function (): void {
     if (! filter_var(env('RUN_ERP_STRESS_TESTS', false), FILTER_VALIDATE_BOOL)) {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Import\Data;
 
-use Carbon\CarbonImmutable;
 use Brick\Math\Exception\NumberFormatException;
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 use Modules\Core\Import\ValueObjects\ExternalRecordIdentity;
 use Modules\ERP\Casts\MovementType;

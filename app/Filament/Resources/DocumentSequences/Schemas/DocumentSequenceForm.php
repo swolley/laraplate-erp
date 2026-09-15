@@ -8,8 +8,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
-use Modules\ERP\Casts\DocumentType;
 use Modules\Core\Filament\Utils\HasForm;
+use Modules\ERP\Casts\DocumentType;
 
 final class DocumentSequenceForm
 {

@@ -11,7 +11,7 @@ uses(RefreshDatabase::class);
 
 it('links an ERP site to the canonical Core place', function (): void {
     $company = Company::query()->create([
-        'slug' => 'site-place-'.uniqid(), 'name' => 'Site Place',
+        'slug' => 'site-place-' . uniqid(), 'name' => 'Site Place',
         'fiscal_country' => 'IT', 'default_currency' => 'EUR',
     ]);
     $place = Place::query()->create([

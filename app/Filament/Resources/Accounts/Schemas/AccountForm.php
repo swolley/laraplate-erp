@@ -10,8 +10,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Query\Builder;
-use Modules\ERP\Casts\AccountKind;
 use Modules\Core\Filament\Utils\HasForm;
+use Modules\ERP\Casts\AccountKind;
 
 final class AccountForm
 {

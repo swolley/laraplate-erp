@@ -5,12 +5,12 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\LeadStatus;
-use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Casts\OpportunityStatus;
+use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Company;
-use Modules\ERP\Models\Party;
 use Modules\ERP\Models\Lead;
 use Modules\ERP\Models\Opportunity;
+use Modules\ERP\Models\Party;
 use Modules\ERP\Tests\Support\OpportunityStageTaxonomy;
 
 uses(RefreshDatabase::class);

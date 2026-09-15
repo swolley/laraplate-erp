@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Filament\Resources\Accounts\AccountResource;
 use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
@@ -27,8 +27,8 @@ use Modules\ERP\Filament\Resources\Movements\MovementResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
 use Modules\ERP\Filament\Resources\Parties\PartyResource;
 use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
-use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
 use Modules\ERP\Filament\Resources\PaymentRequests\PaymentRequestResource;
+use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
 use Modules\ERP\Filament\Resources\Payments\PaymentResource;
 use Modules\ERP\Filament\Resources\PaymentTerms\PaymentTermResource;
 use Modules\ERP\Filament\Resources\PriceLists\PriceListResource;
@@ -39,8 +39,8 @@ use Modules\ERP\Filament\Resources\SalesOrders\Actions\SalesOrderAmendmentAction
 use Modules\ERP\Filament\Resources\Sites\SiteResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
-use Modules\ERP\Filament\Resources\TaxCodes\TaxCodeResource;
 use Modules\ERP\Filament\Resources\Tasks\TaskResource;
+use Modules\ERP\Filament\Resources\TaxCodes\TaxCodeResource;
 use Modules\ERP\Filament\Resources\VatRegister\VatRegisterResource;
 use Modules\ERP\Filament\Resources\VatSettlements\VatSettlementResource;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
@@ -54,8 +54,8 @@ use Modules\ERP\Models\Movement;
 use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Models\PaymentRequest;
 use Modules\ERP\Models\Site;
-use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Models\Task;
+use Modules\ERP\Models\TaxCode;
 
 uses(RefreshDatabase::class);
 
@@ -69,7 +69,7 @@ it('registers Filament pages for companies', function (): void {
 });
 
 it('disallows editing and deleting locked projects via resource gates', function (): void {
-    $project = new \Modules\ERP\Models\Project;
+    $project = new Modules\ERP\Models\Project;
     $project->setAttribute('locked_at', now());
 
     expect(ProjectResource::canEdit($project))->toBeFalse()

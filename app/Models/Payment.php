@@ -28,6 +28,7 @@ use Override;
  * @property int|null $bank_account_id
  * @property int|null $journal_entry_id
  * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperPayment
  */
@@ -106,7 +107,6 @@ final class Payment extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\Concerns\HasActivation;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -21,6 +21,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * @property int|string $id
  * @property int $company_id
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperAccount
  */
@@ -94,6 +95,14 @@ final class Account extends Model
         return $rules;
     }
 
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return AccountFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -101,13 +110,5 @@ final class Account extends Model
             'meta' => 'array',
             'is_active' => 'boolean',
         ];
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    protected static function newFactory(): Factory
-    {
-        return AccountFactory::new();
     }
 }

@@ -16,6 +16,7 @@ use Override;
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
  *
  * @property numeric-string $settlement_amount
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperVatSettlement
  */
@@ -56,7 +57,6 @@ final class VatSettlement extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {
@@ -113,15 +113,6 @@ final class VatSettlement extends Model
         });
     }
 
-    private static function isConfirmedStatus(mixed $status): bool
-    {
-        if ($status instanceof VatSettlementStatus) {
-            return $status === VatSettlementStatus::Confirmed;
-        }
-
-        return $status === VatSettlementStatus::Confirmed->value;
-    }
-
     protected function casts(): array
     {
         return [
@@ -132,5 +123,14 @@ final class VatSettlement extends Model
             'status' => VatSettlementStatus::class,
             'confirmed_at' => 'immutable_datetime',
         ];
+    }
+
+    private static function isConfirmedStatus(mixed $status): bool
+    {
+        if ($status instanceof VatSettlementStatus) {
+            return $status === VatSettlementStatus::Confirmed;
+        }
+
+        return $status === VatSettlementStatus::Confirmed->value;
     }
 }

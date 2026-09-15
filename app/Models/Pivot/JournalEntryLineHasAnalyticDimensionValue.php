@@ -18,13 +18,13 @@ use Override;
 final class JournalEntryLineHasAnalyticDimensionValue extends Pivot
 {
     #[Override]
-    protected $table = ERPTables::JournalEntryLineAnalyticDimensionValue->value;
-
-    #[Override]
     public $incrementing = true;
 
     #[Override]
     public $timestamps = true;
+
+    #[Override]
+    protected $table = ERPTables::JournalEntryLineAnalyticDimensionValue->value;
 
     #[Override]
     protected $fillable = ['journal_entry_line_id', 'analytic_dimension_value_id', 'allocation_percent'];

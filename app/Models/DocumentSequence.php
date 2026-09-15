@@ -18,6 +18,7 @@ use Override;
  * @property string $prefix
  * @property string $suffix
  * @property string|null $format_pattern
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperDocumentSequence
  */
@@ -50,7 +51,6 @@ final class DocumentSequence extends Model
     /**
      * @return array<string, mixed>
      */
-
     #[Override]
     public function getRules(): array
     {

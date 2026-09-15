@@ -7,8 +7,8 @@ namespace Modules\ERP\Filament\Resources\Contacts\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Modules\ERP\Models\Party;
 use Modules\Core\Filament\Utils\HasForm;
+use Modules\ERP\Models\Party;
 
 final class ContactForm
 {

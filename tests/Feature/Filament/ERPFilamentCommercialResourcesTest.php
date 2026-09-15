@@ -5,21 +5,20 @@ declare(strict_types=1);
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Modules\ERP\Tests\Stubs\FilamentSchemaTestHarness;
 use Modules\ERP\Filament\Pages\BankReconciliationPage;
 use Modules\ERP\Filament\Resources\BankAccounts\BankAccountResource;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
+use Modules\ERP\Filament\Resources\Contacts\ContactResource;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
 use Modules\ERP\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Filament\Resources\Items\ItemResource;
-use Modules\ERP\Filament\Resources\Contacts\ContactResource;
-use Modules\ERP\Filament\Resources\Parties\PartyResource;
-use Modules\ERP\Filament\Resources\Parties\RelationManagers\PriceRulesRelationManager;
 use Modules\ERP\Filament\Resources\Leads\LeadResource;
 use Modules\ERP\Filament\Resources\Opportunities\OpportunityResource;
-use Modules\ERP\Filament\Resources\Projects\ProjectResource;
+use Modules\ERP\Filament\Resources\Parties\PartyResource;
+use Modules\ERP\Filament\Resources\Parties\RelationManagers\PriceRulesRelationManager;
 use Modules\ERP\Filament\Resources\PriceLists\PriceListResource;
+use Modules\ERP\Filament\Resources\Projects\ProjectResource;
 use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Filament\Resources\ReturnOrders\ReturnOrderResource;
@@ -27,6 +26,7 @@ use Modules\ERP\Filament\Resources\SalesOrders\SalesOrderResource;
 use Modules\ERP\Filament\Resources\StockLevels\StockLevelResource;
 use Modules\ERP\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use Modules\ERP\Filament\Resources\Warehouses\WarehouseResource;
+use Modules\ERP\Tests\Stubs\FilamentSchemaTestHarness;
 
 it('defines Filament pages for party resource', function (): void {
     expect(PartyResource::getPages())

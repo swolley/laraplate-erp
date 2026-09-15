@@ -7,8 +7,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
-use Modules\Core\Models\RecordOrigin;
 use Modules\Core\Import\ValueObjects\ExternalRecordIdentity;
+use Modules\Core\Models\RecordOrigin;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Import\Data\ExternalCashMovementInput;
@@ -23,7 +23,9 @@ use Modules\ERP\Tests\Stubs\Import\NonStrictCashInputFactory;
 
 uses(RefreshDatabase::class);
 
-/** @return array{Company, Account, Account, Account, Account} */
+/**
+ * @return array{Company, Account, Account, Account, Account}
+ */
 function externalCashFixture(): array
 {
     $company = Company::query()->create([

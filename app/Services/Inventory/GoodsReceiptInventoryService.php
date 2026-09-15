@@ -9,12 +9,12 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\PurchaseOrderStatus;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Models\GoodsReceiptLine;
-use Modules\ERP\Support\ConnectionScopedTransaction;
-use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
 use Modules\ERP\Models\Warehouse;
+use Modules\ERP\Support\ConnectionScopedModels;
+use Modules\ERP\Support\ConnectionScopedTransaction;
 
 /**
  * Posts inventory for a {@see GoodsReceipt} after `posted_at` is set: inbound

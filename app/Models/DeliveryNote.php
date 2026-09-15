@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
-use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Casts\DeliveryNoteDirection;
+use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Database\Factories\DeliveryNoteFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
@@ -27,6 +27,7 @@ use Override;
  * @property \Carbon\CarbonInterface|null $inventory_posted_at
  * @property int|null $cogs_journal_entry_id
  * @property string|null $notes
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperDeliveryNote
  */
@@ -81,6 +82,15 @@ final class DeliveryNote extends Model
         return $this->belongsTo(JournalEntry::class, 'cogs_journal_entry_id');
     }
 
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return DeliveryNoteFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -89,14 +99,5 @@ final class DeliveryNote extends Model
             'posted_at' => 'datetime',
             'inventory_posted_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    #[Override]
-    protected static function newFactory(): Factory
-    {
-        return DeliveryNoteFactory::new();
     }
 }

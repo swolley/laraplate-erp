@@ -27,6 +27,7 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * @property \Carbon\CarbonInterface $end_date
  * @property bool $is_closed
  * @property-read FiscalYear|null $fiscal_year
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperFiscalPeriod
  */
@@ -93,6 +94,14 @@ final class FiscalPeriod extends Model
         return $rules;
     }
 
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return FiscalPeriodFactory::new();
+    }
+
     protected function casts(): array
     {
         return [
@@ -101,13 +110,5 @@ final class FiscalPeriod extends Model
             'end_date' => 'immutable_date',
             'is_closed' => 'boolean',
         ];
-    }
-
-    /**
-     * @return Factory<self>
-     */
-    protected static function newFactory(): Factory
-    {
-        return FiscalPeriodFactory::new();
     }
 }

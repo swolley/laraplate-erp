@@ -20,6 +20,7 @@ use Override;
  * @property int $stock_movement_id
  * @property numeric-string $qty_remaining
  * @property numeric-string $unit_cost
+ *
  * @mixin \Eloquent
  * @mixin IdeHelperStockCostLayer
  */
