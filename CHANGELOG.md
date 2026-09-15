@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [1.24.0] - 2026-09-15
 
 ### 🚀 Features
 
@@ -23,6 +23,8 @@ All notable changes to this project will be documented in this file.
 ### 📚 Documentation
 
 - Describe the factories and the demo dataset
+- *(changelog)* Regenerate with the corrected git-cliff configuration
+- Releases are run from the application
 
 ### 🎨 Styling
 
