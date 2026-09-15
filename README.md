@@ -477,16 +477,10 @@ composer update:requirements  # composer bump + npm-check-updates
 
 ### Versioning
 
-```bash
-composer version:major
-composer version:minor
-composer version:patch
-```
-
-### Hooks
+Releases are run from the application, not from the module. From the `laraplate` root:
 
 ```bash
-composer setup:hooks
+composer run version:minor ERP   # or version:major / version:patch, see docs/releasing.md
 ```
 
 ## Repository rename (from laraplate-business)
