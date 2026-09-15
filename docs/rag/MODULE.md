@@ -463,6 +463,18 @@ effect: without a registered policy the Gate has nothing to consult and denies t
 
 ## Scripts
 
+### Development fixtures
+
+`Modules/ERP/database/factories/` holds twelve model factories (company, anagraphics, fiscal
+frame, document chain), resolved through `newFactory()` on each model. They never write a document
+`reference`: numbering belongs to `DocumentNumberAllocator` at posting time. `->for($company)`
+keeps a whole document chain inside one company, which the models require.
+
+`DevERPDatabaseSeeder` seeds the CRM taxonomies **and** a demo company with both commercial flows
+(sales order to delivery note to invoice; purchase order to goods receipt to invoice), on stable
+identifiers (`DEMO-ITEM-001..003`, warehouse `DEMO-WH`) and idempotently.
+
+
 The ERP module exposes the same Composer script conventions as **Cms** and **Core**:
 
 ### Code quality and testing

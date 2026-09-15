@@ -415,6 +415,36 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 The ERP module exposes the same Composer script conventions as **Cms** and **Core**:
 
+### Test fixtures and the demo dataset
+
+Twelve model factories live in `database/factories/`, resolved by `newFactory()` on the model:
+`Company`, `Party`, `Item`, `Warehouse`, `FiscalYear`, `FiscalPeriod`, `Account`, `SalesOrder`,
+`PurchaseOrder`, `DeliveryNote`, `Invoice` and their lines.
+
+```php
+$company = Company::factory()->create();
+$invoice = Invoice::factory()->for($company)->withLines(3)->create();
+$year    = FiscalYear::factory()->for($company)->withPeriods()->create();
+$order   = SalesOrder::factory()->for($company)->confirmed()->withLines()->create();
+```
+
+Three rules they keep, because the domain enforces them:
+
+- **No factory writes a document number.** `reference` is allocated by `DocumentNumberAllocator`
+  at posting time (and at the creation page for orders), so a factory-made document has none.
+  `->numbered('INV-2026-0001')` exists for the tests that need a fixed value.
+- **A scoped factory reuses the company it was given.** `->for($company)` keeps the party, the
+  items and the lines inside that company: the models refuse a party or an item from another one.
+- **Enum columns take their backing value.** Validation runs before the cast and stringifies.
+
+`php artisan db:seed --class="Modules\\ERP\\Database\\Seeders\\DevERPDatabaseSeeder"` (or the
+root `DevDatabaseSeeder`, which discovers it) produces the CRM taxonomies plus one demo company
+carrying both commercial flows: a customer and a supplier, a warehouse, three articles
+(`DEMO-ITEM-001..003`), sales order to delivery note to invoice, and purchase order to goods
+receipt to invoice. Identifiers are stable and the seeder is idempotent, so running it twice
+changes nothing.
+
+
 ### Code quality and testing
 
 ```bash
