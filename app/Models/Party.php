@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Core\Models\Concerns\HasActivation;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\PartyFactory;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\Contactable;
 use Override;
@@ -183,5 +185,14 @@ final class Party extends Model
     protected function suppliers(Builder $builder): Builder
     {
         return $builder->where('is_supplier', true);
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return PartyFactory::new();
     }
 }

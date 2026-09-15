@@ -7,9 +7,11 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Enums\CoreTables;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Casts\TracingType;
+use Modules\ERP\Database\Factories\ItemFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
@@ -103,5 +105,14 @@ final class Item extends Model
         ]);
 
         return $rules;
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return ItemFactory::new();
     }
 }

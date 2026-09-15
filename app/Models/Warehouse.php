@@ -6,8 +6,10 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\WarehouseFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
@@ -55,5 +57,14 @@ final class Warehouse extends Model
     public function stock_levels(): HasMany
     {
         return $this->hasMany(StockLevel::class);
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return WarehouseFactory::new();
     }
 }
