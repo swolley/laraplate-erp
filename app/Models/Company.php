@@ -7,7 +7,9 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
+use Modules\ERP\Database\Factories\CompanyFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
@@ -223,6 +225,15 @@ final class Company extends Model
     protected function default(Builder $query): Builder
     {
         return $query->where('is_default', true);
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    #[Override]
+    protected static function newFactory(): Factory
+    {
+        return CompanyFactory::new();
     }
 
     private function companySlugUniqueId(): int|string
