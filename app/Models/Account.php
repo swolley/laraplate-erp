@@ -7,9 +7,11 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\Concerns\HasActivation;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\AccountFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -99,5 +101,13 @@ final class Account extends Model
             'meta' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return AccountFactory::new();
     }
 }

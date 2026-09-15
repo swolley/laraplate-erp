@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
+use Modules\ERP\Database\Factories\FiscalYearFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -92,5 +94,13 @@ final class FiscalYear extends Model
             'end_date' => 'immutable_date',
             'is_closed' => 'boolean',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return FiscalYearFactory::new();
     }
 }

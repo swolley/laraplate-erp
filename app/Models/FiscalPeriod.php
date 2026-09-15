@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Core\Models\Concerns\HasValidations;
 use Modules\Core\Models\Concerns\HasVersions;
+use Modules\ERP\Database\Factories\FiscalPeriodFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 use Overtrue\LaravelVersionable\VersionStrategy;
@@ -99,5 +101,13 @@ final class FiscalPeriod extends Model
             'end_date' => 'immutable_date',
             'is_closed' => 'boolean',
         ];
+    }
+
+    /**
+     * @return Factory<self>
+     */
+    protected static function newFactory(): Factory
+    {
+        return FiscalPeriodFactory::new();
     }
 }
