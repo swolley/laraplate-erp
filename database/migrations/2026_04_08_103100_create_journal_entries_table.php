@@ -25,6 +25,12 @@ return new class extends Migration
             $table->unsignedBigInteger('posted_by')->nullable()->index()->comment('users.id when posted; no FK for module isolation');
             $table->nullableMorphs('reference', "{$journal_entries_table}_reference_idx");
             $table->text('description')->nullable();
+            $table->foreignId('reverses_journal_entry_id')
+                ->nullable()
+                ->constrained($journal_entries_table, 'id', "{$journal_entries_table}_reverses_entry_id_FK")
+                ->restrictOnDelete()
+                ->comment('Set on reversal vouchers pointing at the original posted entry');
+            $table->text('reversal_reason')->nullable();
 
             MigrateUtils::timestamps(
                 $table,

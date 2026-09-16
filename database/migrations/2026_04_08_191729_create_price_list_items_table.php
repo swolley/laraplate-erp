@@ -31,6 +31,8 @@ return new class extends Migration
                 $table,
                 hasCreateUpdate: true,
                 hasSoftDelete: true,
+                hasValidity: true,
+                isValidityRequired: false,
             );
         });
     }

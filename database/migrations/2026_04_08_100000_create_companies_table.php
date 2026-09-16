@@ -23,6 +23,17 @@ return new class extends Migration
             $table->char('default_currency', 3)->default('EUR')->comment('ISO 4217 functional currency used as amount_local for journal balancing');
             $table->json('settings')->nullable()->comment('Free-form per-company settings (logo, defaults, etc.)');
             $table->boolean('is_default')->default(false)->index("{$companies_table}_is_default_IDX")->comment('At most one company per environment can be the default tenant');
+            $table->string('fiscal_regime', 4)->nullable()->comment('FatturaPA RegimeFiscale code, e.g. RF01');
+            $table->string('legal_address_line')->nullable();
+            $table->string('legal_postal_code', 16)->nullable();
+            $table->string('legal_city', 128)->nullable();
+            $table->string('legal_province', 8)->nullable();
+            $table->string('legal_country', 2)->nullable();
+            $table->string('rea_office', 8)->nullable();
+            $table->string('rea_number', 32)->nullable();
+            $table->decimal('share_capital', 15, 2)->nullable();
+            $table->boolean('sole_shareholder')->nullable();
+            $table->string('liquidation_status', 2)->nullable()->comment('FatturaPA StatoLiquidazione code');
 
             MigrateUtils::timestamps(
                 $table,

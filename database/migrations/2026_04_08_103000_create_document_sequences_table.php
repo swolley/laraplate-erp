@@ -29,6 +29,12 @@ return new class extends Migration
             $table->boolean('gap_allowed')->default(false)->comment('When true, holes in the numeric sequence may exist by policy');
             $table->string('prefix', 32)->default('')->comment('Prepended to the formatted number');
             $table->unsignedTinyInteger('padding')->default(5)->comment('Zero-padding width for the numeric segment');
+            $table->string('format_pattern', 255)
+                ->nullable()
+                ->comment('Optional template; tokens: {prefix},{suffix},{number},{YYYY}; null = built-in fiscal layout');
+            $table->string('suffix', 32)
+                ->default('')
+                ->comment('Trailing segment inserted by {suffix} or default layout');
 
             $table->unique(
                 ['company_id', 'document_type', 'fiscal_year'],

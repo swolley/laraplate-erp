@@ -28,6 +28,10 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::TaxCodes->value, 'id', "{$invoice_lines_table}_tax_code_id_FK")
                 ->nullOnDelete();
+            $table->foreignId('sales_order_line_id')
+                ->nullable()
+                ->constrained(ERPTables::SalesOrderLines->value, 'id', "{$invoice_lines_table}_sales_order_line_id_FK")
+                ->nullOnDelete();
             $table->string('tax_code', 64)->nullable()->comment('Snapshot: TaxCode.code at posting');
             $table->decimal('tax_rate', 8, 4)->nullable()->comment('Snapshot: percentage frozen at posting');
             $table->string('tax_label')->nullable()->comment('Snapshot: human label at posting');

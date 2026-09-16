@@ -26,6 +26,10 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::Payments->value, 'id', "{$bank_statement_lines_table}_matched_payment_id_FK")
                 ->nullOnDelete();
+            $table->foreignId('difference_journal_entry_id')
+                ->nullable()
+                ->constrained(ERPTables::JournalEntries->value, 'id', "{$bank_statement_lines_table}_difference_journal_entry_id_FK")
+                ->nullOnDelete();
             $table->date('booked_at');
             $table->date('value_at')->nullable();
             $table->string('reference', 128)->nullable();
