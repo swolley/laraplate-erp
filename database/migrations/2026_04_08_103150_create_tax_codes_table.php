@@ -32,6 +32,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained($tax_codes_table, 'id', "{$tax_codes_table}_replaced_by_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'replaced_by_tax_code_id');
             $table->json('meta')->nullable()->comment('Extensions e.g. SDI regime codes');
 
             $table->unique(['company_id', 'code'], "{$tax_codes_table}_company_code_UN");

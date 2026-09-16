@@ -22,11 +22,13 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('party_id')->constrained(ERPTables::Parties->value, 'id', "{$quotations_table}_party_id_FK")->restrictOnDelete()->comment('The party that the quotation belongs to');
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('opportunity_id')
                 ->nullable()
                 ->constrained(ERPTables::Opportunities->value, 'id', "{$quotations_table}_opportunity_id_FK")
                 ->nullOnDelete()
                 ->comment('Originating CRM opportunity when applicable');
+            MigrateUtils::prefixIndex($table, 'opportunity_id');
             $table->char('currency', 3)->default('EUR')->index("{$quotations_table}_currency_idx")->comment('ISO 4217 for document amounts');
             $table->text('notes')->nullable(true)->comment('The notes of the quotation');
             $table->enum('status', QuoteStatus::cases())->nullable(false)->default(QuoteStatus::Draft->value)->index("{$quotations_table}_status_IDX")->comment('The status of the quotation');

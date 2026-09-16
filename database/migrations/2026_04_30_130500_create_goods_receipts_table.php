@@ -21,6 +21,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::PurchaseOrders->value, 'id', "{$goods_receipts_table}_purchase_order_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'purchase_order_id');
             $table->string('reference', 64)->nullable();
             $table->timestamp('received_at')->nullable();
             $table->timestamp('posted_at')->nullable();

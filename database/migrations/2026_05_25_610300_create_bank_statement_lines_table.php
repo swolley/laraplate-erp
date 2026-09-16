@@ -22,14 +22,17 @@ return new class extends Migration
             $table->foreignId('bank_statement_id')
                 ->constrained(ERPTables::BankStatements->value, 'id', "{$bank_statement_lines_table}_bank_statement_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'bank_statement_id');
             $table->foreignId('matched_payment_id')
                 ->nullable()
                 ->constrained(ERPTables::Payments->value, 'id', "{$bank_statement_lines_table}_matched_payment_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'matched_payment_id');
             $table->foreignId('difference_journal_entry_id')
                 ->nullable()
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$bank_statement_lines_table}_difference_journal_entry_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'difference_journal_entry_id');
             $table->date('booked_at');
             $table->date('value_at')->nullable();
             $table->string('reference', 128)->nullable();

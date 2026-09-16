@@ -30,6 +30,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('partner_pool_id')->constrained($pools, 'id', "{$members}_pool_FK")->cascadeOnDelete();
             $table->foreignId('user_id')->constrained(CoreTables::Users->value, 'id', "{$members}_user_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'user_id');
             MigrateUtils::timestamps($table, hasCreateUpdate: true);
             $table->unique(['partner_pool_id', 'user_id'], "{$members}_pool_user_UQ");
         });
@@ -38,8 +39,10 @@ return new class extends Migration
         Schema::create($allocations, function (Blueprint $table) use ($allocations, $pools): void {
             $table->id();
             $table->foreignId('partner_pool_id')->constrained($pools, 'id', "{$allocations}_pool_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'partner_pool_id');
             $table->foreignId('movement_id')->constrained(ERPTables::Movements->value, 'id', "{$allocations}_movement_FK")->cascadeOnDelete();
             $table->foreignId('user_id')->constrained(CoreTables::Users->value, 'id', "{$allocations}_user_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'user_id');
             $table->decimal('owed_amount', 15, 4)->default(0);
             $table->decimal('paid_amount', 15, 4)->default(0);
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
@@ -53,7 +56,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('partner_pool_id')->constrained($pools, 'id', "{$transactions}_pool_FK")->restrictOnDelete();
             $table->foreignId('from_user_id')->constrained(CoreTables::Users->value, 'id', "{$transactions}_from_user_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'from_user_id');
             $table->foreignId('to_user_id')->constrained(CoreTables::Users->value, 'id', "{$transactions}_to_user_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'to_user_id');
             $table->decimal('amount', 15, 4);
             $table->char('currency', 3);
             $table->date('occurred_on');

@@ -23,6 +23,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::Sites->value, 'id', "{$warehouses_table}_site_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'site_id');
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
             $table->unique(['company_id', 'code'], "{$warehouses_table}_company_code_un");

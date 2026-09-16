@@ -21,8 +21,11 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('party_id')->nullable()->constrained(ERPTables::Parties->value, 'id', "{$party_price_rules_table}_party_id_FK")->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('item_id')->nullable()->constrained(ERPTables::Items->value, 'id', "{$party_price_rules_table}_item_id_FK")->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('taxonomy_id')->nullable()->constrained(CoreTables::Taxonomies->value, 'id', "{$party_price_rules_table}_taxonomy_id_FK")->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'taxonomy_id');
             $table->unsignedSmallInteger('priority')->default(100);
             $table->enum('discount_type', array_map(static fn (DiscountType $type): string => $type->value, DiscountType::cases()));
             $table->decimal('discount_value', 15, 4)->default(0);

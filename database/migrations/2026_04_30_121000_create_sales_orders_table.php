@@ -21,18 +21,22 @@ return new class extends Migration
             $table->foreignId('party_id')
                 ->constrained(ERPTables::Parties->value, 'id', "{$sales_orders_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('quotation_id')
                 ->nullable()
                 ->constrained(ERPTables::Quotations->value, 'id', "{$sales_orders_table}_quotation_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'quotation_id');
             $table->foreignId('project_id')
                 ->nullable()
                 ->constrained(ERPTables::Projects->value, 'id', "{$sales_orders_table}_project_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'project_id');
             $table->foreignId('amends_sales_order_id')
                 ->nullable()
                 ->constrained($sales_orders_table, 'id', "{$sales_orders_table}_amends_sales_order_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'amends_sales_order_id');
             $table->string('reference', 64)->nullable()->comment('Human-friendly reference until fiscal numbering is bound');
             $table->char('currency', 3)->default('EUR');
             $table->enum('status', array_map(

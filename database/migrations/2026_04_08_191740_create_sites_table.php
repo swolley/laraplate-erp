@@ -23,6 +23,7 @@ return new class extends Migration
             ERPMigrateUtils::companyForeign($table);
             $table->string('name')->comment('The name of the site');
             $table->foreignId('place_id')->constrained(CoreTables::Places->value, 'id', "{$sites_table}_place_id_FK")->restrictOnDelete()->comment('The place that the site belongs to');
+            MigrateUtils::prefixIndex($table, 'place_id');
 
             MigrateUtils::timestamps(
                 $table,

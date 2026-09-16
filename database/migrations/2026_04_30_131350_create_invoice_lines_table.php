@@ -28,10 +28,12 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::TaxCodes->value, 'id', "{$invoice_lines_table}_tax_code_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'tax_code_id');
             $table->foreignId('sales_order_line_id')
                 ->nullable()
                 ->constrained(ERPTables::SalesOrderLines->value, 'id', "{$invoice_lines_table}_sales_order_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'sales_order_line_id');
             $table->string('tax_code', 64)->nullable()->comment('Snapshot: TaxCode.code at posting');
             $table->decimal('tax_rate', 8, 4)->nullable()->comment('Snapshot: percentage frozen at posting');
             $table->string('tax_label')->nullable()->comment('Snapshot: human label at posting');
@@ -40,10 +42,12 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::PurchaseOrderLines->value, 'id', "{$invoice_lines_table}_po_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'purchase_order_line_id');
             $table->foreignId('goods_receipt_line_id')
                 ->nullable()
                 ->constrained(ERPTables::GoodsReceiptLines->value, 'id', "{$invoice_lines_table}_gr_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'goods_receipt_line_id');
             $table->string('match_status', 20)->nullable()->comment('Three-way match result');
             $table->json('match_discrepancy')->nullable()->comment('Details of price/qty discrepancies');
 

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('payment_schedule_line_id')
                 ->constrained(ERPTables::PaymentScheduleLines->value, 'id', "{$payment_allocations_table}_psl_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'payment_schedule_line_id');
             $table->decimal('allocated_amount_doc', 15, 4);
             $table->decimal('allocated_amount_local', 15, 4);
 

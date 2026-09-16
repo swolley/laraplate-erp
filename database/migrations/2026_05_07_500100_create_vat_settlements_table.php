@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('fiscal_period_id')
                 ->constrained(ERPTables::FiscalPeriods->value, 'id', "{$vat_settlements_table}_fiscal_period_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'fiscal_period_id');
             $table->decimal('vat_sales', 15, 4)->default(0);
             $table->decimal('vat_purchases', 15, 4)->default(0);
             $table->decimal('previous_credit', 15, 4)->default(0);

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('party_id')
                 ->constrained(ERPTables::Parties->value, 'id', "{$payments_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->enum('direction', array_map(
                 static fn (PaymentDirection $d): string => $d->value,
                 PaymentDirection::cases(),
@@ -32,10 +33,12 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::BankAccounts->value, 'id', "{$payments_table}_bank_account_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'bank_account_id');
             $table->foreignId('journal_entry_id')
                 ->nullable()
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$payments_table}_journal_entry_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'journal_entry_id');
             $table->text('notes')->nullable();
 
             MigrateUtils::timestamps(

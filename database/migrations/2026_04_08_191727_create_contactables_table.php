@@ -27,6 +27,7 @@ return new class extends Migration
                 ->nullable(false)
                 ->cascadeOnDelete()
                 ->comment('The contact that the contactable belongs to');
+            MigrateUtils::prefixIndex($table, 'contact_id');
 
             $table->primary(['party_id', 'contact_id'], "{$contactables_table}_primary_idx")->comment('The primary key of the contactable relationship');
 

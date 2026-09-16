@@ -21,6 +21,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::FiscalPeriods->value, 'id', "{$journal_entries_table}_fiscal_period_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'fiscal_period_id');
             $table->timestamp('posted_at')->nullable()->comment('Null until posted; immutable after set');
             $table->unsignedBigInteger('posted_by')->nullable()->index()->comment('users.id when posted; no FK for module isolation');
             $table->nullableMorphs('reference', "{$journal_entries_table}_reference_idx");
@@ -30,6 +31,7 @@ return new class extends Migration
                 ->constrained($journal_entries_table, 'id', "{$journal_entries_table}_reverses_entry_id_FK")
                 ->restrictOnDelete()
                 ->comment('Set on reversal vouchers pointing at the original posted entry');
+            MigrateUtils::prefixIndex($table, 'reverses_journal_entry_id');
             $table->text('reversal_reason')->nullable();
 
             MigrateUtils::timestamps(

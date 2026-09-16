@@ -19,15 +19,22 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('supplier_return_id')->constrained(ERPTables::SupplierReturns->value, 'id', "{$supplier_return_lines_table}_supplier_return_id_FK")->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'supplier_return_id');
             $table->foreignId('purchase_order_line_id')->nullable()->constrained(ERPTables::PurchaseOrderLines->value, 'id', "{$supplier_return_lines_table}_purchase_order_line_id_FK")->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'purchase_order_line_id');
             $table->foreignId('goods_receipt_line_id')->nullable()->constrained(ERPTables::GoodsReceiptLines->value, 'id', "{$supplier_return_lines_table}_goods_receipt_line_id_FK")->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'goods_receipt_line_id');
             $table->foreignId('delivery_note_line_id')->nullable()->constrained(ERPTables::DeliveryNoteLines->value, 'id', "{$supplier_return_lines_table}_delivery_note_line_id_FK")->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'delivery_note_line_id');
             $table->foreignId('invoice_line_id')
                 ->nullable()
                 ->constrained(ERPTables::InvoiceLines->value, 'id', "{$supplier_return_lines_table}_invoice_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'invoice_line_id');
             $table->foreignId('item_id')->constrained(ERPTables::Items->value, 'id', "{$supplier_return_lines_table}_item_id_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')->constrained(ERPTables::Warehouses->value, 'id', "{$supplier_return_lines_table}_warehouse_id_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->decimal('quantity', 15, 4);
             $table->decimal('unit_price', 15, 4)->nullable();
 

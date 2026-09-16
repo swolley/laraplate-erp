@@ -26,6 +26,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(CoreTables::Taxonomies->value, 'id', "{$items_table}_taxonomy_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'taxonomy_id');
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);
             $table->unique(['company_id', 'sku'], "{$items_table}_company_sku_un");

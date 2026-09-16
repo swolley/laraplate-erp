@@ -25,6 +25,7 @@ return new class extends Migration
             $table->foreignId('bank_account_id')
                 ->constrained(ERPTables::BankAccounts->value, 'id', "{$payment_runs_table}_bank_account_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'bank_account_id');
             $table->date('execution_date');
             $table->char('currency', 3)->default('EUR');
             $table->decimal('total_amount_doc', 15, 4)->default(0);
@@ -50,13 +51,16 @@ return new class extends Migration
             $table->foreignId('payment_schedule_line_id')
                 ->constrained(ERPTables::PaymentScheduleLines->value, 'id', "{$payment_run_lines_table}_sched_line_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'payment_schedule_line_id');
             $table->foreignId('party_id')
                 ->constrained(ERPTables::Parties->value, 'id', "{$payment_run_lines_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('party_bank_account_id')
                 ->nullable()
                 ->constrained(ERPTables::PartyBankAccounts->value, 'id', "{$payment_run_lines_table}_party_bank_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_bank_account_id');
             $table->decimal('amount_doc', 15, 4);
             $table->char('currency_doc', 3);
             $table->decimal('amount_local', 15, 4);

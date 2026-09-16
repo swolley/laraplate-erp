@@ -23,9 +23,11 @@ return new class extends Migration
             $table->foreignId('item_id')
                 ->constrained(ERPTables::Items->value, 'id', "{$goods_receipt_lines_table}_item_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$goods_receipt_lines_table}_warehouse_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->decimal('quantity', 15, 4);
             $table->decimal('qty_returned', 15, 4)->default(0);
             $table->decimal('unit_cost', 15, 4);
@@ -33,6 +35,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::PurchaseOrderLines->value, 'id', "{$goods_receipt_lines_table}_purchase_order_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'purchase_order_line_id');
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true, hasLocks: false);
 

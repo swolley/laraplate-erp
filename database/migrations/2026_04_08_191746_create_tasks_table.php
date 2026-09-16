@@ -20,8 +20,11 @@ return new class extends Migration
         Schema::create($tasks_table, function (Blueprint $table) use ($tasks_table): void {
             $table->id();
             $table->foreignId('project_id')->nullable()->constrained(ERPTables::Projects->value, 'id', "{$tasks_table}_project_id_FK")->nullOnDelete()->comment('The project that the task belongs to');
+            MigrateUtils::prefixIndex($table, 'project_id');
             $table->foreignId('site_id')->nullable()->constrained(ERPTables::Sites->value, 'id', "{$tasks_table}_site_id_FK")->nullOnDelete()->comment('The site that the task belongs to');
+            MigrateUtils::prefixIndex($table, 'site_id');
             $table->foreignId('taxonomy_id')->constrained(CoreTables::Taxonomies->value, 'id', "{$tasks_table}_taxonomy_id_FK")->restrictOnDelete()->comment('Activity type node in taxonomies (EntityType activities)');
+            MigrateUtils::prefixIndex($table, 'taxonomy_id');
 
             MigrateUtils::timestamps(
                 $table,

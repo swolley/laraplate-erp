@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId('delivery_note_line_id')
                 ->constrained(ERPTables::DeliveryNoteLines->value, 'id', "{$invoice_line_delivery_note_line_table}_delivery_note_line_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'delivery_note_line_id');
             $table->decimal('quantity', 15, 4)->comment('Qty of this DDT line covered by this invoice line');
 
             MigrateUtils::timestamps($table);

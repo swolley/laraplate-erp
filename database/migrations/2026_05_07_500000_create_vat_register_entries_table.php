@@ -20,15 +20,18 @@ return new class extends Migration
             $table->foreignId('invoice_id')
                 ->constrained(ERPTables::Invoices->value, 'id', "{$vat_register_entries_table}_invoice_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'invoice_id');
             $table->string('register_type', 16);
             $table->unsignedInteger('protocol_number');
             $table->date('registration_date')->index();
             $table->foreignId('fiscal_year_id')
                 ->constrained(ERPTables::FiscalYears->value, 'id', "{$vat_register_entries_table}_fiscal_year_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'fiscal_year_id');
             $table->foreignId('tax_code_id')
                 ->constrained(ERPTables::TaxCodes->value, 'id', "{$vat_register_entries_table}_tax_code_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'tax_code_id');
             $table->decimal('taxable_amount', 15, 4);
             $table->decimal('tax_amount', 15, 4);
 

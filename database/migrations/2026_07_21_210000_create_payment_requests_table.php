@@ -20,8 +20,11 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('party_id')->nullable()->constrained(ERPTables::Parties->value, 'id', "{$table_name}_party_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('user_id')->nullable()->constrained(CoreTables::Users->value, 'id', "{$table_name}_user_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'user_id');
             $table->foreignId('partner_pool_id')->nullable()->constrained(ERPTables::PartnerPools->value, 'id', "{$table_name}_pool_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'partner_pool_id');
             $table->foreignId('pool_transaction_id')->nullable()->unique()->constrained(ERPTables::PoolTransactions->value, 'id', "{$table_name}_transaction_FK")->restrictOnDelete();
             $table->decimal('amount', 15, 4);
             $table->char('currency', 3);

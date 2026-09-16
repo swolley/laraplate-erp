@@ -48,6 +48,7 @@ return new class extends Migration
             $table->foreignId('analytic_dimension_value_id')
                 ->constrained($values, 'id', "{$pivot}_value_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'analytic_dimension_value_id');
             $table->decimal('allocation_percent', 7, 4)->default(100);
             $table->unique(['journal_entry_line_id', 'analytic_dimension_value_id'], "{$pivot}_line_value_UN");
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true);

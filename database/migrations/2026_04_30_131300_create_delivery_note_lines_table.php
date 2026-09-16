@@ -23,14 +23,17 @@ return new class extends Migration
             $table->foreignId('item_id')
                 ->constrained(ERPTables::Items->value, 'id', "{$delivery_note_lines_table}_item_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$delivery_note_lines_table}_warehouse_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->decimal('quantity', 15, 4);
             $table->foreignId('sales_order_line_id')
                 ->nullable()
                 ->constrained(ERPTables::SalesOrderLines->value, 'id', "{$delivery_note_lines_table}_sales_order_line_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'sales_order_line_id');
 
             MigrateUtils::timestamps($table, hasCreateUpdate: true, hasSoftDelete: true, hasLocks: false);
 

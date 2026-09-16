@@ -31,6 +31,7 @@ return new class extends Migration
             $table->foreignId('counterparty_account_id')
                 ->constrained(ERPTables::Accounts->value, 'id', "{$movements_table}_counterparty_account_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'counterparty_account_id');
             $table->foreignId('posted_journal_entry_id')
                 ->nullable()
                 ->unique()

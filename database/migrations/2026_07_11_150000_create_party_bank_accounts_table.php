@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('party_id')
                 ->constrained(ERPTables::Parties->value, 'id', "{$party_bank_accounts_table}_party_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->string('beneficiary_name');
             $table->string('iban', 34);
             $table->string('bic', 11)->nullable();

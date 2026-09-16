@@ -20,14 +20,17 @@ return new class extends Migration
             $table->foreignId('sales_order_id')
                 ->constrained(ERPTables::SalesOrders->value, 'id', "{$sales_order_lines_table}_sales_order_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'sales_order_id');
             $table->foreignId('quotation_item_id')
                 ->nullable()
                 ->constrained(ERPTables::QuotationItems->value, 'id', "{$sales_order_lines_table}_quotation_item_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'quotation_item_id');
             $table->foreignId('item_id')
                 ->nullable()
                 ->constrained(ERPTables::Items->value, 'id', "{$sales_order_lines_table}_item_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->string('name');
             $table->decimal('qty_ordered', 15, 4)->default(1);
             $table->decimal('qty_delivered', 15, 4)->default(0);

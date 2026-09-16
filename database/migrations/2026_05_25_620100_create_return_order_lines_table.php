@@ -19,10 +19,15 @@ return new class extends Migration
             $table->id();
             ERPMigrateUtils::companyForeign($table);
             $table->foreignId('return_order_id')->constrained(ERPTables::ReturnOrders->value, 'id', "{$return_order_lines_table}_return_order_id_FK")->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'return_order_id');
             $table->foreignId('invoice_line_id')->nullable()->constrained(ERPTables::InvoiceLines->value, 'id', "{$return_order_lines_table}_invoice_line_id_FK")->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'invoice_line_id');
             $table->foreignId('delivery_note_line_id')->nullable()->constrained(ERPTables::DeliveryNoteLines->value, 'id', "{$return_order_lines_table}_delivery_note_line_id_FK")->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'delivery_note_line_id');
             $table->foreignId('item_id')->constrained(ERPTables::Items->value, 'id', "{$return_order_lines_table}_item_id_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')->constrained(ERPTables::Warehouses->value, 'id', "{$return_order_lines_table}_warehouse_id_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->decimal('quantity', 15, 4);
             $table->decimal('unit_cost', 15, 4)->default(0);
             $table->decimal('unit_price', 15, 4)->nullable();

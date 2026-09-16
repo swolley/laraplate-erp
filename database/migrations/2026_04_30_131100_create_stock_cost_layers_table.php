@@ -20,12 +20,15 @@ return new class extends Migration
             $table->foreignId('item_id')
                 ->constrained(ERPTables::Items->value, 'id', "{$stock_cost_layers_table}_item_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$stock_cost_layers_table}_warehouse_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->foreignId('stock_movement_id')
                 ->constrained(ERPTables::StockMovements->value, 'id', "{$stock_cost_layers_table}_stock_movement_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'stock_movement_id');
             $table->decimal('qty_remaining', 15, 4);
             $table->decimal('unit_cost', 15, 4);
 

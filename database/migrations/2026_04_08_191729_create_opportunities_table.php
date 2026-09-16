@@ -23,15 +23,18 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::Leads->value, 'id', "{$opportunities_table}_lead_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'lead_id');
             $table->foreignId('party_id')
                 ->nullable(false)
                 ->constrained(ERPTables::Parties->value, 'id', "{$opportunities_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('stage_taxonomy_id')
                 ->nullable(false)
                 ->constrained(CoreTables::Taxonomies->value, 'id', "{$opportunities_table}_stage_taxonomy_id_FK")
                 ->restrictOnDelete()
                 ->comment('Pipeline stage; use EntityType::OpportunityStages tree');
+            MigrateUtils::prefixIndex($table, 'stage_taxonomy_id');
             $table->string('name')->comment('Opportunity title');
             $table->enum('status', array_map(
                 static fn (OpportunityStatus $s): string => $s->value,

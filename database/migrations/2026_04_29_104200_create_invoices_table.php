@@ -22,6 +22,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::Parties->value, 'id', "{$invoices_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->enum('direction', array_map(
                 static fn (InvoiceDirection $d): string => $d->value,
                 InvoiceDirection::cases(),
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->foreignId('credited_invoice_id')->nullable()
                 ->constrained(ERPTables::Invoices->value, 'id', "{$invoices_table}_credited_invoice_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'credited_invoice_id');
             $table->string('reference', 64)->nullable()->comment('Assigned by DocumentNumberAllocator at posting time');
             $table->char('currency', 3);
             $table->timestamp('posted_at')->nullable()->index();
@@ -37,11 +39,13 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$invoices_table}_journal_entry_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'journal_entry_id');
             $table->text('notes')->nullable();
             $table->foreignId('payment_term_id')
                 ->nullable()
                 ->constrained(ERPTables::PaymentTerms->value, 'id', "{$invoices_table}_payment_term_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'payment_term_id');
             $table->string('einvoice_transmission_format', 5)->nullable()->comment('FatturaPA transmission format, e.g. FPR12 or FPA12');
             $table->string('einvoice_recipient_code', 7)->nullable();
             $table->string('einvoice_pec_email')->nullable();

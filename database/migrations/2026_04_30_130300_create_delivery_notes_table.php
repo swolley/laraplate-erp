@@ -22,6 +22,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::SalesOrders->value, 'id', "{$delivery_notes_table}_sales_order_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'sales_order_id');
             $table->enum('direction', DeliveryNoteDirection::values())
                 ->default(DeliveryNoteDirection::Outbound->value)
                 ->index("{$delivery_notes_table}_direction_IDX");
@@ -34,6 +35,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$delivery_notes_table}_cogs_journal_entry_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'cogs_journal_entry_id');
 
             MigrateUtils::timestamps(
                 $table,

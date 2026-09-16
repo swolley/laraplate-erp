@@ -24,11 +24,13 @@ return new class extends Migration
                 ->constrained(ERPTables::Parties->value, 'id', "{$leads_table}_party_id_FK")
                 ->nullOnDelete()
                 ->comment('Linked party once qualified (optional on cold leads)');
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->foreignId('contact_id')
                 ->nullable()
                 ->constrained(ERPTables::Contacts->value, 'id', "{$leads_table}_contact_id_FK")
                 ->nullOnDelete()
                 ->comment('Primary contact person when known');
+            MigrateUtils::prefixIndex($table, 'contact_id');
             $table->string('title')->comment('Short label for the lead');
             $table->string('source', 128)->nullable()->comment('e.g. web, referral, partner');
             $table->enum('status', array_map(
@@ -39,6 +41,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(CoreTables::Users->value, 'id', "{$leads_table}_owner_user_id_FK")
                 ->nullOnDelete();
+            MigrateUtils::prefixIndex($table, 'owner_user_id');
             $table->text('notes')->nullable();
             $table->timestamp('converted_at')->nullable()->comment('When the lead moved to an opportunity or party flow');
 

@@ -20,9 +20,11 @@ return new class extends Migration
             $table->foreignId('item_id')
                 ->constrained(ERPTables::Items->value, 'id', "{$stock_levels_table}_item_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$stock_levels_table}_warehouse_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->decimal('quantity', 15, 4)->default(0);
             $table->decimal('weighted_avg_cost', 15, 4)->default(0);
 

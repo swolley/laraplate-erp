@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('invoice_id')
                 ->constrained(ERPTables::Invoices->value, 'id', "{$payment_schedule_lines_table}_invoice_id_FK")
                 ->cascadeOnDelete();
+            MigrateUtils::prefixIndex($table, 'invoice_id');
             $table->date('due_date')->index("{$payment_schedule_lines_table}_due_date_idx");
             ERPMigrateUtils::moneyColumns($table);
             $table->decimal('paid_amount_doc', 15, 4)->default(0);

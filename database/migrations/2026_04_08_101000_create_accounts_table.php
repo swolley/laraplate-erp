@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('kind', array_map(static fn (AccountKind $k): string => $k->value, AccountKind::cases()))
                 ->comment('Balance-sheet / P&L classification');
             $table->foreignId('parent_id')->nullable()->constrained($accounts_table, 'id', "{$accounts_table}_parent_id_FK")->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'parent_id');
             $table->json('meta')->nullable()->comment('Extensions e.g. civilistico_code, oic_mapping');
             $table->boolean('is_active')->default(true)->index("{$accounts_table}_is_active_IDX");
 

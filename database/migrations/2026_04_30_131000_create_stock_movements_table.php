@@ -21,9 +21,11 @@ return new class extends Migration
             $table->foreignId('item_id')
                 ->constrained(ERPTables::Items->value, 'id', "{$stock_movements_table}_item_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'item_id');
             $table->foreignId('warehouse_id')
                 ->constrained(ERPTables::Warehouses->value, 'id', "{$stock_movements_table}_warehouse_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'warehouse_id');
             $table->enum('direction', StockMovementDirection::values())->index("{$stock_movements_table}_direction_IDX");
             $table->decimal('quantity', 15, 4)->comment('Always positive; sign implied by direction');
             $table->decimal('unit_cost', 15, 4)->nullable()->comment('Document or computed unit cost for this movement');

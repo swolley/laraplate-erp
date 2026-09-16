@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('party_id')
                 ->constrained(ERPTables::Parties->value, 'id', "{$purchase_orders_table}_party_id_FK")
                 ->restrictOnDelete();
+            MigrateUtils::prefixIndex($table, 'party_id');
             $table->string('reference', 64)->nullable();
             $table->char('currency', 3)->default('EUR');
             $table->enum('status', PurchaseOrderStatus::values())->default(PurchaseOrderStatus::Draft->value)->index("{$purchase_orders_table}_status_IDX");
