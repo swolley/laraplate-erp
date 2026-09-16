@@ -28,7 +28,10 @@ return new class extends Migration
             $table->date('payment_date');
             ERPMigrateUtils::moneyColumns($table);
             $table->string('reference', 64)->nullable();
-            $table->unsignedBigInteger('bank_account_id')->nullable();
+            $table->foreignId('bank_account_id')
+                ->nullable()
+                ->constrained(ERPTables::BankAccounts->value, 'id', "{$payments_table}_bank_account_id_FK")
+                ->nullOnDelete();
             $table->foreignId('journal_entry_id')
                 ->nullable()
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$payments_table}_journal_entry_id_FK")

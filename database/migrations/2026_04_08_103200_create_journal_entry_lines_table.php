@@ -24,6 +24,12 @@ return new class extends Migration
                 ->constrained(ERPTables::Accounts->value, 'id', "{$journal_entry_lines_table}_account_id_FK")
                 ->restrictOnDelete();
 
+            $table->foreignId('tax_code_id')
+                ->nullable()
+                ->constrained(ERPTables::TaxCodes->value, 'id', "{$journal_entry_lines_table}_tax_code_id_FK")
+                ->nullOnDelete()
+                ->comment('Optional FK; fiscal strings remain the immutable posting snapshot');
+
             ERPMigrateUtils::moneyColumns($table);
 
             $table->string('tax_code', 32)->nullable();

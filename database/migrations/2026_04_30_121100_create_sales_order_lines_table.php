@@ -24,6 +24,10 @@ return new class extends Migration
                 ->nullable()
                 ->constrained(ERPTables::QuotationItems->value, 'id', "{$sales_order_lines_table}_quotation_item_id_FK")
                 ->nullOnDelete();
+            $table->foreignId('item_id')
+                ->nullable()
+                ->constrained(ERPTables::Items->value, 'id', "{$sales_order_lines_table}_item_id_FK")
+                ->nullOnDelete();
             $table->string('name');
             $table->decimal('qty_ordered', 15, 4)->default(1);
             $table->decimal('qty_delivered', 15, 4)->default(0);

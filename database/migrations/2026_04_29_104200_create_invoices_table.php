@@ -38,6 +38,10 @@ return new class extends Migration
                 ->constrained(ERPTables::JournalEntries->value, 'id', "{$invoices_table}_journal_entry_id_FK")
                 ->nullOnDelete();
             $table->text('notes')->nullable();
+            $table->foreignId('payment_term_id')
+                ->nullable()
+                ->constrained(ERPTables::PaymentTerms->value, 'id', "{$invoices_table}_payment_term_id_FK")
+                ->restrictOnDelete();
             $table->string('einvoice_transmission_format', 5)->nullable()->comment('FatturaPA transmission format, e.g. FPR12 or FPA12');
             $table->string('einvoice_recipient_code', 7)->nullable();
             $table->string('einvoice_pec_email')->nullable();
