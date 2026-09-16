@@ -13,16 +13,6 @@ use Modules\ERP\Database\Factories\WarehouseFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property string $name
- * @property string $code
- * @property int|null $site_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperWarehouse
- */
 final class Warehouse extends Model
 {
     use BelongsToCompany;

@@ -18,17 +18,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * CRM opportunity (M3.1): qualified deal linked to a {@see Party} and pipeline {@see OpportunityStage}.
- *
- * @property OpportunityStatus $status
- * @property int $party_id
- * @property int $company_id
- * @property numeric-string|null $expected_value_doc
- * @property numeric-string|null $expected_value_local
- * @property \Carbon\CarbonInterface|null $won_at
- * @property \Carbon\CarbonInterface|null $lost_at
- *
- * @mixin \Eloquent
- * @mixin IdeHelperOpportunity
  */
 final class Opportunity extends Model
 {

@@ -15,9 +15,6 @@ use Override;
 
 /**
  * Business preset model; behaviour lives in Core — this class exists for the Business namespace and Filament resources.
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPreset
  */
 final class Preset extends CorePreset
 {

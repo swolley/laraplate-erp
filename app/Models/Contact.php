@@ -15,14 +15,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\Contactable;
 use Override;
 
-/**
- * @property int|string $id
- * @property int|null $user_id
- * @property-read User|null $user
- *
- * @mixin \Eloquent
- * @mixin IdeHelperContact
- */
 final class Contact extends Model
 {
     use BelongsToCompany;

@@ -14,15 +14,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Rules\TimeEntryOverlap;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $user_id
- * @property \Carbon\CarbonInterface $started_at
- * @property \Carbon\CarbonInterface|null $ended_at
- *
- * @mixin \Eloquent
- * @mixin IdeHelperTimeEntry
- */
 final class TimeEntry extends Model
 {
     /**

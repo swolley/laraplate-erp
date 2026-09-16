@@ -12,21 +12,6 @@ use Override;
 
 /**
  * Immutable archive row for a generated ERP report snapshot.
- *
- * @property int|string $id
- * @property int $company_id
- * @property string $report_key
- * @property string $title
- * @property array<string, mixed>|null $parameters
- * @property array<string, mixed> $snapshot_payload
- * @property string|null $csv_content
- * @property string|null $pdf_content
- * @property string $content_hash
- * @property \Carbon\CarbonInterface $generated_at
- * @property bool $is_immutable
- *
- * @mixin \Eloquent
- * @mixin IdeHelperReportSnapshot
  */
 final class ReportSnapshot extends Model
 {

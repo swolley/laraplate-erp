@@ -11,16 +11,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property string $name
- * @property list<array{days?: int, percent?: float|int}> $rate_lines
- * @property bool $is_active
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPaymentTerm
- */
 final class PaymentTerm extends Model
 {
     use BelongsToCompany, HasActivation;

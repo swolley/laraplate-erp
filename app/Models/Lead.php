@@ -19,9 +19,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * CRM lead (M3.1): early-stage prospect before a formal {@see Opportunity}.
- *
- * @mixin \Eloquent
- * @mixin IdeHelperLead
  */
 final class Lead extends Model
 {

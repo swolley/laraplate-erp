@@ -15,18 +15,6 @@ use Override;
 
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
- *
- * @property int|string $id
- * @property int $purchase_order_id
- * @property int|null $item_id
- * @property string $name
- * @property numeric-string $qty_ordered
- * @property numeric-string $qty_received
- * @property numeric-string $qty_returned
- * @property numeric-string|null $unit_price
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPurchaseOrderLine
  */
 final class PurchaseOrderLine extends Model
 {

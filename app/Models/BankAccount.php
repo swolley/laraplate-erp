@@ -11,14 +11,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property string $currency
- *
- * @mixin \Eloquent
- * @mixin IdeHelperBankAccount
- */
 final class BankAccount extends Model
 {
     use BelongsToCompany, HasActivation;

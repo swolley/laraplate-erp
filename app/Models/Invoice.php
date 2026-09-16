@@ -21,26 +21,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Minimal commercial invoice header (M2/M3 bridge): full lifecycle comes in M3.5.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int|null $party_id
- * @property InvoiceDirection $direction
- * @property InvoiceType $invoice_type
- * @property int|null $credited_invoice_id
- * @property string|null $reference
- * @property string|null $einvoice_transmission_format
- * @property string|null $einvoice_recipient_code
- * @property string|null $einvoice_pec_email
- * @property string $currency
- * @property \Carbon\CarbonInterface|null $posted_at
- * @property int|null $journal_entry_id
- * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceLine> $lines
- * @property int|null $payment_term_id
- * @property string|null $notes
- *
- * @mixin \Eloquent
- * @mixin IdeHelperInvoice
  */
 #[ObservedBy([InvoiceObserver::class])]
 final class Invoice extends Model

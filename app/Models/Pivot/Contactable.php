@@ -10,12 +10,6 @@ use Override;
 
 /**
  * Pivot linking ERP parties and contacts.
- *
- * @property int $party_id
- * @property int $contact_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperContactable
  */
 final class Contactable extends Pivot
 {

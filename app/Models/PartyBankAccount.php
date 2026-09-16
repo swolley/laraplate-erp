@@ -12,22 +12,6 @@ use Override;
 
 /**
  * Supplier or customer bank account used for payment execution snapshots.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int $party_id
- * @property string $beneficiary_name
- * @property string $iban
- * @property string|null $bic
- * @property string $currency
- * @property string|null $direct_debit_mandate_reference
- * @property \Carbon\CarbonInterface|null $direct_debit_mandate_signed_on
- * @property string|null $direct_debit_mandate_scheme
- * @property bool $is_default
- * @property bool $is_active
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPartyBankAccount
  */
 final class PartyBankAccount extends Model
 {

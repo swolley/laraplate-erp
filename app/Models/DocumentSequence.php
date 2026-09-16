@@ -12,15 +12,6 @@ use Override;
 
 /**
  * Per-company document number sequence state (increments under row lock).
- *
- * @property int $padding
- * @property int $last_number
- * @property string $prefix
- * @property string $suffix
- * @property string|null $format_pattern
- *
- * @mixin \Eloquent
- * @mixin IdeHelperDocumentSequence
  */
 final class DocumentSequence extends Model
 {

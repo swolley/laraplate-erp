@@ -9,16 +9,6 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $payment_id
- * @property int $payment_schedule_line_id
- * @property numeric-string $allocated_amount_doc
- * @property numeric-string $allocated_amount_local
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPaymentAllocation
- */
 final class PaymentAllocation extends Model
 {
     /**

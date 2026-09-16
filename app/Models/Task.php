@@ -14,10 +14,6 @@ use Override;
 
 // use Modules\ERP\Database\Factories\TaskFactory;
 
-/**
- * @mixin \Eloquent
- * @mixin IdeHelperTask
- */
 final class Task extends Model
 {
     use HasValidity;

@@ -11,10 +11,6 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin \Eloquent
- * @mixin IdeHelperPoolTransaction
- */
 final class PoolTransaction extends Model
 {
     #[Override]

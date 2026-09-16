@@ -15,9 +15,6 @@ use Override;
 
 /**
  * Single-tax-code row inside an Italian VAT register (registro IVA).
- *
- * @mixin \Eloquent
- * @mixin IdeHelperVatRegisterEntry
  */
 final class VatRegisterEntry extends Model implements RestrictsCrudWrites
 {

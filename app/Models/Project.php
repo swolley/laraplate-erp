@@ -16,14 +16,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $party_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperProject
- */
 final class Project extends Model
 {
     use BelongsToCompany;

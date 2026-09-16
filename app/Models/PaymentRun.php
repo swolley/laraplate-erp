@@ -16,24 +16,6 @@ use Override;
 
 /**
  * Approved batch of outbound supplier payments exported as a bank file.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int $bank_account_id
- * @property \Carbon\CarbonInterface $execution_date
- * @property string $currency
- * @property numeric-string $total_amount_doc
- * @property numeric-string $total_amount_local
- * @property PaymentRunStatus $status
- * @property PaymentRunFormat $format
- * @property \Carbon\CarbonInterface|null $approved_at
- * @property \Carbon\CarbonInterface|null $exported_at
- * @property string|null $export_file_name
- * @property string|null $export_checksum
- * @property-read \Illuminate\Database\Eloquent\Collection<int, PaymentRunLine> $lines
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPaymentRun
  */
 final class PaymentRun extends Model
 {

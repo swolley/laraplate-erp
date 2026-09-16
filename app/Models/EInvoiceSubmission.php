@@ -13,13 +13,6 @@ use Override;
 
 /**
  * Tracks outbound e-invoice submission attempts per invoice and logical provider.
- *
- * @property string|null $external_id
- * @property EInvoiceSubmissionStatus $status
- * @property array<string, mixed>|null $response_payload
- *
- * @mixin \Eloquent
- * @mixin IdeHelperEInvoiceSubmission
  */
 final class EInvoiceSubmission extends Model
 {

@@ -10,15 +10,6 @@ use Override;
 
 /**
  * Historical exchange rate from one ISO currency to another.
- *
- * @property string $from_currency
- * @property string $to_currency
- * @property numeric-string $rate
- * @property \Carbon\CarbonInterface $rate_date
- * @property string|null $source
- *
- * @mixin \Eloquent
- * @mixin IdeHelperExchangeRate
  */
 final class ExchangeRate extends Model
 {

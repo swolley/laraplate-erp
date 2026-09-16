@@ -16,21 +16,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int|null $sales_order_id
- * @property DeliveryNoteDirection $direction
- * @property string|null $reference
- * @property \Carbon\CarbonInterface|null $delivered_at
- * @property \Carbon\CarbonInterface|null $posted_at
- * @property \Carbon\CarbonInterface|null $inventory_posted_at
- * @property int|null $cogs_journal_entry_id
- * @property string|null $notes
- *
- * @mixin \Eloquent
- * @mixin IdeHelperDeliveryNote
- */
 #[ObservedBy([DeliveryNoteObserver::class])]
 final class DeliveryNote extends Model
 {

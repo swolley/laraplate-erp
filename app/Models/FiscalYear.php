@@ -15,17 +15,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Fiscal year boundary for accounting closes and reporting.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int $year
- * @property \Carbon\CarbonInterface $start_date
- * @property \Carbon\CarbonInterface $end_date
- * @property bool $is_closed
- * @property-read \Illuminate\Database\Eloquent\Collection<int, FiscalPeriod> $fiscal_periods
- *
- * @mixin \Eloquent
- * @mixin IdeHelperFiscalYear
  */
 final class FiscalYear extends Model
 {

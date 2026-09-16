@@ -17,16 +17,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\Contactable;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property string $name
- * @property bool $is_customer
- * @property bool $is_supplier
- *
- * @mixin \Eloquent
- * @mixin IdeHelperParty
- */
 final class Party extends Model
 {
     use BelongsToCompany;

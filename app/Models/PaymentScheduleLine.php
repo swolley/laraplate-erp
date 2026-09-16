@@ -13,24 +13,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $invoice_id
- * @property \Carbon\CarbonInterface $due_date
- * @property numeric-string $amount_doc
- * @property string $currency_doc
- * @property numeric-string $amount_local
- * @property string $currency_local
- * @property numeric-string $fx_rate
- * @property numeric-string $paid_amount_doc
- * @property numeric-string $paid_amount_local
- * @property PaymentScheduleStatus $status
- * @property \Carbon\CarbonInterface|null $paid_at
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPaymentScheduleLine
- */
 final class PaymentScheduleLine extends Model
 {
     use BelongsToCompany;

@@ -12,12 +12,6 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property numeric-string $unit_price
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPriceListItem
- */
 final class PriceListItem extends Model
 {
     use HasValidity;

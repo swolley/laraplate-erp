@@ -11,10 +11,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\PartnerPool;
 use Override;
 
-/**
- * @mixin \Eloquent
- * @mixin IdeHelperPartnerPoolHasUser
- */
 final class PartnerPoolHasUser extends Pivot
 {
     #[Override]

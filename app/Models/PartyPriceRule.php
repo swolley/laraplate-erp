@@ -14,13 +14,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property DiscountType $discount_type
- * @property numeric-string $discount_value
- *
- * @mixin \Eloquent
- * @mixin IdeHelperPartyPriceRule
- */
 final class PartyPriceRule extends Model
 {
     use BelongsToCompany;

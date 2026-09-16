@@ -17,24 +17,6 @@ use Override;
 
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
- *
- * @property int|string $id
- * @property int $journal_entry_id
- * @property int $line_no
- * @property int $account_id
- * @property int|null $tax_code_id
- * @property numeric-string $amount_doc
- * @property string $currency_doc
- * @property numeric-string $amount_local
- * @property string $currency_local
- * @property numeric-string $fx_rate
- * @property string|null $tax_code
- * @property numeric-string|null $tax_rate
- * @property string|null $tax_label
- * @property string|null $description
- *
- * @mixin \Eloquent
- * @mixin IdeHelperJournalEntryLine
  */
 final class JournalEntryLine extends Model implements RestrictsCrudWrites
 {

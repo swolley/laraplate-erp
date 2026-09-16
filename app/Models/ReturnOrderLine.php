@@ -11,21 +11,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $return_order_id
- * @property int|null $invoice_line_id
- * @property int|null $delivery_note_line_id
- * @property int $item_id
- * @property int $warehouse_id
- * @property numeric-string $quantity
- * @property numeric-string|null $unit_cost
- * @property numeric-string|null $unit_price
- *
- * @mixin \Eloquent
- * @mixin IdeHelperReturnOrderLine
- */
 final class ReturnOrderLine extends Model
 {
     use BelongsToCompany;

@@ -10,10 +10,6 @@ use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin \Eloquent
- * @mixin IdeHelperQuotationItem
- */
 final class QuotationItem extends Model
 {
     /**

@@ -16,28 +16,6 @@ use Override;
 
 /**
  * Invoice line with optional live FK and immutable fiscal snapshot at posting.
- *
- * @property int|string $id
- * @property int $invoice_id
- * @property int $line_no
- * @property string|null $description
- * @property numeric-string $quantity
- * @property numeric-string $qty_returned
- * @property numeric-string $unit_price
- * @property int|null $tax_code_id
- * @property int|null $item_id
- * @property int|null $sales_order_line_id
- * @property string|null $tax_code
- * @property numeric-string|null $tax_rate
- * @property string|null $tax_label
- * @property int|null $purchase_order_line_id
- * @property int|null $goods_receipt_line_id
- * @property MatchStatus|null $match_status
- * @property array<string, mixed>|null $match_discrepancy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, DeliveryNoteLine> $delivery_note_lines
- *
- * @mixin \Eloquent
- * @mixin IdeHelperInvoiceLine
  */
 final class InvoiceLine extends Model
 {

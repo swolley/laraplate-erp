@@ -12,18 +12,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $item_id
- * @property int $warehouse_id
- * @property int $stock_movement_id
- * @property numeric-string $qty_remaining
- * @property numeric-string $unit_cost
- *
- * @mixin \Eloquent
- * @mixin IdeHelperStockCostLayer
- */
 final class StockCostLayer extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;

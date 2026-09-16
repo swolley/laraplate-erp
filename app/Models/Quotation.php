@@ -20,15 +20,6 @@ use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
 #[ObservedBy([QuotationObserver::class])]
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $party_id
- * @property int|null $opportunity_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperQuotation
- */
 final class Quotation extends Model
 {
     use BelongsToCompany;

@@ -19,17 +19,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * Sub-year accounting bucket (typically a calendar month).
  *
  * Scoped through {@see FiscalYear} for multi-company isolation.
- *
- * @property int|string $id
- * @property int $fiscal_year_id
- * @property int $period_no
- * @property \Carbon\CarbonInterface $start_date
- * @property \Carbon\CarbonInterface $end_date
- * @property bool $is_closed
- * @property-read FiscalYear|null $fiscal_year
- *
- * @mixin \Eloquent
- * @mixin IdeHelperFiscalPeriod
  */
 final class FiscalPeriod extends Model
 {

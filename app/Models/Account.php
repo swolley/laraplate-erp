@@ -18,12 +18,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * General ledger account node (chart of accounts).
- *
- * @property int|string $id
- * @property int $company_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperAccount
  */
 final class Account extends Model
 {

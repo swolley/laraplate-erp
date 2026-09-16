@@ -22,21 +22,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Party sales order (M3.2) with optional links to a {@see Quotation} and {@see Project}.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int $party_id
- * @property int|null $quotation_id
- * @property int|null $project_id
- * @property int|null $amends_sales_order_id
- * @property string|null $reference
- * @property string $currency
- * @property SalesOrderStatus $status
- * @property string|null $notes
- * @property-read \Illuminate\Database\Eloquent\Collection<int, SalesOrderLine> $lines
- *
- * @mixin \Eloquent
- * @mixin IdeHelperSalesOrder
  */
 final class SalesOrder extends Model
 {

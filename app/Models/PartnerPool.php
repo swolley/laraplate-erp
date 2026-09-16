@@ -14,10 +14,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\PartnerPoolHasUser;
 use Override;
 
-/**
- * @mixin \Eloquent
- * @mixin IdeHelperPartnerPool
- */
 final class PartnerPool extends Model
 {
     use BelongsToCompany, HasActivation;

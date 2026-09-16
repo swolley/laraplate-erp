@@ -11,30 +11,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @property int|string $id
- * @property int $company_id
- * @property int $bank_statement_id
- * @property int|null $matched_payment_id
- * @property int|null $difference_journal_entry_id
- * @property \Carbon\CarbonInterface|null $booked_at
- * @property \Carbon\CarbonInterface|null $value_at
- * @property string|null $reference
- * @property string|null $description
- * @property numeric-string $amount_doc
- * @property string $currency_doc
- * @property numeric-string $amount_local
- * @property string $currency_local
- * @property numeric-string $fx_rate
- * @property BankStatementLineStatus $status
- * @property array<string, mixed>|null $raw_payload
- * @property-read BankStatement|null $bank_statement
- * @property-read Payment|null $matched_payment
- * @property-read JournalEntry|null $difference_journal_entry
- *
- * @mixin \Eloquent
- * @mixin IdeHelperBankStatementLine
- */
 final class BankStatementLine extends Model
 {
     use BelongsToCompany;

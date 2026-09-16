@@ -12,19 +12,6 @@ use Override;
 
 /**
  * Line on a {@see GoodsReceipt} driving stock-in and optional PO receipt progress.
- *
- * @property int|string $id
- * @property int $company_id
- * @property int $goods_receipt_id
- * @property int $item_id
- * @property int $warehouse_id
- * @property numeric-string $quantity
- * @property numeric-string $qty_returned
- * @property numeric-string|null $unit_cost
- * @property int|null $purchase_order_line_id
- *
- * @mixin \Eloquent
- * @mixin IdeHelperGoodsReceiptLine
  */
 final class GoodsReceiptLine extends Model
 {
