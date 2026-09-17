@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Models\Place;
@@ -17,9 +18,8 @@ use Override;
 /**
  * Physical premise (branch) for on-site work; optional LOCATION for calendar exports (ICS).
  *
- * @mixin IdeHelperSite
  */
-final class Site extends Model
+final class Site extends Model implements IValidatableModel
 {
     use BelongsToCompany;
     use HasValidity;

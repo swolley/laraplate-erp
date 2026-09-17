@@ -11,9 +11,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperBankStatementLine
- */
 final class BankStatementLine extends Model
 {
     use BelongsToCompany;

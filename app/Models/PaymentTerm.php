@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IActivatableModel;
 use Modules\Core\Models\Concerns\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperPaymentTerm
- */
-final class PaymentTerm extends Model
+final class PaymentTerm extends Model implements IActivatableModel
 {
     use BelongsToCompany, HasActivation;
 

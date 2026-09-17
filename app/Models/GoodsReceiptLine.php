@@ -13,7 +13,6 @@ use Override;
 /**
  * Line on a {@see GoodsReceipt} driving stock-in and optional PO receipt progress.
  *
- * @mixin IdeHelperGoodsReceiptLine
  */
 final class GoodsReceiptLine extends Model
 {

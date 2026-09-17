@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IActivatableModel;
 use Modules\Core\Models\Concerns\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\TaxKind;
@@ -18,9 +19,8 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * Immutable fiscal code row (VAT / withholding). Rate changes = new row + supersession link.
  *
- * @mixin IdeHelperTaxCode
  */
-final class TaxCode extends Model
+final class TaxCode extends Model implements IActivatableModel
 {
     use BelongsToCompany, HasActivation;
 

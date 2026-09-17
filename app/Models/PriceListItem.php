@@ -6,16 +6,14 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperPriceListItem
- */
-final class PriceListItem extends Model
+final class PriceListItem extends Model implements IValidatableModel
 {
     use HasValidity;
 

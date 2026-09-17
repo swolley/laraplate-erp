@@ -22,7 +22,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * Minimal commercial invoice header (M2/M3 bridge): full lifecycle comes in M3.5.
  *
- * @mixin IdeHelperInvoice
  */
 #[ObservedBy([InvoiceObserver::class])]
 final class Invoice extends Model

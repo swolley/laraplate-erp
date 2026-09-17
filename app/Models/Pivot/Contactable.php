@@ -11,7 +11,6 @@ use Override;
 /**
  * Pivot linking ERP parties and contacts.
  *
- * @mixin IdeHelperContactable
  */
 final class Contactable extends Pivot
 {

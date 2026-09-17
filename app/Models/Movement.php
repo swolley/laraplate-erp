@@ -14,9 +14,6 @@ use Override;
 
 // use Modules\ERP\Database\Factories\MovementFactory;
 
-/**
- * @mixin IdeHelperMovement
- */
 final class Movement extends Model
 {
     use BelongsToCompany;

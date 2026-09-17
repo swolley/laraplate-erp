@@ -15,7 +15,6 @@ use Override;
 /**
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
  *
- * @mixin IdeHelperVatSettlement
  */
 final class VatSettlement extends Model
 {

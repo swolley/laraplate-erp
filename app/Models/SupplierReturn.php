@@ -13,9 +13,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperSupplierReturn
- */
 final class SupplierReturn extends Model implements OverridesGenericCrudActions
 {
     use BelongsToCompany;

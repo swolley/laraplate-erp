@@ -11,9 +11,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @mixin IdeHelperSupplierReturnLine
- */
 final class SupplierReturnLine extends Model
 {
     use BelongsToCompany;

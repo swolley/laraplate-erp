@@ -11,7 +11,6 @@ use Override;
 /**
  * Pivot linking invoice lines to delivery-note lines with covered quantity.
  *
- * @mixin IdeHelperInvoiceLineHasDeliveryNoteLine
  */
 final class InvoiceLineHasDeliveryNoteLine extends Pivot
 {

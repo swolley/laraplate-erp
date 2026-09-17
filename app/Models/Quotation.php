@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\ILockableModel;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
@@ -19,11 +21,8 @@ use Modules\ERP\Observers\QuotationObserver;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @mixin IdeHelperQuotation
- */
 #[ObservedBy([QuotationObserver::class])]
-final class Quotation extends Model
+final class Quotation extends Model implements ILockableModel, IValidatableModel
 {
     use BelongsToCompany;
     use HasLocks;

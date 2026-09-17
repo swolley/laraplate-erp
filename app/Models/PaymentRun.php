@@ -17,7 +17,6 @@ use Override;
 /**
  * Approved batch of outbound supplier payments exported as a bank file.
  *
- * @mixin IdeHelperPaymentRun
  */
 final class PaymentRun extends Model
 {

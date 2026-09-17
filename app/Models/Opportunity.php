@@ -19,7 +19,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * CRM opportunity (M3.1): qualified deal linked to a {@see Party} and pipeline {@see OpportunityStage}.
  *
- * @mixin IdeHelperOpportunity
  */
 final class Opportunity extends Model
 {

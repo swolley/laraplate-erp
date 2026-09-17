@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperPriceList
- */
-final class PriceList extends Model
+final class PriceList extends Model implements IValidatableModel
 {
     use BelongsToCompany;
     use HasValidity;

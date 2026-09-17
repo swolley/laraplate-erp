@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
@@ -14,10 +15,7 @@ use Override;
 
 // use Modules\ERP\Database\Factories\TaskFactory;
 
-/**
- * @mixin IdeHelperTask
- */
-final class Task extends Model
+final class Task extends Model implements IValidatableModel
 {
     use HasValidity;
 

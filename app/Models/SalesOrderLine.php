@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\ILockableModel;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderLineStatus;
@@ -17,9 +18,8 @@ use Override;
 /**
  * Line item on a {@see SalesOrder}.
  *
- * @mixin IdeHelperSalesOrderLine
  */
-final class SalesOrderLine extends Model
+final class SalesOrderLine extends Model implements ILockableModel
 {
     use HasLocks;
 

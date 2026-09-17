@@ -7,6 +7,8 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\ILockableModel;
+use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Models\Concerns\HasValidity;
 use Modules\Core\Overrides\Model;
@@ -16,10 +18,7 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @mixin IdeHelperProject
- */
-final class Project extends Model
+final class Project extends Model implements ILockableModel, IValidatableModel
 {
     use BelongsToCompany;
     use HasLocks;

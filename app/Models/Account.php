@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IActivatableModel;
 use Modules\Core\Models\Concerns\HasActivation;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\AccountKind;
@@ -19,9 +20,8 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 /**
  * General ledger account node (chart of accounts).
  *
- * @mixin IdeHelperAccount
  */
-final class Account extends Model
+final class Account extends Model implements IActivatableModel
 {
     use BelongsToCompany, HasActivation;
 

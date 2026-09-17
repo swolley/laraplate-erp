@@ -11,9 +11,6 @@ use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Pivot\Presettable;
 use Override;
 
-/**
- * @mixin IdeHelperActivity
- */
 final class Activity extends Taxonomy
 {
     #[Override]

@@ -12,9 +12,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperStockCostLayer
- */
 final class StockCostLayer extends Model implements RestrictsCrudWrites
 {
     use BelongsToCompany;

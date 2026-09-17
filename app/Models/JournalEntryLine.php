@@ -18,7 +18,6 @@ use Override;
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
  *
- * @mixin IdeHelperJournalEntryLine
  */
 final class JournalEntryLine extends Model implements RestrictsCrudWrites
 {

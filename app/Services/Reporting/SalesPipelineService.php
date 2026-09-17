@@ -94,7 +94,7 @@ final class SalesPipelineService
     /**
      * @return Enumerable<int, Opportunity>
      */
-    private function loadOpportunities(int $company_id): Enumerable
+    protected function loadOpportunities(int $company_id): Enumerable
     {
         return Opportunity::query()
             ->where('company_id', $company_id)

@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IActivatableModel;
 use Modules\Core\Models\Concerns\HasActivation;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
@@ -14,10 +15,7 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\PartnerPoolHasUser;
 use Override;
 
-/**
- * @mixin IdeHelperPartnerPool
- */
-final class PartnerPool extends Model
+final class PartnerPool extends Model implements IActivatableModel
 {
     use BelongsToCompany, HasActivation;
 

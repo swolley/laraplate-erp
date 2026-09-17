@@ -16,9 +16,6 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-/**
- * @mixin IdeHelperPurchaseOrder
- */
 final class PurchaseOrder extends Model
 {
     use BelongsToCompany;

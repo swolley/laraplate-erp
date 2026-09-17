@@ -16,7 +16,6 @@ use Override;
 /**
  * Line on a {@see DeliveryNote} driving stock movement and optional SO evasion.
  *
- * @mixin IdeHelperDeliveryNoteLine
  */
 final class DeliveryNoteLine extends Model
 {

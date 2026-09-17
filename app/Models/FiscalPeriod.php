@@ -20,7 +20,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  *
  * Scoped through {@see FiscalYear} for multi-company isolation.
  *
- * @mixin IdeHelperFiscalPeriod
  */
 final class FiscalPeriod extends Model
 {

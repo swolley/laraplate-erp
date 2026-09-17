@@ -13,9 +13,6 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-/**
- * @mixin IdeHelperPayment
- */
 final class Payment extends Model
 {
     use BelongsToCompany;
