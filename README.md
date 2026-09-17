@@ -102,9 +102,11 @@ Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpComp
 -   Laravel 12.0+
 -   **Recommended:** Laraplate **Core** for users, permissions, and shared infrastructure (typical production setup)
 
-### Installed Packages (development)
+### Quality toolchain (declared by the application)
 
-The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
+The module declares no `require-dev` of its own — it was removed on 2026-09-15, together with its
+`phpunit.xml`, `pint.json`, `rector.php` and `peck.json`. The packages below are installed and
+configured once in the root `composer.json`, and the module is analysed and formatted from there:
 
 -   [pestphp/pest](https://github.com/pestphp/pest) and Laravel / type-coverage plugins
 -   [laravel/pint](https://github.com/laravel/pint)
@@ -445,11 +447,17 @@ receipt to invoice. Identifiers are stable and the seeder is idempotent, so runn
 changes nothing.
 
 
+The module has no runner of its own: its tests extend the application's `TestCase`
+and it has no `vendor/`, so everything below runs **from the application root**.
+
 ### Code quality and testing
 
 ```bash
+php artisan test --compact Modules/ERP/tests        # the whole module
+php artisan test --compact Modules/ERP/tests/Unit   # one suite of it
+php artisan test --compact --testsuite=Unit         # the fast suite, every module
+
 composer test                 # Full test and quality pipeline
-composer test:standalone      # Unit-focused Pest run
 composer test:type-coverage   # Type coverage (target: 100%)
 composer test:typos           # Peck typo check
 composer test:lint            # Pint + Rector dry-run

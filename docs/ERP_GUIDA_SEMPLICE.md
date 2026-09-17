@@ -402,11 +402,17 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 The ERP module exposes the same Composer script conventions as **Cms** and **Core**:
 
+The module has no runner of its own: its tests extend the application's `TestCase`
+and it has no `vendor/`, so everything below runs **from the application root**.
+
 ### Code quality and testing
 
 ```bash
+php artisan test --compact Modules/ERP/tests        # the whole module
+php artisan test --compact Modules/ERP/tests/Unit   # one suite of it
+php artisan test --compact --testsuite=Unit         # the fast suite, every module
+
 composer test                 # Full test and quality pipeline
-composer test:standalone      # Unit-focused Pest run
 composer test:type-coverage   # Type coverage (target: 100%)
 composer test:typos           # Peck typo check
 composer test:lint            # Pint + Rector dry-run
