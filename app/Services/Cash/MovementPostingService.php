@@ -35,14 +35,14 @@ final readonly class MovementPostingService
             $company_query = $models->query(Company::class);
             $account_query = $models->query(Account::class);
             $models->model(FiscalPeriod::class);
-            $locked = $movement_query->withoutGlobalScopes()->lockForUpdate()->findOrFail($movement->id);
+            $locked = $movement_query->withoutGlobalScopes()->lockForUpdate()->whereKey($movement->id)->firstOrFail();
 
             if ($locked->posted_journal_entry_id !== null) {
-                return $journal_entry_query->withoutGlobalScopes()->findOrFail($locked->posted_journal_entry_id);
+                return $journal_entry_query->withoutGlobalScopes()->whereKey($locked->posted_journal_entry_id)->firstOrFail();
             }
 
-            $company = $company_query->withoutGlobalScopes()->findOrFail($locked->company_id);
-            $counterparty = $account_query->withoutGlobalScopes()->findOrFail($locked->counterparty_account_id);
+            $company = $company_query->withoutGlobalScopes()->whereKey($locked->company_id)->firstOrFail();
+            $counterparty = $account_query->withoutGlobalScopes()->whereKey($locked->counterparty_account_id)->firstOrFail();
             $this->validateCounterparty($locked, $counterparty);
             $bank_cash = $this->bankCashAccount($models, $company);
             $occurred_on = CarbonImmutable::parse($locked->occurred_on);

@@ -102,7 +102,7 @@ final class BankReconciliationService
                 ]);
             }
 
-            $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($line->company_id);
+            $company = $models->query(Company::class)->withoutGlobalScopes()->whereKey($line->company_id)->firstOrFail();
             $bank_account_id = $line->bank_statement?->bank_account_id;
 
             if ($bank_account_id === null) {

@@ -33,11 +33,11 @@ final readonly class ExternalExpenseAllocationService
             $movement = $models->query(Movement::class)
                 ->withoutGlobalScopes()
                 ->lockForUpdate()
-                ->findOrFail($input->movementId);
+                ->whereKey($input->movementId)->firstOrFail();
             $pool = $models->query(PartnerPool::class)
                 ->withoutGlobalScopes()
                 ->lockForUpdate()
-                ->findOrFail($input->partnerPoolId);
+                ->whereKey($input->partnerPoolId)->firstOrFail();
             $identity = $input->identity();
             $registered_movement_id = $this->originRegistry->referableId(
                 $movement,

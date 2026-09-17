@@ -61,7 +61,7 @@ final readonly class SalesOrderAmendmentService
                 ]);
             }
 
-            $company = $company_query->withoutGlobalScopes()->findOrFail($locked_source->company_id);
+            $company = $company_query->withoutGlobalScopes()->whereKey($locked_source->company_id)->firstOrFail();
             $new_reference = $this->document_number_allocator->next($company, DocumentType::SalesOrder, 0);
 
             $amendment = $models->query(SalesOrder::class)->create([

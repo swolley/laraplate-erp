@@ -25,7 +25,7 @@ final readonly class QuotationRevisionService
             $source = $quotation_query
                 ->with('quotation_items')
                 ->lockForUpdate()
-                ->findOrFail($quotation->id);
+                ->whereKey($quotation->id)->firstOrFail();
 
             if ($source->status === QuoteStatus::Draft && ! $source->isLocked()) {
                 throw ValidationException::withMessages([

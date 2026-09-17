@@ -72,7 +72,7 @@ final readonly class ExternalCashMovementImportService
                 $movement = $models->query(Movement::class)
                     ->withoutGlobalScopes()
                     ->lockForUpdate()
-                    ->findOrFail($movement_id);
+                    ->whereKey($movement_id)->firstOrFail();
 
                 if ($movement->posted_journal_entry_id !== null) {
                     $identity = $input->identity();
@@ -93,7 +93,7 @@ final readonly class ExternalCashMovementImportService
 
             $counterparty = $models->query(Account::class)
                 ->withoutGlobalScopes()
-                ->findOrFail($movement->counterparty_account_id);
+                ->whereKey($movement->counterparty_account_id)->firstOrFail();
             $this->movement_posting_service->validateCounterparty($movement, $counterparty);
 
             $journal_entry_id = null;

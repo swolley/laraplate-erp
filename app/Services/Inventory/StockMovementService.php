@@ -51,8 +51,8 @@ final class StockMovementService
 
         $unit_cost_string = $this->normalizeMoneyString($unit_cost);
         $company = $source instanceof Model
-            ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
-            : $this->connection_context->model(Company::class)->newQuery()->findOrFail($company_id);
+            ? ConnectionScopedModels::for($source)->query(Company::class)->whereKey($company_id)->firstOrFail()
+            : $this->connection_context->model(Company::class)->newQuery()->whereKey($company_id)->firstOrFail();
 
         if ($source instanceof Model) {
             ConnectionScopedTransaction::connection($company, $source);
@@ -138,8 +138,8 @@ final class StockMovementService
             ]);
         }
         $company = $source instanceof Model
-            ? ConnectionScopedModels::for($source)->query(Company::class)->findOrFail($company_id)
-            : $this->connection_context->model(Company::class)->newQuery()->findOrFail($company_id);
+            ? ConnectionScopedModels::for($source)->query(Company::class)->whereKey($company_id)->firstOrFail()
+            : $this->connection_context->model(Company::class)->newQuery()->whereKey($company_id)->firstOrFail();
 
         if ($source instanceof Model) {
             ConnectionScopedTransaction::connection($company, $source);

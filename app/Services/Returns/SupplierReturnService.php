@@ -39,7 +39,7 @@ final readonly class SupplierReturnService
             $models->model(Party::class);
 
             /** @var SupplierReturn $locked */
-            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->findOrFail((int) $supplier_return->id);
+            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->whereKey((int) $supplier_return->id)->firstOrFail();
 
             if ($locked->status !== ReturnStatus::Draft) {
                 throw ValidationException::withMessages([
@@ -90,7 +90,7 @@ final readonly class SupplierReturnService
             $locked = $models->query(SupplierReturn::class)
                 ->with('lines')
                 ->lockForUpdate()
-                ->findOrFail((int) $supplier_return->id);
+                ->whereKey((int) $supplier_return->id)->firstOrFail();
 
             if ($locked->status !== ReturnStatus::Processed) {
                 throw ValidationException::withMessages([
@@ -153,7 +153,7 @@ final readonly class SupplierReturnService
             $locked = $models->query(SupplierReturn::class)
                 ->with('lines')
                 ->lockForUpdate()
-                ->findOrFail((int) $supplier_return->id);
+                ->whereKey((int) $supplier_return->id)->firstOrFail();
 
             if ($locked->status !== ReturnStatus::Processed) {
                 throw ValidationException::withMessages([
@@ -240,7 +240,7 @@ final readonly class SupplierReturnService
     {
         return ConnectionScopedTransaction::run($supplier_return, function (ConnectionScopedModels $models) use ($supplier_return): SupplierReturn {
             /** @var SupplierReturn $locked */
-            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->findOrFail((int) $supplier_return->id);
+            $locked = $models->query(SupplierReturn::class)->lockForUpdate()->whereKey((int) $supplier_return->id)->firstOrFail();
 
             if (! in_array($locked->status, [ReturnStatus::Draft, ReturnStatus::Approved], true)) {
                 throw ValidationException::withMessages([
@@ -470,7 +470,7 @@ final readonly class SupplierReturnService
         }
 
         /** @var InvoiceLine $invoice_line */
-        $invoice_line = $models->query(InvoiceLine::class)->with('invoice')->findOrFail($source_line_id);
+        $invoice_line = $models->query(InvoiceLine::class)->with('invoice')->whereKey($source_line_id)->firstOrFail();
 
         /** @var Invoice $invoice */
         return $invoice_line->invoice;

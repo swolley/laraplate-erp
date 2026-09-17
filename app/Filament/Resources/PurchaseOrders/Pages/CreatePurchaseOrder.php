@@ -29,7 +29,7 @@ final class CreatePurchaseOrder extends CreateRecord
         $company = app(ErpConnectionContext::class)
             ->model(Company::class)
             ->newQuery()
-            ->findOrFail((int) $data['company_id']);
+            ->whereKey((int) $data['company_id'])->firstOrFail();
         $models = ConnectionScopedModels::for($company);
 
         if (blank($data['reference'] ?? null)) {

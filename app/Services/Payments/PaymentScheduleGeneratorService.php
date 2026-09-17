@@ -54,7 +54,7 @@ final class PaymentScheduleGeneratorService
 
             $payment_term = $models->query(PaymentTerm::class)
                 ->withoutGlobalScopes()
-                ->findOrFail($invoice->payment_term_id);
+                ->whereKey($invoice->payment_term_id)->firstOrFail();
 
             foreach ($payment_term->rate_lines as $rate_line) {
                 $days = (int) ($rate_line['days'] ?? 0);

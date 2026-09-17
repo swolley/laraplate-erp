@@ -33,7 +33,7 @@ final readonly class FxRevaluationService
     ): ?JournalEntry {
         $company = $this->connection_context->model(Company::class)
             ->newQuery()
-            ->findOrFail($company_id);
+            ->whereKey($company_id)->firstOrFail();
 
         return ConnectionScopedTransaction::run($company, function (ConnectionScopedModels $models) use ($company, $company_id, $as_of, $balance_account_id, $gain_account_id, $loss_account_id): ?JournalEntry {
             $schedule_query = $models->query(PaymentScheduleLine::class);

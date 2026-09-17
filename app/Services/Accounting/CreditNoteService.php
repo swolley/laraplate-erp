@@ -103,7 +103,7 @@ final class CreditNoteService
         }
 
         $models ??= ConnectionScopedModels::for($credit_note);
-        $original = $models->query(Invoice::class)->withoutGlobalScopes()->findOrFail((int) $credit_note->credited_invoice_id);
+        $original = $models->query(Invoice::class)->withoutGlobalScopes()->whereKey((int) $credit_note->credited_invoice_id)->firstOrFail();
         $original_total = (float) $this->getInvoiceGrossTotal($models, $original);
         $existing_cn_total = (float) $this->getExistingCreditNoteTotal($models, $original, (int) $credit_note->id);
         $cn_total = (float) $this->getInvoiceGrossTotal($models, $credit_note);

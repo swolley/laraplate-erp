@@ -26,8 +26,8 @@ final class PartnerPoolSettlementService
             $movement_query = $models->query(Movement::class);
             $pool_query = $models->query(PartnerPool::class);
             $allocation_query = $models->query(MovementAllocation::class);
-            $pool = $pool_query->lockForUpdate()->findOrFail($pool->getKey());
-            $movement = $movement_query->lockForUpdate()->findOrFail($movement->getKey());
+            $pool = $pool_query->lockForUpdate()->whereKey($pool->getKey())->firstOrFail();
+            $movement = $movement_query->lockForUpdate()->whereKey($movement->getKey())->firstOrFail();
 
             if ($movement->type !== MovementType::Expense) {
                 $this->fail('movement', 'Only expense movements can be split between pool members.');
@@ -164,7 +164,7 @@ final class PartnerPoolSettlementService
             $pool_query = $models->query(PartnerPool::class);
             $transaction_query = $models->query(PoolTransaction::class);
             $models->model(MovementAllocation::class);
-            $pool = $pool_query->lockForUpdate()->findOrFail($pool->getKey());
+            $pool = $pool_query->lockForUpdate()->whereKey($pool->getKey())->firstOrFail();
 
             if ($from_user_id === $to_user_id) {
                 $this->fail('to_user_id', 'Settlement participants must be different.');

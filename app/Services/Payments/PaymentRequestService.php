@@ -18,7 +18,7 @@ final readonly class PaymentRequestService
     public function send(PaymentRequest $request): PaymentRequest
     {
         return ConnectionScopedTransaction::run($request, function (ConnectionScopedModels $models) use ($request): PaymentRequest {
-            $request = $models->query(PaymentRequest::class)->lockForUpdate()->findOrFail($request->getKey());
+            $request = $models->query(PaymentRequest::class)->lockForUpdate()->whereKey($request->getKey())->firstOrFail();
 
             if ($request->status !== PaymentRequestStatus::Draft) {
                 throw ValidationException::withMessages(['status' => ['Only draft payment requests can be sent.']]);

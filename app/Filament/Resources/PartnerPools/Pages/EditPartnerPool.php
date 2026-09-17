@@ -60,7 +60,7 @@ final class EditPartnerPool extends EditRecord
                     resolve(PartnerPoolSettlementService::class)->allocate(
                         ConnectionScopedModels::for($this->record)
                             ->query(Movement::class)
-                            ->findOrFail($data['movement_id']),
+                            ->whereKey($data['movement_id'])->firstOrFail(),
                         $this->record,
                         $shares,
                     );

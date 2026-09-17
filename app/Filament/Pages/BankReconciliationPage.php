@@ -85,7 +85,7 @@ final class BankReconciliationPage extends Page
         $line = $this->lineSource((int) $state['bank_statement_line_id']);
         $payment = ConnectionScopedModels::for($line)
             ->query(Payment::class)
-            ->findOrFail((int) $state['payment_id']);
+            ->whereKey((int) $state['payment_id'])->firstOrFail();
 
         app(BankReconciliationService::class)->matchPayment($line, $payment);
 
@@ -118,7 +118,7 @@ final class BankReconciliationPage extends Page
         $line = $this->lineSource((int) $state['bank_statement_line_id']);
         $payment = ConnectionScopedModels::for($line)
             ->query(Payment::class)
-            ->findOrFail((int) $state['payment_id']);
+            ->whereKey((int) $state['payment_id'])->firstOrFail();
         $expense_account_id = (int) $state['expense_account_id'];
 
         app(BankReconciliationService::class)->matchPaymentWithDifference($line, $payment, $expense_account_id);
@@ -304,6 +304,6 @@ final class BankReconciliationPage extends Page
     private function lineSource(int $line_id): BankStatementLine
     {
         /** @var BankStatementLine */
-        return $this->lineQuery()->findOrFail($line_id);
+        return $this->lineQuery()->whereKey($line_id)->firstOrFail();
     }
 }

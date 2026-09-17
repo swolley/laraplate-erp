@@ -53,7 +53,7 @@ final readonly class InvoicePostingService
                 return;
             }
 
-            $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($locked->company_id);
+            $company = $models->query(Company::class)->withoutGlobalScopes()->whereKey($locked->company_id)->firstOrFail();
             $this->chart_of_accounts_installer->installWhenEmpty($company);
 
             $lines = $models->query(InvoiceLine::class)
@@ -140,7 +140,7 @@ final readonly class InvoicePostingService
                 $entry = $models->query(JournalEntry::class)->withoutGlobalScopes()->find($locked->journal_entry_id);
 
                 if ($entry !== null) {
-                    $company = $models->query(Company::class)->withoutGlobalScopes()->findOrFail($locked->company_id);
+                    $company = $models->query(Company::class)->withoutGlobalScopes()->whereKey($locked->company_id)->firstOrFail();
                     $reason = $locked->reference !== null && $locked->reference !== ''
                         ? 'Invoice unposted ' . $locked->reference
                         : 'Invoice unposted #' . (string) $locked->id;
