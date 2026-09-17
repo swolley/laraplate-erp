@@ -13,6 +13,8 @@ use Override;
 
 /**
  * Tracks outbound e-invoice submission attempts per invoice and logical provider.
+ *
+ * @mixin IdeHelperEInvoiceSubmission
  */
 final class EInvoiceSubmission extends Model
 {

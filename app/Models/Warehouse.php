@@ -13,6 +13,9 @@ use Modules\ERP\Database\Factories\WarehouseFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperWarehouse
+ */
 final class Warehouse extends Model
 {
     use BelongsToCompany;

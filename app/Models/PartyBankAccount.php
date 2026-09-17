@@ -12,6 +12,8 @@ use Override;
 
 /**
  * Supplier or customer bank account used for payment execution snapshots.
+ *
+ * @mixin IdeHelperPartyBankAccount
  */
 final class PartyBankAccount extends Model
 {

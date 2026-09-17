@@ -16,6 +16,8 @@ use Override;
 
 /**
  * Line item on a {@see SalesOrder}.
+ *
+ * @mixin IdeHelperSalesOrderLine
  */
 final class SalesOrderLine extends Model
 {

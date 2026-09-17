@@ -10,6 +10,9 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperMovementAllocation
+ */
 final class MovementAllocation extends Model
 {
     #[Override]

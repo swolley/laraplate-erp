@@ -15,6 +15,8 @@ use Override;
 
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
+ *
+ * @mixin IdeHelperPurchaseOrderLine
  */
 final class PurchaseOrderLine extends Model
 {

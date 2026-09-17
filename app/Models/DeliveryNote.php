@@ -16,6 +16,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\DeliveryNoteObserver;
 use Override;
 
+/**
+ * @mixin IdeHelperDeliveryNote
+ */
 #[ObservedBy([DeliveryNoteObserver::class])]
 final class DeliveryNote extends Model
 {

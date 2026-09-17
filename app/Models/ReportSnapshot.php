@@ -12,6 +12,8 @@ use Override;
 
 /**
  * Immutable archive row for a generated ERP report snapshot.
+ *
+ * @mixin IdeHelperReportSnapshot
  */
 final class ReportSnapshot extends Model
 {

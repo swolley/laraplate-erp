@@ -12,6 +12,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\JournalEntryLineHasAnalyticDimensionValue;
 use Override;
 
+/**
+ * @mixin IdeHelperAnalyticDimensionValue
+ */
 final class AnalyticDimensionValue extends Model
 {
     use BelongsToCompany;

@@ -9,6 +9,9 @@ use Modules\ERP\Models\Entity;
 use Modules\ERP\Models\Preset;
 use Override;
 
+/**
+ * @mixin IdeHelperPresettable
+ */
 final class Presettable extends CorePresettable
 {
     #[Override]

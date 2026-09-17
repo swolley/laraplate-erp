@@ -10,6 +10,9 @@ use Modules\ERP\Casts\EntityType;
 use Modules\ERP\Models\Pivot\Presettable;
 use Override;
 
+/**
+ * @mixin IdeHelperEntity
+ */
 final class Entity extends CoreEntity
 {
     /**

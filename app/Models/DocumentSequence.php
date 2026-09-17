@@ -12,6 +12,8 @@ use Override;
 
 /**
  * Per-company document number sequence state (increments under row lock).
+ *
+ * @mixin IdeHelperDocumentSequence
  */
 final class DocumentSequence extends Model
 {

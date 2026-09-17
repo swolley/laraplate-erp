@@ -13,6 +13,8 @@ use Override;
 
 /**
  * Immutable beneficiary/payment snapshot inside a supplier payment run.
+ *
+ * @mixin IdeHelperPaymentRunLine
  */
 final class PaymentRunLine extends Model
 {

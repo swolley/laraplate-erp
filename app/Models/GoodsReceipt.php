@@ -13,6 +13,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Observers\GoodsReceiptObserver;
 use Override;
 
+/**
+ * @mixin IdeHelperGoodsReceipt
+ */
 #[ObservedBy([GoodsReceiptObserver::class])]
 final class GoodsReceipt extends Model
 {

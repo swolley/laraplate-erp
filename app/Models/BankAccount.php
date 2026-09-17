@@ -11,6 +11,9 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperBankAccount
+ */
 final class BankAccount extends Model
 {
     use BelongsToCompany, HasActivation;

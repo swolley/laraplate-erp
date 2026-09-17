@@ -15,6 +15,9 @@ use Modules\ERP\Database\Factories\ItemFactory;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperItem
+ */
 final class Item extends Model
 {
     use BelongsToCompany;

@@ -16,6 +16,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
+/**
+ * @mixin IdeHelperProject
+ */
 final class Project extends Model
 {
     use BelongsToCompany;

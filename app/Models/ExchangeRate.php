@@ -10,6 +10,8 @@ use Override;
 
 /**
  * Historical exchange rate from one ISO currency to another.
+ *
+ * @mixin IdeHelperExchangeRate
  */
 final class ExchangeRate extends Model
 {

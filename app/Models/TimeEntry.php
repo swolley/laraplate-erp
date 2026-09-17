@@ -14,6 +14,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Rules\TimeEntryOverlap;
 use Override;
 
+/**
+ * @mixin IdeHelperTimeEntry
+ */
 final class TimeEntry extends Model
 {
     /**

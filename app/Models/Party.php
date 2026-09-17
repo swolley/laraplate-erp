@@ -17,6 +17,9 @@ use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\Contactable;
 use Override;
 
+/**
+ * @mixin IdeHelperParty
+ */
 final class Party extends Model
 {
     use BelongsToCompany;

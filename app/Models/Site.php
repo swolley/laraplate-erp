@@ -16,6 +16,8 @@ use Override;
 
 /**
  * Physical premise (branch) for on-site work; optional LOCATION for calendar exports (ICS).
+ *
+ * @mixin IdeHelperSite
  */
 final class Site extends Model
 {

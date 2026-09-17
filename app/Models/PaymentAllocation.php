@@ -9,6 +9,9 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperPaymentAllocation
+ */
 final class PaymentAllocation extends Model
 {
     /**

@@ -16,6 +16,8 @@ use Override;
 
 /**
  * Invoice line with optional live FK and immutable fiscal snapshot at posting.
+ *
+ * @mixin IdeHelperInvoiceLine
  */
 final class InvoiceLine extends Model
 {

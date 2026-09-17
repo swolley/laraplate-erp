@@ -19,6 +19,9 @@ use Modules\ERP\Observers\QuotationObserver;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
+/**
+ * @mixin IdeHelperQuotation
+ */
 #[ObservedBy([QuotationObserver::class])]
 final class Quotation extends Model
 {

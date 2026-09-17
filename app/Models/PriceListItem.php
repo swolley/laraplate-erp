@@ -12,6 +12,9 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperPriceListItem
+ */
 final class PriceListItem extends Model
 {
     use HasValidity;

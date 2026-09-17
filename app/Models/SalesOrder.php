@@ -22,6 +22,8 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Party sales order (M3.2) with optional links to a {@see Quotation} and {@see Project}.
+ *
+ * @mixin IdeHelperSalesOrder
  */
 final class SalesOrder extends Model
 {

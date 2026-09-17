@@ -18,6 +18,8 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * General ledger account node (chart of accounts).
+ *
+ * @mixin IdeHelperAccount
  */
 final class Account extends Model
 {

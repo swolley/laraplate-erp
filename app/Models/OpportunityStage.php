@@ -12,6 +12,8 @@ use Override;
 
 /**
  * CRM pipeline stage node (M3.1); rows live in `taxonomies` with {@see EntityType::OpportunityStages}.
+ *
+ * @mixin IdeHelperOpportunityStage
  */
 final class OpportunityStage extends Taxonomy
 {

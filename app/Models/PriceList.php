@@ -11,6 +11,9 @@ use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
+/**
+ * @mixin IdeHelperPriceList
+ */
 final class PriceList extends Model
 {
     use BelongsToCompany;

@@ -15,6 +15,8 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Fiscal year boundary for accounting closes and reporting.
+ *
+ * @mixin IdeHelperFiscalYear
  */
 final class FiscalYear extends Model
 {
