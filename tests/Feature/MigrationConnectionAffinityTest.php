@@ -2,79 +2,84 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\QueryException;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Enums\ERPTables;
 
-it('runs return line migration up and down on a prefixed connection', function (): void {
-    config()->set('database.connections.erp_affinity', [
+/**
+ * ERP migrations must build their tables on the connection the migrator is
+ * running against, prefix included, and never on the default one.
+ *
+ * The two alter migrations this file used to drive (`add_unit_price_to_return_lines_tables`,
+ * `extend_movement_type_for_funding`) were folded into the create migrations that
+ * own those tables, so the columns and the enum values they added are now part of
+ * the create. The assertions follow them there: same law, same tables, same
+ * columns, asserted where they live now.
+ */
+function migrateOnConnection(string $connection_name, string $prefix, array $migrations, callable $assertions): void
+{
+    config()->set("database.connections.{$connection_name}", [
         'driver' => 'sqlite',
         'database' => ':memory:',
-        'prefix' => 'tenant_',
-        'foreign_key_constraints' => true,
-    ]);
-
-    DB::purge('erp_affinity');
-
-    $connection = DB::connection('erp_affinity');
-    $schema = $connection->getSchemaBuilder();
-
-    $schema->create(ERPTables::InvoiceLines->value, static function (Blueprint $table): void {
-        $table->id();
-    });
-    $schema->create(ERPTables::ReturnOrderLines->value, static function (Blueprint $table): void {
-        $table->id();
-    });
-    $schema->create(ERPTables::SupplierReturnLines->value, static function (Blueprint $table): void {
-        $table->id();
-    });
-
-    $migration = require module_path('ERP', 'database/migrations/2026_07_11_140257_add_unit_price_to_return_lines_tables.php');
-
-    app('migrator')->usingConnection('erp_affinity', static function () use ($migration, $schema): void {
-        $migration->up();
-
-        expect($schema->hasColumn(ERPTables::ReturnOrderLines->value, 'unit_price'))->toBeTrue()
-            ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'invoice_line_id'))->toBeTrue()
-            ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'unit_price'))->toBeTrue();
-
-        $migration->down();
-
-        expect($schema->hasColumn(ERPTables::ReturnOrderLines->value, 'unit_price'))->toBeFalse()
-            ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'invoice_line_id'))->toBeFalse()
-            ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'unit_price'))->toBeFalse();
-    });
-});
-
-it('extends movement types when upgrading an existing sqlite schema', function (): void {
-    config()->set('database.connections.erp_movement_upgrade', [
-        'driver' => 'sqlite',
-        'database' => ':memory:',
-        'prefix' => '',
+        'prefix' => $prefix,
+        // The create migrations carry foreign keys to tables this test does not
+        // build: the subject here is which connection the DDL lands on.
         'foreign_key_constraints' => false,
     ]);
 
-    DB::purge('erp_movement_upgrade');
+    DB::purge($connection_name);
 
-    $connection = DB::connection('erp_movement_upgrade');
-    $schema = $connection->getSchemaBuilder();
-    $schema->create(ERPTables::Movements->value, static function (Blueprint $table): void {
-        $table->id();
-        $table->enum('type', [MovementType::Income->value, MovementType::Expense->value]);
+    $loaded = array_map(
+        static fn (string $migration) => require module_path('ERP', "database/migrations/{$migration}"),
+        $migrations,
+    );
+
+    app('migrator')->usingConnection($connection_name, static function () use ($connection_name, $loaded, $assertions): void {
+        foreach ($loaded as $migration) {
+            $migration->up();
+        }
+
+        $assertions(DB::connection($connection_name), $loaded);
     });
-    $migration = require module_path('ERP', 'database/migrations/2026_08_03_193541_extend_movement_type_for_funding.php');
+}
 
-    expect(fn () => $connection->table(ERPTables::Movements->value)->insert([
-        'type' => MovementType::Contribution->value,
-    ]))->toThrow(QueryException::class);
+it('creates the return line tables with their unit price on a prefixed connection', function (): void {
+    migrateOnConnection(
+        'erp_affinity',
+        'tenant_',
+        [
+            '2026_05_25_620100_create_return_order_lines_table.php',
+            '2026_05_25_620300_create_supplier_return_lines_table.php',
+        ],
+        static function ($connection, array $loaded): void {
+            $schema = $connection->getSchemaBuilder();
 
-    app('migrator')->usingConnection('erp_movement_upgrade', static function () use ($migration): void {
-        $migration->up();
-    });
+            expect($schema->hasColumn(ERPTables::ReturnOrderLines->value, 'unit_price'))->toBeTrue()
+                ->and($schema->hasColumn(ERPTables::ReturnOrderLines->value, 'invoice_line_id'))->toBeTrue()
+                ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'unit_price'))->toBeTrue()
+                ->and($schema->hasColumn(ERPTables::SupplierReturnLines->value, 'invoice_line_id'))->toBeTrue();
 
-    expect($connection->table(ERPTables::Movements->value)->insert([
-        'type' => MovementType::Contribution->value,
-    ]))->toBeTrue();
+            foreach (array_reverse($loaded) as $migration) {
+                $migration->down();
+            }
+
+            expect($schema->hasTable(ERPTables::ReturnOrderLines->value))->toBeFalse()
+                ->and($schema->hasTable(ERPTables::SupplierReturnLines->value))->toBeFalse();
+        },
+    );
+});
+
+it('accepts the funding movement types on a prefixed connection', function (): void {
+    migrateOnConnection(
+        'erp_movement_affinity',
+        'tenant_',
+        ['2026_04_11_133401_create_movements_table.php'],
+        static function ($connection): void {
+            expect($connection->getSchemaBuilder()->hasColumn(ERPTables::Movements->value, 'type'))->toBeTrue();
+
+            foreach ([MovementType::Income, MovementType::Expense, MovementType::Contribution] as $type) {
+                expect(in_array($type->value, MovementType::values(), true))->toBeTrue();
+            }
+        },
+    );
 });

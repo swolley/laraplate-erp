@@ -2,116 +2,63 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Modules\Core\Enums\CoreTables;
-
-uses(RefreshDatabase::class);
+use Modules\Core\Authorization\PermissionManifest;
+use Modules\ERP\Authorization\ERPPermissions;
+use Modules\ERP\Models\DeliveryNote;
+use Modules\ERP\Models\Invoice;
 
 /**
- * `post` and `unpost` were seeded on five models that are never posted. The
- * migration drops those ten rows and leaves the invoice and the delivery note,
- * the two documents that really are posted, untouched.
+ * `post` and `unpost` were once seeded on five models that are never posted. A
+ * migration used to delete those ten rows; the declaration that produced them is
+ * gone instead, so a fresh database never writes them and there is nothing left
+ * to delete. What has to stay true is the law the migration enforced: posting
+ * belongs to the invoice and the delivery note, and to no other document.
  */
-function insertPostingPermission(string $name): int
-{
-    return (int) DB::table(CoreTables::Permissions->value)->insertGetId([
-        'name' => $name,
-        'guard_name' => 'web',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-}
+it('declares posting on the invoice and the delivery note', function (): void {
+    $operations = ERPPermissions::operations();
 
-function runPostingPermissionDrop(): void
-{
-    $migration = require module_path('ERP', 'database/migrations/2026_09_07_000000_drop_unused_posting_permissions.php');
+    expect($operations[Invoice::class] ?? [])->toContain('post')->toContain('unpost')
+        ->and($operations[DeliveryNote::class] ?? [])->toContain('post')->toContain('unpost');
+});
 
-    $migration->up();
-}
+it('declares posting on nothing else', function (): void {
+    $posting_models = [];
 
-it('drops posting on every model that is not posted', function (): void {
-    $dead = [];
-
-    foreach (['erp_document_sequences', 'erp_fiscal_periods', 'erp_journal_entries', 'erp_quotations', 'erp_sales_orders'] as $table) {
-        $dead[] = insertPostingPermission("default.{$table}.post");
-        $dead[] = insertPostingPermission("default.{$table}.unpost");
+    foreach (ERPPermissions::operations() as $model_class => $operations) {
+        if (in_array('post', $operations, true) || in_array('unpost', $operations, true)) {
+            $posting_models[] = $model_class;
+        }
     }
 
-    runPostingPermissionDrop();
+    sort($posting_models);
 
-    expect(DB::table(CoreTables::Permissions->value)->whereIn('id', $dead)->count())->toBe(0);
-});
-
-it('leaves the invoice and the delivery note posting alone', function (): void {
-    $survivors = [
-        insertPostingPermission('default.erp_invoices.post'),
-        insertPostingPermission('default.erp_invoices.unpost'),
-        insertPostingPermission('default.erp_delivery_notes.post'),
-        insertPostingPermission('default.erp_delivery_notes.unpost'),
-    ];
-
-    runPostingPermissionDrop();
-
-    expect(DB::table(CoreTables::Permissions->value)->whereIn('id', $survivors)->count())->toBe(4);
+    expect($posting_models)->toBe([DeliveryNote::class, Invoice::class]);
 });
 
 /**
- * The five models keep the verbs they really answer to: a fiscal period closes
- * and reopens, a journal entry reverses, a sales order is amended.
+ * The five models that lost posting keep the verbs they really answer to: a
+ * fiscal period closes and reopens, a journal entry reverses, a sales order is
+ * amended.
  */
-it('leaves the live verbs on the same tables alone', function (): void {
-    $survivors = [
-        insertPostingPermission('default.erp_fiscal_periods.close'),
-        insertPostingPermission('default.erp_fiscal_periods.reopen'),
-        insertPostingPermission('default.erp_journal_entries.reverse'),
-        insertPostingPermission('default.erp_sales_orders.amend'),
-        insertPostingPermission('default.erp_quotations.unlock'),
-        insertPostingPermission('default.erp_document_sequences.reset'),
-    ];
+it('leaves the live verbs on those documents alone', function (): void {
+    $names = app(PermissionManifest::class)->namesFor('ERP');
 
-    runPostingPermissionDrop();
-
-    expect(DB::table(CoreTables::Permissions->value)->whereIn('id', $survivors)->count())->toBe(6);
+    expect($names)
+        ->toContain('default.erp_fiscal_periods.close')
+        ->toContain('default.erp_fiscal_periods.reopen')
+        ->toContain('default.erp_journal_entries.reverse')
+        ->toContain('default.erp_sales_orders.amend')
+        ->toContain('default.erp_quotations.unlock')
+        ->toContain('default.erp_document_sequences.reset');
 });
 
-it('takes the grants and ACLs hanging off a dropped row', function (): void {
-    $role_id = DB::table(CoreTables::Roles->value)->insertGetId([
-        'name' => 'erp_posting_role',
-        'guard_name' => 'web',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+it('generates no posting permission for a document that is not posted', function (): void {
+    $names = app(PermissionManifest::class)->namesFor('ERP');
 
-    $id = insertPostingPermission('default.erp_quotations.post');
-
-    DB::table(CoreTables::RoleHasPermissions->value)->insert([
-        'permission_id' => $id,
-        'role_id' => $role_id,
-    ]);
-
-    $acl_id = DB::table(CoreTables::Acls->value)->insertGetId([
-        'permission_id' => $id,
-        'role_id' => $role_id,
-        'unrestricted' => true,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    runPostingPermissionDrop();
-
-    expect(DB::table(CoreTables::RoleHasPermissions->value)->where('permission_id', $id)->exists())->toBeFalse()
-        ->and(DB::table(CoreTables::Acls->value)->where('id', $acl_id)->exists())->toBeFalse();
-});
-
-/**
- * Another module's table is not this migration's to touch, however it spells the
- * verb.
- */
-it('leaves a non-ERP table alone', function (): void {
-    $foreign_id = insertPostingPermission('default.cms_contents.post');
-
-    runPostingPermissionDrop();
-
-    expect(DB::table(CoreTables::Permissions->value)->where('id', $foreign_id)->exists())->toBeTrue();
+    expect($names)
+        ->not->toContain('default.erp_quotations.post')
+        ->not->toContain('default.erp_sales_orders.post')
+        ->not->toContain('default.erp_journal_entries.post')
+        ->not->toContain('default.erp_fiscal_periods.post')
+        ->not->toContain('default.erp_document_sequences.post');
 });
