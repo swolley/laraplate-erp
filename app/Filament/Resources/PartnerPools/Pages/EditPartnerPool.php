@@ -16,9 +16,11 @@ use Filament\Support\Icons\Heroicon;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
 use Modules\ERP\Models\Movement;
+use Modules\ERP\Models\PartnerPool;
 use Modules\ERP\Services\Cash\PartnerPoolSettlementService;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
+use UnexpectedValueException;
 
 final class EditPartnerPool extends EditRecord
 {
@@ -35,10 +37,10 @@ final class EditPartnerPool extends EditRecord
                 ->schema([
                     Select::make('movement_id')
                         ->label('Expense movement')
-                        ->options(fn (): array => ConnectionScopedModels::for($this->record)
+                        ->options(fn (): array => ConnectionScopedModels::for($this->pool())
                             ->query(Movement::class)
-                            ->where('company_id', $this->record->company_id)
-                            ->where('currency_doc', $this->record->currency)
+                            ->where('company_id', $this->pool()->company_id)
+                            ->where('currency_doc', $this->pool()->currency)
                             ->where('type', MovementType::Expense->value)
                             ->orderByDesc('occurred_on')
                             ->get()->mapWithKeys(fn (Movement $movement): array => [
@@ -47,7 +49,7 @@ final class EditPartnerPool extends EditRecord
                         ->searchable()->required(),
                     Repeater::make('shares')->schema([
                         Select::make('user_id')
-                            ->options(fn (): array => $this->record->members()->pluck('name', 'users.id')->all())
+                            ->options(fn (): array => $this->pool()->members()->pluck('name', 'users.id')->all())
                             ->distinct()->required(),
                         TextInput::make('owed')->numeric()->minValue(0)->required(),
                         TextInput::make('paid')->numeric()->minValue(0)->required(),
@@ -58,10 +60,10 @@ final class EditPartnerPool extends EditRecord
                         (int) $share['user_id'] => ['owed' => $share['owed'], 'paid' => $share['paid']],
                     ])->all();
                     resolve(PartnerPoolSettlementService::class)->allocate(
-                        ConnectionScopedModels::for($this->record)
+                        ConnectionScopedModels::for($this->pool())
                             ->query(Movement::class)
                             ->whereKey($data['movement_id'])->firstOrFail(),
-                        $this->record,
+                        $this->pool(),
                         $shares,
                     );
                     Notification::make()->title('Expense split saved')->success()->send();
@@ -70,15 +72,15 @@ final class EditPartnerPool extends EditRecord
                 ->label('Settle up')
                 ->icon(Heroicon::OutlinedBanknotes)
                 ->schema([
-                    Select::make('from_user_id')->label('Paid by')->options(fn (): array => $this->record->members()->pluck('name', 'users.id')->all())->required(),
-                    Select::make('to_user_id')->label('Paid to')->options(fn (): array => $this->record->members()->pluck('name', 'users.id')->all())->different('from_user_id')->required(),
+                    Select::make('from_user_id')->label('Paid by')->options(fn (): array => $this->pool()->members()->pluck('name', 'users.id')->all())->required(),
+                    Select::make('to_user_id')->label('Paid to')->options(fn (): array => $this->pool()->members()->pluck('name', 'users.id')->all())->different('from_user_id')->required(),
                     TextInput::make('amount')->numeric()->minValue(0.0001)->required(),
                     DatePicker::make('occurred_on')->default(now())->disabled(),
                     TextInput::make('description')->maxLength(255),
                 ])
                 ->action(function (array $data): void {
                     resolve(PartnerPoolSettlementService::class)->settle(
-                        $this->record,
+                        $this->pool(),
                         (int) $data['from_user_id'],
                         (int) $data['to_user_id'],
                         (string) $data['amount'],
@@ -88,5 +90,22 @@ final class EditPartnerPool extends EditRecord
                 }),
             DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Filament declares $record as Model|int|string|null, which is honest about the
+     * page lifecycle and useless to every caller that needs the pool itself. Narrowed
+     * once here rather than assumed nine times below.
+     */
+    private function pool(): PartnerPool
+    {
+        $record = $this->getRecord();
+
+        throw_unless($record instanceof PartnerPool, UnexpectedValueException::class, sprintf(
+            'Expected a PartnerPool record, got %s.',
+            get_debug_type($record),
+        ));
+
+        return $record;
     }
 }

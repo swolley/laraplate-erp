@@ -31,11 +31,18 @@ final class JournalEntryActions
                     ->maxLength(500),
             ])
             ->action(static function (JournalEntry $record, array $data): void {
+                $user_id = auth()->id();
+
                 $reversal = resolve(JournalPostingService::class)->reverse(
                     $record,
-                    $record->company,
+                    // company_id is required on a journal entry, so the relation is
+                    // there; firstOrFail says so in the type and fails loudly rather
+                    // than passing null into a Company parameter.
+                    $record->company()->firstOrFail(),
                     (string) $data['reversal_reason'],
-                    auth()->id(),
+                    // auth()->id() is int|string|null: a string key belongs to a user
+                    // model this application does not have, so narrowing is honest.
+                    is_numeric($user_id) ? (int) $user_id : null,
                 );
 
                 Notification::make()

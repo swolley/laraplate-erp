@@ -66,7 +66,7 @@ final class ErpDomainActionRegistrar
      */
     private function registerFileActions(DomainActionRegistry $registry): void
     {
-        $registry->register(PaymentRun::class, 'export_sepa', static function (Model $record, array $payload, User $user): StreamedResponse {
+        $registry->register(PaymentRun::class, 'export_sepa', static function (PaymentRun $record, array $payload, User $user): StreamedResponse {
             $xml = resolve(SepaPain001Exporter::class)->export($record);
 
             return response()->streamDownload(
@@ -76,7 +76,7 @@ final class ErpDomainActionRegistrar
             );
         });
 
-        $registry->register(PaymentRun::class, 'export_cbi_bonifici', static function (Model $record, array $payload, User $user): StreamedResponse {
+        $registry->register(PaymentRun::class, 'export_cbi_bonifici', static function (PaymentRun $record, array $payload, User $user): StreamedResponse {
             $content = resolve(CbiBonificiExporter::class)->export($record);
 
             return response()->streamDownload(
@@ -86,7 +86,7 @@ final class ErpDomainActionRegistrar
             );
         });
 
-        $registry->register(Task::class, 'export_ics', static function (Model $record, array $payload, User $user): StreamedResponse {
+        $registry->register(Task::class, 'export_ics', static function (Task $record, array $payload, User $user): StreamedResponse {
             $exporter = resolve(TaskIcsExporter::class);
             $content = $exporter->export($record);
 
@@ -97,7 +97,7 @@ final class ErpDomainActionRegistrar
             );
         });
 
-        $registry->register(BankStatement::class, 'import_file', static function (Model $record, array $payload, User $user): array {
+        $registry->register(BankStatement::class, 'import_file', static function (BankStatement $record, array $payload, User $user): array {
             $file = request()->file('file');
 
             throw_if(
@@ -117,22 +117,22 @@ final class ErpDomainActionRegistrar
      */
     private function registerReturns(DomainActionRegistry $registry): void
     {
-        $registry->register(ReturnOrder::class, 'approve', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->approve($record));
-        $registry->register(ReturnOrder::class, 'complete', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->complete($record));
-        $registry->register(ReturnOrder::class, 'cancel', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->cancel($record));
-        $registry->register(ReturnOrder::class, 'reverse_processed', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->reverseProcessed($record));
-        $registry->register(ReturnOrder::class, 'create_credit_note', static fn (Model $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->createCreditNote($record));
+        $registry->register(ReturnOrder::class, 'approve', static fn (ReturnOrder $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->approve($record));
+        $registry->register(ReturnOrder::class, 'complete', static fn (ReturnOrder $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->complete($record));
+        $registry->register(ReturnOrder::class, 'cancel', static fn (ReturnOrder $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->cancel($record));
+        $registry->register(ReturnOrder::class, 'reverse_processed', static fn (ReturnOrder $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->reverseProcessed($record));
+        $registry->register(ReturnOrder::class, 'create_credit_note', static fn (ReturnOrder $record, array $payload, User $user): Model => resolve(ReturnOrderService::class)->createCreditNote($record));
 
-        $registry->register(SupplierReturn::class, 'approve', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->approve($record));
-        $registry->register(SupplierReturn::class, 'complete', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->complete($record));
-        $registry->register(SupplierReturn::class, 'cancel', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->cancel($record));
-        $registry->register(SupplierReturn::class, 'reverse_processed', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->reverseProcessed($record));
-        $registry->register(SupplierReturn::class, 'create_debit_note', static fn (Model $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->createDebitNote($record));
+        $registry->register(SupplierReturn::class, 'approve', static fn (SupplierReturn $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->approve($record));
+        $registry->register(SupplierReturn::class, 'complete', static fn (SupplierReturn $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->complete($record));
+        $registry->register(SupplierReturn::class, 'cancel', static fn (SupplierReturn $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->cancel($record));
+        $registry->register(SupplierReturn::class, 'reverse_processed', static fn (SupplierReturn $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->reverseProcessed($record));
+        $registry->register(SupplierReturn::class, 'create_debit_note', static fn (SupplierReturn $record, array $payload, User $user): Model => resolve(SupplierReturnService::class)->createDebitNote($record));
     }
 
     private function registerCommercial(DomainActionRegistry $registry): void
     {
-        $registry->register(DocumentSequence::class, 'reset', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(DocumentSequence::class, 'reset', static function (DocumentSequence $record, array $payload, User $user): Model {
             resolve(DocumentSequenceResetService::class)->reset($record, (int) ($payload['last_number'] ?? 0));
 
             return $record->fresh();
@@ -141,13 +141,13 @@ final class ErpDomainActionRegistrar
         $registry->register(
             Quotation::class,
             'create_revision',
-            static fn (Model $record, array $payload, User $user): Model => resolve(QuotationRevisionService::class)->createRevision($record),
+            static fn (Quotation $record, array $payload, User $user): Model => resolve(QuotationRevisionService::class)->createRevision($record),
         );
 
         $registry->register(
             PaymentRequest::class,
             'send',
-            static fn (Model $record, array $payload, User $user): Model => resolve(PaymentRequestService::class)->send($record),
+            static fn (PaymentRequest $record, array $payload, User $user): Model => resolve(PaymentRequestService::class)->send($record),
         );
     }
 
@@ -162,7 +162,7 @@ final class ErpDomainActionRegistrar
          * the checkbox appears only for a purchase invoice when the user holds
          * `forcePost`.
          */
-        $registry->register(Invoice::class, 'post', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(Invoice::class, 'post', static function (Invoice $record, array $payload, User $user): Model {
             $force = (bool) ($payload['force_three_way_match'] ?? false);
 
             throw_if(
@@ -177,7 +177,7 @@ final class ErpDomainActionRegistrar
             return $record->fresh();
         });
 
-        $registry->register(Invoice::class, 'unpost', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(Invoice::class, 'unpost', static function (Invoice $record, array $payload, User $user): Model {
             $record->update(['posted_at' => null]);
 
             return $record->fresh();
@@ -186,10 +186,10 @@ final class ErpDomainActionRegistrar
         $registry->register(
             Invoice::class,
             'submitEInvoice',
-            static fn (Model $record, array $payload, User $user): Model => resolve(EInvoiceSubmissionService::class)->submit($record),
+            static fn (Invoice $record, array $payload, User $user): Model => resolve(EInvoiceSubmissionService::class)->submit($record),
         );
 
-        $registry->register(Invoice::class, 'refreshEInvoice', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(Invoice::class, 'refreshEInvoice', static function (Invoice $record, array $payload, User $user): Model {
             $submission = $record->eInvoiceSubmissions()
                 ->where('status', EInvoiceSubmissionStatus::Submitted->value)
                 ->whereNotNull('external_id')
@@ -206,7 +206,7 @@ final class ErpDomainActionRegistrar
          * reverse() needs the owning company and an explicit reason: a reversal
          * is an auditable accounting event, so it may not be anonymous.
          */
-        $registry->register(JournalEntry::class, 'reverse', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(JournalEntry::class, 'reverse', static function (JournalEntry $record, array $payload, User $user): Model {
             $reason = mb_trim((string) ($payload['reversal_reason'] ?? ''));
 
             throw_if(
@@ -219,19 +219,19 @@ final class ErpDomainActionRegistrar
 
         // FiscalPeriodCloser and the amendment service return void; hand back the
         // refreshed record so the response carries the resulting state.
-        $registry->register(FiscalPeriod::class, 'close', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(FiscalPeriod::class, 'close', static function (FiscalPeriod $record, array $payload, User $user): Model {
             resolve(FiscalPeriodCloser::class)->closePeriod($record);
 
             return $record->fresh();
         });
 
-        $registry->register(FiscalPeriod::class, 'reopen', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(FiscalPeriod::class, 'reopen', static function (FiscalPeriod $record, array $payload, User $user): Model {
             resolve(FiscalPeriodCloser::class)->reopenPeriod($record);
 
             return $record->fresh();
         });
 
-        $registry->register(FiscalYear::class, 'close', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(FiscalYear::class, 'close', static function (FiscalYear $record, array $payload, User $user): Model {
             resolve(FiscalPeriodCloser::class)->closeYear($record);
 
             return $record->fresh();
@@ -240,18 +240,18 @@ final class ErpDomainActionRegistrar
         $registry->register(
             SalesOrder::class,
             'amend',
-            static fn (Model $record, array $payload, User $user): Model => resolve(SalesOrderAmendmentService::class)->amend($record),
+            static fn (SalesOrder $record, array $payload, User $user): Model => resolve(SalesOrderAmendmentService::class)->amend($record),
         );
 
         // Delivery notes post through the same observer-on-posted_at path as
         // DeliveryNotePostingActions.
-        $registry->register(DeliveryNote::class, 'post', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(DeliveryNote::class, 'post', static function (DeliveryNote $record, array $payload, User $user): Model {
             $record->update(['posted_at' => now()]);
 
             return $record->fresh();
         });
 
-        $registry->register(DeliveryNote::class, 'unpost', static function (Model $record, array $payload, User $user): Model {
+        $registry->register(DeliveryNote::class, 'unpost', static function (DeliveryNote $record, array $payload, User $user): Model {
             $record->update(['posted_at' => null]);
 
             return $record->fresh();
