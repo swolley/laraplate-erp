@@ -13,7 +13,6 @@ use Override;
 
 /**
  * Tracks outbound e-invoice submission attempts per invoice and logical provider.
- *
  */
 final class EInvoiceSubmission extends Model
 {

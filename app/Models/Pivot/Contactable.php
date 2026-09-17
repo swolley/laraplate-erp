@@ -10,7 +10,6 @@ use Override;
 
 /**
  * Pivot linking ERP parties and contacts.
- *
  */
 final class Contactable extends Pivot
 {

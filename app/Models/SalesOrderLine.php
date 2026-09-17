@@ -17,7 +17,6 @@ use Override;
 
 /**
  * Line item on a {@see SalesOrder}.
- *
  */
 final class SalesOrderLine extends Model implements ILockableModel
 {

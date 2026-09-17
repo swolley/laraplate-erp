@@ -19,7 +19,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
  * Sub-year accounting bucket (typically a calendar month).
  *
  * Scoped through {@see FiscalYear} for multi-company isolation.
- *
  */
 final class FiscalPeriod extends Model
 {

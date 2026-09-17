@@ -12,7 +12,6 @@ use Override;
 
 /**
  * Supplier or customer bank account used for payment execution snapshots.
- *
  */
 final class PartyBankAccount extends Model
 {

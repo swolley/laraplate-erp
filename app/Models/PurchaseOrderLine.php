@@ -15,7 +15,6 @@ use Override;
 
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
- *
  */
 final class PurchaseOrderLine extends Model
 {

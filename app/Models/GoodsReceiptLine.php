@@ -12,7 +12,6 @@ use Override;
 
 /**
  * Line on a {@see GoodsReceipt} driving stock-in and optional PO receipt progress.
- *
  */
 final class GoodsReceiptLine extends Model
 {

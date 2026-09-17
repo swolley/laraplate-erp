@@ -20,7 +20,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Header for a posted double-entry journal voucher.
- *
  */
 final class JournalEntry extends Model implements RestrictsCrudWrites
 {

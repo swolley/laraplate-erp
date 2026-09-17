@@ -10,7 +10,6 @@ use Override;
 
 /**
  * Historical exchange rate from one ISO currency to another.
- *
  */
 final class ExchangeRate extends Model
 {

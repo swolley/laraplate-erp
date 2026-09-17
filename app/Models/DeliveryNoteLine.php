@@ -15,7 +15,6 @@ use Override;
 
 /**
  * Line on a {@see DeliveryNote} driving stock movement and optional SO evasion.
- *
  */
 final class DeliveryNoteLine extends Model
 {

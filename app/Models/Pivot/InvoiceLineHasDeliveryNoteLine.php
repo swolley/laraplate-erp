@@ -10,7 +10,6 @@ use Override;
 
 /**
  * Pivot linking invoice lines to delivery-note lines with covered quantity.
- *
  */
 final class InvoiceLineHasDeliveryNoteLine extends Pivot
 {

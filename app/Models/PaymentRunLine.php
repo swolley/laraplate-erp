@@ -13,7 +13,6 @@ use Override;
 
 /**
  * Immutable beneficiary/payment snapshot inside a supplier payment run.
- *
  */
 final class PaymentRunLine extends Model
 {

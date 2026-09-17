@@ -18,7 +18,6 @@ use Override;
  *
  * Holds fiscal identity (tax_id, fiscal_country) and the functional currency
  * used as `amount_local` for double-entry journal balancing.
- *
  */
 final class Company extends Model
 {

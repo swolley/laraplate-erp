@@ -16,7 +16,6 @@ use Override;
 
 /**
  * Approved batch of outbound supplier payments exported as a bank file.
- *
  */
 final class PaymentRun extends Model
 {

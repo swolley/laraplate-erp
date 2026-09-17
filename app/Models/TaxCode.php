@@ -18,7 +18,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * Immutable fiscal code row (VAT / withholding). Rate changes = new row + supersession link.
- *
  */
 final class TaxCode extends Model implements IActivatableModel
 {

@@ -14,7 +14,6 @@ use Override;
 
 /**
  * Periodic VAT settlement (liquidazione IVA) for Italian compliance.
- *
  */
 final class VatSettlement extends Model
 {

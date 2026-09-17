@@ -6,6 +6,7 @@ namespace Modules\ERP\Services\Reporting;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Closure;
 use Illuminate\Support\Enumerable;
 use Modules\ERP\Casts\OpportunityStatus;
 use Modules\ERP\Models\Opportunity;
@@ -15,6 +16,16 @@ use Modules\ERP\Models\Opportunity;
  */
 final class SalesPipelineService
 {
+    /**
+     * @param  (Closure(int): Enumerable<int, object>)|null  $opportunityProvider
+     *                                                                             Where the opportunities come from. Null means the database, which is the
+     *                                                                             only caller in production. A test passes its own rows instead of reaching
+     *                                                                             for a seam: the class stays final and its internals stay private.
+     */
+    public function __construct(
+        private readonly ?Closure $opportunityProvider = null,
+    ) {}
+
     /**
      * @param  array{won_from?: string|null, won_to?: string|null}  $filters
      * @return array{
@@ -92,10 +103,14 @@ final class SalesPipelineService
     }
 
     /**
-     * @return Enumerable<int, Opportunity>
+     * @return Enumerable<int, Opportunity|object>
      */
-    protected function loadOpportunities(int $company_id): Enumerable
+    private function loadOpportunities(int $company_id): Enumerable
     {
+        if ($this->opportunityProvider instanceof Closure) {
+            return ($this->opportunityProvider)($company_id);
+        }
+
         return Opportunity::query()
             ->where('company_id', $company_id)
             ->select([

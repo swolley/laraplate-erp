@@ -16,7 +16,6 @@ use Override;
 
 /**
  * Invoice line with optional live FK and immutable fiscal snapshot at posting.
- *
  */
 final class InvoiceLine extends Model
 {

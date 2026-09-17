@@ -17,7 +17,6 @@ use Override;
 
 /**
  * Physical premise (branch) for on-site work; optional LOCATION for calendar exports (ICS).
- *
  */
 final class Site extends Model implements IValidatableModel
 {

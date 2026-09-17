@@ -17,7 +17,6 @@ use Override;
 
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
- *
  */
 final class JournalEntryLine extends Model implements RestrictsCrudWrites
 {

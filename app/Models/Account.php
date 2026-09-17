@@ -19,7 +19,6 @@ use Overtrue\LaravelVersionable\VersionStrategy;
 
 /**
  * General ledger account node (chart of accounts).
- *
  */
 final class Account extends Model implements IActivatableModel
 {

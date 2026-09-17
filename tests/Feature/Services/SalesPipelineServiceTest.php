@@ -15,7 +15,6 @@ use Modules\ERP\Models\Pivot\Presettable;
 use Modules\ERP\Services\Reporting\SalesPipelineService;
 use Modules\ERP\Tests\Stubs\OpportunityStatusDouble;
 use Modules\ERP\Tests\Stubs\SalesPipelineOpportunityRowDouble;
-use Modules\ERP\Tests\Stubs\SalesPipelineServiceStub;
 
 uses(RefreshDatabase::class);
 
@@ -35,7 +34,9 @@ it('creates buckets for unknown opportunity status values', function (): void {
         lost_at: null,
     );
 
-    $result = (new SalesPipelineServiceStub(new Collection([$legacy_row])))->generate(99);
+    $result = new SalesPipelineService(
+        opportunityProvider: static fn (): Collection => new Collection([$legacy_row]),
+    )->generate(99);
 
     expect($result['by_status']['archived']['count'])->toBe(1)
         ->and($result['by_status']['archived']['expected_value_doc'])->toBe('250.0000')

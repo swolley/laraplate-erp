@@ -12,7 +12,6 @@ use Override;
 
 /**
  * Immutable archive row for a generated ERP report snapshot.
- *
  */
 final class ReportSnapshot extends Model
 {
