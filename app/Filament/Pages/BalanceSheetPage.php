@@ -17,9 +17,12 @@ use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
+use Modules\Core\Filament\Utils\HasPageForm;
 
 final class BalanceSheetPage extends Page
 {
+    use HasPageForm;
+
     public ?array $data = [];
 
     /**
@@ -47,7 +50,7 @@ final class BalanceSheetPage extends Page
 
     public function mount(): void
     {
-        $this->form->fill([
+        $this->pageForm()->fill([
             'as_of_date' => now()->format('Y-m-d'),
         ]);
     }
@@ -69,7 +72,7 @@ final class BalanceSheetPage extends Page
 
     public function generate(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
 
         $service = resolve(BalanceSheetService::class);
 

@@ -133,7 +133,7 @@ final class Project extends Model implements ILockableModel, IValidatableModel
 
             $party = ConnectionScopedModels::for($project)
                 ->query(Party::class)
-                ->find($project->party_id);
+                ->whereKey($project->party_id)->first();
 
             if ($party !== null && ! $party->is_customer) {
                 throw ValidationException::withMessages([

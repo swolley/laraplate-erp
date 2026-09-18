@@ -137,7 +137,7 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
             $models = ConnectionScopedModels::for($order);
 
             if ($order->party_id !== null) {
-                $party = $models->query(Party::class)->find($order->party_id);
+                $party = $models->query(Party::class)->whereKey($order->party_id)->first();
 
                 if ($party !== null && ! $party->is_customer) {
                     throw ValidationException::withMessages([
@@ -159,7 +159,7 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
             }
 
             if ($order->quotation_id !== null) {
-                $quotation = $models->query(Quotation::class)->find($order->quotation_id);
+                $quotation = $models->query(Quotation::class)->whereKey($order->quotation_id)->first();
 
                 if ($quotation === null) {
                     throw ValidationException::withMessages([
@@ -181,7 +181,7 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
             }
 
             if ($order->project_id !== null) {
-                $project = $models->query(Project::class)->find($order->project_id);
+                $project = $models->query(Project::class)->whereKey($order->project_id)->first();
 
                 if ($project === null) {
                     throw ValidationException::withMessages([
@@ -219,7 +219,7 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
             $models = ConnectionScopedModels::for($order);
 
             if ($order->quotation_id !== null) {
-                $quotation = $models->query(Quotation::class)->find($order->quotation_id);
+                $quotation = $models->query(Quotation::class)->whereKey($order->quotation_id)->first();
 
                 if ($quotation !== null && ! $quotation->isLocked()) {
                     $quotation->lock();
@@ -230,7 +230,7 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
                 return;
             }
 
-            $project = $models->query(Project::class)->find($order->project_id);
+            $project = $models->query(Project::class)->whereKey($order->project_id)->first();
 
             if ($project !== null && ! $project->isLocked()) {
                 $project->lock();

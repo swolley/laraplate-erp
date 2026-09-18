@@ -141,7 +141,7 @@ final class Opportunity extends Model
 
             $party = ConnectionScopedModels::for($opportunity)
                 ->query(Party::class)
-                ->find($opportunity->party_id);
+                ->whereKey($opportunity->party_id)->first();
 
             if ($party !== null && ! $party->is_customer) {
                 throw ValidationException::withMessages([

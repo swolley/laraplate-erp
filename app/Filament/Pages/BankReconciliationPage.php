@@ -23,9 +23,12 @@ use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 use UnitEnum;
+use Modules\Core\Filament\Utils\HasPageForm;
 
 final class BankReconciliationPage extends Page
 {
+    use HasPageForm;
+
     public ?array $data = [];
 
     #[Override]
@@ -81,7 +84,7 @@ final class BankReconciliationPage extends Page
 
     public function matchSelected(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
         $line = $this->lineSource((int) $state['bank_statement_line_id']);
         $payment = ConnectionScopedModels::for($line)
             ->query(Payment::class)
@@ -89,7 +92,7 @@ final class BankReconciliationPage extends Page
 
         app(BankReconciliationService::class)->matchPayment($line, $payment);
 
-        $this->form->fill();
+        $this->pageForm()->fill();
 
         Notification::make()
             ->title('Bank statement line matched')
@@ -99,12 +102,12 @@ final class BankReconciliationPage extends Page
 
     public function ignoreSelected(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
         $line = $this->lineSource((int) $state['bank_statement_line_id']);
 
         app(BankReconciliationService::class)->ignore($line);
 
-        $this->form->fill();
+        $this->pageForm()->fill();
 
         Notification::make()
             ->title('Bank statement line ignored')
@@ -114,7 +117,7 @@ final class BankReconciliationPage extends Page
 
     public function matchWithDifference(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
         $line = $this->lineSource((int) $state['bank_statement_line_id']);
         $payment = ConnectionScopedModels::for($line)
             ->query(Payment::class)
@@ -123,7 +126,7 @@ final class BankReconciliationPage extends Page
 
         app(BankReconciliationService::class)->matchPaymentWithDifference($line, $payment, $expense_account_id);
 
-        $this->form->fill();
+        $this->pageForm()->fill();
 
         Notification::make()
             ->title('Matched with difference')

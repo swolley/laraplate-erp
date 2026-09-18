@@ -34,11 +34,11 @@ final class ThreeWayMatchService
         $models = ConnectionScopedModels::for($invoice_line);
 
         $po_line = $invoice_line->purchase_order_line_id !== null
-            ? $models->query(PurchaseOrderLine::class)->find($invoice_line->purchase_order_line_id)
+            ? $models->query(PurchaseOrderLine::class)->whereKey($invoice_line->purchase_order_line_id)->first()
             : null;
 
         $gr_line = $invoice_line->goods_receipt_line_id !== null
-            ? $models->query(GoodsReceiptLine::class)->find($invoice_line->goods_receipt_line_id)
+            ? $models->query(GoodsReceiptLine::class)->whereKey($invoice_line->goods_receipt_line_id)->first()
             : null;
 
         if ($po_line === null && $gr_line === null) {

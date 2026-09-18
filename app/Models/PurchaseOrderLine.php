@@ -105,7 +105,7 @@ final class PurchaseOrderLine extends Model
                 return;
             }
 
-            $item = $models->query(Item::class)->find($line->item_id);
+            $item = $models->query(Item::class)->whereKey($line->item_id)->first();
 
             if ($item === null) {
                 throw ValidationException::withMessages([

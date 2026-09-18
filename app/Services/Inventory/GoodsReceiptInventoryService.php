@@ -146,7 +146,7 @@ final readonly class GoodsReceiptInventoryService
 
         $purchase_order_id = $header->purchase_order_id;
 
-        $po = $models->query(PurchaseOrder::class)->find($purchase_order_id);
+        $po = $models->query(PurchaseOrder::class)->whereKey($purchase_order_id)->first();
 
         if ($po === null) {
             throw ValidationException::withMessages([
@@ -165,7 +165,7 @@ final readonly class GoodsReceiptInventoryService
                 continue;
             }
 
-            $po_line = $models->query(PurchaseOrderLine::class)->find($line->purchase_order_line_id);
+            $po_line = $models->query(PurchaseOrderLine::class)->whereKey($line->purchase_order_line_id)->first();
 
             if ($po_line === null) {
                 throw ValidationException::withMessages([

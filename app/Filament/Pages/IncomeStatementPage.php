@@ -17,9 +17,12 @@ use Modules\ERP\Services\Reporting\IncomeStatementService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
+use Modules\Core\Filament\Utils\HasPageForm;
 
 final class IncomeStatementPage extends Page
 {
+    use HasPageForm;
+
     public ?array $data = [];
 
     /**
@@ -47,7 +50,7 @@ final class IncomeStatementPage extends Page
 
     public function mount(): void
     {
-        $this->form->fill([
+        $this->pageForm()->fill([
             'from_date' => now()->startOfYear()->format('Y-m-d'),
             'to_date' => now()->format('Y-m-d'),
         ]);
@@ -73,7 +76,7 @@ final class IncomeStatementPage extends Page
 
     public function generate(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
 
         $service = resolve(IncomeStatementService::class);
 

@@ -16,9 +16,12 @@ use Modules\ERP\Services\Reporting\StockValuationService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
+use Modules\Core\Filament\Utils\HasPageForm;
 
 final class StockValuationPage extends Page
 {
+    use HasPageForm;
+
     public ?array $data = [];
 
     /**
@@ -67,7 +70,7 @@ final class StockValuationPage extends Page
 
     public function generate(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
 
         $service = resolve(StockValuationService::class);
 

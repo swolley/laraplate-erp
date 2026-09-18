@@ -16,9 +16,12 @@ use Modules\ERP\Services\Reporting\SalesPipelineService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
+use Modules\Core\Filament\Utils\HasPageForm;
 
 final class SalesPipelinePage extends Page
 {
+    use HasPageForm;
+
     public ?array $data = [];
 
     /**
@@ -65,7 +68,7 @@ final class SalesPipelinePage extends Page
 
     public function generate(): void
     {
-        $state = $this->form->getState();
+        $state = $this->pageForm()->getState();
 
         $service = resolve(SalesPipelineService::class);
 

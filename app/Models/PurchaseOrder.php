@@ -90,7 +90,7 @@ final class PurchaseOrder extends Model
 
             $party = ConnectionScopedModels::for($purchase_order)
                 ->query(Party::class)
-                ->find($purchase_order->party_id);
+                ->whereKey($purchase_order->party_id)->first();
 
             if ($party === null) {
                 return;
