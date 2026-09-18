@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku', 64);
             $table->string('uom', 16)->default('unit');
+            $table->enum('tracing_type', ['none', 'lot', 'serial'])->default('none');
             $table->enum('costing_method', ['fifo', 'weighted_avg'])->default('fifo');
             $table->foreignId('taxonomy_id')
                 ->nullable()
