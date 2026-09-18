@@ -25,17 +25,26 @@ final class PartnerPool extends Model implements IActivatableModel
     #[Override]
     protected $fillable = ['company_id', 'name', 'currency', 'is_active'];
 
+    // Deliberately unannotated: declaring BelongsToMany<User, $this> turns on
+    // Larastan's column check, which reads the qualified `users.id` this relation
+    // plucks (to disambiguate it from the pivot) as a column User does not have.
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, ERPTables::PartnerPoolMembers->value)
             ->using(PartnerPoolHasUser::class)->withTimestamps();
     }
 
+    /**
+     * @return HasMany<MovementAllocation, $this>
+     */
     public function allocations(): HasMany
     {
         return $this->hasMany(MovementAllocation::class);
     }
 
+    /**
+     * @return HasMany<PoolTransaction, $this>
+     */
     public function transactions(): HasMany
     {
         return $this->hasMany(PoolTransaction::class);

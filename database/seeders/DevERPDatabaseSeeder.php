@@ -350,7 +350,7 @@ final class DevERPDatabaseSeeder extends Seeder
                     'delivery_note_id' => $delivery_note->id,
                     'item_id' => $line->item_id,
                     'warehouse_id' => $warehouse->id,
-                    'quantity' => $line->qty_ordered,
+                    'quantity' => $line->getAttribute('qty_ordered'),
                     'sales_order_line_id' => $line->id,
                 ]);
             }
@@ -399,7 +399,7 @@ final class DevERPDatabaseSeeder extends Seeder
                     'goods_receipt_id' => $receipt->id,
                     'item_id' => $line->item_id,
                     'warehouse_id' => $warehouse->id,
-                    'quantity' => $line->qty_ordered,
+                    'quantity' => $line->getAttribute('qty_ordered'),
                     'qty_returned' => 0,
                     'unit_cost' => $line->unit_price,
                     'purchase_order_line_id' => $line->id,
@@ -434,10 +434,10 @@ final class DevERPDatabaseSeeder extends Seeder
             InvoiceLine::query()->create([
                 'invoice_id' => $invoice->id,
                 'line_no' => $line_no++,
-                'description' => $line->name,
-                'quantity' => $line->qty_ordered,
+                'description' => $line->getAttribute('name'),
+                'quantity' => $line->getAttribute('qty_ordered'),
                 'qty_returned' => 0,
-                'unit_price' => $line->unit_price,
+                'unit_price' => $line->getAttribute('unit_price'),
             ]);
         }
     }

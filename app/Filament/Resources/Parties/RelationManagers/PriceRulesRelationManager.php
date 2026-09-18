@@ -85,7 +85,7 @@ final class PriceRulesRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->mutateDataUsing(function (array $data): array {
-                        $data['company_id'] = $this->getOwnerRecord()->company_id;
+                        $data['company_id'] = $this->getOwnerRecord()->getAttribute('company_id');
 
                         return $data;
                     }),
