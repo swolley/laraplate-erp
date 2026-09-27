@@ -10,7 +10,6 @@ use Modules\Core\Authorization\PermissionManifest;
 use Modules\Core\Models\Permission;
 use Modules\Core\Models\Setting;
 use Modules\Core\Overrides\Seeder;
-use Modules\Core\Seeding\SeedDefinition;
 use Modules\Core\Seeding\SeedReconciler;
 use Modules\Core\Services\PresetVersioningService;
 use Modules\ERP\Casts\EntityType;
@@ -136,12 +135,7 @@ final class ERPDatabaseSeeder extends Seeder
     private function ensureGlobalErpSettings(): void
     {
         $outcome = app(SeedReconciler::class)->reconcile(
-            SeedDefinition::for(Setting::class)
-                ->identity(['name'])
-                ->structural(['type', 'group_name', 'description', 'choices'])
-                ->initial(['value'])
-                ->ownedBy('ERP')
-                ->rows(ErpCompanySettings::globalSettingDefinitions()),
+            self::internalSettingsDefinition('ERP', ErpCompanySettings::globalSettingDefinitions()),
         );
 
         $this->command?->line(
