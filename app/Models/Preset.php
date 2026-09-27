@@ -51,6 +51,7 @@ final class Preset extends CorePreset
         return parent::newBaseQueryBuilder()->whereExists(function (Builder $query): void {
             $query->select(DB::raw('1'))
                 ->from(CoreTables::Entities->value)
+                ->whereColumn(CoreTables::Entities->value . '.id', CoreTables::Presets->value . '.entity_id')
                 ->whereIn(CoreTables::Entities->value . '.type', EntityType::values());
         });
     }
