@@ -24,13 +24,13 @@ it('is idempotent and leaves an operator-changed value untouched on a second run
     $this->seed(ERPDatabaseSeeder::class);
 
     Setting::query()->withoutGlobalScopes()
-        ->where('name', ErpCompanySettings::PRICE_TOLERANCE_PERCENT)
+        ->where('name', ErpCompanySettings::settingName(ErpCompanySettings::PRICE_TOLERANCE_PERCENT))
         ->update(['value' => json_encode(12.5), 'description' => 'drifted']);
 
     $this->seed(ERPDatabaseSeeder::class);
 
     $setting = Setting::query()->withoutGlobalScopes()
-        ->where('name', ErpCompanySettings::PRICE_TOLERANCE_PERCENT)->sole();
+        ->where('name', ErpCompanySettings::settingName(ErpCompanySettings::PRICE_TOLERANCE_PERCENT))->sole();
 
     expect($setting->value)->toBe(12.5)
         ->and($setting->description)->toBe('Three-way match price tolerance (percent)');

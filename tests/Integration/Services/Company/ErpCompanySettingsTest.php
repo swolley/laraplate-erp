@@ -67,7 +67,7 @@ it('reads three-way match tolerances from company settings json', function (): v
 
 it('falls back to global setting rows when company json omits the key', function (): void {
     Setting::factory()->persistedWithoutApprovalCapture()->create([
-        'name' => ErpCompanySettings::PRICE_TOLERANCE_PERCENT,
+        'name' => ErpCompanySettings::settingName(ErpCompanySettings::PRICE_TOLERANCE_PERCENT),
         'value' => 4.5,
         'type' => SettingTypeEnum::Float,
         'group_name' => ErpCompanySettings::GLOBAL_SETTINGS_GROUP,

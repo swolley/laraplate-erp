@@ -40,6 +40,14 @@ final class ErpCompanySettings
      *
      * @return array<string, mixed>
      */
+    /**
+     * The global setting row is named without the module prefix: the module lives in its own column.
+     */
+    public static function settingName(string $key): string
+    {
+        return str_starts_with($key, 'erp.') ? mb_substr($key, 4) : $key;
+    }
+
     public static function defaultSettings(): array
     {
         return [
@@ -69,7 +77,7 @@ final class ErpCompanySettings
     {
         return [
             [
-                'name' => self::PRICE_TOLERANCE_PERCENT,
+                'name' => self::settingName(self::PRICE_TOLERANCE_PERCENT),
                 'value' => 0,
                 'encrypted' => false,
                 'choices' => null,
@@ -78,7 +86,7 @@ final class ErpCompanySettings
                 'description' => 'Three-way match price tolerance (percent)',
             ],
             [
-                'name' => self::QTY_TOLERANCE_PERCENT,
+                'name' => self::settingName(self::QTY_TOLERANCE_PERCENT),
                 'value' => 0,
                 'encrypted' => false,
                 'choices' => null,
@@ -87,7 +95,7 @@ final class ErpCompanySettings
                 'description' => 'Three-way match quantity tolerance (percent)',
             ],
             [
-                'name' => self::INVOICE_GENERATION_MODE,
+                'name' => self::settingName(self::INVOICE_GENERATION_MODE),
                 'value' => self::INVOICE_GENERATION_MODE_EXPANDED,
                 'encrypted' => false,
                 'choices' => [self::INVOICE_GENERATION_MODE_EXPANDED, self::INVOICE_GENERATION_MODE_COMPACT],
@@ -96,7 +104,7 @@ final class ErpCompanySettings
                 'description' => 'Invoice line generation mode (expanded or compact)',
             ],
             [
-                'name' => self::AUTO_CREATE_NOTES_ON_COMPLETE,
+                'name' => self::settingName(self::AUTO_CREATE_NOTES_ON_COMPLETE),
                 'value' => false,
                 'encrypted' => false,
                 'choices' => null,
@@ -131,7 +139,7 @@ final class ErpCompanySettings
             }
         }
 
-        $global_value = $this->settings->value($key, null);
+        $global_value = $this->settings->value(self::settingName($key), null);
 
         if ($global_value !== null) {
             return $global_value;
