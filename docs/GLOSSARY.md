@@ -253,7 +253,7 @@ Italian baseline codes are seeded by `ItalianTaxCodesSeeder` on the default comp
 | **ERP extension point** | Explicit service-container contract for chart of accounts, FX conversion, e-invoicing, or Core outbox publication. ERP does not currently provide tagged plugin discovery. |
 | **App-lock portability** | Application guards enforce lock chains on every supported database. MySQL/MariaDB and PostgreSQL additionally enforce them with triggers; SQLite/Oracle use the application fallback. |
 | **Default permission connection** | Models without explicit `$connection` correctly use the default connection for permission naming and lookup. This is not a bug. |
-| **Forced DIFF setting** | Accounting models that pin DIFF in code do not expose a mutable `version_strategy.{table}` control in Core Settings. |
+| **Forced DIFF setting** | Accounting models that pin DIFF in code do not expose a mutable `versioning.strategy.{table}` control in Core Settings. |
 | **Separate or optional scopes** | MES is a separate vertical; external-source importers are a separate workstream; Gantt and mobile API are optional. Calendar/ICS export is implemented. External execution of pool reimbursements remains separate. |
 
 ## Related reading
