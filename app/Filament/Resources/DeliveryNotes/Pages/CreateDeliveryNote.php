@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\DeliveryNotes\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\DeliveryNotes\DeliveryNoteResource;
 use Modules\ERP\Models\DeliveryNote;
 use Modules\ERP\Services\Inventory\DeliveryNoteInventoryService;
@@ -14,6 +15,8 @@ use Override;
 
 final class CreateDeliveryNote extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = DeliveryNoteResource::class;
 

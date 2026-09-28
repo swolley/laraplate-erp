@@ -9,6 +9,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Casts\PaymentRequestStatus;
 use Modules\ERP\Filament\Resources\PaymentRequests\PaymentRequestResource;
 use Modules\ERP\Models\PaymentRequest;
@@ -17,6 +18,8 @@ use Override;
 
 final class EditPaymentRequest extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PaymentRequestResource::class;
 

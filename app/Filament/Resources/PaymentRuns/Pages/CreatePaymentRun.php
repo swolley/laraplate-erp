@@ -6,6 +6,7 @@ namespace Modules\ERP\Filament\Resources\PaymentRuns\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
 use Modules\ERP\Models\BankAccount;
 use Modules\ERP\Services\Payments\PaymentRunBuilderService;
@@ -14,6 +15,8 @@ use Override;
 
 final class CreatePaymentRun extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PaymentRunResource::class;
 

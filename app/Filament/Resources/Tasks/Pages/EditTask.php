@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\Tasks\TaskResource;
 use Modules\ERP\Models\Task;
 use Modules\ERP\Services\Calendar\TaskIcsExporter;
@@ -16,6 +17,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class EditTask extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = TaskResource::class;
 

@@ -10,6 +10,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Modules\ERP\Models\PurchaseOrder;
 use Modules\ERP\Models\PurchaseOrderLine;
@@ -17,6 +18,8 @@ use Override;
 
 final class EditPurchaseOrder extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PurchaseOrderResource::class;
 

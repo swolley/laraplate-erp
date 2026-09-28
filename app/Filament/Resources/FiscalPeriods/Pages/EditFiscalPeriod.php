@@ -6,12 +6,15 @@ namespace Modules\ERP\Filament\Resources\FiscalPeriods\Pages;
 
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\FiscalPeriods\Actions\FiscalPeriodActions;
 use Modules\ERP\Filament\Resources\FiscalPeriods\FiscalPeriodResource;
 use Override;
 
 final class EditFiscalPeriod extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = FiscalPeriodResource::class;
 

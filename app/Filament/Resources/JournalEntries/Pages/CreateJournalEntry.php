@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\JournalEntries\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\JournalEntries\JournalEntryResource;
 use Modules\ERP\Filament\Resources\JournalEntries\Schemas\JournalEntryCreateForm;
 use Modules\ERP\Models\JournalEntry;
@@ -14,6 +15,8 @@ use Override;
 
 final class CreateJournalEntry extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = JournalEntryResource::class;
 

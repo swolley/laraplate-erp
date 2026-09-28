@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Modules\ERP\Filament\Resources\PaymentRuns\Pages;
 
 use Filament\Resources\Pages\EditRecord;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\PaymentRuns\Actions\PaymentRunActions;
 use Modules\ERP\Filament\Resources\PaymentRuns\PaymentRunResource;
 use Override;
 
 final class EditPaymentRun extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PaymentRunResource::class;
 

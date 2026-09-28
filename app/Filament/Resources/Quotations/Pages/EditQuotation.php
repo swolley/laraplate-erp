@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\Quotations\Pages;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\Core\Filament\Utils\HasRecordLease;
 use Modules\ERP\Filament\Resources\Quotations\Actions\QuotationActions;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
@@ -16,6 +17,7 @@ use Override;
 
 final class EditQuotation extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
     use HasRecordLease;
 
     #[Override]

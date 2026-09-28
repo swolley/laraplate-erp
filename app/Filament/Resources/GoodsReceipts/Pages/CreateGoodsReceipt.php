@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\GoodsReceipts\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use Modules\ERP\Models\GoodsReceipt;
 use Modules\ERP\Services\Inventory\GoodsReceiptInventoryService;
@@ -14,6 +15,8 @@ use Override;
 
 final class CreateGoodsReceipt extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = GoodsReceiptResource::class;
 

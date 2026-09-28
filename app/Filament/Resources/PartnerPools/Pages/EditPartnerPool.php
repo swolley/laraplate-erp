@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Casts\MovementType;
 use Modules\ERP\Filament\Resources\PartnerPools\PartnerPoolResource;
 use Modules\ERP\Models\Movement;
@@ -24,6 +25,8 @@ use UnexpectedValueException;
 
 final class EditPartnerPool extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PartnerPoolResource::class;
 

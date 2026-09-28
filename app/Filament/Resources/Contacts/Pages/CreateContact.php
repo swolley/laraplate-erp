@@ -6,12 +6,15 @@ namespace Modules\ERP\Filament\Resources\Contacts\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\Contacts\ContactResource;
 use Modules\ERP\Models\Contact;
 use Override;
 
 final class CreateContact extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = ContactResource::class;
 

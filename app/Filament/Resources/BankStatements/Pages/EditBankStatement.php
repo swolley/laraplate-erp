@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Storage;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\BankStatements\BankStatementResource;
 use Modules\ERP\Models\BankStatement;
 use Modules\ERP\Services\Banking\BankStatementCsvImporter;
@@ -20,6 +21,8 @@ use Override;
 
 final class EditBankStatement extends EditRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = BankStatementResource::class;
 

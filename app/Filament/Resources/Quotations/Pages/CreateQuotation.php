@@ -7,12 +7,15 @@ namespace Modules\ERP\Filament\Resources\Quotations\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\Quotations\QuotationResource;
 use Modules\ERP\Models\Quotation;
 use Override;
 
 final class CreateQuotation extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = QuotationResource::class;
 

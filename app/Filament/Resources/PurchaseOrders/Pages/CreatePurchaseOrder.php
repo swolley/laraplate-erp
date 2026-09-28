@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\PurchaseOrders\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Casts\DocumentType;
 use Modules\ERP\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use Modules\ERP\Models\Company;
@@ -18,6 +19,8 @@ use Override;
 
 final class CreatePurchaseOrder extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = PurchaseOrderResource::class;
 

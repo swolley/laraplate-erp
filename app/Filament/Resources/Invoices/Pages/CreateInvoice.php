@@ -7,6 +7,7 @@ namespace Modules\ERP\Filament\Resources\Invoices\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Modules\Core\Filament\Utils\HasCloseOrCancelFormAction;
 use Modules\ERP\Filament\Resources\Invoices\InvoiceResource;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
@@ -14,6 +15,8 @@ use Override;
 
 final class CreateInvoice extends CreateRecord
 {
+    use HasCloseOrCancelFormAction;
+
     #[Override]
     protected static string $resource = InvoiceResource::class;
 
