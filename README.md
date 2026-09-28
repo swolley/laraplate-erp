@@ -313,7 +313,7 @@ configured once in the root `composer.json`, and the module is analysed and form
 
 ### External ERP imports
 
--   `php artisan erp:import --importer='Vendor\\Importer'` runs only importers implementing `Modules\ERP\Import\Contracts\BulkImporterInterface`. `--bootstrap`, repeated `--arg`, `--limit`, `--dry-run`, and `--no-search` use the shared Core import contract.
+-   `php artisan erp:import --importer='Vendor\\Importer'` runs only importers implementing `Modules\ERP\Import\Contracts\BulkImporterInterface`. `--bootstrap`, repeated `--arg`, `--limit`, `--dry-run`, `--no-search`, and `--index-batch` use the shared Core import contract.
 -   Source adapters remain external runtime plugins. They map source records explicitly to a company, Core users, accounts, pool, currency, and categories, then call `ExternalCashMovementImportService` and `ExternalExpenseAllocationService`; ERP contains no Symfony, SPLID, or Tricount schema knowledge.
 -   Every source record uses a stable `(source_key, external_id)` plus a lowercase SHA-256 fingerprint of normalized fields. Unchanged reruns skip, changed unposted records may be replaced, and changed posted movements throw `PostedImportConflict` instead of rewriting a journal.
 -   Import boundaries accept decimal strings normalized to scale 4 and never floats. Expense allocations preserve both owed and paid totals; dated contributions, withdrawals, and reimbursements remain separate cash events rather than allocation rows.
