@@ -2,6 +2,62 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.24.1] - 2026-09-29
+
+### 🚀 Features
+
+- *(erp)* Create and edit pages say Close until something is unsaved
+
+### 🐛 Bug Fixes
+
+- *(reporting)* Restore the test seam Pint's protected_to_private removed
+- *(erp)* Scope presets to their own entity's type
+- *(erp)* Update logo size and add PHP version badge in README
+
+### 💼 Other
+
+- Own tracing_type on the Item schema
+
+tracing_type is an intrinsic Item attribute: it governs lot/serial tracing
+across purchase, warehouse and sales flows, and a commercial-only company
+(no MES) needs it. Define the column in the items create migration and cover
+it with an ERP-owned test, instead of relying on MES to patch the table.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### 🚜 Refactor
+
+- *(migrations)* Fold column/index/enum alters into their create migrations
+- *(migrations)* Fold FK-column alters into their create by moving the referenced table earlier
+- *(migrations)* Fold cascade FK-column alters into their create migrations
+- *(reporting)* Inject the opportunity source instead of exposing a seam
+- Narrow findOrFail to a single record with whereKey()->firstOrFail()
+- Give the domain action handlers and Filament pages their real types
+- *(erp)* Resolve single records by key instead of find()
+- *(erp)* Annotate the pool relations instead of the reads below them
+- *(erp)* Seed global settings through internalSettingsDefinition
+- *(erp)* Global setting rows named without the module prefix
+- *(erp)* Correct versioning strategy terminology in glossary
+
+### 📚 Documentation
+
+- *(rag)* Describe how the module is released from the application
+- Run the module tests from the application, where the runner lives
+- *(erp)* Erp:import lists the shared --index-batch option
+
+### ⚡ Performance
+
+- *(migrations)* Index all foreign-key and row-scoping columns
+
+### 🧪 Testing
+
+- *(migrations)* Assert the law, now that the migrations enforcing it are gone
+
+### ⚙️ Miscellaneous Tasks
+
+- Rimuove docblock ide-helper generati dai model
+- Add IDE helper mixin annotations to models
+
 ## [1.24.0] - 2026-09-15
 
 ### 🚀 Features
