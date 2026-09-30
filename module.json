@@ -8,7 +8,7 @@
         "erp",
         "laraplate"
     ],
-    "priority": 99,
+    "priority": 10,
     "providers": [
         "Modules\\ERP\\Providers\\ERPServiceProvider"
     ],
