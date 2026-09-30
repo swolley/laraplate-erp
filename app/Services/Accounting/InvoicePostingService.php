@@ -17,6 +17,7 @@ use Modules\ERP\Models\FiscalPeriod;
 use Modules\ERP\Models\Invoice;
 use Modules\ERP\Models\InvoiceLine;
 use Modules\ERP\Models\JournalEntry;
+use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Models\TaxCode;
 use Modules\ERP\Services\Company\ErpCompanySettings;
 use Modules\ERP\Services\Payments\PaymentScheduleGeneratorService;
@@ -176,6 +177,9 @@ final readonly class InvoicePostingService
                 ->get()
                 ->keyBy('id');
 
+        /** @var array<int, list<int>> $line_ids_by_tax_code */
+        $line_ids_by_tax_code = [];
+
         foreach ($lines as $line) {
             $line_net = Decimal::mul((string) $line->quantity, (string) $line->unit_price);
             $line_tax = '0.0000';
@@ -195,17 +199,23 @@ final readonly class InvoicePostingService
                 $line->tax_rate = $tax_code->rate;
                 $line->tax_label = $tax_code->label;
 
-                $models->query(InvoiceLine::class)
-                    ->whereKey($line->id)
-                    ->update([
-                        'tax_code' => $tax_code->code,
-                        'tax_rate' => $tax_code->rate,
-                        'tax_label' => $tax_code->label,
-                    ]);
+                $line_ids_by_tax_code[(int) $tax_code->id][] = $line->id;
             }
 
             $net_total = Decimal::add($net_total, $line_net);
             $tax_total = Decimal::add($tax_total, $line_tax);
+        }
+
+        foreach ($line_ids_by_tax_code as $tax_code_id => $line_ids) {
+            $tax_code = $tax_codes->get($tax_code_id);
+
+            $models->query(InvoiceLine::class)
+                ->whereKey($line_ids)
+                ->update([
+                    'tax_code' => $tax_code->code,
+                    'tax_rate' => $tax_code->rate,
+                    'tax_label' => $tax_code->label,
+                ]);
         }
 
         $gross_total = Decimal::add($net_total, $tax_total);
@@ -306,13 +316,21 @@ final readonly class InvoicePostingService
         }
 
         $quantities_by_order = [];
+        $sales_order_line_ids = $lines->pluck('sales_order_line_id')->filter()->unique()->values();
+        $sales_order_lines = $sales_order_line_ids->isEmpty()
+            ? collect()
+            : $models->query(SalesOrderLine::class)
+                ->withoutGlobalScopes()
+                ->whereIn('id', $sales_order_line_ids)
+                ->get()
+                ->keyBy('id');
 
         foreach ($lines as $line) {
             if ($line->sales_order_line_id === null) {
                 continue;
             }
 
-            $sales_order_line = $line->sales_order_line()->withoutGlobalScopes()->first();
+            $sales_order_line = $sales_order_lines->get($line->sales_order_line_id);
 
             if ($sales_order_line === null) {
                 continue;

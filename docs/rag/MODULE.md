@@ -162,7 +162,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   Items, Warehouses, StockLevels
 -   `StockMovement` / `stock_cost_layers` tables
--   `StockMovementService` with FIFO and weighted-average costing
+-   `StockMovementService` with FIFO and weighted-average costing; an outbound FIFO movement locks and consumes open layers oldest first in keyset pages of 100 (`lazyById`), so any number of open layers is consumed in order
 -   COGS calculation integrated with delivery posting
 
 ### M3.4 — Delivery Notes

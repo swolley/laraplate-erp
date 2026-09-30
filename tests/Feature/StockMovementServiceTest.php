@@ -267,3 +267,50 @@ it('persists optional polymorphic source on movements', function (): void {
     expect($movement->source_type)->toBe(Party::class)
         ->and((int) $movement->source_id)->toBe((int) $party->id);
 });
+
+it('consumes fifo layers in order across the lazy page boundary', function (): void {
+    $company = Company::query()->create([
+        'slug' => 'inv-fifo-paged',
+        'name' => 'Inv Fifo Paged',
+        'fiscal_country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $warehouse = Warehouse::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Paged Hub',
+        'code' => 'PAGED-HUB',
+    ]);
+
+    $item = Item::query()->create([
+        'company_id' => $company->id,
+        'name' => 'Paged Item',
+        'sku' => 'PAGED-1',
+        'uom' => 'pcs',
+        'costing_method' => 'fifo',
+    ]);
+
+    $service = app(StockMovementService::class);
+
+    for ($i = 1; $i <= 150; $i++) {
+        $service->recordInbound($company->id, $item->id, $warehouse->id, 1, (string) $i);
+    }
+
+    $out = $service->recordOutbound($company->id, $item->id, $warehouse->id, 120);
+
+    assert_decimal_close('60.5000', (string) $out->unit_cost);
+
+    $open_layer_costs = StockCostLayer::query()
+        ->where('company_id', $company->id)
+        ->where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->where('qty_remaining', '>', 0)
+        ->orderBy('id')
+        ->pluck('unit_cost')
+        ->map(static fn (mixed $value): float => (float) $value)
+        ->all();
+
+    expect($open_layer_costs)->toHaveCount(30)
+        ->and($open_layer_costs[0])->toBe(121.0)
+        ->and($open_layer_costs[29])->toBe(150.0);
+});

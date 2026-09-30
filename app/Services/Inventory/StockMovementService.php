@@ -293,9 +293,8 @@ final class StockMovementService
             ->where('item_id', $item_id)
             ->where('warehouse_id', $warehouse_id)
             ->where('qty_remaining', '>', 0)
-            ->orderBy('id')
             ->lockForUpdate()
-            ->lazy(100);
+            ->lazyById(100);
 
         foreach ($layers as $layer) {
             if ((float) $remaining_to_take === 0.0) {

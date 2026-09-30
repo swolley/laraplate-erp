@@ -868,3 +868,68 @@ it('posts a sale invoice into an open fiscal period', function (): void {
 
     expect($invoice->fresh()->journal_entry_id)->not->toBeNull();
 });
+
+it('snapshots taxes and resolves sales order lines without a query per invoice line', function (): void {
+    [$company, $invoice, $tax_code] = erpInvoicePostingFixtureWithRepeatedTaxCode();
+
+    $order = SalesOrder::query()->create([
+        'company_id' => $company->id,
+        'party_id' => Party::query()->where('company_id', $company->id)->value('id'),
+        'currency' => 'EUR',
+        'status' => SalesOrderStatus::Confirmed,
+    ]);
+
+    $so_lines = [];
+
+    for ($i = 1; $i <= 6; $i++) {
+        $so_lines[$i] = SalesOrderLine::query()->create([
+            'sales_order_id' => $order->id,
+            'name' => 'Part ' . $i,
+            'qty_ordered' => 5,
+            'qty_delivered' => 0,
+            'qty_invoiced' => 0,
+            'status' => SalesOrderLineStatus::Open,
+        ]);
+
+        InvoiceLine::query()->create([
+            'invoice_id' => $invoice->id,
+            'line_no' => $i,
+            'sales_order_line_id' => $so_lines[$i]->id,
+            'description' => 'Part ' . $i,
+            'quantity' => '2.0000',
+            'unit_price' => '10.0000',
+            'tax_code_id' => $tax_code->id,
+        ]);
+    }
+
+    $connection = $invoice->getConnection();
+    $connection->flushQueryLog();
+    $connection->enableQueryLog();
+
+    try {
+        app(InvoicePostingService::class)->post($invoice);
+        $queries = collect($connection->getQueryLog())->pluck('query');
+    } finally {
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+    }
+
+    $invoice_lines_table = (new InvoiceLine)->getTable();
+    $so_lines_table = (new SalesOrderLine)->getTable();
+
+    $tax_snapshot_updates = $queries->filter(
+        static fn (string $query): bool => str_starts_with(mb_strtolower($query), 'update')
+            && str_contains($query, $invoice_lines_table)
+            && str_contains($query, 'tax_label'),
+    );
+    $so_line_lookups_by_key = $queries->filter(
+        static fn (string $query): bool => str_starts_with(mb_strtolower($query), 'select *')
+            && str_contains($query, $so_lines_table)
+            && ! str_contains($query, 'sales_order_id'),
+    );
+
+    expect($tax_snapshot_updates)->toHaveCount(1)
+        ->and($so_line_lookups_by_key)->toHaveCount(1)
+        ->and(InvoiceLine::query()->where('invoice_id', $invoice->id)->pluck('tax_code')->unique()->all())->toBe(['VAT22-PRELOAD'])
+        ->and(SalesOrderLine::query()->whereKey(collect($so_lines)->pluck('id'))->pluck('qty_invoiced')->map(static fn (mixed $qty): string => (string) $qty)->unique()->all())->toBe(['2.0000']);
+});
