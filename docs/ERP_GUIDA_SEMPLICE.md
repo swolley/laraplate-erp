@@ -135,6 +135,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 
 -   Chart of Accounts (`accounts` table, `Account` model, `ChartOfAccountsProvider` interface, Italian PDC default)
 -   Journal Entries (`JournalEntry` / `JournalEntryLine`, `JournalPostingService::post/reverse`, immutability after posting)
+-   `JournalEntry`, `JournalEntryLine`, `VatRegisterEntry`, `StockCostLayer`, `StockLevel` and `StockMovement` implement Core `RestrictsCrudWrites` (via `DeniesGenericCrudWrites`): generic CRUD writes on them answer `403`; they change only through their owning services
 -   Fiscal Calendar (`FiscalYear`, `FiscalPeriod`, `FiscalPeriodCloser` with re-open audit)
 -   Document Sequences (`DocumentSequence`, `DocumentNumberAllocator`, `DocumentType` enum with gap policy)
 
@@ -181,6 +182,8 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `InvoiceDeliveryNoteValidationService` — optional DDT linkage rules at posting (posted DDT, qty caps, SO line consistency)
 -   `InvoiceCompactionService` (compact / expand invoice lines by item)
 -   Filament **Post** / **Unpost** actions on invoice edit page and list (no manual `posted_at` editing)
+-   Posting is refused with `PostingToClosedFiscalPeriodException` when the posting date falls in a closed fiscal period: `InvoicePostingService` resolves the covering period of the company and `JournalPostingService` rejects it. Reopen the period (Filament **Reopen** action or the `reopen` domain action) before posting
+-   `force_post` is a separate ability that applies only to unposted purchase invoices: it shows the **Force three-way match** checkbox on the Post action, which lets posting proceed past a price/quantity tolerance breach recorded as `MatchStatus::Forced`
 -   See `docs/ERP_GUIDA_SEMPLICE.md` §4.7 and `docs/rag/MODULE.md` § Invoice posting workflow for end-to-end flows
 
 ### M3.6 — Purchasing Cycle
