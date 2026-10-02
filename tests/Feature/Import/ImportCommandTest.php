@@ -14,7 +14,7 @@ use Modules\ERP\Import\Support\SiblingImportersDiscovery;
 use Modules\ERP\Tests\Stubs\Import\FailingErpImporter;
 use Modules\ERP\Tests\Stubs\Import\FakeImportRow;
 use Modules\ERP\Tests\Stubs\Import\SuccessfulErpImporter;
-use Modules\ERP\Tests\Stubs\Import\WrongModuleImporter;
+use Modules\ERP\Tests\Stubs\Import\CoreOnlyImporter;
 
 uses(RefreshDatabase::class);
 
@@ -108,7 +108,7 @@ it('rolls back dry-run writes on the importer-selected connection', function ():
 });
 
 it('rejects importers that do not implement the ERP marker', function (): void {
-    $this->artisan(ImportCommand::class, ['--importer' => WrongModuleImporter::class])
+    $this->artisan(ImportCommand::class, ['--importer' => CoreOnlyImporter::class])
         ->expectsOutputToContain('must implement')
         ->assertFailed();
 });
@@ -142,10 +142,10 @@ final class SelectableErpImporter implements \Modules\ERP\Import\Contracts\BulkI
     public function import(?\Symfony\Component\Console\Output\OutputInterface $output = null): int { return 0; }
 }
 PHP);
-    file_put_contents($source . '/CmsOnlyImporter.php', <<<'PHP'
+    file_put_contents($source . '/CoreOnlyImporter.php', <<<'PHP'
 <?php
 namespace Demo;
-final class CmsOnlyImporter implements \Modules\CMS\Import\Contracts\BulkImporterInterface
+final class CoreOnlyImporter implements \Modules\Core\Import\Contracts\BulkImporterInterface
 {
     public function import(?\Symfony\Component\Console\Output\OutputInterface $output = null): int { return 0; }
 }
@@ -153,7 +153,7 @@ PHP);
     file_put_contents($vendor . '/autoload.php', <<<'PHP'
 <?php
 require dirname(__DIR__) . '/src/Demo/SelectableErpImporter.php';
-require dirname(__DIR__) . '/src/Demo/CmsOnlyImporter.php';
+require dirname(__DIR__) . '/src/Demo/CoreOnlyImporter.php';
 PHP);
 
     try {
