@@ -131,3 +131,17 @@ it('reads return auto note creation from company settings', function (): void {
 
     expect(app(ErpCompanySettings::class)->autoCreateNotesOnComplete($company))->toBeTrue();
 });
+
+it('keeps company-backed settings selectable where appropriate, with names within the Setting limit', function (): void {
+    $definitions = collect(ErpCompanySettings::globalSettingDefinitions())->keyBy('name');
+
+    expect($definitions->get(ErpCompanySettings::settingName(ErpCompanySettings::INVOICE_GENERATION_MODE))['choices'])
+        ->toBe([
+            ErpCompanySettings::INVOICE_GENERATION_MODE_EXPANDED,
+            ErpCompanySettings::INVOICE_GENERATION_MODE_COMPACT,
+        ]);
+
+    foreach ($definitions->keys() as $name) {
+        expect(mb_strlen((string) $name))->toBeLessThanOrEqual(255);
+    }
+});
