@@ -16,6 +16,7 @@ use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockReservation;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\Inventory\StockReservationService;
+use Modules\ERP\Tests\Stubs\LockRecordingSqliteGrammar;
 
 uses(RefreshDatabase::class);
 
@@ -248,6 +249,38 @@ it('reserve serializes on the per-item atomic lock and frees it afterwards', fun
     $probe = Cache::lock($key, 10);
     expect($probe->get())->toBeTrue();
     $probe->release();
+});
+
+it('reserve row-locks the stock and live reservation rows inside its own transaction before reading availability', function (): void {
+    reservation_test_on_hand($this->company, $this->item, '5.0000');
+    StockReservation::factory()->hard()->create([
+        'company_id' => $this->company->id,
+        'item_id' => $this->item->id,
+        'quantity' => '1.0000',
+    ]);
+
+    $connection = (new StockReservation)->getConnection();
+    $outer_depth = $connection->transactionLevel();
+    $grammar = new LockRecordingSqliteGrammar($connection);
+    $connection->setQueryGrammar($grammar);
+
+    try {
+        $this->service->reserve($this->company->id, $this->item->id, '1.0000', StockReservationState::Hard, 'external_document', 1);
+    } finally {
+        $connection->useDefaultQueryGrammar();
+    }
+
+    $stock_table = (new StockLevel)->getTable();
+    $reservation_table = (new StockReservation)->getTable();
+    $stock_reads = array_filter($grammar->selects, fn (array $select): bool => $select['table'] === $stock_table);
+    $reservation_reads = array_filter($grammar->selects, fn (array $select): bool => $select['table'] === $reservation_table);
+
+    expect($stock_reads)->not->toBeEmpty()
+        ->and($reservation_reads)->not->toBeEmpty()
+        ->and(array_filter($stock_reads, fn (array $select): bool => ! $select['locked']))->toBeEmpty()
+        ->and(array_filter($reservation_reads, fn (array $select): bool => ! $select['locked']))->toBeEmpty()
+        ->and(array_filter($stock_reads + $reservation_reads, fn (array $select): bool => $select['depth'] <= $outer_depth))->toBeEmpty()
+        ->and(array_key_first($stock_reads))->toBeLessThan(array_key_first($reservation_reads));
 });
 
 it('reserve frees the lock when stock is insufficient', function (): void {

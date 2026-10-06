@@ -57,8 +57,12 @@ final readonly class StockReservationService
 
     /**
      * Holds `$quantity` of the item for the source. The availability check and the insert run in one
-     * critical section: a per-(company, item) atomic lock acquired first, then a transaction, so the
-     * row is committed before the next reserver for the same item can look at availability.
+     * critical section guarded twice: a per-(company, item) atomic cache lock is a cheap first gate,
+     * and inside the transaction the item's stock rows are row-locked (`FOR UPDATE`) before
+     * availability is recomputed. The row lock is the real guarantee: the database holds it until the
+     * actual COMMIT, so it still serializes reservers when the caller runs `reserve()` inside its own
+     * outer transaction (where the inner transaction is only a savepoint and the cache lock is long
+     * released by the time the row becomes visible).
      *
      * A `soft` reservation carries `$expiresAt` (null means it does not lapse); a `hard` one never
      * expires and ignores it.
@@ -90,7 +94,7 @@ final readonly class StockReservationService
         return $lock->block(
             self::LOCK_WAIT_SECONDS,
             fn (): StockReservation => $this->connection()->transaction(function () use ($companyId, $itemId, $quantity, $mode, $sourceType, $sourceId, $warehouseId, $expiresAt): StockReservation {
-                $available = $this->available($companyId, $itemId);
+                $available = $this->availableUnderRowLock($companyId, $itemId);
 
                 if (Decimal::isNegative(Decimal::sub($available, $quantity))) {
                     throw InsufficientStockException::forReservation($companyId, $itemId, $quantity, $available);
@@ -207,6 +211,51 @@ final readonly class StockReservationService
                 $row->save();
             }
         });
+    }
+
+    /**
+     * Availability as seen by a reserver that owns the item's critical section. Locks the stock rows
+     * first (in id order, so concurrent reservers cannot deadlock on each other) and then reads the
+     * live reservations with a locking read too: a locking read is a current read, so the figures
+     * reflect everything committed up to now even on engines whose plain SELECT reads an older
+     * snapshot inside a long-running outer transaction. A locking read cannot use SUM() on every
+     * engine, so the rows are summed here with exact decimals.
+     *
+     * Must run inside a transaction, otherwise the row locks are released immediately.
+     */
+    private function availableUnderRowLock(int $companyId, int $itemId): string
+    {
+        $on_hand = $this->sumDecimals(
+            StockLevel::query()
+                ->where('company_id', $companyId)
+                ->where('item_id', $itemId)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->pluck('quantity'),
+        );
+
+        $reserved = $this->sumDecimals(
+            $this->liveReservations($companyId, $itemId)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->pluck('quantity'),
+        );
+
+        return Decimal::sub($on_hand, $reserved);
+    }
+
+    /**
+     * @param  iterable<mixed>  $quantities
+     */
+    private function sumDecimals(iterable $quantities): string
+    {
+        $total = '0.0000';
+
+        foreach ($quantities as $quantity) {
+            $total = Decimal::add($total, $this->decimalFromAggregate($quantity));
+        }
+
+        return $total;
     }
 
     /**
