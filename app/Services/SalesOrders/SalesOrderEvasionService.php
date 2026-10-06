@@ -8,9 +8,20 @@ use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
+use Modules\ERP\Services\Inventory\StockReservationService;
+use Modules\ERP\Support\Decimal;
 
 final class SalesOrderEvasionService
 {
+    /**
+     * Opaque reservation source alias for a sales order line (never resolved by the reservation service).
+     */
+    private const string RESERVATION_SOURCE = 'erp.sales_order_line';
+
+    public function __construct(
+        private readonly StockReservationService $reservations,
+    ) {}
+
     /**
      * @param  array<int, numeric-string|float|int>  $line_quantities
      */
@@ -62,8 +73,12 @@ final class SalesOrderEvasionService
                 continue;
             }
 
+            $shipped = '0.0000';
+
             if ($mode === 'delivery') {
+                $previous_delivered = $this->formatQuantity((float) $line->qty_delivered);
                 $line->qty_delivered = $this->formatQuantity(min((float) $line->qty_ordered, (float) $line->qty_delivered + $quantity));
+                $shipped = Decimal::sub($line->qty_delivered, $previous_delivered);
             } elseif ($mode === 'delivery_reversal') {
                 $line->qty_delivered = $this->formatQuantity(max(0.0, (float) $line->qty_delivered - $quantity));
             } elseif ($mode === 'invoice_reversal') {
@@ -75,9 +90,34 @@ final class SalesOrderEvasionService
             $line->status = $this->lineStatusFromQuantities($line);
 
             $line->save();
+
+            if ($mode === 'delivery' && $line->item_id !== null) {
+                $this->consumeReservation($line, $shipped);
+            }
         }
 
         $this->syncHeaderStatus($sales_order->fresh(['lines']) ?? $sales_order);
+    }
+
+    /**
+     * Closes the hard reservation for the quantity actually shipped, clamped to what the line still
+     * holds: a partially backordered line reserved less than it ships, so consuming `qty_delivered`
+     * blindly would over-consume. The backorder remainder was never reserved and stays unconsumed.
+     */
+    private function consumeReservation(SalesOrderLine $line, string $shipped): void
+    {
+        if (Decimal::isZero($shipped)) {
+            return;
+        }
+
+        $reserved = $this->reservations->reservedQuantity(self::RESERVATION_SOURCE, $line->id);
+        $to_consume = Decimal::isNegative(Decimal::sub($shipped, $reserved)) ? $shipped : $reserved;
+
+        if (Decimal::isZero($to_consume)) {
+            return;
+        }
+
+        $this->reservations->consume(self::RESERVATION_SOURCE, $line->id, $to_consume);
     }
 
     private function lineStatusFromQuantities(SalesOrderLine $line): SalesOrderLineStatus

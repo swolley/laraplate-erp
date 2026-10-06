@@ -136,6 +136,26 @@ final readonly class StockReservationService
     }
 
     /**
+     * The quantity the source still holds as a live `hard` reservation: the sum of its `hard` rows.
+     *
+     * Only `hard` rows count. A `soft` hold is not yet committed, and `consumed`/`released` rows are
+     * terminal; so this is exactly the quantity that {@see consume()} can close and that the
+     * evasion/amend lifecycle clamps against before shipping or reducing a line. Company scoping is
+     * left to the global {@see BelongsToCompanyScope}: callers run in company context, and the
+     * `(source_type, source_id)` pair already pins the figure to one line.
+     */
+    public function reservedQuantity(string $sourceType, int $sourceId): string
+    {
+        return $this->sumDecimals(
+            StockReservation::query()
+                ->where('source_type', $sourceType)
+                ->where('source_id', $sourceId)
+                ->where('state', StockReservationState::Hard->value)
+                ->pluck('quantity'),
+        );
+    }
+
+    /**
      * Gives back everything the source still holds. Idempotent: no live rows means nothing to do.
      */
     public function release(string $sourceType, int $sourceId): void

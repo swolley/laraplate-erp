@@ -11,7 +11,6 @@ use Modules\ERP\Enums\StockReservationState;
 use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Exceptions\InsufficientStockException;
 use Modules\ERP\Models\SalesOrderLine;
-use Modules\ERP\Models\StockReservation;
 use Modules\ERP\Services\Inventory\StockReservationService;
 use Modules\ERP\Support\Decimal;
 
@@ -63,7 +62,7 @@ final readonly class ReserveStockForConfirmedSalesOrder
     {
         $this->reservations->promoteToHard(self::SOURCE_TYPE, $line->id, $companyId);
 
-        $remaining = Decimal::sub($line->qty_ordered, $this->hardReserved($companyId, $line->id));
+        $remaining = Decimal::sub($line->qty_ordered, $this->reservations->reservedQuantity(self::SOURCE_TYPE, $line->id));
 
         for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
             $quantity = $this->clampToAvailable($remaining, $this->reservations->available($companyId, $line->item_id));
@@ -135,23 +134,5 @@ final readonly class ReserveStockForConfirmedSalesOrder
         }
 
         return $quantity;
-    }
-
-    private function hardReserved(int $companyId, int $lineId): string
-    {
-        $total = '0.0000';
-
-        $quantities = StockReservation::query()
-            ->where('company_id', $companyId)
-            ->where('source_type', self::SOURCE_TYPE)
-            ->where('source_id', $lineId)
-            ->where('state', StockReservationState::Hard->value)
-            ->pluck('quantity');
-
-        foreach ($quantities as $quantity) {
-            $total = Decimal::add($total, (string) $quantity);
-        }
-
-        return $total;
     }
 }

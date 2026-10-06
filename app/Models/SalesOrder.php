@@ -17,6 +17,7 @@ use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Database\Factories\SalesOrderFactory;
 use Modules\ERP\Enums\ERPTables;
+use Modules\ERP\Events\SalesOrderCancelled;
 use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
@@ -244,8 +245,18 @@ final class SalesOrder extends Model implements ILockableModel, IValidatableMode
         });
 
         self::updated(static function (SalesOrder $order): void {
-            if ($order->wasChanged('status') && $order->status === SalesOrderStatus::Confirmed) {
+            if (! $order->wasChanged('status')) {
+                return;
+            }
+
+            if ($order->status === SalesOrderStatus::Confirmed) {
                 event(new SalesOrderConfirmed($order));
+
+                return;
+            }
+
+            if ($order->status === SalesOrderStatus::Cancelled) {
+                event(new SalesOrderCancelled($order));
             }
         });
     }

@@ -240,7 +240,7 @@ it('updates evasion quantities and locks qty_ordered after progress', function (
         'status' => SalesOrderLineStatus::Open,
     ]);
 
-    $service = new SalesOrderEvasionService;
+    $service = app(SalesOrderEvasionService::class);
     $service->registerDelivery($order, [$line->id => 1]);
     $service->registerInvoice($order, [$line->id => 1]);
 
