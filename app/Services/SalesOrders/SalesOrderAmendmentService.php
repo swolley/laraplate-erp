@@ -17,7 +17,6 @@ use Modules\ERP\Models\QuotationItem;
 use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Accounting\DocumentNumberAllocator;
-use Modules\ERP\Services\Inventory\StockReservationService;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ConnectionScopedTransaction;
 
@@ -26,14 +25,8 @@ use Modules\ERP\Support\ConnectionScopedTransaction;
  */
 final readonly class SalesOrderAmendmentService
 {
-    /**
-     * Opaque reservation source alias for a sales order line (never resolved by the reservation service).
-     */
-    private const string RESERVATION_SOURCE = 'erp.sales_order_line';
-
     public function __construct(
         private DocumentNumberAllocator $document_number_allocator,
-        private StockReservationService $reservations,
     ) {}
 
     public function amend(SalesOrder $source_order): SalesOrder
@@ -101,13 +94,6 @@ final readonly class SalesOrderAmendmentService
                     'unit_price' => $source_line->unit_price,
                     'status' => SalesOrderLineStatus::Open,
                 ]);
-
-                // The remaining quantity moves to the amendment, which re-reserves on its own
-                // confirm (amend-up = a larger reservation there). Release the source line's live
-                // hard hold so the stock is not double booked; consumed rows are terminal and left
-                // untouched, so an amend-down below the already-shipped quantity cannot go negative
-                // or give back consumed stock.
-                $this->reservations->release(self::RESERVATION_SOURCE, $source_line->id);
             }
 
             if (! $amendment->lines()->exists()) {

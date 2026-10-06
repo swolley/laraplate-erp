@@ -127,8 +127,85 @@ it('amend-down below consumed quantity is clamped', function (): void {
         ->where('state', StockReservationState::Consumed->value)
         ->sum('quantity');
 
-    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('0.0000')
+    // amend() no longer releases the source's hold: the remaining 3 stay hard-reserved on the
+    // source (released only when the amendment confirms), the 7 consumed rows are terminal and
+    // untouched, and no negative reservation is ever produced.
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('3.0000')
         ->and((float) $consumed)->toBe(7.0)
-        ->and($this->service->available($this->company->id, $item->id))->toBe('10.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('7.0000')
         ->and(StockReservation::query()->where('quantity', '<', 0)->count())->toBe(0);
+});
+
+it('amend() does not release the source order reservation', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    lifecycle_on_hand($this->company, $item, '10.0000');
+    $line = lifecycle_line($this->order, $item, '4.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('4.0000');
+
+    app(SalesOrderAmendmentService::class)->amend($this->order->fresh());
+
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('4.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('6.0000');
+});
+
+it('an abandoned amendment leaves the source hold intact', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    lifecycle_on_hand($this->company, $item, '10.0000');
+    $line = lifecycle_line($this->order, $item, '4.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    // Drafted and never confirmed: the amendment is abandoned.
+    $amendment = app(SalesOrderAmendmentService::class)->amend($this->order->fresh());
+    $amendment_line = $amendment->lines->first();
+
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('4.0000')
+        ->and($this->service->reservedQuantity(LIFECYCLE_SOURCE, $amendment_line->id))->toBe('0.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('6.0000');
+});
+
+it('confirming the amendment releases the source holds and reserves the amendment lines', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    lifecycle_on_hand($this->company, $item, '10.0000');
+    $line = lifecycle_line($this->order, $item, '4.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('4.0000');
+
+    $amendment = app(SalesOrderAmendmentService::class)->amend($this->order->fresh());
+    $amendment_line = $amendment->lines->first();
+
+    $amendment->update(['status' => SalesOrderStatus::Confirmed]);
+
+    // Net: the remaining 4 is reserved exactly once, by the amendment; the source holds nothing.
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('0.0000')
+        ->and($this->service->reservedQuantity(LIFECYCLE_SOURCE, $amendment_line->id))->toBe('4.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('6.0000');
+});
+
+it('releases the source before reserving so the amendment fully reserves when on_hand equals the remaining', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    lifecycle_on_hand($this->company, $item, '4.0000');
+    $line = lifecycle_line($this->order, $item, '4.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    // The source holds all 4 units; nothing is available for a reserve-first ordering to grab.
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('4.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('0.0000');
+
+    $amendment = app(SalesOrderAmendmentService::class)->amend($this->order->fresh());
+    $amendment_line = $amendment->lines->first();
+
+    $amendment->update(['status' => SalesOrderStatus::Confirmed]);
+
+    // Release-before-reserve frees the source's 4 first, so the amendment reserves the full 4
+    // (fully reserved, not backordered) even though on_hand exactly equals the remaining quantity.
+    expect($this->service->reservedQuantity(LIFECYCLE_SOURCE, $amendment_line->id))->toBe('4.0000')
+        ->and($this->service->reservedQuantity(LIFECYCLE_SOURCE, $line->id))->toBe('0.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('0.0000');
 });

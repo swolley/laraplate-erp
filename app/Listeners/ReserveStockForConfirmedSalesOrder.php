@@ -10,9 +10,11 @@ use Illuminate\Validation\ValidationException;
 use Modules\ERP\Enums\StockReservationState;
 use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Exceptions\InsufficientStockException;
+use Modules\ERP\Models\SalesOrder;
 use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Inventory\StockReservationService;
 use Modules\ERP\Support\Decimal;
+use Throwable;
 
 /**
  * Holds stock for the item-backed lines of a sales order the moment it is confirmed, best effort.
@@ -48,6 +50,14 @@ final readonly class ReserveStockForConfirmedSalesOrder
     {
         $order = $event->salesOrder;
 
+        // An amendment confirming supersedes its source order: free the source's hard holds first
+        // so the stock they pinned is available again, then reserve the amendment's own lines
+        // against it. Releasing before reserving is what lets the amendment actually take the
+        // remaining quantity; reserving first would see ~zero availability and hold nothing.
+        if ($order->amends_sales_order_id !== null) {
+            $this->releaseAmendedSourceHolds($order->amends_sales_order_id);
+        }
+
         $lines = $order->lines()
             ->whereNotNull('item_id')
             ->orderBy('id')
@@ -55,6 +65,38 @@ final readonly class ReserveStockForConfirmedSalesOrder
 
         foreach ($lines as $line) {
             $this->reserveLine($order->company_id, $line);
+        }
+    }
+
+    /**
+     * Releases every live hard hold the amended source order's lines still carry, best effort. The
+     * source is in the same company, so the global company scope resolves it; a missing source or a
+     * release failure is logged and never thrown, so it cannot break the amendment's confirmation.
+     */
+    private function releaseAmendedSourceHolds(int $sourceOrderId): void
+    {
+        try {
+            $source = SalesOrder::query()
+                ->whereKey($sourceOrderId)
+                ->with('lines')
+                ->first();
+
+            if ($source === null) {
+                Log::warning('An amendment confirmed but its amended source order could not be loaded to release its reservations.', [
+                    'amends_sales_order_id' => $sourceOrderId,
+                ]);
+
+                return;
+            }
+
+            foreach ($source->lines as $sourceLine) {
+                $this->reservations->release(self::SOURCE_TYPE, $sourceLine->id);
+            }
+        } catch (Throwable $exception) {
+            Log::error('Releasing the amended source order reservations failed; the amendment confirm proceeds.', [
+                'amends_sales_order_id' => $sourceOrderId,
+                'exception' => $exception->getMessage(),
+            ]);
         }
     }
 
