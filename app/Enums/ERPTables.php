@@ -60,6 +60,7 @@ enum ERPTables: string
     case GoodsReceipts = 'erp_goods_receipts';
     case StockMovements = 'erp_stock_movements';
     case StockCostLayers = 'erp_stock_cost_layers';
+    case StockReservations = 'erp_stock_reservations';
     case PurchaseOrderLines = 'erp_purchase_order_lines';
     case GoodsReceiptLines = 'erp_goods_receipt_lines';
     case InvoiceLineDeliveryNoteLine = 'erp_invoice_line_delivery_note_line';
