@@ -164,6 +164,7 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `StockMovement` / `stock_cost_layers` tables
 -   `StockMovementService` with FIFO and weighted-average costing; an outbound FIFO movement locks and consumes open layers oldest first in keyset pages of 100 (`lazyById`), so any number of open layers is consumed in order
 -   COGS calculation integrated with delivery posting
+-   `StockReservation` / `StockReservationService`: `available = on hand - live reservations` (see Stock Reservation and Availability (ATP))
 
 ### M3.4 — Delivery Notes
 
@@ -171,6 +172,49 @@ The ERP module aligns with the same quality toolchain as **Cms** and **Core**:
 -   `DeliveryNoteInventoryService` (stock posting + rollback)
 -   `DeliveryNoteCogsJournalService` (COGS journal on posting, full reversal on unpost)
 -   Automatic SO qty_delivered updates
+
+### Stock Reservation and Availability (ATP)
+
+ERP owns a native stock reservation, so a confirmed but not yet shipped sales order reduces what can still be promised. The concept is **available = on hand - live reservations**, where on hand is the sum of the item's `StockLevel` quantity across all of the company's warehouses and a reservation is live when it is `hard`, or `soft` with `expires_at` null or in the future. `StockLevel` stays the on-hand truth and `StockMovement` the realized-movement ledger; a reservation never moves stock.
+
+**Table and model**
+
+-   `erp_stock_reservations`: `company_id`, `item_id`, nullable `warehouse_id`, `source_type` + `source_id` (opaque owning document), `quantity` (decimal 15,4, DB check keeps it positive), `state` (`soft` / `hard` / `consumed` / `released`, `StockReservationState`), nullable `expires_at`, timestamps with soft delete. Indexes: `(company_id, item_id, state)` for the availability sum, `(source_type, source_id)` for lifecycle lookups.
+-   `StockReservation` is company-scoped (`BelongsToCompany`), not versioned, and implements `RestrictsCrudWrites` (generic CRUD writes answer `403`): it changes only through `StockReservationService`. `source_type` / `source_id` are plain columns, not a morph relation: ERP never resolves the source document, so a source can live in a module ERP must not import. Current source aliases: `erp.sales_order_line` (ERP) and `mes.production_order_material` (MES, see the MES module doc).
+-   `soft` and `hard` are the live states; `consumed` (already reflected in the on-hand drop) and `released` are terminal and never count. `StockReservation::active()` is the scope for soft + hard by state alone.
+
+**`StockReservationService` contract** (`Modules\ERP\Services\Inventory`, exact decimal strings of scale 4 through `Decimal`, no floats)
+
+-   `available(companyId, itemId): string`: on hand minus live reservations, item-level and company-wide. An expired soft is ignored on read, whether or not the sweep has closed it.
+-   `reserve(companyId, itemId, quantity, mode, sourceType, sourceId, ?warehouseId, ?expiresAt): StockReservation`: `mode` is `soft` or `hard`; `expiresAt` applies only to `soft` (null means it does not lapse), a `hard` row never expires. Throws `InsufficientStockException` when the quantity exceeds availability, `ValidationException` for a non-positive quantity or an item/warehouse of another company, `LockTimeoutException` when the item lock cannot be taken.
+-   `promoteToHard(sourceType, sourceId, companyId)`: turns the source's live soft rows into hard and clears `expires_at`; a missing or already expired soft is left alone (the caller reserves a fresh hard one, which re-validates availability).
+-   `reservedQuantity(sourceType, sourceId): string`: the sum of the source's `hard` rows only (the part `consume()` can close).
+-   `release(sourceType, sourceId)`: gives back every soft/hard row of the source; idempotent.
+-   `consume(sourceType, sourceId, quantity)`: closes `quantity` of the source's hard rows oldest first, splitting the last row when it is only partly consumed; `ValidationException` above the hard total. It does not move on-hand stock: the caller records the outbound movement in the same transaction, so availability never counts the same units twice.
+-   `release`, `consume` and `reservedQuantity` rely on the model's company global scope: callers run in company context.
+-   The service is a PHP contract only. No route, domain action or Filament resource exposes reservations.
+
+**Concurrency.** `reserve()` is a critical section guarded twice. A per-`(company, item)` cache lock (`erp:stock-reservation:{company}:{item}`, held up to 10 s, waited up to 5 s) is a cheap first gate. Inside the transaction the item's `StockLevel` rows and its live reservation rows are row-locked (`FOR UPDATE`, in id order so concurrent reservers cannot deadlock) and availability is recomputed from those current reads; the row lock is the real guarantee, because the database keeps it until the actual COMMIT and so still serializes reservers when `reserve()` runs inside the caller's own outer transaction (the inner transaction is then only a savepoint). Overselling through a reservation is impossible: it never exceeds what is on hand.
+
+**Sales order lifecycle** (source alias `erp.sales_order_line`, one source per `SalesOrderLine`, `warehouse_id` null)
+
+-   **Confirm.** `SalesOrderConfirmed` (fired on create-as-confirmed and on the transition to confirmed) runs `ReserveStockForConfirmedSalesOrder`, best effort and never blocking the confirm. For each item-backed line, in id order, it first promotes a live soft hold of the line to hard, then hard-reserves `min(quantity not yet hard-reserved, available)`. The unreserved remainder is backorder or make-to-order (MES plans production off the same event). The quantity is pre-clamped, and a lost race retries up to three times with fresh availability. No exception from `reserve()` escapes: a contended lock, or three lost races in a row, ends as a WARNING log, and an item that is not the order company's as an ERROR log, and the line is left unreserved either way. Lines without an item reserve nothing.
+-   **Cancel.** The `SalesOrderCancelled` event (fired when the status changes to cancelled) runs `ReleaseStockForCancelledSalesOrder`, which releases every soft/hard row of each line. Consumed rows are terminal.
+-   **Evasion.** Posting a delivery note records the outbound `StockMovement`s and then `SalesOrderEvasionService::registerDelivery`, in the same transaction. For each item-backed line it consumes `min(quantity shipped by this posting, hard reserved quantity)`: only the reserved part is closed, so a partly backordered line never over-consumes, and on a partial evasion the remainder stays `hard`. Unposting the delivery note reverts the movement and the delivered quantity but does not restore consumed reservations.
+-   **Amend.** `SalesOrderAmendmentService::amend()` copies the remaining quantity (ordered minus the larger of delivered and invoiced) of each line into a draft amendment order and releases the source line's live hold in the same transaction. The amendment hard-reserves its own lines when it is confirmed (an amend-up is simply a larger reservation there). Consumed rows of the source are not touched.
+-   **Soft holds.** A soft hold is caller-initiated (for example a storefront checkout holding stock during the payment window); nothing in the repository creates one yet, and ERP forces none on a manual draft. Promotion to hard happens through `promoteToHard()` or at confirm as above.
+
+**Expiry and configuration**
+
+-   `erp:stock-reservations:expire` (scheduled hourly, `onOneServer`, `withoutOverlapping`) releases, across every company, the soft rows whose `expires_at` has passed, in one guarded `UPDATE` that cannot clobber a soft promoted to hard in the meantime. It is housekeeping: availability already ignores an expired soft on read, so a missed run changes no figure.
+-   `erp.stock_reservation.soft_ttl` (env `ERP_STOCK_RESERVATION_SOFT_TTL`, minutes, default `1440`) is the soft hold lifetime. It is read by whoever creates the soft hold (`expires_at = now + soft_ttl`), not by the sweep. Keep it well above the payment window.
+
+**Known limitations**
+
+-   Availability is item-level and company-wide for sales: which warehouse ships is still decided at evasion. Reservations created by sales have a null warehouse; only a module that must pin a location (MES) sets `warehouse_id`.
+-   Best-effort confirm means a short order confirms anyway, with a backorder remainder. Refusing an order whose stock cannot be covered, or refunding the unfulfillable remainder, is a consumer policy (a Shop concern), not part of the ERP confirm.
+-   Availability is `on hand - reservations` only: incoming stock (open purchase orders, planned production) is not promised against.
+-   An abandoned amendment frees the source order's reservation: the hold is released when the draft amendment is created, and the source order stays confirmed with no hold until the amendment is confirmed.
 
 ### M3.5 — Invoice Posting & DDT Integration
 

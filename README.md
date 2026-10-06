@@ -99,6 +99,7 @@ E-invoice provider configuration is read through Laravel config/env:
 -   `ERP_EINVOICE_ARUBA_SIGNATURE_CREDENTIAL` / `ERP_EINVOICE_ARUBA_SIGNATURE_DOMAIN`: optional Aruba signature parameters
 -   `ERP_EINVOICE_ARUBA_SENDER_PIVA`: optional sender VAT override; defaults to company fiscal country + tax id
 -   `ERP_EINVOICE_ARUBA_SKIP_EXTRA_SCHEMA` / `ERP_EINVOICE_ARUBA_DRY_RUN`: optional upload flags
+-   `ERP_STOCK_RESERVATION_SOFT_TTL`: minutes a soft stock reservation holds stock back before it lapses (`erp.stock_reservation.soft_ttl`), default `1440`; read by whoever creates the soft hold, so keep it well above the payment window
 
 Per-company ERP settings are stored in `companies.settings` (JSON). Use `ErpCompanySettings` to read dotted keys (e.g. `erp.three_way_match.price_tolerance_percent`).
 
@@ -176,6 +177,8 @@ configured once in the root `composer.json`, and the module is analysed and form
 -   `StockMovement` / `stock_cost_layers` tables
 -   `StockMovementService` with FIFO and weighted-average costing
 -   COGS calculation integrated with delivery posting
+-   `StockReservation` / `StockReservationService`: `available = on hand - live reservations`, item-level and company-wide. A sales order hard-reserves its item lines best effort when confirmed (never blocking the confirm), releases them on cancel or amend, and consumes the reserved part at delivery; MES reserves BOM components for released production orders through the same service. See `docs/rag/MODULE.md` § Stock Reservation and Availability (ATP)
+-   `erp:stock-reservations:expire` (scheduled hourly) releases soft reservations whose `expires_at` has passed; availability already ignores an expired soft on read, so the sweep is housekeeping
 
 ### M3.4 — Delivery Notes
 
