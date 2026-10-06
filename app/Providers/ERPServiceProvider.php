@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Gate;
 use Modules\Core\Import\Support\EntityImporterRegistry;
 use Modules\Core\Overrides\ModuleServiceProvider;
 use Modules\Core\Services\Crud\DomainActionRegistry;
+use Modules\ERP\Console\ExpireStockReservationsCommand;
 use Modules\ERP\Contracts\ChartOfAccountsProvider;
 use Modules\ERP\Contracts\CurrencyConverter;
 use Modules\ERP\Contracts\EInvoiceProvider;
@@ -154,6 +156,22 @@ class ERPServiceProvider extends ModuleServiceProvider
         $this->app->singleton(QuotationRevisionService::class);
         $this->app->singleton(PaymentRequestService::class);
         $this->app->singleton(ErpConnectionContext::class);
+    }
+
+    /**
+     * Housekeeping only: availability ignores an expired soft reservation on read, so a missed run
+     * changes no figure.
+     */
+    #[Override]
+    protected function registerCommandSchedules(): void
+    {
+        $this->app->booted(function (): void {
+            $this->app->make(Schedule::class)
+                ->command(ExpireStockReservationsCommand::class)
+                ->hourly()
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
     }
 
     /**
