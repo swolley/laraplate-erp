@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\ERP\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Modules\ERP\Events\SalesOrderConfirmed;
+use Modules\ERP\Listeners\ReserveStockForConfirmedSalesOrder;
 use Override;
 
 class EventServiceProvider extends ServiceProvider
@@ -15,7 +17,11 @@ class EventServiceProvider extends ServiceProvider
      * @var array<string, array<int, string>>
      */
     #[Override]
-    protected $listen = [];
+    protected $listen = [
+        SalesOrderConfirmed::class => [
+            ReserveStockForConfirmedSalesOrder::class,
+        ],
+    ];
 
     /**
      * Indicates if events should be discovered.
