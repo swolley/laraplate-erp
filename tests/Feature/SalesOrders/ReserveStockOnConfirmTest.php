@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Enums\StockReservationState;
-use Modules\ERP\Exceptions\InsufficientStockException;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Item;
 use Modules\ERP\Models\SalesOrder;
@@ -49,7 +48,7 @@ beforeEach(function (): void {
     $this->service = app(StockReservationService::class);
 });
 
-it('confirming a sales order hard-reserves each item-backed line', function (): void {
+it('confirming a sales order hard-reserves each item-backed line up to availability', function (): void {
     $first_item = Item::factory()->create(['company_id' => $this->company->id]);
     $second_item = Item::factory()->create(['company_id' => $this->company->id]);
     reserve_on_confirm_on_hand($this->company, $first_item, '10.0000');
@@ -137,7 +136,7 @@ it('reserves only the part of the line a soft hold does not already cover', func
         ->and($this->service->available($this->company->id, $item->id))->toBe('5.0000');
 });
 
-it('confirm with expired hold and no stock is rejected', function (): void {
+it('confirm with no stock reserves nothing and still succeeds', function (): void {
     $item = Item::factory()->create(['company_id' => $this->company->id]);
     reserve_on_confirm_on_hand($this->company, $item, '0.0000');
     $line = reserve_on_confirm_line($this->order, $item, '3.0000');
@@ -151,23 +150,42 @@ it('confirm with expired hold and no stock is rejected', function (): void {
         'expires_at' => now()->subMinute(),
     ]);
 
-    expect(fn () => $this->order->update(['status' => SalesOrderStatus::Confirmed]))
-        ->toThrow(InsufficientStockException::class);
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
 
-    expect(StockReservation::query()->where('state', StockReservationState::Hard->value)->count())->toBe(0);
+    expect($this->order->fresh()->status)->toBe(SalesOrderStatus::Confirmed)
+        ->and(StockReservation::query()->where('state', StockReservationState::Hard->value)->count())->toBe(0)
+        ->and($this->service->available($this->company->id, $item->id))->toBe('0.0000');
 });
 
-it('leaves no partial reservation when a later line cannot be covered', function (): void {
+it('confirm partially short reserves up to available', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    reserve_on_confirm_on_hand($this->company, $item, '3.0000');
+    $line = reserve_on_confirm_line($this->order, $item, '5.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    $reservations = StockReservation::query()->where('source_id', $line->id)->get();
+
+    expect($this->order->fresh()->status)->toBe(SalesOrderStatus::Confirmed)
+        ->and($reservations)->toHaveCount(1)
+        ->and($reservations->first()->state)->toBe(StockReservationState::Hard)
+        ->and($reservations->first()->quantity)->toBe('3.0000')
+        ->and($this->service->available($this->company->id, $item->id))->toBe('0.0000');
+});
+
+it('reserves each line on its own so a short line does not hold back the others', function (): void {
     $stocked = Item::factory()->create(['company_id' => $this->company->id]);
     $empty = Item::factory()->create(['company_id' => $this->company->id]);
     reserve_on_confirm_on_hand($this->company, $stocked, '10.0000');
 
-    reserve_on_confirm_line($this->order, $stocked, '4.0000');
+    $stocked_line = reserve_on_confirm_line($this->order, $stocked, '4.0000');
     reserve_on_confirm_line($this->order, $empty, '1.0000');
 
-    expect(fn () => $this->order->update(['status' => SalesOrderStatus::Confirmed]))
-        ->toThrow(InsufficientStockException::class);
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
 
-    expect(StockReservation::query()->count())->toBe(0)
-        ->and($this->service->available($this->company->id, $stocked->id))->toBe('10.0000');
+    $reservations = StockReservation::query()->get();
+
+    expect($reservations)->toHaveCount(1)
+        ->and($reservations->first()->source_id)->toBe($stocked_line->id)
+        ->and($this->service->available($this->company->id, $stocked->id))->toBe('6.0000');
 });
