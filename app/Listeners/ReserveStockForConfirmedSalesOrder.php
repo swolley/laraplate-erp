@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Listeners;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Enums\StockReservationState;
 use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Exceptions\InsufficientStockException;
@@ -23,6 +26,12 @@ use Modules\ERP\Support\Decimal;
  *
  * A live soft hold the line already owns is promoted to hard first. Lines without an item
  * (digital goods) reserve nothing.
+ *
+ * No exception from `reserve()` escapes: the order is already persisted as confirmed when this
+ * runs (the model save has no wrapping transaction), so throwing would leave it half-confirmed and
+ * could skip the other listeners. A stock shortfall that lost a race and a lock that stays
+ * contended end as a WARNING log; an item that is not the order company's is a data anomaly and
+ * ends as an ERROR log. Either way the line is left unreserved.
  */
 final readonly class ReserveStockForConfirmedSalesOrder
 {
@@ -76,8 +85,41 @@ final readonly class ReserveStockForConfirmedSalesOrder
                 return;
             } catch (InsufficientStockException) {
                 continue;
+            } catch (LockTimeoutException) {
+                // The service already waited its whole lock window; retrying would stall the confirm further.
+                $this->logUnreserved($companyId, $line, 'The item lock stayed contended.');
+
+                return;
+            } catch (ValidationException $exception) {
+                Log::error('A sales order line could not be reserved: the reservation was rejected as invalid (data anomaly, e.g. an item of another company).', $this->logContext($companyId, $line) + [
+                    'errors' => $exception->errors(),
+                ]);
+
+                return;
             }
         }
+
+        $this->logUnreserved($companyId, $line, 'Concurrent reservers kept taking the stock.');
+    }
+
+    private function logUnreserved(int $companyId, SalesOrderLine $line, string $reason): void
+    {
+        Log::warning('A sales order line was left unreserved by contention, not by a plain stock shortfall.', $this->logContext($companyId, $line) + [
+            'reason' => $reason,
+        ]);
+    }
+
+    /**
+     * @return array{company_id: int, item_id: int, sales_order_line_id: int, sales_order_id: int}
+     */
+    private function logContext(int $companyId, SalesOrderLine $line): array
+    {
+        return [
+            'company_id' => $companyId,
+            'item_id' => $line->item_id,
+            'sales_order_line_id' => $line->id,
+            'sales_order_id' => $line->sales_order_id,
+        ];
     }
 
     /**

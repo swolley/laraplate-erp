@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Sleep;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Enums\StockReservationState;
 use Modules\ERP\Models\Company;
@@ -188,4 +191,69 @@ it('reserves each line on its own so a short line does not hold back the others'
     expect($reservations)->toHaveCount(1)
         ->and($reservations->first()->source_id)->toBe($stocked_line->id)
         ->and($this->service->available($this->company->id, $stocked->id))->toBe('6.0000');
+});
+
+it('splits one item across several lines of the same order without overselling it', function (): void {
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    reserve_on_confirm_on_hand($this->company, $item, '5.0000');
+
+    $first_line = reserve_on_confirm_line($this->order, $item, '3.0000');
+    $second_line = reserve_on_confirm_line($this->order, $item, '4.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    $first = StockReservation::query()->where('source_id', $first_line->id)->sum('quantity');
+    $second = StockReservation::query()->where('source_id', $second_line->id)->sum('quantity');
+
+    expect((float) $first)->toBe(3.0)
+        ->and((float) $second)->toBe(2.0)
+        ->and(StockReservation::query()->where('state', StockReservationState::Hard->value)->count())->toBe(2)
+        ->and($this->service->available($this->company->id, $item->id))->toBe('0.0000');
+});
+
+it('confirm still succeeds and warns when the item lock stays contended', function (): void {
+    Log::spy();
+    Sleep::fake(syncWithCarbon: true);
+
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    reserve_on_confirm_on_hand($this->company, $item, '5.0000');
+    $line = reserve_on_confirm_line($this->order, $item, '2.0000');
+
+    $held = Cache::lock("erp:stock-reservation:{$this->company->id}:{$item->id}", 60);
+    expect($held->get())->toBeTrue();
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    $held->release();
+
+    expect($this->order->fresh()->status)->toBe(SalesOrderStatus::Confirmed)
+        ->and(StockReservation::query()->count())->toBe(0);
+
+    Log::shouldHaveReceived('warning')->once()->withArgs(
+        fn (string $message, array $context): bool => $context['company_id'] === $this->company->id
+            && $context['item_id'] === $item->id
+            && $context['sales_order_line_id'] === $line->id,
+    );
+});
+
+it('confirm still succeeds and logs an error when the line item is not the order company\'s', function (): void {
+    Log::spy();
+
+    $foreign_item = Item::factory()->create();
+    $item = Item::factory()->create(['company_id' => $this->company->id]);
+    $line = reserve_on_confirm_line($this->order, $item, '2.0000');
+
+    SalesOrderLine::query()->whereKey($line->id)->toBase()->update(['item_id' => $foreign_item->id]);
+    reserve_on_confirm_on_hand($this->company, $foreign_item, '5.0000');
+
+    $this->order->update(['status' => SalesOrderStatus::Confirmed]);
+
+    expect($this->order->fresh()->status)->toBe(SalesOrderStatus::Confirmed)
+        ->and(StockReservation::query()->count())->toBe(0);
+
+    Log::shouldHaveReceived('error')->once()->withArgs(
+        fn (string $message, array $context): bool => $context['company_id'] === $this->company->id
+            && $context['item_id'] === $foreign_item->id
+            && $context['sales_order_line_id'] === $line->id,
+    );
 });
