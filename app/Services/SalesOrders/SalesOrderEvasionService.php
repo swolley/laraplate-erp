@@ -12,7 +12,7 @@ use Modules\ERP\Models\SalesOrderLine;
 use Modules\ERP\Services\Inventory\StockReservationService;
 use Modules\ERP\Support\Decimal;
 
-final class SalesOrderEvasionService
+final readonly class SalesOrderEvasionService
 {
     /**
      * Opaque reservation source alias for a sales order line (never resolved by the reservation service).

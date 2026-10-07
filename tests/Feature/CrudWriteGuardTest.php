@@ -14,6 +14,7 @@ use Modules\ERP\Models\JournalEntryLine;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
+use Modules\ERP\Models\StockReservation;
 use Modules\ERP\Models\VatRegisterEntry;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -45,7 +46,7 @@ function createCrudGuardJournalEntry(?Company $company = null): JournalEntry
 }
 
 it('marks the immutable/derived ERP models as write-restricted', function (): void {
-    foreach ([JournalEntry::class, JournalEntryLine::class, VatRegisterEntry::class, StockMovement::class, StockCostLayer::class, StockLevel::class] as $model) {
+    foreach ([JournalEntry::class, JournalEntryLine::class, VatRegisterEntry::class, StockMovement::class, StockReservation::class, StockCostLayer::class, StockLevel::class] as $model) {
         $instance = new $model;
         expect($instance)->toBeInstanceOf(RestrictsCrudWrites::class)
             ->and($instance->deniedCrudWrites())->toContain('insert')

@@ -60,7 +60,7 @@ it('reports zero and stays idempotent when nothing is left to expire', function 
     StockReservation::factory()->soft()->create(['expires_at' => now()->subMinute()]);
 
     $this->artisan('erp:stock-reservations:expire')
-        ->expectsOutputToContain('Released 1 expired soft stock reservations.')
+        ->expectsOutputToContain('Released 1 expired soft stock reservation.')
         ->assertExitCode(Command::SUCCESS);
 
     $this->artisan('erp:stock-reservations:expire')

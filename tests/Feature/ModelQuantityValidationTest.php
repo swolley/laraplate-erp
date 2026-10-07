@@ -16,6 +16,7 @@ use Modules\ERP\Models\ReturnOrderLine;
 use Modules\ERP\Models\StockCostLayer;
 use Modules\ERP\Models\StockLevel;
 use Modules\ERP\Models\StockMovement;
+use Modules\ERP\Models\StockReservation;
 use Modules\ERP\Models\SupplierReturnLine;
 use Modules\ERP\Models\Warehouse;
 
@@ -38,6 +39,7 @@ it('rejects negative operational quantities through model rules', function (Mode
     'return order line quantity' => [new ReturnOrderLine, 'quantity'],
     'stock cost layer remaining quantity' => [new StockCostLayer, 'qty_remaining'],
     'stock level quantity' => [new StockLevel, 'quantity'],
+    'stock reservation quantity' => [new StockReservation, 'quantity'],
     'supplier return line quantity' => [new SupplierReturnLine, 'quantity'],
 ]);
 

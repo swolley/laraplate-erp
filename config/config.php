@@ -33,7 +33,7 @@ return [
         // Read by whoever creates the soft hold (e.g. a checkout), not by the expiry sweep, which only
         // closes rows whose `expires_at` has already passed (`erp:stock-reservations:expire`, hourly).
         // Keep it well above the payment window so a slow payment cannot lose its hold mid-flight.
-        'soft_ttl' => (int) env('ERP_STOCK_RESERVATION_SOFT_TTL', 1440),
+        'soft_ttl' => max(1, (int) env('ERP_STOCK_RESERVATION_SOFT_TTL', 1440)),
     ],
     'payment_requests' => [
         'driver' => env('ERP_PAYMENT_REQUEST_DRIVER', 'stub'),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Console;
 
+use Illuminate\Support\Str;
 use Modules\Core\Overrides\Command;
 use Modules\ERP\Enums\StockReservationState;
 use Modules\ERP\Models\StockReservation;
@@ -36,7 +37,7 @@ final class ExpireStockReservationsCommand extends Command
             ->where('expires_at', '<', now())
             ->update(['state' => StockReservationState::Released->value]);
 
-        $this->info(sprintf('Released %d expired soft stock reservations.', $released));
+        $this->info(sprintf('Released %d expired soft stock %s.', $released, Str::plural('reservation', $released)));
 
         return BaseCommand::SUCCESS;
     }

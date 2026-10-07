@@ -28,11 +28,13 @@ use Throwable;
  * A live soft hold the line already owns is promoted to hard first. Lines without an item
  * (digital goods) reserve nothing.
  *
- * No exception from `reserve()` escapes: the order is already persisted as confirmed when this
- * runs (the model save has no wrapping transaction), so throwing would leave it half-confirmed and
- * could skip the other listeners. A stock shortfall that lost a race and a lock that stays
- * contended end as a WARNING log; an item that is not the order company's is a data anomaly and
- * ends as an ERROR log. Either way the line is left unreserved.
+ * The failures `reserve()` declares are caught here: the order is already persisted as confirmed
+ * when this runs (the model save has no wrapping transaction), so throwing would leave it
+ * half-confirmed and could skip the other listeners. A stock shortfall that lost a race and a lock
+ * that stays contended end as a WARNING log; an item that is not the order company's is a data
+ * anomaly and ends as an ERROR log. Either way the line is left unreserved. Only those declared
+ * failures are absorbed: an unexpected infrastructure exception (e.g. a QueryException from
+ * `promoteToHard()` or `available()`) is not and can still propagate.
  */
 final readonly class ReserveStockForConfirmedSalesOrder
 {
