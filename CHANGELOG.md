@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.25.0] - 2026-10-07
+
+### 🚀 Features
+
+- *(erp)* Domain interface labels in lang/{locale}/erp.php
+- *(erp)* Add stock reservation table, state enum and model
+- *(erp)* Stock reservation service with locked availability
+- *(erp)* Hard-reserve stock when a sales order is confirmed
+- *(erp)* Release/consume reservations on cancel, amend and evasion
+- *(erp)* Expire stale soft stock reservations
+- *(erp)* Amendment supersedes the source sales order (mark Amended, block evasion)
+
+### 🐛 Bug Fixes
+
+- *(erp)* FIFO consumption pages layers by id; invoice posting snapshots taxes per code and preloads order lines
+- *(erp)* Row-lock stock before recomputing availability in reserve
+- *(erp)* Reserve stock best-effort at sales order confirm
+- *(erp)* Never let a reservation failure escape the sales order confirm
+- *(erp)* Release the amended source's reservation on amendment confirm, not draft creation
+- *(erp)* Keep Amended terminal on reversal and revert the source when an amendment is cancelled
+
+### 💼 Other
+
+- Own ERP plugin, version strategy, seed graph and setting tests
+
+Moved from Core so Core tests no longer depend on ERP.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016bQ9UWLJjnRQA6sGEYNGPL
+
+### 📚 Documentation
+
+- *(erp)* Describe closed-period posting block, force_post and write-restricted models
+- *(erp)* Document stock reservation / ATP
+
+### 🧪 Testing
+
+- *(erp)* Prove the importer marker check without the CMS module
+
+### ⚙️ Miscellaneous Tasks
+
+- *(erp)* Module priority 10, first tier after Core
+- *(erp)* Reviewer-flagged minor polish for stock reservation
+
 ## [1.24.1] - 2026-09-29
 
 ### 🚀 Features
