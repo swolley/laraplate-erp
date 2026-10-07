@@ -10,6 +10,7 @@ use Modules\ERP\Events\SalesOrderConfirmed;
 use Modules\ERP\Listeners\MarkSourceOrderSupersededOnAmendmentConfirm;
 use Modules\ERP\Listeners\ReleaseStockForCancelledSalesOrder;
 use Modules\ERP\Listeners\ReserveStockForConfirmedSalesOrder;
+use Modules\ERP\Listeners\RevertSourceOrderOnAmendmentCancel;
 use Override;
 
 class EventServiceProvider extends ServiceProvider
@@ -27,6 +28,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         SalesOrderCancelled::class => [
             ReleaseStockForCancelledSalesOrder::class,
+            RevertSourceOrderOnAmendmentCancel::class,
         ],
     ];
 

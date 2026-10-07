@@ -19,8 +19,8 @@ use Throwable;
 /**
  * Holds stock for the item-backed lines of a sales order the moment it is confirmed, best effort.
  *
- * It never blocks the confirmation. Each line reserves `min(quantity not yet hard-reserved,
- * available)`, clamped before calling the service so {@see InsufficientStockException} is not
+ * It never blocks the confirmation. Each line reserves `min(quantity still owed and not yet
+ * hard-reserved, available)`, clamped before calling the service so {@see InsufficientStockException} is not
  * triggered; the part that stock cannot cover stays unreserved as backorder or make-to-order (MES
  * plans production for it off the same event). Overselling stays impossible because the listener
  * never holds more than is on hand.
@@ -58,6 +58,17 @@ final readonly class ReserveStockForConfirmedSalesOrder
             $this->releaseAmendedSourceHolds($order->amends_sales_order_id);
         }
 
+        $this->reserveOrderLines($order);
+    }
+
+    /**
+     * Reserves every item-backed line of the order best effort, holding `min(quantity still owed and
+     * not yet reserved, available)` per line. Shared by the confirm path and by the revert that
+     * restores a source order when its amendment is cancelled (where already delivered lines must
+     * re-reserve only what is still owed).
+     */
+    public function reserveOrderLines(SalesOrder $order): void
+    {
         $lines = $order->lines()
             ->whereNotNull('item_id')
             ->orderBy('id')
@@ -104,7 +115,12 @@ final readonly class ReserveStockForConfirmedSalesOrder
     {
         $this->reservations->promoteToHard(self::SOURCE_TYPE, $line->id, $companyId);
 
-        $remaining = Decimal::sub($line->qty_ordered, $this->reservations->reservedQuantity(self::SOURCE_TYPE, $line->id));
+        // Reserve only what the line still owes: its ordered quantity less what has already shipped
+        // (a delivered quantity is terminal and was consumed, never re-held) less what it still
+        // holds live. At confirm time nothing is delivered, so this is the full ordered quantity;
+        // on a source reverted from a cancelled amendment it is the undelivered remainder.
+        $owed = Decimal::sub($line->qty_ordered, $line->qty_delivered);
+        $remaining = Decimal::sub($owed, $this->reservations->reservedQuantity(self::SOURCE_TYPE, $line->id));
 
         for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
             $quantity = $this->clampToAvailable($remaining, $this->reservations->available($companyId, $line->item_id));

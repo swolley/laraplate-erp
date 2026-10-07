@@ -97,6 +97,47 @@ it('a delivery reversal on an Amended order is still allowed', function (): void
     expect((string) $this->line->fresh()->qty_delivered)->toBe('0.0000');
 });
 
+it('a reversal on an Amended order keeps it Amended and the forward guard still blocks', function (): void {
+    app(SalesOrderEvasionService::class)->registerDelivery($this->source->fresh(), [$this->line->id => '2.0000']);
+    supersede_source($this->source);
+
+    expect($this->source->fresh()->status)->toBe(SalesOrderStatus::Amended);
+
+    // The reversal rewinds the line quantity but must not un-supersede the header.
+    app(SalesOrderEvasionService::class)->unregisterDelivery($this->source->fresh(), [$this->line->id => '2.0000']);
+
+    expect($this->source->fresh()->status)->toBe(SalesOrderStatus::Amended)
+        ->and((string) $this->line->fresh()->qty_delivered)->toBe('0.0000');
+
+    // The order is still Amended, so a forward delivery is still refused.
+    expect(fn (): mixed => app(SalesOrderEvasionService::class)
+        ->registerDelivery($this->source->fresh(), [$this->line->id => '1.0000']))
+        ->toThrow(ValidationException::class);
+});
+
+it('the forward evasion guard message is grammatical for amended and cancelled orders', function (): void {
+    supersede_source($this->source);
+
+    try {
+        app(SalesOrderEvasionService::class)->registerDelivery($this->source->fresh(), [$this->line->id => '1.0000']);
+        $this->fail('Expected a ValidationException for delivering an amended order.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors()['status'][0])->toBe('An amended sales order cannot be delivered.');
+    }
+
+    $cancelled = SalesOrder::factory()->create(['company_id' => $this->company->id]);
+    $cancelled_line = supersede_line($cancelled, $this->item, '4.0000');
+    $cancelled->update(['status' => SalesOrderStatus::Confirmed]);
+    $cancelled->update(['status' => SalesOrderStatus::Cancelled]);
+
+    try {
+        app(SalesOrderEvasionService::class)->registerInvoice($cancelled->fresh(), [$cancelled_line->id => '1.0000']);
+        $this->fail('Expected a ValidationException for invoicing a cancelled order.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors()['status'][0])->toBe('A cancelled sales order cannot be invoiced.');
+    }
+});
+
 it('a cancelled order cannot be delivered', function (): void {
     $this->source->update(['status' => SalesOrderStatus::Cancelled]);
 

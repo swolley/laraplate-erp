@@ -56,6 +56,39 @@ final class SalesOrderEvasionService
     }
 
     /**
+     * The header status implied by the order's line quantities: {@see SalesOrderStatus::FullyEvased}
+     * when every line is fully evased, {@see SalesOrderStatus::PartiallyEvased} when any line has
+     * been delivered or invoiced, otherwise {@see SalesOrderStatus::Confirmed}. Returns null when the
+     * order has no lines, so the caller leaves the status untouched. Does not persist anything.
+     */
+    public function statusFromLineQuantities(SalesOrder $sales_order): ?SalesOrderStatus
+    {
+        $lines = $sales_order->lines;
+
+        if ($lines->isEmpty()) {
+            return null;
+        }
+
+        $all_fully_evased = $lines->every(
+            static fn (SalesOrderLine $line): bool => $line->status === SalesOrderLineStatus::FullyEvased,
+        );
+
+        if ($all_fully_evased) {
+            return SalesOrderStatus::FullyEvased;
+        }
+
+        $has_progress = $lines->contains(
+            static fn (SalesOrderLine $line): bool => $line->qty_delivered > 0 || $line->qty_invoiced > 0,
+        );
+
+        if ($has_progress) {
+            return SalesOrderStatus::PartiallyEvased;
+        }
+
+        return SalesOrderStatus::Confirmed;
+    }
+
+    /**
      * @param  array<int, numeric-string|float|int>  $line_quantities
      */
     private function applyQuantities(SalesOrder $sales_order, array $line_quantities, string $mode): void
@@ -120,7 +153,8 @@ final class SalesOrderEvasionService
 
         throw ValidationException::withMessages([
             'status' => [sprintf(
-                'A %s sales order cannot be %s.',
+                '%s %s sales order cannot be %s.',
+                $sales_order->status === SalesOrderStatus::Amended ? 'An' : 'A',
                 $sales_order->status->value,
                 $mode === 'delivery' ? 'delivered' : 'invoiced',
             )],
@@ -161,37 +195,27 @@ final class SalesOrderEvasionService
         return SalesOrderLineStatus::Open;
     }
 
+    /**
+     * Recomputes the header status from the current line quantities, unless the order sits in a
+     * terminal lifecycle state. An {@see SalesOrderStatus::Amended} order (superseded by a confirmed
+     * amendment) or a {@see SalesOrderStatus::Cancelled} one keeps that status even while a reversal
+     * rewinds its line quantities: recomputing would silently un-supersede it and reopen it to
+     * evasion and re-amendment. The line quantity changes are already persisted by the caller; only
+     * the header is held.
+     */
     private function syncHeaderStatus(SalesOrder $sales_order): void
     {
-        $lines = $sales_order->lines;
-
-        if ($lines->isEmpty()) {
+        if (in_array($sales_order->status, [SalesOrderStatus::Amended, SalesOrderStatus::Cancelled], true)) {
             return;
         }
 
-        $all_fully_evased = $lines->every(
-            static fn (SalesOrderLine $line): bool => $line->status === SalesOrderLineStatus::FullyEvased,
-        );
+        $status = $this->statusFromLineQuantities($sales_order);
 
-        if ($all_fully_evased) {
-            $sales_order->status = SalesOrderStatus::FullyEvased;
-            $sales_order->saveQuietly();
-
+        if ($status === null) {
             return;
         }
 
-        $has_progress = $lines->contains(
-            static fn (SalesOrderLine $line): bool => $line->qty_delivered > 0 || $line->qty_invoiced > 0,
-        );
-
-        if ($has_progress) {
-            $sales_order->status = SalesOrderStatus::PartiallyEvased;
-            $sales_order->saveQuietly();
-
-            return;
-        }
-
-        $sales_order->status = SalesOrderStatus::Confirmed;
+        $sales_order->status = $status;
         $sales_order->saveQuietly();
     }
 
