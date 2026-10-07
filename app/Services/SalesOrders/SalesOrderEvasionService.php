@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ERP\Services\SalesOrders;
 
+use Illuminate\Validation\ValidationException;
 use Modules\ERP\Casts\SalesOrderLineStatus;
 use Modules\ERP\Casts\SalesOrderStatus;
 use Modules\ERP\Models\SalesOrder;
@@ -59,6 +60,8 @@ final class SalesOrderEvasionService
      */
     private function applyQuantities(SalesOrder $sales_order, array $line_quantities, string $mode): void
     {
+        $this->guardForwardEvasion($sales_order, $mode);
+
         foreach ($line_quantities as $line_id => $qty) {
             /** @var SalesOrderLine|null $line */
             $line = $sales_order->lines()->find($line_id);
@@ -97,6 +100,31 @@ final class SalesOrderEvasionService
         }
 
         $this->syncHeaderStatus($sales_order->fresh(['lines']) ?? $sales_order);
+    }
+
+    /**
+     * Blocks forward evasion of an order that is no longer live: a superseded ({@see SalesOrderStatus::Amended})
+     * or {@see SalesOrderStatus::Cancelled} order must not ship or invoice, and because `applyQuantities`
+     * would otherwise recompute and overwrite the header status from line quantities, delivering it would
+     * silently un-supersede it. Reversals stay allowed so a prior movement can still be undone.
+     */
+    private function guardForwardEvasion(SalesOrder $sales_order, string $mode): void
+    {
+        if ($mode !== 'delivery' && $mode !== 'invoice') {
+            return;
+        }
+
+        if (! in_array($sales_order->status, [SalesOrderStatus::Amended, SalesOrderStatus::Cancelled], true)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'status' => [sprintf(
+                'A %s sales order cannot be %s.',
+                $sales_order->status->value,
+                $mode === 'delivery' ? 'delivered' : 'invoiced',
+            )],
+        ]);
     }
 
     /**
