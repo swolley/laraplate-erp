@@ -35,7 +35,7 @@ final class QuotationResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 70;
 
     public static function getSlug(?Panel $panel = null): string
     {

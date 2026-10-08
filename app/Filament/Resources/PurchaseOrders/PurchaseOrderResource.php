@@ -32,7 +32,7 @@ final class PurchaseOrderResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Purchasing';
 
     #[Override]
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 20;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'reference';

@@ -37,7 +37,7 @@ final class BalanceSheetPage extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 20;
 
     #[Override]
     protected static ?string $navigationLabel = 'Balance Sheet';

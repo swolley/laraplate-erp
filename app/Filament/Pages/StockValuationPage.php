@@ -36,7 +36,7 @@ final class StockValuationPage extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 40;
 
     #[Override]
     protected static ?string $navigationLabel = 'Stock Valuation';

@@ -35,7 +35,7 @@ final class LeadResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 20;
 
     public static function getSlug(?Panel $panel = null): string
     {

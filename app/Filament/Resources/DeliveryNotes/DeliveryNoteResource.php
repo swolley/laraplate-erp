@@ -31,7 +31,7 @@ final class DeliveryNoteResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 10;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'reference';

@@ -36,7 +36,7 @@ final class SalesPipelinePage extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 110;
+    protected static ?int $navigationSort = 100;
 
     #[Override]
     protected static ?string $navigationLabel = 'Sales Pipeline';

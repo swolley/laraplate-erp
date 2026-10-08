@@ -37,7 +37,7 @@ final class SalesOrderResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 90;
 
     public static function getSlug(?Panel $panel = null): string
     {

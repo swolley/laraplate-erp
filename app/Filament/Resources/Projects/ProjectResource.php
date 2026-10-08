@@ -36,7 +36,7 @@ final class ProjectResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = 60;
 
     public static function getSlug(?Panel $panel = null): string
     {

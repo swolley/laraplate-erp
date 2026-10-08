@@ -37,7 +37,7 @@ final class IncomeStatementPage extends Page
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 100;
+    protected static ?int $navigationSort = 50;
 
     #[Override]
     protected static ?string $navigationLabel = 'Income Statement';

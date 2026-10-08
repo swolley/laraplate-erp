@@ -36,7 +36,7 @@ final class PartyResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Master data';
 
     #[Override]
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 40;
 
     public static function getSlug(?Panel $panel = null): string
     {

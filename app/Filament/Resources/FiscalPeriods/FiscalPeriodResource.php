@@ -35,7 +35,7 @@ final class FiscalPeriodResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 30;
 
     public static function getSlug(?Panel $panel = null): string
     {

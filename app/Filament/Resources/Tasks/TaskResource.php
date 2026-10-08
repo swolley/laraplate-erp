@@ -31,7 +31,7 @@ final class TaskResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 100;
+    protected static ?int $navigationSort = 110;
 
     public static function getSlug(?Panel $panel = null): string
     {

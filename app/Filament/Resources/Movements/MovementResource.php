@@ -33,7 +33,7 @@ final class MovementResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 20;
 
     public static function getSlug(?Panel $panel = null): string
     {

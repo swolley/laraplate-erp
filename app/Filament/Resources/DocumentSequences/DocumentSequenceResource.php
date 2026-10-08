@@ -32,7 +32,7 @@ final class DocumentSequenceResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'ERP - Master data';
 
     #[Override]
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 30;
 
     public static function getSlug(?Panel $panel = null): string
     {
