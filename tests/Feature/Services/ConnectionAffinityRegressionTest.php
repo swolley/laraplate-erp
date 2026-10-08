@@ -11,6 +11,7 @@ use Modules\Core\Jobs\PublishOutboxEventJob;
 use Modules\Core\Models\OutboxEvent;
 use Modules\Core\Models\Version;
 use Modules\Core\Models\VersionSet;
+use Modules\Core\Support\CrudApiExposure;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\DeliveryNoteDirection;
 use Modules\ERP\Casts\DocumentType;
@@ -50,6 +51,7 @@ use Modules\ERP\Support\ErpConnectionContext;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    CrudApiExposure::enable();
     config()->set('database.connections.erp-secondary', [
         'driver' => 'sqlite',
         'database' => ':memory:',

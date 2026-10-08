@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Modules\Core\Support\CrudApiExposure;
 use Modules\ERP\Casts\InvoiceDirection;
 use Modules\ERP\Casts\InvoiceType;
 use Modules\ERP\Contracts\EInvoiceProvider;
@@ -16,6 +17,10 @@ use Modules\ERP\Services\EInvoice\ArubaEInvoiceProvider;
 use Modules\ERP\Services\EInvoice\EInvoiceSubmissionService;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    CrudApiExposure::enable();
+});
 
 function createArubaEInvoiceCompany(): Company
 {

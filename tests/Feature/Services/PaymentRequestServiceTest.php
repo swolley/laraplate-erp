@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Models\User;
+use Modules\Core\Support\CrudApiExposure;
 use Modules\ERP\Casts\PaymentRequestStatus;
 use Modules\ERP\Contracts\PaymentRequestProvider;
 use Modules\ERP\Models\Company;
@@ -14,6 +15,10 @@ use Modules\ERP\Services\Payments\PaymentRequestService;
 use Modules\ERP\Services\Payments\StubPaymentRequestProvider;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    CrudApiExposure::enable();
+});
 
 function paymentRequestFixture(): array
 {
