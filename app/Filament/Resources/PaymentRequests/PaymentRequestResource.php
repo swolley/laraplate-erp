@@ -28,10 +28,10 @@ final class PaymentRequestResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Treasury';
 
     #[Override]
-    protected static ?int $navigationSort = 64;
+    protected static ?int $navigationSort = 40;
 
     public static function getSlug(?Panel $panel = null): string
     {

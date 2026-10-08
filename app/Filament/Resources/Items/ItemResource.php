@@ -28,10 +28,10 @@ final class ItemResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 37;
+    protected static ?int $navigationSort = 10;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'name';

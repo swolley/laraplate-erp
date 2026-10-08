@@ -32,10 +32,10 @@ final class OpportunityResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLightBulb;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 35;
+    protected static ?int $navigationSort = 20;
 
     public static function getSlug(?Panel $panel = null): string
     {

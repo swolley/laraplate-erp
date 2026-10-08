@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasPageForm;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Models\Warehouse;
 use Modules\ERP\Services\Reporting\OperationalReportCsvExporter;
@@ -16,7 +17,6 @@ use Modules\ERP\Services\Reporting\StockValuationService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
-use Modules\Core\Filament\Utils\HasPageForm;
 
 final class StockValuationPage extends Page
 {
@@ -33,10 +33,10 @@ final class StockValuationPage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 84;
+    protected static ?int $navigationSort = 50;
 
     #[Override]
     protected static ?string $navigationLabel = 'Stock Valuation';

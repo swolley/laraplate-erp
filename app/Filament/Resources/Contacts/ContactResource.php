@@ -32,10 +32,10 @@ final class ContactResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Master data';
 
     #[Override]
-    protected static ?int $navigationSort = 31;
+    protected static ?int $navigationSort = 60;
 
     public static function getSlug(?Panel $panel = null): string
     {

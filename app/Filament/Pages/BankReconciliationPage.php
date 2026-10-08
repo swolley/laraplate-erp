@@ -12,6 +12,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
+use Modules\Core\Filament\Utils\HasPageForm;
 use Modules\ERP\Casts\AccountKind;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Casts\PaymentDirection;
@@ -23,7 +24,6 @@ use Modules\ERP\Support\ConnectionScopedModels;
 use Modules\ERP\Support\ErpConnectionContext;
 use Override;
 use UnitEnum;
-use Modules\Core\Filament\Utils\HasPageForm;
 
 final class BankReconciliationPage extends Page
 {
@@ -35,10 +35,10 @@ final class BankReconciliationPage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Treasury';
 
     #[Override]
-    protected static ?int $navigationSort = 64;
+    protected static ?int $navigationSort = 60;
 
     #[Override]
     protected static ?string $slug = 'bank-reconciliation';

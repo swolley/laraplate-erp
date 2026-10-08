@@ -11,13 +11,13 @@ use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasPageForm;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Modules\ERP\Services\Reporting\TrialBalanceService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
-use Modules\Core\Filament\Utils\HasPageForm;
 
 final class TrialBalancePage extends Page
 {
@@ -34,7 +34,7 @@ final class TrialBalancePage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScale;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
     protected static ?int $navigationSort = 80;

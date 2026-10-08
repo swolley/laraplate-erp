@@ -44,9 +44,12 @@ final class ERPPlugin implements Plugin
         }
 
         $panel->navigationGroups([
-            NavigationGroup::make()
-                ->label('ERP')
-                ->icon(Heroicon::OutlinedBuildingOffice),
+            NavigationGroup::make()->label('ERP - Master data')->icon(Heroicon::OutlinedBuildingOffice),
+            NavigationGroup::make()->label('ERP - Sales')->icon(Heroicon::OutlinedShoppingCart),
+            NavigationGroup::make()->label('ERP - Purchasing')->icon(Heroicon::OutlinedTruck),
+            NavigationGroup::make()->label('ERP - Inventory')->icon(Heroicon::OutlinedArchiveBox),
+            NavigationGroup::make()->label('ERP - Accounting')->icon(Heroicon::OutlinedCalculator),
+            NavigationGroup::make()->label('ERP - Treasury')->icon(Heroicon::OutlinedBanknotes),
         ]);
     }
 }

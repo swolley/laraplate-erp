@@ -25,10 +25,10 @@ final class VatSettlementResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPercentBadge;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 71;
+    protected static ?int $navigationSort = 70;
 
     public static function getSlug(?Panel $panel = null): string
     {

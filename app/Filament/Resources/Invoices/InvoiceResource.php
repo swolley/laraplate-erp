@@ -29,10 +29,10 @@ final class InvoiceResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCurrencyDollar;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 41;
+    protected static ?int $navigationSort = 30;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'id';

@@ -34,10 +34,10 @@ final class SalesOrderResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 36;
+    protected static ?int $navigationSort = 40;
 
     public static function getSlug(?Panel $panel = null): string
     {

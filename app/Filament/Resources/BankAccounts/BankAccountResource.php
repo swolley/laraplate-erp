@@ -28,10 +28,10 @@ final class BankAccountResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Treasury';
 
     #[Override]
-    protected static ?int $navigationSort = 62;
+    protected static ?int $navigationSort = 10;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'name';

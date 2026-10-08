@@ -28,10 +28,10 @@ final class StockLevelResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 39;
+    protected static ?int $navigationSort = 30;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'id';

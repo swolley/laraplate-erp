@@ -11,13 +11,13 @@ use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasPageForm;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Reporting\BalanceSheetService;
 use Modules\ERP\Services\Reporting\FinancialReportCsvExporter;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
-use Modules\Core\Filament\Utils\HasPageForm;
 
 final class BalanceSheetPage extends Page
 {
@@ -34,10 +34,10 @@ final class BalanceSheetPage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Accounting';
 
     #[Override]
-    protected static ?int $navigationSort = 81;
+    protected static ?int $navigationSort = 90;
 
     #[Override]
     protected static ?string $navigationLabel = 'Balance Sheet';

@@ -28,10 +28,10 @@ final class WarehouseResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Inventory';
 
     #[Override]
-    protected static ?int $navigationSort = 38;
+    protected static ?int $navigationSort = 20;
 
     #[Override]
     protected static ?string $recordTitleAttribute = 'name';

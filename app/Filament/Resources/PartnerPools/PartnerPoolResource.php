@@ -28,10 +28,10 @@ final class PartnerPoolResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 63;
+    protected static ?int $navigationSort = 80;
 
     public static function getSlug(?Panel $panel = null): string
     {

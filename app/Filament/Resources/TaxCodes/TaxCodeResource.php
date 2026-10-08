@@ -32,7 +32,7 @@ final class TaxCodeResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Master data';
 
     #[Override]
     protected static ?int $navigationSort = 20;

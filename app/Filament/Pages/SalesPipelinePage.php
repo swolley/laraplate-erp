@@ -10,13 +10,13 @@ use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Modules\Core\Filament\Utils\HasPageForm;
 use Modules\ERP\Models\Company;
 use Modules\ERP\Services\Reporting\OperationalReportCsvExporter;
 use Modules\ERP\Services\Reporting\SalesPipelineService;
 use Override;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use UnitEnum;
-use Modules\Core\Filament\Utils\HasPageForm;
 
 final class SalesPipelinePage extends Page
 {
@@ -33,10 +33,10 @@ final class SalesPipelinePage extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFunnel;
 
     #[Override]
-    protected static string|UnitEnum|null $navigationGroup = 'ERP';
+    protected static string|UnitEnum|null $navigationGroup = 'ERP - Sales';
 
     #[Override]
-    protected static ?int $navigationSort = 83;
+    protected static ?int $navigationSort = 110;
 
     #[Override]
     protected static ?string $navigationLabel = 'Sales Pipeline';
