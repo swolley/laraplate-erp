@@ -52,7 +52,7 @@ it('refuses a domain action to a user without the permission', function (): void
     $response = $this->actingAs(User::factory()->create())
         ->postJson(domainActionUrl('post', 'invoices'), ['id' => $invoice->id]);
 
-    $response->assertUnauthorized();
+    $response->assertForbidden();
 
     expect($invoice->fresh()?->posted_at)->toBeNull();
 });
@@ -86,7 +86,7 @@ it('refuses unpost on an invoice that was never posted', function (): void {
     // before the service is reached.
     $this->actingAs($user)
         ->postJson(domainActionUrl('unpost', 'invoices'), ['id' => $invoice->id])
-        ->assertUnauthorized();
+        ->assertForbidden();
 });
 
 it('refuses an action the user may not force', function (): void {
@@ -101,7 +101,7 @@ it('refuses an action the user may not force', function (): void {
             'id' => $invoice->id,
             'force_three_way_match' => true,
         ])
-        ->assertUnauthorized();
+        ->assertForbidden();
 
     expect($invoice->fresh()?->posted_at)->toBeNull();
 });
