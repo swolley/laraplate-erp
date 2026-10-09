@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PaymentRunLineStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
@@ -14,7 +15,7 @@ use Override;
 /**
  * Immutable beneficiary/payment snapshot inside a supplier payment run.
  */
-final class PaymentRunLine extends Model
+final class PaymentRunLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -42,6 +43,15 @@ final class PaymentRunLine extends Model
         'remittance_information',
         'status',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'payment_run';
+    }
 
     /**
      * @return BelongsTo<PaymentRun, $this>

@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Contracts\RestrictsCrudWrites;
 use Modules\Core\Models\Concerns\DeniesGenericCrudWrites;
 use Modules\Core\Overrides\Model;
@@ -18,7 +19,7 @@ use Override;
 /**
  * Single line in a journal entry (Dare/Avere as signed amount_local).
  */
-final class JournalEntryLine extends Model implements RestrictsCrudWrites
+final class JournalEntryLine extends Model implements IsPartOfParent, RestrictsCrudWrites
 {
     use DeniesGenericCrudWrites;
 
@@ -54,6 +55,15 @@ final class JournalEntryLine extends Model implements RestrictsCrudWrites
     public function source_tax_code(): BelongsTo
     {
         return $this->belongsTo(TaxCode::class, 'tax_code_id');
+    }
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'journal_entry';
     }
 
     /**

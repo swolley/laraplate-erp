@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -13,7 +14,7 @@ use Override;
 /**
  * Supplier or customer bank account used for payment execution snapshots.
  */
-final class PartyBankAccount extends Model
+final class PartyBankAccount extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -37,6 +38,15 @@ final class PartyBankAccount extends Model
         'is_default',
         'is_active',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'party';
+    }
 
     /**
      * @return BelongsTo<Party, $this>

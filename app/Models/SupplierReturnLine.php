@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Support\ConnectionScopedModels;
 use Override;
 
-final class SupplierReturnLine extends Model
+final class SupplierReturnLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -34,6 +35,15 @@ final class SupplierReturnLine extends Model
         'quantity',
         'unit_price',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'supplier_return';
+    }
 
     /**
      * @return BelongsTo<SupplierReturn, $this>

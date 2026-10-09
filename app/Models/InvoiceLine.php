@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\MatchStatus;
 use Modules\ERP\Database\Factories\InvoiceLineFactory;
@@ -17,7 +18,7 @@ use Override;
 /**
  * Invoice line with optional live FK and immutable fiscal snapshot at posting.
  */
-final class InvoiceLine extends Model
+final class InvoiceLine extends Model implements IsPartOfParent
 {
     /**
      * @var string
@@ -46,6 +47,15 @@ final class InvoiceLine extends Model
         'match_status',
         'match_discrepancy',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'invoice';
+    }
 
     /**
      * @return BelongsTo<Invoice, $this>

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\BankStatementLineStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class BankStatementLine extends Model
+final class BankStatementLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -39,6 +40,15 @@ final class BankStatementLine extends Model
         'status',
         'raw_payload',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'bank_statement';
+    }
 
     /**
      * @return BelongsTo<BankStatement, $this>

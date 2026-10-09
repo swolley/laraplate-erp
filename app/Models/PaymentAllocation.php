@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class PaymentAllocation extends Model
+final class PaymentAllocation extends Model implements IsPartOfParent
 {
     /**
      * @var string
@@ -27,6 +28,15 @@ final class PaymentAllocation extends Model
         'allocated_amount_doc',
         'allocated_amount_local',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'payment';
+    }
 
     /**
      * @return BelongsTo<Payment, $this>

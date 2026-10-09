@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Contracts\IValidatableModel;
 use Modules\Core\Enums\CoreTables;
 use Modules\Core\Models\Concerns\HasValidity;
@@ -13,7 +14,7 @@ use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class PriceListItem extends Model implements IValidatableModel
+final class PriceListItem extends Model implements IsPartOfParent, IValidatableModel
 {
     use HasValidity;
 
@@ -50,6 +51,15 @@ final class PriceListItem extends Model implements IValidatableModel
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'price_list';
     }
 
     /**

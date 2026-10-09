@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Models\User;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class MovementAllocation extends Model
+final class MovementAllocation extends Model implements IsPartOfParent
 {
     #[Override]
     protected $table = ERPTables::MovementAllocations->value;
@@ -21,6 +22,15 @@ final class MovementAllocation extends Model
     public function partner_pool(): BelongsTo
     {
         return $this->belongsTo(PartnerPool::class);
+    }
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'movement';
     }
 
     public function movement(): BelongsTo

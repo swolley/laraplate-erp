@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\Contracts\ILockableModel;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Locking\Traits\HasLocks;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\SalesOrderLineStatus;
@@ -18,7 +19,7 @@ use Override;
 /**
  * Line item on a {@see SalesOrder}.
  */
-final class SalesOrderLine extends Model implements ILockableModel
+final class SalesOrderLine extends Model implements ILockableModel, IsPartOfParent
 {
     use HasLocks;
 
@@ -74,6 +75,15 @@ final class SalesOrderLine extends Model implements ILockableModel
     public function attributesWritableWhileLocked(): array
     {
         return array_values(array_diff($this->getFillable(), self::LOCKED_COMMERCIAL_FIELDS));
+    }
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'sales_order';
     }
 
     /**

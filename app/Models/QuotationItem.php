@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\BillingMode;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class QuotationItem extends Model
+final class QuotationItem extends Model implements IsPartOfParent
 {
     /**
      * @var string
@@ -30,6 +31,15 @@ final class QuotationItem extends Model
         'quantity',
         'unit_price',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'quotation';
+    }
 
     /**
      * @return BelongsTo<Quotation, $this>

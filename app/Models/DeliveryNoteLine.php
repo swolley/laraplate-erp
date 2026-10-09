@@ -6,6 +6,7 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -16,7 +17,7 @@ use Override;
 /**
  * Line on a {@see DeliveryNote} driving stock movement and optional SO evasion.
  */
-final class DeliveryNoteLine extends Model
+final class DeliveryNoteLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -38,6 +39,15 @@ final class DeliveryNoteLine extends Model
         'quantity',
         'sales_order_line_id',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'delivery_note';
+    }
 
     /**
      * @return BelongsTo<DeliveryNote, $this>

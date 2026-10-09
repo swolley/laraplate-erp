@@ -7,6 +7,7 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Database\Factories\PurchaseOrderLineFactory;
 use Modules\ERP\Enums\ERPTables;
@@ -16,7 +17,7 @@ use Override;
 /**
  * Line on a {@see PurchaseOrder} tracking ordered vs received quantities.
  */
-final class PurchaseOrderLine extends Model
+final class PurchaseOrderLine extends Model implements IsPartOfParent
 {
     /**
      * @var string
@@ -37,6 +38,15 @@ final class PurchaseOrderLine extends Model
         'qty_returned',
         'unit_price',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'purchase_order';
+    }
 
     /**
      * @return BelongsTo<PurchaseOrder, $this>

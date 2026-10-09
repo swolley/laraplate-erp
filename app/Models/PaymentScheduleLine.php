@@ -7,13 +7,14 @@ namespace Modules\ERP\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Casts\PaymentScheduleStatus;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Override;
 
-final class PaymentScheduleLine extends Model
+final class PaymentScheduleLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -41,6 +42,15 @@ final class PaymentScheduleLine extends Model
         'status',
         'paid_at',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'invoice';
+    }
 
     /**
      * @return BelongsTo<Invoice, $this>

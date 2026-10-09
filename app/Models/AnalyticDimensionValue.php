@@ -6,13 +6,14 @@ namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
 use Modules\ERP\Models\Pivot\JournalEntryLineHasAnalyticDimensionValue;
 use Override;
 
-final class AnalyticDimensionValue extends Model
+final class AnalyticDimensionValue extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -21,6 +22,15 @@ final class AnalyticDimensionValue extends Model
 
     #[Override]
     protected $fillable = ['company_id', 'analytic_dimension_id', 'code', 'name', 'is_active'];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'dimension';
+    }
 
     public function dimension(): BelongsTo
     {

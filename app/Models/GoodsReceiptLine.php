@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ERP\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Core\Contracts\IsPartOfParent;
 use Modules\Core\Overrides\Model;
 use Modules\ERP\Concerns\BelongsToCompany;
 use Modules\ERP\Enums\ERPTables;
@@ -13,7 +14,7 @@ use Override;
 /**
  * Line on a {@see GoodsReceipt} driving stock-in and optional PO receipt progress.
  */
-final class GoodsReceiptLine extends Model
+final class GoodsReceiptLine extends Model implements IsPartOfParent
 {
     use BelongsToCompany;
 
@@ -37,6 +38,15 @@ final class GoodsReceiptLine extends Model
         'unit_cost',
         'purchase_order_line_id',
     ];
+
+    /**
+     * The relation to the record this one only exists inside, whose visibility it inherits.
+     */
+    #[Override]
+    public function parentRelation(): string
+    {
+        return 'goods_receipt';
+    }
 
     /**
      * @return BelongsTo<GoodsReceipt, $this>
